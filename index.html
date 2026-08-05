@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Build 019 Live AI Workers & Settings */
+/* Genesis Alpha v1.0 Stable & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Build 019 Live AI Workers */
+/* Genesis Alpha v1.0 Stable */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* Build 019 Live AI Workers */
+/* Genesis Alpha v1.0 Stable */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -758,9 +758,216 @@ header .brand-title{
   .worker-grid-019{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
+
+/* Build 020 — Genesis Alpha v1.0 Stable */
+:root{
+  --stable-glow:rgba(142,91,255,.22);
+}
+body{
+  background:
+    radial-gradient(circle at 88% 2%,rgba(112,57,221,.24),transparent 30%),
+    radial-gradient(circle at 0 82%,rgba(0,120,170,.18),transparent 28%),
+    #050713;
+}
+.card,.live-card,.workspace-card,.worker-card-019,.router-019{
+  border-radius:20px!important;
+  box-shadow:0 16px 34px rgba(0,0,0,.24);
+}
+button{
+  -webkit-tap-highlight-color:transparent;
+}
+button:active{
+  transform:scale(.985);
+}
+.genesis-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 11px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#5d5cff,#a52cf0);
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  box-shadow:0 0 24px var(--stable-glow);
+}
+.stable-welcome{
+  background:
+    radial-gradient(circle at 88% 10%,rgba(154,77,255,.26),transparent 34%),
+    linear-gradient(135deg,#1f1550,#131d42 58%,#092d3d);
+  border:1px solid #65528e;
+  border-radius:22px;
+  padding:19px;
+  margin-bottom:15px;
+  box-shadow:0 18px 42px rgba(0,0,0,.30);
+}
+.stable-welcome h2{
+  margin:10px 0 6px;
+  font-size:27px;
+}
+.stable-status-list{
+  display:grid;
+  gap:9px;
+  margin-top:14px;
+}
+.stable-status-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:11px 12px;
+  border-radius:14px;
+  background:rgba(6,12,27,.68);
+  border:1px solid rgba(94,111,151,.34);
+}
+.stable-status-left{
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.stable-dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#35dfae;
+  box-shadow:0 0 14px #35dfae;
+  animation:stablePulse 2s infinite;
+}
+@keyframes stablePulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.62;transform:scale(.82)}
+}
+.stable-health-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.stable-health-card{
+  background:#080f20;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:13px;
+}
+.stable-health-card b{
+  display:block;
+  margin-top:5px;
+  font-size:24px;
+  color:#d7b8ff;
+}
+.release-card{
+  background:linear-gradient(145deg,#10182d,#17112e);
+  border:1px solid #3c4968;
+  border-radius:20px;
+  padding:17px;
+  text-align:center;
+}
+.release-emblem{
+  width:82px;height:82px;border-radius:24px;
+  margin:0 auto 12px;
+  display:grid;place-items:center;
+  background:linear-gradient(145deg,#19134d,#35206c);
+  border:1px solid #6c57a0;
+  font-size:36px;
+  box-shadow:0 0 34px rgba(139,84,255,.28);
+}
+.release-meta{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:14px;
+  text-align:left;
+}
+.release-meta div{
+  background:#080f20;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:11px;
+}
+.release-meta small{color:var(--muted)}
+.release-meta b{display:block;margin-top:4px}
+#finalSplash020{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:
+    radial-gradient(circle at 50% 35%,rgba(120,64,229,.34),transparent 34%),
+    linear-gradient(180deg,#080d1e,#050713);
+  transition:opacity .55s ease,visibility .55s ease;
+}
+#finalSplash020.hide{
+  opacity:0;
+  visibility:hidden;
+}
+.splash020-wrap{
+  width:min(92vw,420px);
+  text-align:center;
+}
+.splash020-logo{
+  width:112px;
+  height:112px;
+  margin:0 auto;
+  filter:drop-shadow(0 0 28px rgba(155,77,255,.52));
+}
+.splash020-title{
+  margin:16px 0 4px;
+  font-size:30px;
+  font-weight:900;
+}
+.splash020-sub{color:#b9c4da}
+.splash020-progress{
+  height:9px;
+  margin:22px 0 14px;
+  border-radius:999px;
+  background:#10172b;
+  overflow:hidden;
+  border:1px solid #2c3957;
+}
+.splash020-progress span{
+  display:block;
+  width:0;
+  height:100%;
+  background:linear-gradient(90deg,#5967ff,#a12ff0,#3be0bd);
+  transition:width .38s ease;
+}
+.splash020-log{
+  min-height:84px;
+  text-align:left;
+  background:rgba(5,10,23,.66);
+  border:1px solid #2a3754;
+  border-radius:15px;
+  padding:12px;
+  font-size:11px;
+  color:#bac8e6;
+}
+.splash020-log div{padding:3px 0}
+.fade-in-020{
+  animation:fade020 .35s ease;
+}
+@keyframes fade020{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@media(min-width:700px){
+  .stable-health-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
 </style></head><body>
+
+<div id="finalSplash020">
+  <div class="splash020-wrap">
+    <img class="splash020-logo" src="./icon-192.png" alt="ACC OS X">
+    <div class="splash020-title">ACC OS X</div>
+    <div class="splash020-sub">Genesis Alpha • v1.0 Stable</div>
+    <div class="splash020-progress"><span id="splash020Bar"></span></div>
+    <div id="splash020Log" class="splash020-log"></div>
+  </div>
+</div>
+
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 019 Live AI Workers</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • v1.0 Stable</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
@@ -919,7 +1126,43 @@ header .brand-title{
   </div>
 </section>
 
-<section id="home" class="page active"><div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
+<section id="home" class="page active">
+
+<div class="stable-welcome fade-in-020">
+  <span class="genesis-badge">GENESIS ALPHA • v1.0 STABLE</span>
+  <h2>Welcome back, Arda 👋</h2>
+  <div class="muted">ACC Enterprise siap bekerja.</div>
+
+  <div class="stable-status-list">
+    <div class="stable-status-row">
+      <div class="stable-status-left"><span class="stable-dot"></span><b>Database</b></div>
+      <span class="db-pill">HEALTHY</span>
+    </div>
+    <div class="stable-status-row">
+      <div class="stable-status-left"><span class="stable-dot"></span><b>AI Router</b></div>
+      <span class="db-pill">ACTIVE</span>
+    </div>
+    <div class="stable-status-row">
+      <div class="stable-status-left"><span class="stable-dot"></span><b>AI Workers</b></div>
+      <span id="stableWorkers020" class="db-pill">6/6 ONLINE</span>
+    </div>
+    <div class="stable-status-row">
+      <div class="stable-status-left"><span class="stable-dot"></span><b>Workflow</b></div>
+      <span class="db-pill">READY</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="title"><h3>Enterprise Health</h3><span id="stableHealthStatus020">99.9%</span></div>
+  <div class="stable-health-grid">
+    <div class="stable-health-card"><small>Workers</small><b id="stableHealthWorkers020">6/6</b></div>
+    <div class="stable-health-card"><small>Running Jobs</small><b id="stableHealthRunning020">0</b></div>
+    <div class="stable-health-card"><small>Queue</small><b id="stableHealthQueue020">0</b></div>
+    <div class="stable-health-card"><small>Notifications</small><b id="stableHealthNotif020">0</b></div>
+  </div>
+</div>
+<div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
 <section id="missions" class="page"><div class="card"><div class="title"><h3>Mission Center</h3><span>persistent</span></div><input id="missionTitle" placeholder="Judul mission"><textarea id="missionObjective" placeholder="Objective mission"></textarea><button id="createMission" class="primary">+ CREATE MISSION</button></div><div id="missionList" class="list"></div></section>
 <section id="production" class="page"><div class="card hero"><span class="tag">WORKFLOW AUTOMATION v1</span><h2>READY → RESEARCH → SCRIPT → POSTER + CAPTION → QC → APPROVAL</h2><div class="muted">AI provider belum dikonfigurasi. Pipeline tetap dapat diuji dalam LOCAL SANDBOX MODE tanpa mengklaim hasil AI nyata.</div></div><div id="workflowPanel"></div></section>
 <section id="knowledge" class="page"><div class="card"><div class="title"><h3>Knowledge Vault</h3><span>official memory</span></div><select id="knowledgeCategory"><option>CHANNEL_PASSPORT</option><option>CURRENT_STATE</option><option>WORKFLOW_RULES</option><option>STORY_BIBLE</option><option>CHARACTER_BIBLE</option><option>BRAND_GUIDE</option><option>RESEARCH_RULES</option><option>SOURCE_RULES</option><option>CAPTION_RULES</option><option>PUBLISHING_RULES</option><option>QC_RULES</option><option>CANON_RULES</option></select><input id="knowledgeTitle" placeholder="Judul knowledge"><textarea id="knowledgeContent" placeholder="Isi knowledge"></textarea><button id="addKnowledge" class="primary">+ ADD KNOWLEDGE ENTRY</button></div><div id="knowledgeList" class="list"></div></section>
@@ -1110,7 +1353,41 @@ header .brand-title{
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 019 DATA</button></div></section>
+
+<section id="about020" class="page">
+  <div class="card hero">
+    <span class="tag">OFFICIAL RELEASE</span>
+    <h2>ACC OS X Genesis Alpha</h2>
+    <div class="muted">Enterprise Operating System • Version 1.0.0 • Stable Release</div>
+  </div>
+
+  <div class="release-card">
+    <div class="release-emblem">🏆</div>
+    <h2 style="margin:0">ACC OS X</h2>
+    <div class="muted">Genesis Alpha v1.0 Stable</div>
+
+    <div class="release-meta">
+      <div><small>Version</small><b>1.0.0</b></div>
+      <div><small>Build</small><b>020</b></div>
+      <div><small>Release</small><b>Stable</b></div>
+      <div><small>Platform</small><b>PWA</b></div>
+      <div><small>Database</small><b>Local First</b></div>
+      <div><small>Mode</small><b>Enterprise</b></div>
+    </div>
+
+    <div class="drawer-section" style="margin-top:14px;text-align:left">
+      <h4>Credits</h4>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Designed by</b><small>Arda × KAI</small></div>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Powered by</b><small>ACC Enterprise</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 020 DATA</button></div></section>
 </main>
 <div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -1758,7 +2035,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -2052,7 +2329,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
 });
 
 
@@ -2345,7 +2622,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
 });
 
 
@@ -2412,7 +2689,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
 });
 
 
@@ -2432,7 +2709,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
 });
 
 
@@ -2597,7 +2874,7 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','Build 019 Live AI Workers aktif','ACC OS X');
+    pushLiveActivity('STARTUP','Genesis Alpha v1.0 Stable aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
@@ -2859,7 +3136,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     saveWorkspaceState();
   },5000);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
 });
 
 
@@ -3081,9 +3358,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderLiveCommandEngine();
   if(!liveCommandState.console.length){
-    addConsoleLine('Build 019 Live AI Workers active.','success');
+    addConsoleLine('Genesis Alpha v1.0 Stable active.','success');
   }
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
 });
 
 
@@ -3323,7 +3600,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(!workerState019.activity.length){
-    workerLog019('KAI_ONE','Build 019 Live AI Workers active','STARTUP');
+    workerLog019('KAI_ONE','Genesis Alpha v1.0 Stable active','STARTUP');
   }
 
   renderWorkers019();
@@ -3336,7 +3613,97 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderWorkers019();
   },1800);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+});
+
+
+// ACC OS X Build 020 — Genesis Alpha v1.0 Stable
+const RELEASE_020_KEY='acc_os_x_release_020_v1';
+
+function stableMetrics020(){
+  const workers=(typeof workerState019!=='undefined'&&workerState019.workers)||[];
+  const running=workers.filter(w=>w.currentJob).length;
+  const queue=workers.reduce((n,w)=>n+(w.queue||[]).length,0);
+  const online=workers.filter(w=>w.status!=='PAUSED').length;
+  const notifications=(typeof notificationState!=='undefined'&&notificationState.items)||[];
+  const unread=notifications.filter(n=>!n.read).length;
+
+  const el=id=>document.getElementById(id);
+  if(el('stableWorkers020')) el('stableWorkers020').textContent=`${online}/${workers.length||6} ONLINE`;
+  if(el('stableHealthWorkers020')) el('stableHealthWorkers020').textContent=`${online}/${workers.length||6}`;
+  if(el('stableHealthRunning020')) el('stableHealthRunning020').textContent=running;
+  if(el('stableHealthQueue020')) el('stableHealthQueue020').textContent=queue;
+  if(el('stableHealthNotif020')) el('stableHealthNotif020').textContent=unread;
+  if(el('stableHealthStatus020')) el('stableHealthStatus020').textContent=(online>=5?'99.9%':'92.0%');
+}
+
+function runSplash020(){
+  const splash=document.getElementById('finalSplash020');
+  const bar=document.getElementById('splash020Bar');
+  const log=document.getElementById('splash020Log');
+  if(!splash||!bar||!log) return;
+
+  const steps=[
+    'Initializing Enterprise State...',
+    'Loading Local Database...',
+    'Connecting AI Router...',
+    'Starting 6 AI Workers...',
+    'Loading Workflow Engine...',
+    'Opening Workspace Context...',
+    'Enterprise Ready.'
+  ];
+
+  log.innerHTML='';
+  let i=0;
+  const timer=setInterval(()=>{
+    if(i<steps.length){
+      const line=document.createElement('div');
+      line.textContent=(i===steps.length-1?'✓ ':'• ')+steps[i];
+      log.appendChild(line);
+      bar.style.width=`${Math.round((i+1)/steps.length*100)}%`;
+      i++;
+      return;
+    }
+    clearInterval(timer);
+    setTimeout(()=>splash.classList.add('hide'),420);
+    try{
+      localStorage.setItem(RELEASE_020_KEY,JSON.stringify({
+        version:'1.0.0',
+        build:'020',
+        release:'STABLE',
+        firstBootCompleted:true,
+        timestamp:new Date().toISOString()
+      }));
+    }catch(e){}
+  },250);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  runSplash020();
+  stableMetrics020();
+  setInterval(stableMetrics020,2500);
+
+  document.getElementById('drawerOpenAbout020')?.addEventListener('click',()=>{
+    closeSettingsDrawer();
+    show('about020');
+  });
+
+  if(typeof pushNotification==='function'){
+    const exists=(notificationState?.items||[]).some(n=>n.title==='Genesis Alpha v1.0 Released');
+    if(!exists){
+      pushNotification(
+        'RELEASE',
+        'Genesis Alpha v1.0 Released',
+        'ACC OS X Build 020 Stable is now active.',
+        'acc',
+        'INFO'
+      );
+    }
+  }
+
+  if(typeof stableLog==='function'){
+    stableLog('RELEASE','ACC OS X Genesis Alpha v1.0 Stable aktif');
+  }
 });
 
 </script>
@@ -3349,11 +3716,15 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Genesis Alpha • Build 019 Live AI Workers</small>
+      <small>Genesis Alpha • v1.0 Stable</small>
     </div>
 
     <div class="drawer-section">
       <h4>Application</h4>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>About Genesis Alpha</b><small>Release identity and credits</small></div>
+        <button id="drawerOpenAbout020" class="drawer-action">OPEN</button>
+      </div>
       <div class="drawer-item">
         <div class="drawer-label"><b>Open Full Settings</b><small>Update, export, reset, diagnostics</small></div>
         <button id="drawerOpenFullSettings" class="drawer-action">OPEN</button>
