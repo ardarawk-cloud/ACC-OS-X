@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Build 018 Live Command Engine & Settings */
+/* Build 019 Live AI Workers & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Build 018 Live Command Engine */
+/* Build 019 Live AI Workers */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* Build 018 Live Command Engine */
+/* Build 019 Live AI Workers */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -659,9 +659,108 @@ header .brand-title{
   }
 }
 
+
+/* Build 019 — Live AI Workers */
+.worker-grid-019{display:grid;grid-template-columns:1fr;gap:12px}
+.worker-card-019{
+  background:linear-gradient(145deg,#0a1123,#15112e);
+  border:1px solid #34405f;
+  border-radius:18px;
+  padding:14px;
+  position:relative;
+  overflow:hidden;
+}
+.worker-card-019::after{
+  content:'';
+  position:absolute;
+  width:120px;height:120px;border-radius:50%;
+  right:-48px;top:-48px;
+  background:radial-gradient(circle,rgba(135,88,255,.18),transparent 68%);
+  pointer-events:none;
+}
+.worker-head-019{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.worker-avatar-019{
+  width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#17124a,#30205d);
+  border:1px solid #594b7a;font-size:22px
+}
+.worker-id-019{display:flex;gap:11px;align-items:flex-start}
+.worker-state-019{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 9px;border-radius:999px;font-size:10px;font-weight:900
+}
+.state-online-019{background:#073d32;color:#56edbb}
+.state-working-019{background:#3a290b;color:#ffd37a}
+.state-idle-019{background:#16233e;color:#9fc5ff}
+.state-paused-019{background:#2b1738;color:#d7b8ff}
+.pulse-dot-019{
+  width:8px;height:8px;border-radius:50%;background:currentColor;
+  box-shadow:0 0 0 rgba(255,255,255,.25);
+  animation:pulse019 1.8s infinite
+}
+@keyframes pulse019{
+  0%{box-shadow:0 0 0 0 rgba(255,255,255,.25)}
+  70%{box-shadow:0 0 0 7px rgba(255,255,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}
+}
+.worker-progress-019{
+  height:10px;background:#050817;border:1px solid var(--line);
+  border-radius:99px;overflow:hidden;margin-top:11px
+}
+.worker-progress-019 span{
+  display:block;height:100%;
+  background:linear-gradient(90deg,#5967ff,#a12ff0,#3be0bd);
+  transition:width .6s ease
+}
+.worker-stats-019{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:11px}
+.worker-stat-019{
+  background:#080f20;border:1px solid var(--line);
+  border-radius:13px;padding:9px;text-align:center
+}
+.worker-stat-019 b{display:block;color:#d7b8ff;font-size:18px}
+.worker-actions-019{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+.worker-actions-019 button{
+  padding:11px;border-radius:12px;border:1px solid var(--line);
+  background:#121a2c;color:#fff;font-weight:900
+}
+.router-019{
+  background:linear-gradient(145deg,#121733,#231346);
+  border:1px solid #4b3e69;border-radius:20px;padding:15px
+}
+.router-flow-019{display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:5px}
+.router-node-019{
+  flex:0 0 auto;min-width:108px;text-align:center;
+  background:#080f20;border:1px solid #34405f;border-radius:14px;padding:11px
+}
+.router-arrow-019{color:#b79cff;font-weight:900}
+.worker-detail-backdrop-019{
+  position:fixed;inset:0;background:rgba(2,5,13,.7);
+  backdrop-filter:blur(6px);z-index:230;
+  opacity:0;pointer-events:none;transition:.22s ease
+}
+.worker-detail-backdrop-019.open{opacity:1;pointer-events:auto}
+.worker-detail-panel-019{
+  position:absolute;right:0;top:0;width:min(94vw,440px);height:100%;
+  background:linear-gradient(180deg,#0c1328,#090d1c 60%,#080b16);
+  border-left:1px solid #35405c;box-shadow:-18px 0 45px rgba(0,0,0,.4);
+  transform:translateX(100%);transition:.28s ease;overflow-y:auto;
+  padding:18px 18px calc(28px + env(safe-area-inset-bottom))
+}
+.worker-detail-backdrop-019.open .worker-detail-panel-019{transform:translateX(0)}
+.worker-detail-section-019{
+  background:#0b1224;border:1px solid #2e3a56;border-radius:16px;
+  padding:14px;margin-bottom:12px
+}
+@media(min-width:700px){
+  .worker-grid-019{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1100px){
+  .worker-grid-019{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 018 Live Command Engine</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 019 Live AI Workers</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
@@ -680,6 +779,47 @@ header .brand-title{
 <main>
 
 
+
+
+<section id="liveworkers" class="page">
+  <div class="card hero">
+    <span class="tag">LIVE AI WORKFORCE</span>
+    <h2>Setiap worker punya status, queue, dan pekerjaan aktif</h2>
+    <div class="muted">AI Router membagi command ke worker yang sesuai dan seluruh aktivitas tersimpan dalam Enterprise State.</div>
+  </div>
+
+  <div class="overview-grid">
+    <div class="overview-card"><small>Workers Online</small><b id="workers019Online">0</b></div>
+    <div class="overview-card"><small>Jobs Running</small><b id="workers019Running">0</b></div>
+    <div class="overview-card"><small>Total Queue</small><b id="workers019Queue">0</b></div>
+    <div class="overview-card"><small>Success Rate</small><b id="workers019Success">100%</b></div>
+  </div>
+
+  <div class="router-019">
+    <div class="live-title"><h3>AI Router</h3><span id="router019Status">ACTIVE</span></div>
+    <div class="router-flow-019" style="margin-top:12px">
+      <div class="router-node-019"><b>Command</b><div class="muted">Incoming</div></div>
+      <div class="router-arrow-019">→</div>
+      <div class="router-node-019"><b>Intent Router</b><div class="muted">Classify</div></div>
+      <div class="router-arrow-019">→</div>
+      <div class="router-node-019"><b>Dispatcher</b><div class="muted">Assign</div></div>
+      <div class="router-arrow-019">→</div>
+      <div class="router-node-019"><b>Worker</b><div class="muted">Execute</div></div>
+      <div class="router-arrow-019">→</div>
+      <div class="router-node-019"><b>Database</b><div class="muted">Persist</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>AI Worker Directory</h3><span id="worker019Count">0 workers</span></div>
+    <div id="worker019Grid" class="worker-grid-019"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Worker Activity</h3><span>realtime local</span></div>
+    <div id="worker019Activity" class="live-feed"></div>
+  </div>
+</section>
 
 <section id="commandcenter" class="page">
   <div class="card hero">
@@ -970,7 +1110,7 @@ header .brand-title{
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 018 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 019 DATA</button></div></section>
 </main>
 <div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -1618,7 +1758,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 018 Live Command Engine aktif');
+  stableLog('STARTUP','Build 019 Live AI Workers aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -1912,7 +2052,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Build 018 Live Command Engine aktif');
+  stableLog('STARTUP','Build 019 Live AI Workers aktif');
 });
 
 
@@ -2205,7 +2345,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Build 018 Live Command Engine aktif');
+  stableLog('STARTUP','Build 019 Live AI Workers aktif');
 });
 
 
@@ -2272,7 +2412,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Build 018 Live Command Engine aktif');
+  stableLog('STARTUP','Build 019 Live AI Workers aktif');
 });
 
 
@@ -2292,7 +2432,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 018 Live Command Engine aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
 });
 
 
@@ -2457,7 +2597,7 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','Build 018 Live Command Engine aktif','ACC OS X');
+    pushLiveActivity('STARTUP','Build 019 Live AI Workers aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
@@ -2719,7 +2859,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     saveWorkspaceState();
   },5000);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 018 Live Command Engine aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
 });
 
 
@@ -2941,9 +3081,262 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderLiveCommandEngine();
   if(!liveCommandState.console.length){
-    addConsoleLine('Build 018 Live Command Engine active.','success');
+    addConsoleLine('Build 019 Live AI Workers active.','success');
   }
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 018 Live Command Engine aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
+});
+
+
+// ACC OS X Build 019 — Live AI Workers
+const WORKER_019_KEY='acc_os_x_live_workers_v1';
+
+const workerCatalog019=[
+  {id:'KAI_ONE',name:'KAI ONE',role:'CTO / Enterprise Architect',icon:'🧠',capabilities:['architecture','system','deployment','diagnostics']},
+  {id:'KAI_ZERO',name:'KAI ZERO',role:'Creative Director',icon:'✦',capabilities:['creative','story','visual direction','canon']},
+  {id:'KAI_NIBAN',name:'KAI NIBAN',role:'Productions Department Lead',icon:'▶',capabilities:['mission','content','production','workflow']},
+  {id:'KAI_ONI',name:'KAI ONI',role:'Senior Visual Director',icon:'🎨',capabilities:['poster','illustration','visual QC','assets']},
+  {id:'EVE',name:'EVE',role:'Accounting Lead',icon:'▦',capabilities:['accounting','stock','expense','distribution']},
+  {id:'KAI_SANBAN',name:'KAI SANBAN',role:'Financial Consultant',icon:'📈',capabilities:['income','finance','monetization','analysis']}
+];
+
+let workerState019;
+try{
+  workerState019=JSON.parse(localStorage.getItem(WORKER_019_KEY)||'null')||{
+    workers:workerCatalog019.map((w,i)=>({
+      ...w,status:'ONLINE',queue:[],history:[],
+      currentJob:null,progress:0,success:0,failed:0,
+      lastActivity:new Date().toISOString(),seed:i
+    })),
+    activity:[],
+    tick:0,
+    updatedAt:new Date().toISOString()
+  };
+}catch(e){
+  workerState019={
+    workers:workerCatalog019.map((w,i)=>({...w,status:'ONLINE',queue:[],history:[],currentJob:null,progress:0,success:0,failed:0,lastActivity:new Date().toISOString(),seed:i})),
+    activity:[],tick:0,updatedAt:new Date().toISOString()
+  };
+}
+
+function saveWorkers019(){
+  workerState019.updatedAt=new Date().toISOString();
+  localStorage.setItem(WORKER_019_KEY,JSON.stringify(workerState019));
+  renderWorkers019();
+}
+
+function workerLog019(workerId,message,type='INFO'){
+  const worker=workerState019.workers.find(w=>w.id===workerId);
+  const item={
+    id:'wact-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    workerId,workerName:worker?.name||workerId,message,type,
+    timestamp:new Date().toISOString()
+  };
+  workerState019.activity.push(item);
+  if(workerState019.activity.length>160) workerState019.activity=workerState019.activity.slice(-160);
+  saveWorkers019();
+  if(typeof pushNotification==='function'){
+    pushNotification('WORKER',`${item.workerName}: ${message}`,type,'aicore','INFO');
+  }
+}
+
+function resolveWorkerForCommand019(command){
+  const q=String(command||'').toLowerCase();
+  if(/psl|stock|stok|expense|pengeluaran|account/.test(q)) return 'EVE';
+  if(/poster|visual|illustration|gambar|qc/.test(q)) return 'KAI_ONI';
+  if(/income|finance|cuan|monet/.test(q)) return 'KAI_SANBAN';
+  if(/story|canon|creative|concept/.test(q)) return 'KAI_ZERO';
+  if(/deploy|architecture|system|database|diagnostic/.test(q)) return 'KAI_ONE';
+  return 'KAI_NIBAN';
+}
+
+function dispatchWorkerJob019(command){
+  const workerId=resolveWorkerForCommand019(command);
+  const worker=workerState019.workers.find(w=>w.id===workerId);
+  if(!worker) return null;
+
+  const job={
+    id:'wjob-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    command,status:'QUEUED',progress:0,
+    createdAt:new Date().toISOString()
+  };
+  worker.queue.push(job);
+  worker.lastActivity=new Date().toISOString();
+  workerLog019(worker.id,`Job queued: ${command}`,'QUEUE');
+  return job;
+}
+
+function processWorker019(worker){
+  if(worker.status==='PAUSED') return;
+
+  if(!worker.currentJob && worker.queue.length){
+    worker.currentJob=worker.queue.shift();
+    worker.currentJob.status='RUNNING';
+    worker.status='WORKING';
+    worker.progress=10;
+    worker.lastActivity=new Date().toISOString();
+    workerLog019(worker.id,`Started ${worker.currentJob.command}`,'START');
+    return;
+  }
+
+  if(worker.currentJob){
+    worker.progress=Math.min(100,worker.progress+12+((worker.seed+workerState019.tick)%9));
+    worker.currentJob.progress=worker.progress;
+    if(worker.progress>=100){
+      worker.currentJob.status='SUCCESS';
+      worker.currentJob.completedAt=new Date().toISOString();
+      worker.history.push(worker.currentJob);
+      worker.success++;
+      workerLog019(worker.id,`Completed ${worker.currentJob.command}`,'SUCCESS');
+      worker.currentJob=null;
+      worker.progress=0;
+      worker.status='ONLINE';
+    }
+  }else{
+    worker.status='ONLINE';
+  }
+}
+
+function renderWorkers019(){
+  const grid=document.getElementById('worker019Grid');
+  if(!grid) return;
+
+  const workers=workerState019.workers;
+  grid.innerHTML='';
+
+  workers.forEach(worker=>{
+    const stateClass=worker.status==='WORKING'?'state-working-019':
+      worker.status==='PAUSED'?'state-paused-019':
+      worker.status==='IDLE'?'state-idle-019':'state-online-019';
+
+    const card=document.createElement('div');
+    card.className='worker-card-019';
+    card.innerHTML=`
+      <div class="worker-head-019">
+        <div class="worker-id-019">
+          <div class="worker-avatar-019">${worker.icon}</div>
+          <div><b>${worker.name}</b><div class="muted">${worker.role}</div></div>
+        </div>
+        <span class="worker-state-019 ${stateClass}"><span class="pulse-dot-019"></span>${worker.status}</span>
+      </div>
+      <div class="muted" style="margin-top:11px">Current Job: ${worker.currentJob?.command||'Monitoring'}</div>
+      <div class="worker-progress-019"><span style="width:${worker.progress||0}%"></span></div>
+      <div class="worker-stats-019">
+        <div class="worker-stat-019"><b>${worker.queue.length}</b><small>Queue</small></div>
+        <div class="worker-stat-019"><b>${worker.success}</b><small>Success</small></div>
+        <div class="worker-stat-019"><b>${worker.failed}</b><small>Failed</small></div>
+      </div>
+      <div class="worker-actions-019">
+        <button data-worker-detail019="${worker.id}">DETAIL</button>
+        <button data-worker-toggle019="${worker.id}">${worker.status==='PAUSED'?'RESUME':'PAUSE'}</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  const online=workers.filter(w=>w.status!=='PAUSED').length;
+  const running=workers.filter(w=>w.currentJob).length;
+  const queue=workers.reduce((n,w)=>n+w.queue.length,0);
+  const success=workers.reduce((n,w)=>n+w.success,0);
+  const failed=workers.reduce((n,w)=>n+w.failed,0);
+  const rate=(success+failed)?Math.round(success/(success+failed)*100):100;
+
+  document.getElementById('workers019Online').textContent=`${online}/${workers.length}`;
+  document.getElementById('workers019Running').textContent=running;
+  document.getElementById('workers019Queue').textContent=queue;
+  document.getElementById('workers019Success').textContent=`${rate}%`;
+  document.getElementById('worker019Count').textContent=`${workers.length} workers`;
+
+  const feed=document.getElementById('worker019Activity');
+  feed.innerHTML='';
+  [...workerState019.activity].reverse().slice(0,40).forEach(item=>{
+    const row=document.createElement('div');
+    row.className='live-feed-row';
+    row.innerHTML=`
+      <div class="live-feed-time">${new Date(item.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div>
+      <div><b>${item.workerName}</b><div class="muted">${item.message}</div></div>
+    `;
+    feed.appendChild(row);
+  });
+  if(!workerState019.activity.length) feed.innerHTML='<div class="muted">Belum ada worker activity.</div>';
+}
+
+function openWorkerDetail019(id){
+  const worker=workerState019.workers.find(w=>w.id===id);
+  if(!worker) return;
+  document.getElementById('workerDetailName019').textContent=worker.name;
+  document.getElementById('workerDetailBody019').innerHTML=`
+    <div class="drawer-build">
+      <b>${worker.name}</b>
+      <small>${worker.role}</small>
+    </div>
+    <div class="worker-detail-section-019">
+      <h4>Status</h4>
+      <div class="drawer-item"><div class="drawer-label"><b>${worker.status}</b><small>${worker.currentJob?.command||'No active job'}</small></div><span class="db-pill">${worker.progress||0}%</span></div>
+    </div>
+    <div class="worker-detail-section-019">
+      <h4>Capabilities</h4>
+      <div class="favorite-grid">${worker.capabilities.map(c=>`<span class="favorite-chip">${c}</span>`).join('')}</div>
+    </div>
+    <div class="worker-detail-section-019">
+      <h4>Recent History</h4>
+      ${(worker.history||[]).slice(-8).reverse().map(j=>`<div class="drawer-item"><div class="drawer-label"><b>${j.command}</b><small>${j.status}</small></div></div>`).join('')||'<div class="muted">No history.</div>'}
+    </div>
+  `;
+  document.getElementById('workerDetailBackdrop019').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeWorkerDetail019(){
+  document.getElementById('workerDetailBackdrop019').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+document.addEventListener('click',e=>{
+  const detail=e.target.closest('[data-worker-detail019]');
+  if(detail) openWorkerDetail019(detail.dataset.workerDetail019);
+
+  const toggle=e.target.closest('[data-worker-toggle019]');
+  if(toggle){
+    const worker=workerState019.workers.find(w=>w.id===toggle.dataset.workerToggle019);
+    if(worker){
+      worker.status=worker.status==='PAUSED'?'ONLINE':'PAUSED';
+      worker.lastActivity=new Date().toISOString();
+      workerLog019(worker.id,worker.status==='PAUSED'?'Worker paused':'Worker resumed','STATUS');
+    }
+  }
+});
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('closeWorkerDetail019')?.addEventListener('click',closeWorkerDetail019);
+  document.getElementById('workerDetailBackdrop019')?.addEventListener('click',e=>{
+    if(e.target.id==='workerDetailBackdrop019') closeWorkerDetail019();
+  });
+
+  // Hook into Build 018 command enqueue so every command also reaches a worker.
+  if(typeof enqueueLiveCommand==='function'){
+    const originalEnqueue019=enqueueLiveCommand;
+    enqueueLiveCommand=function(command){
+      const result=originalEnqueue019(command);
+      dispatchWorkerJob019(command);
+      return result;
+    };
+  }
+
+  if(!workerState019.activity.length){
+    workerLog019('KAI_ONE','Build 019 Live AI Workers active','STARTUP');
+  }
+
+  renderWorkers019();
+
+  setInterval(()=>{
+    workerState019.tick++;
+    workerState019.workers.forEach(processWorker019);
+    workerState019.updatedAt=new Date().toISOString();
+    localStorage.setItem(WORKER_019_KEY,JSON.stringify(workerState019));
+    renderWorkers019();
+  },1800);
+
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 019 Live AI Workers aktif');
 });
 
 </script>
@@ -2956,7 +3349,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Genesis Alpha • Build 018 Live Command Engine</small>
+      <small>Genesis Alpha • Build 019 Live AI Workers</small>
     </div>
 
     <div class="drawer-section">
@@ -3036,6 +3429,17 @@ document.addEventListener('DOMContentLoaded',()=>{
     </div>
 
     <div id="notificationList"></div>
+  </aside>
+</div>
+
+
+<div id="workerDetailBackdrop019" class="worker-detail-backdrop-019">
+  <aside class="worker-detail-panel-019" role="dialog" aria-modal="true" aria-label="Worker Detail">
+    <div class="drawer-head">
+      <h3 id="workerDetailName019">Worker Detail</h3>
+      <button id="closeWorkerDetail019" class="drawer-close">×</button>
+    </div>
+    <div id="workerDetailBody019"></div>
   </aside>
 </div>
 
