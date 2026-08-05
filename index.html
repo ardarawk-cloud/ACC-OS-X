@@ -4,11 +4,24 @@
 :root{color-scheme:dark;--bg:#050713;--panel:#10182d;--panel2:#080f20;--line:#273452;--text:#f5f7ff;--muted:#98a4bd;--vio:#a855f7;--blue:#4e9cff;--green:#35dfae;--gold:#f3c75f;--red:#ff637d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 90% 0,#291454 0,transparent 32%),radial-gradient(circle at 0 80%,#07324a 0,transparent 28%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh;padding-bottom:max(88px,env(safe-area-inset-bottom))}button,select,input,textarea{font:inherit}.hidden{display:none!important}
 #splash{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:radial-gradient(circle,#24104c 0,#050713 60%);transition:.45s}#splash.hide{opacity:0;visibility:hidden}.splash{text-align:center}.splash img{width:108px;filter:drop-shadow(0 0 26px #9b4dff)}.loader{width:180px;height:7px;border-radius:99px;background:#11172c;overflow:hidden;margin:20px auto}.loader:after{content:"";display:block;width:46%;height:100%;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));animation:move .8s infinite alternate}@keyframes move{to{transform:translateX(120%)}}
 header{padding:18px;background:linear-gradient(180deg,#111b39f2,#0b1024ef);border-bottom:1px solid var(--line)}.brand{display:flex;gap:13px;align-items:center}.brand img{width:58px;filter:drop-shadow(0 0 18px #9b4dff99)}h1{font-size:29px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:5px}.statusrow{display:flex;justify-content:space-between;align-items:center;margin-top:14px}.online{display:flex;gap:8px;align-items:center;color:var(--green);font-weight:900;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 13px var(--green)}.clock{color:#ddb5ff;font-weight:900}.selectors{display:grid;gap:9px;margin-top:14px}select,input,textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:#090f20;color:var(--text)}textarea{min-height:92px;resize:vertical}
-nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#070b18ef;border-bottom:1px solid var(--line)}nav button{flex:0 0 auto;padding:15px 16px;border:0;background:transparent;color:var(--muted);font-weight:900}nav button.active{color:#efd9ff;border-bottom:3px solid var(--vio)}main{padding:17px;max-width:900px;margin:auto}.page{display:none}.page.active{display:block}.card{background:linear-gradient(145deg,#151e38e6,#0d1328e6);border:1px solid #2b3653;border-radius:21px;padding:17px;margin-bottom:14px;box-shadow:0 14px 34px #0006}.hero{background:linear-gradient(135deg,#30195e,#111b3d 55%,#073349)}.hero h2{font-size:27px;margin:10px 0 7px}.tag{display:inline-flex;padding:6px 10px;border-radius:99px;background:#073d32;border:1px solid #3d8f75;color:#5af0bd;font-weight:900;font-size:11px}.muted{color:var(--muted);line-height:1.5}.title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px}.title h3{margin:0}.title span{font-size:12px;color:var(--muted)}.stats,.grid2,.grid3{display:grid;gap:10px}.stats,.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}.stat,.tile{background:var(--panel2);border:1px solid var(--line);border-radius:17px;padding:14px}.stat small{color:var(--muted)}.stat b{display:block;font-size:27px;margin-top:6px;color:var(--blue)}.stat:nth-child(2)b{color:var(--green)}.stat:nth-child(3)b{color:var(--gold)}.stat:nth-child(4)b{color:#d8a5ff}.primary,.secondary,.danger,.action{width:100%;padding:14px;border-radius:14px;font-weight:900}.primary{border:0;background:linear-gradient(135deg,#645cff,#a436ef);color:#fff}.secondary{border:1px solid var(--line);background:#121a2c;color:#fff}.danger{border:1px solid #713044;background:#2a0d19;color:#ff9db0}.action{border:1px solid #5f388b;background:linear-gradient(145deg,#281145,#17102c);color:#eddcff}.btnrow{display:flex;flex-wrap:wrap;gap:8px}.btnrow button{width:auto;flex:1 1 135px}.progress-bg{height:13px;border:1px solid var(--line);border-radius:99px;background:#050817;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));transition:.3s}.list{display:grid;gap:9px}.item,.worker,.knowledge,.artifact,.event,.graphnode{background:#090f20;border:1px solid var(--line);border-radius:16px;padding:13px}.itemhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.b-ready,.b-success,.b-active{background:#073d32;color:#56edbb}.b-running,.b-warning,.b-waiting{background:#3a280b;color:#ffd37a}.b-failed,.b-blocked,.b-cancelled{background:#3b1020;color:#ff9db0}.b-paused,.b-idle{background:#162241;color:#9ec4ff}.b-locked{background:#231536;color:#d7a4ff}.stagebar{display:flex;overflow-x:auto;gap:7px;padding:4px 0 9px}.stage{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#090f20;font-size:11px}.stage.SUCCESS{border-color:#23886b;color:#56edbb}.stage.RUNNING{border-color:#a87b20;color:#ffd37a}.stage.FAILED,.stage.BLOCKED{border-color:#8b2c47;color:#ff9db0}.stage.READY{border-color:#6b42a0;color:#d7a4ff}.stage.LOCKED{opacity:.55}.code{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;background:#040817;border:1px solid var(--line);padding:11px;border-radius:12px;max-height:260px;overflow:auto}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:#080d1cf4;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}.bottom button{border:0;background:transparent;color:var(--muted);padding:10px 2px;font-size:10px;font-weight:900}.bottom span{display:block;font-size:20px;margin-bottom:3px}.bottom button.active{color:#e1c3ff}.toast,.offline{display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:50;padding:13px;border-radius:14px;text-align:center}.toast{background:#142440;border:1px solid #537caf}.offline{background:#5c2700;border:1px solid #e68700}.modal{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:end center;padding:14px}.modalbox{width:min(720px,100%);max-height:88vh;overflow:auto;background:#0c1429;border:1px solid var(--line);border-radius:22px;padding:17px}.diag-pass{color:var(--green)}.diag-fail{color:var(--red)}@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}.btnrow button{flex-basis:120px}}
+nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#070b18ef;border-bottom:1px solid var(--line)}nav button{flex:0 0 auto;padding:15px 16px;border:0;background:transparent;color:var(--muted);font-weight:900}nav button.active{color:#efd9ff;border-bottom:3px solid var(--vio)}main{padding:17px;max-width:900px;margin:auto}.page{display:none}.page.active{display:block}.card{background:linear-gradient(145deg,#151e38e6,#0d1328e6);border:1px solid #2b3653;border-radius:21px;padding:17px;margin-bottom:14px;box-shadow:0 14px 34px #0006}.hero{background:linear-gradient(135deg,#30195e,#111b3d 55%,#073349)}.hero h2{font-size:27px;margin:10px 0 7px}.tag{display:inline-flex;padding:6px 10px;border-radius:99px;background:#073d32;border:1px solid #3d8f75;color:#5af0bd;font-weight:900;font-size:11px}.muted{color:var(--muted);line-height:1.5}.title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px}.title h3{margin:0}.title span{font-size:12px;color:var(--muted)}.stats,.grid2,.grid3{display:grid;gap:10px}.stats,.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}.stat,.tile{background:var(--panel2);border:1px solid var(--line);border-radius:17px;padding:14px}.stat small{color:var(--muted)}.stat b{display:block;font-size:27px;margin-top:6px;color:var(--blue)}.stat:nth-child(2)b{color:var(--green)}.stat:nth-child(3)b{color:var(--gold)}.stat:nth-child(4)b{color:#d8a5ff}.primary,.secondary,.danger,.action{width:100%;padding:14px;border-radius:14px;font-weight:900}.primary{border:0;background:linear-gradient(135deg,#645cff,#a436ef);color:#fff}.secondary{border:1px solid var(--line);background:#121a2c;color:#fff}.danger{border:1px solid #713044;background:#2a0d19;color:#ff9db0}.action{border:1px solid #5f388b;background:linear-gradient(145deg,#281145,#17102c);color:#eddcff}.btnrow{display:flex;flex-wrap:wrap;gap:8px}.btnrow button{width:auto;flex:1 1 135px}.progress-bg{height:13px;border:1px solid var(--line);border-radius:99px;background:#050817;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));transition:.3s}.list{display:grid;gap:9px}.item,.worker,.knowledge,.artifact,.event,.graphnode{background:#090f20;border:1px solid var(--line);border-radius:16px;padding:13px}.itemhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.b-ready,.b-success,.b-active{background:#073d32;color:#56edbb}.b-running,.b-warning,.b-waiting{background:#3a280b;color:#ffd37a}.b-failed,.b-blocked,.b-cancelled{background:#3b1020;color:#ff9db0}.b-paused,.b-idle{background:#162241;color:#9ec4ff}.b-locked{background:#231536;color:#d7a4ff}.stagebar{display:flex;overflow-x:auto;gap:7px;padding:4px 0 9px}.stage{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#090f20;font-size:11px}.stage.SUCCESS{border-color:#23886b;color:#56edbb}.stage.RUNNING{border-color:#a87b20;color:#ffd37a}.stage.FAILED,.stage.BLOCKED{border-color:#8b2c47;color:#ff9db0}.stage.READY{border-color:#6b42a0;color:#d7a4ff}.stage.LOCKED{opacity:.55}.code{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;background:#040817;border:1px solid var(--line);padding:11px;border-radius:12px;max-height:260px;overflow:auto}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(6,1fr);background:#080d1cf4;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}.bottom button{border:0;background:transparent;color:var(--muted);padding:10px 2px;font-size:10px;font-weight:900}.bottom span{display:block;font-size:20px;margin-bottom:3px}.bottom button.active{color:#e1c3ff}.toast,.offline{display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:50;padding:13px;border-radius:14px;text-align:center}.toast{background:#142440;border:1px solid #537caf}.offline{background:#5c2700;border:1px solid #e68700}.modal{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:end center;padding:14px}.modalbox{width:min(720px,100%);max-height:88vh;overflow:auto;background:#0c1429;border:1px solid var(--line);border-radius:22px;padding:17px}.diag-pass{color:var(--green)}.diag-fail{color:var(--red)}@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}.btnrow button{flex-basis:120px}}
+
+.db-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.db-card{background:#080f20;border:1px solid var(--line);border-radius:18px;padding:15px}
+.db-card b{display:block;font-size:28px;margin-top:7px;color:var(--blue)}
+.db-card:nth-child(2n) b{color:var(--green)}
+.db-card:nth-child(3n) b{color:var(--gold)}
+.db-table{width:100%;border-collapse:collapse;font-size:12px}
+.db-table th,.db-table td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.db-table th{color:#d7b8ff}
+.db-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.db-pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#142440;color:#9fc5ff;font-size:10px;font-weight:900}
+.searchbox{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:#090f20;color:#fff;margin-bottom:12px}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 008 Enterprise Core</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
-<nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 009 Enterprise Database</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
+<nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="database">DATABASE</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
 <main>
 <section id="home" class="page active"><div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
 <section id="missions" class="page"><div class="card"><div class="title"><h3>Mission Center</h3><span>persistent</span></div><input id="missionTitle" placeholder="Judul mission"><textarea id="missionObjective" placeholder="Objective mission"></textarea><button id="createMission" class="primary">+ CREATE MISSION</button></div><div id="missionList" class="list"></div></section>
@@ -18,9 +31,59 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 <section id="artifacts" class="page"><div class="card"><div class="title"><h3>Universal Artifact Engine</h3><span>versioned</span></div><div id="artifactList" class="list"></div></div></section>
 <section id="graph" class="page"><div class="card"><div class="title"><h3>Enterprise Memory Graph</h3><span id="graphCount">0 nodes</span></div><div id="graphList" class="list"></div></div></section>
 <section id="qa" class="page"><div class="card"><div class="title"><h3>Observability & QA</h3><span>Foundation tests</span></div><button id="runDiagnostics" class="primary">RUN FOUNDATION TEST</button><div id="diagnosticResult" class="list" style="margin-top:10px"></div></div><div class="card"><div class="title"><h3>Event History</h3><span id="eventCount">0</span></div><div id="eventList" class="list"></div></div></section>
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 008 DATA</button></div></section>
+
+<section id="database" class="page">
+  <div class="card hero">
+    <span class="tag">ENTERPRISE DATABASE ACTIVE</span>
+    <h2>Satu database untuk seluruh ACC OS X</h2>
+    <div class="muted">Workspace, channel, mission, production, worker, knowledge, notification, archive, dan activity log kini tersimpan dalam satu Enterprise Database.</div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Database Overview</h3><span id="dbLastSaved">not saved</span></div>
+    <div class="db-grid">
+      <div class="db-card"><small>Workspaces</small><b id="dbWorkspaceCount">0</b></div>
+      <div class="db-card"><small>Channels</small><b id="dbChannelCount">0</b></div>
+      <div class="db-card"><small>Missions</small><b id="dbMissionCount">0</b></div>
+      <div class="db-card"><small>Production Records</small><b id="dbProductionCount">0</b></div>
+      <div class="db-card"><small>Workers</small><b id="dbWorkerCount">0</b></div>
+      <div class="db-card"><small>Knowledge</small><b id="dbKnowledgeCount">0</b></div>
+      <div class="db-card"><small>Notifications</small><b id="dbNotificationCount">0</b></div>
+      <div class="db-card"><small>Archive</small><b id="dbArchiveCount">0</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Global Search</h3><span>all databases</span></div>
+    <input id="dbSearch" class="searchbox" placeholder="Cari mission, channel, worker, knowledge...">
+    <div id="dbSearchResults" class="muted">Masukkan kata pencarian.</div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Mission Database</h3><span>live state</span></div>
+    <div style="overflow:auto">
+      <table class="db-table">
+        <thead><tr><th>Mission</th><th>Channel</th><th>Status</th><th>Progress</th></tr></thead>
+        <tbody id="dbMissionRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Database Actions</h3><span>safe local tools</span></div>
+    <div class="db-actions">
+      <button id="dbSeed" class="secondary">SEED ACC DATA</button>
+      <button id="dbBackup" class="secondary">BACKUP DATABASE</button>
+      <button id="dbValidate" class="secondary">RUN INTEGRITY CHECK</button>
+      <button id="dbClearArchive" class="secondary">CLEAR EMPTY ARCHIVE</button>
+    </div>
+    <div id="dbIntegrity" class="muted" style="margin-top:12px">Integrity check belum dijalankan.</div>
+  </div>
+</section>
+
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 009 DATA</button></div></section>
 </main>
-<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
+<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
 (()=>{'use strict';
 const BUILD='008';const STORAGE='acc_os_x_enterprise_state_v008';const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);const now=()=>new Date().toISOString();const id=(p='id')=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);const clone=x=>JSON.parse(JSON.stringify(x));
@@ -57,4 +120,196 @@ $('#runDiagnostics').onclick=()=>{const s=engine.state;const tests=[['Mission in
 function setupSelectors(){const s=engine.state;$('#workspaceSelect').innerHTML=s.workspaces.map(w=>`<option value="${w.workspaceId}">${w.name}</option>`).join('');$('#workspaceSelect').value=s.session.workspaceId;function channels(){const list=s.channels.filter(c=>c.workspaceId===$('#workspaceSelect').value);$('#channelSelect').innerHTML=list.map(c=>`<option value="${c.channelId}">${c.name}</option>`).join('');$('#channelSelect').value=list.some(c=>c.channelId===s.session.channelId)?s.session.channelId:list[0]?.channelId||''}channels();$('#roleSelect').value=s.session.role;$('#workspaceSelect').onchange=()=>{channels();engine.mutate('UI','UPDATED','Session',x=>{x.session.workspaceId=$('#workspaceSelect').value;x.session.channelId=$('#channelSelect').value})};$('#channelSelect').onchange=()=>engine.mutate('UI','UPDATED','Session',x=>x.session.channelId=$('#channelSelect').value);$('#roleSelect').onchange=()=>engine.mutate('UI','UPDATED','Session',x=>x.session.role=$('#roleSelect').value)}
 let deferred=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e});$('#installButton').onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null}else toast('Gunakan menu Chrome → Install app')};if(matchMedia('(display-mode:standalone)').matches){$('#installMode').textContent='INSTALLED PWA';$('#installButton').disabled=true;$('#installButton').textContent='ACC OS X INSTALLED'}$('#forceUpdate').onclick=async()=>{toast('Memeriksa update...');if('serviceWorker'in navigator){const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs){await r.update();if(r.waiting)r.waiting.postMessage('SKIP_WAITING')}}const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));setTimeout(()=>location.replace('./index.html?v='+Date.now()),500)};$('#exportState').onclick=()=>{const blob=new Blob([JSON.stringify(engine.state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='acc-os-x-state-build008.json';a.click();URL.revokeObjectURL(a.href)};$('#clearState').onclick=()=>{if(confirm('Reset seluruh data Build 008?')){localStorage.removeItem(STORAGE);location.reload()}};function network(){ $('#offline').style.display=navigator.onLine?'none':'block'}addEventListener('online',network);addEventListener('offline',network);network();setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),1000);if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=008').then(r=>r.update()).catch(console.error));engine.subscribe(render);setupSelectors();showPage(engine.state.session.activePage||'home');render();setTimeout(()=>$('#splash').classList.add('hide'),1150);
 })();
+
+// ACC OS X Build 009 — Enterprise Database Engine
+const DB_KEY='acc_os_x_enterprise_db_v1';
+const dbDefaults=()=>({
+  schemaVersion:'ACC_DB_V1',
+  updatedAt:new Date().toISOString(),
+  workspaces:[
+    {id:'ws-acc',name:'ACC Enterprise',status:'ACTIVE'},
+    {id:'ws-am',name:'AM Studio',status:'ACTIVE'},
+    {id:'ws-psl',name:'Papa Sauce Lab',status:'ACTIVE'},
+    {id:'ws-sandbox',name:'Sandbox Environment',status:'IDLE'}
+  ],
+  channels:[
+    {id:'ch-tech',workspaceId:'ws-acc',name:'ACC Tech Broadcast',status:'ACTIVE'},
+    {id:'ch-rg',workspaceId:'ws-am',name:'Royal Gambler',status:'ACTIVE'},
+    {id:'ch-hk',workspaceId:'ws-am',name:'Han Kera',status:'ACTIVE'},
+    {id:'ch-wr',workspaceId:'ws-am',name:'Warung Republik',status:'ACTIVE'},
+    {id:'ch-bnl',workspaceId:'ws-am',name:'Balinightlife',status:'ACTIVE'}
+  ],
+  missions:[],
+  production:[],
+  workers:[
+    {id:'worker-research',type:'RESEARCH_WORKER',status:'IDLE'},
+    {id:'worker-script',type:'SCRIPT_WORKER',status:'IDLE'},
+    {id:'worker-poster',type:'POSTER_WORKER',status:'IDLE'},
+    {id:'worker-caption',type:'CAPTION_WORKER',status:'IDLE'},
+    {id:'worker-qc',type:'QC_WORKER',status:'IDLE'},
+    {id:'worker-publishing',type:'PUBLISHING_WORKER',status:'IDLE'}
+  ],
+  knowledge:[
+    {id:'k-passport',channelId:'ch-tech',category:'CHANNEL_PASSPORT',title:'ACC Tech Broadcast Passport',status:'APPROVED',version:1},
+    {id:'k-current',channelId:'ch-tech',category:'CURRENT_STATE',title:'Current Production State',status:'ACTIVE',version:1},
+    {id:'k-workflow',channelId:'ch-tech',category:'WORKFLOW_RULES',title:'ACC Production Workflow',status:'APPROVED',version:1}
+  ],
+  notifications:[
+    {id:'n-build009',title:'Build 009 Active',read:false,createdAt:new Date().toISOString()}
+  ],
+  archive:[],
+  activity:[]
+});
+
+let enterpriseDB;
+try{
+  enterpriseDB=JSON.parse(localStorage.getItem(DB_KEY)||'null')||dbDefaults();
+}catch(e){
+  enterpriseDB=dbDefaults();
+}
+
+function saveDB(source='SYSTEM'){
+  enterpriseDB.updatedAt=new Date().toISOString();
+  enterpriseDB.activity.push({
+    id:'act-'+Date.now(),
+    source,
+    action:'DATABASE_UPDATED',
+    timestamp:enterpriseDB.updatedAt
+  });
+  if(enterpriseDB.activity.length>200) enterpriseDB.activity=enterpriseDB.activity.slice(-200);
+  localStorage.setItem(DB_KEY,JSON.stringify(enterpriseDB));
+  syncStateToDB();
+  renderDatabase();
+}
+
+function syncStateToDB(){
+  if(typeof state==='undefined') return;
+  enterpriseDB.missions=(state.missions||[]).map(m=>({
+    id:String(m.id ?? m.missionId ?? crypto.randomUUID?.() ?? Date.now()),
+    title:m.title||m.name||'Untitled Mission',
+    session:m.session||'Unassigned',
+    channelId:(document.querySelector('#channel')?.value||'ACC Tech Broadcast'),
+    status:m.done?'COMPLETED':(m.status||'READY'),
+    progress:m.done?100:(m.progress||0),
+    updatedAt:new Date().toISOString()
+  }));
+  enterpriseDB.production=(state.activity||[]).map((a,i)=>({
+    id:'prod-'+i,
+    title:String(a),
+    status:'LOGGED',
+    createdAt:new Date().toISOString()
+  }));
+}
+
+function renderDatabase(){
+  const el=id=>document.getElementById(id);
+  if(!el('dbWorkspaceCount')) return;
+  el('dbWorkspaceCount').textContent=enterpriseDB.workspaces.length;
+  el('dbChannelCount').textContent=enterpriseDB.channels.length;
+  el('dbMissionCount').textContent=enterpriseDB.missions.length;
+  el('dbProductionCount').textContent=enterpriseDB.production.length;
+  el('dbWorkerCount').textContent=enterpriseDB.workers.length;
+  el('dbKnowledgeCount').textContent=enterpriseDB.knowledge.length;
+  el('dbNotificationCount').textContent=enterpriseDB.notifications.length;
+  el('dbArchiveCount').textContent=enterpriseDB.archive.length;
+  el('dbLastSaved').textContent='Saved '+new Date(enterpriseDB.updatedAt).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+
+  const rows=el('dbMissionRows');
+  rows.innerHTML='';
+  enterpriseDB.missions.forEach(m=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${m.title}</b><br><span class="muted">${m.session||''}</span></td>
+      <td>${m.channelId||'-'}</td>
+      <td><span class="db-pill">${m.status}</span></td>
+      <td>${m.progress||0}%</td>`;
+    rows.appendChild(tr);
+  });
+  if(!enterpriseDB.missions.length){
+    rows.innerHTML='<tr><td colspan="4" class="muted">Belum ada mission. Tekan SEED ACC DATA atau buat mission.</td></tr>';
+  }
+}
+
+function searchDatabase(q){
+  q=q.trim().toLowerCase();
+  const target=document.getElementById('dbSearchResults');
+  if(!q){target.textContent='Masukkan kata pencarian.';return;}
+  const groups=['workspaces','channels','missions','production','workers','knowledge','notifications','archive'];
+  const found=[];
+  groups.forEach(group=>{
+    enterpriseDB[group].forEach(item=>{
+      if(JSON.stringify(item).toLowerCase().includes(q)){
+        found.push({group,item});
+      }
+    });
+  });
+  if(!found.length){target.textContent='Tidak ada hasil.';return;}
+  target.innerHTML=found.slice(0,30).map(x=>`<div class="activity"><div class="ico">⌕</div><div><b>${x.item.title||x.item.name||x.item.type||x.item.id}</b><div class="muted">${x.group.toUpperCase()}</div></div></div>`).join('');
+}
+
+function validateDatabase(){
+  const ids=new Set();
+  const duplicates=[];
+  const orphans=[];
+  ['workspaces','channels','missions','production','workers','knowledge','notifications','archive'].forEach(group=>{
+    enterpriseDB[group].forEach(item=>{
+      if(ids.has(item.id)) duplicates.push(item.id);
+      ids.add(item.id);
+    });
+  });
+  enterpriseDB.channels.forEach(ch=>{
+    if(ch.workspaceId && !enterpriseDB.workspaces.some(w=>w.id===ch.workspaceId)) orphans.push(ch.id);
+  });
+  enterpriseDB.knowledge.forEach(k=>{
+    if(k.channelId && !enterpriseDB.channels.some(c=>c.id===k.channelId)) orphans.push(k.id);
+  });
+  const ok=!duplicates.length&&!orphans.length;
+  document.getElementById('dbIntegrity').innerHTML=
+    `Schema Integrity: <b>${ok?'PASS':'FAIL'}</b><br>`+
+    `Duplicate IDs: ${duplicates.length}<br>`+
+    `Orphan Records: ${orphans.length}<br>`+
+    `Last Diagnostic: DB-${Date.now().toString(36).toUpperCase()}`;
+  return ok;
+}
+
+function backupDatabase(){
+  const blob=new Blob([JSON.stringify(enterpriseDB,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='ACC_OS_X_ENTERPRISE_DATABASE_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function seedACCData(){
+  enterpriseDB=dbDefaults();
+  if(typeof state!=='undefined' && state.missions?.length) syncStateToDB();
+  saveDB('SEED_ACC_DATA');
+  toast('Enterprise Database seeded');
+}
+
+document.addEventListener('input',e=>{
+  if(e.target?.id==='dbSearch') searchDatabase(e.target.value);
+});
+document.addEventListener('click',e=>{
+  if(e.target?.id==='dbSeed') seedACCData();
+  if(e.target?.id==='dbBackup') backupDatabase();
+  if(e.target?.id==='dbValidate') validateDatabase();
+  if(e.target?.id==='dbClearArchive'){
+    enterpriseDB.archive=enterpriseDB.archive.filter(x=>x && Object.keys(x).length);
+    saveDB('CLEAR_EMPTY_ARCHIVE');
+    toast('Empty archive records cleared');
+  }
+});
+
+setInterval(()=>{
+  if(typeof state!=='undefined'){
+    syncStateToDB();
+    localStorage.setItem(DB_KEY,JSON.stringify(enterpriseDB));
+    renderDatabase();
+  }
+},5000);
+
+syncStateToDB();
+saveDB('BUILD_009_STARTUP');
+renderDatabase();
 </script></body></html>
