@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1530">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png">
+<title>ACC OS X</title>
+<style>
+:root{color-scheme:dark;--bg:#050713;--p:#10182d;--p2:#0a1022;--line:#26314a;--txt:#f7f8fc;--muted:#93a0bb;--vio:#9b4dff;--blue:#4e9cff;--green:#35dfae;--gold:#f3c75f;--red:#ff637d}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 90% 0,#291454 0,transparent 32%),radial-gradient(circle at 0 80%,#07324a 0,transparent 28%),var(--bg);color:var(--txt);font-family:Inter,ui-sans-serif,system-ui,sans-serif;min-height:100vh;padding-bottom:max(92px,env(safe-area-inset-bottom))}
+button,select,input{font:inherit}.hidden{display:none!important}
+#splash{position:fixed;inset:0;z-index:999;background:radial-gradient(circle at center,#24104c 0,#050713 58%);display:grid;place-items:center;transition:.5s}
+#splash.hide{opacity:0;visibility:hidden}.splash-box{text-align:center}.splash-box img{width:112px;filter:drop-shadow(0 0 26px #9b4dff)}.splash-box h2{margin:14px 0 4px;font-size:30px}.loader{width:180px;height:7px;border-radius:99px;background:#10162b;overflow:hidden;margin:22px auto 0}.loader:after{content:"";display:block;height:100%;width:45%;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));animation:load 1s infinite alternate}@keyframes load{to{transform:translateX(120%)}}
+header{padding:21px 18px 17px;background:linear-gradient(180deg,#101a36f2,#0b1024ef);border-bottom:1px solid var(--line);backdrop-filter:blur(18px)}.brand{display:flex;align-items:center;gap:13px}.brand img{width:56px;height:56px;filter:drop-shadow(0 0 18px #9b4dff99)}h1{font-size:28px;margin:0}.sub{color:var(--muted);font-size:12px;margin-top:4px}.statusline{display:flex;justify-content:space-between;align-items:center;margin-top:14px}.online{display:flex;align-items:center;gap:8px;color:var(--green);font-size:12px;font-weight:900}.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 13px var(--green)}.clock{color:#d7b8ff;font-weight:900}.selectors{display:grid;gap:9px;margin-top:14px}select{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:15px;background:#090f20;color:var(--txt)}
+nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:9;background:#070b18ec;border-bottom:1px solid var(--line);backdrop-filter:blur(15px)}nav button{flex:0 0 auto;padding:16px 17px;border:0;background:transparent;color:var(--muted);font-weight:900}nav button.active{color:#eddcff;border-bottom:3px solid var(--vio)}
+main{padding:18px;max-width:860px;margin:auto}.section{display:none}.section.active{display:block}.card{background:linear-gradient(145deg,#151e38e6,#0d1328e6);border:1px solid #2b3653;border-radius:22px;padding:18px;margin-bottom:15px;box-shadow:0 15px 35px #0006}.hero{background:linear-gradient(135deg,#2b1854,#111b3d 55%,#082b3a);position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;background:#9b4dff33;right:-70px;top:-75px}.hero h2{font-size:26px;margin:10px 0 6px;position:relative;z-index:1}.tag{display:inline-flex;padding:6px 10px;border:1px solid #3d8f75;background:#073d32;border-radius:999px;color:#5af0bd;font-weight:900;font-size:11px}.muted{color:var(--muted);line-height:1.55}.title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.title h3{margin:0}.title span{font-size:12px;color:var(--muted)}
+.stats,.grid2,.agent-grid,.workspace-grid,.session-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat,.mini{background:#080f20;border:1px solid var(--line);border-radius:18px;padding:15px}.stat small,.mini small{color:var(--muted)}.stat b{display:block;font-size:30px;margin-top:7px;color:var(--blue)}.stat:nth-child(2)b{color:var(--green)}.stat:nth-child(3)b{color:var(--gold)}.stat:nth-child(4)b{color:#d7a4ff}.primary,.secondary,.danger,.action{width:100%;padding:15px;border-radius:15px;font-weight:900}.primary{border:0;background:linear-gradient(135deg,#645cff,#a436ef);color:white}.secondary{border:1px solid var(--line);background:#121a2c;color:white;margin-top:9px}.danger{border:1px solid #713044;background:#2a0d19;color:#ff9db0;margin-top:9px}.action{border:1px solid #5f388b;background:linear-gradient(145deg,#281145,#17102c);color:#eddcff}.progress-bg{height:14px;background:#050817;border:1px solid var(--line);border-radius:99px;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));transition:.35s}
+.activity,.mission,.notice,.agent,.workspace,.session{background:#090f20;border:1px solid var(--line);border-radius:17px;padding:14px;margin-top:9px}.activity{display:flex;gap:11px}.ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#1b2140}.mission{display:flex;gap:11px}.mission input{width:22px;height:22px;accent-color:#9b4dff}.badge{padding:5px 9px;border-radius:99px;font-size:11px;font-weight:900}.ready{background:#073d32;color:#56edbb}.progressing{background:#39270b;color:#ffd37a}.pending{background:#3b1020;color:#ff9db0}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:#080d1cf2;border-top:1px solid var(--line);backdrop-filter:blur(16px);padding-bottom:env(safe-area-inset-bottom)}.bottom-nav button{border:0;background:transparent;color:var(--muted);padding:11px 2px 10px;font-size:11px;font-weight:800}.bottom-nav button span{display:block;font-size:20px;margin-bottom:3px}.bottom-nav button.active{color:#e1c3ff}
+.toast,.offline{display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:40;padding:13px;border-radius:14px;text-align:center}.toast{background:#142440;border:1px solid #537caf}.offline{background:#5c2700;border:1px solid #e68700}
+</style>
+</head>
+<body>
+<div id="splash"><div class="splash-box"><img src="./icons/icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Command Deck</div><div class="loader"></div></div></div>
+<header>
+<div class="brand"><img src="./icons/icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 006 Enterprise Command Deck</div></div></div>
+<div class="statusline"><div class="online"><span class="dot"></span> SYSTEM READY</div><div id="clock" class="clock">--:--</div></div>
+<div class="selectors">
+<select id="workspace"><option>ACC Enterprise</option><option>AM Studio</option><option>Papa Sauce Lab</option><option>Sandbox Environment</option></select>
+<select id="channel"><option>ACC Tech Broadcast</option><option>Royal Gambler</option><option>Han Kera</option><option>Warung Republik</option><option>Balinightlife</option></select>
+<select id="role"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select>
+</div>
+</header>
+<nav>
+<button class="active" data-section="home">HOME</button>
+<button data-section="sessions">SESSIONS</button>
+<button data-section="workspaces">WORKSPACES</button>
+<button data-section="ai">AI CENTER</button>
+<button data-section="notifications">NOTIFICATIONS</button>
+<button data-section="settings">SETTINGS</button>
+</nav>
+<main>
+<section id="home" class="section active">
+<div class="card hero"><span class="tag">COMMAND DECK ONLINE</span><h2>ACC Enterprise siap bergerak, Arda 👋</h2><div class="muted">Pantau produksi, session, AI organization, notifikasi, dan deployment dari satu command deck.</div></div>
+<div class="stats"><div class="stat"><small>Workspace aktif</small><b>4</b></div><div class="stat"><small>Mission selesai</small><b id="doneCount">0</b></div><div class="stat"><small>Approval</small><b id="approvalCount">2</b></div><div class="stat"><small>Artifact</small><b id="artifactCount">8</b></div></div>
+<div class="card"><div class="title"><h3>Progress Hari Ini</h3><span id="progressLabel">0/5 selesai</span></div><div class="progress-bg"><div id="progressBar" class="progress"></div></div></div>
+<div class="card"><div class="title"><h3>Quick Command</h3><span>one tap</span></div><div class="grid2"><button class="action" data-action="NEXT">▶ NEXT</button><button class="action" data-action="KONTEN">✦ KONTEN</button><button class="action" data-action="POSTER">▣ POSTER</button><button class="action" data-action="CAPTION">✎ CAPTION</button></div></div>
+<div class="card"><div class="title"><h3>Live Activity</h3><span>today</span></div><div id="activityList"></div></div>
+</section>
+
+<section id="sessions" class="section">
+<div class="card"><div class="title"><h3>Session Manager</h3><span>ACC daily cycle</span></div><div id="sessionList" class="session-grid"></div></div>
+<div class="card"><div class="title"><h3>Today's Mission</h3><span>interactive</span></div><div id="missionList"></div><button class="secondary" id="resetMissions">RESET HARI INI</button></div>
+</section>
+
+<section id="workspaces" class="section">
+<div class="card"><div class="title"><h3>Workspace Manager</h3><span>4 active</span></div><div id="workspaceList" class="workspace-grid"></div></div>
+</section>
+
+<section id="ai" class="section">
+<div class="card"><div class="title"><h3>AI Organization</h3><span>4 online</span></div><div class="agent-grid">
+<div class="agent"><strong>KAI ONE</strong><div class="muted">Chief Technology Officer</div><span class="badge ready">ONLINE</span></div>
+<div class="agent"><strong>KAI ZERO</strong><div class="muted">Creative Director</div><span class="badge ready">ONLINE</span></div>
+<div class="agent"><strong>KAI NIBAN</strong><div class="muted">Productions Department</div><span class="badge ready">ONLINE</span></div>
+<div class="agent"><strong>EVE</strong><div class="muted">Accounting Lead</div><span class="badge ready">ONLINE</span></div>
+</div></div>
+<div class="card"><h3>KAI Command Input</h3><input id="kaiInput" placeholder="Contoh: Lanjut produksi Session 2" style="width:100%;margin-top:12px;padding:14px;border-radius:14px;border:1px solid var(--line);background:#090f20;color:white"><button class="primary" id="sendKai" style="margin-top:10px">SEND TO KAI</button></div>
+</section>
+
+<section id="notifications" class="section">
+<div class="card"><div class="title"><h3>Notification Center</h3><span id="noticeCount">3 active</span></div><div id="noticeList"></div><button class="secondary" id="clearNotices">MARK ALL READ</button></div>
+</section>
+
+<section id="settings" class="section">
+<div class="card"><h3>System & Deployment</h3><div class="muted">Application: ACC OS X<br>Build: 006 Enterprise Command Deck<br>GitHub: CONNECTED<br>Netlify: AUTO DEPLOY ACTIVE<br>Mode: <span id="installMode">BROWSER</span></div>
+<button id="installButton" class="primary" style="margin-top:15px">INSTALL ACC OS X</button>
+<button id="deployButton" class="secondary">🚀 DEPLOY BUILD</button>
+<button id="reloadButton" class="secondary">RELOAD UPDATE</button>
+<button id="clearData" class="danger">CLEAR LOCAL DATA</button></div>
+</section>
+</main>
+
+<div class="bottom-nav">
+<button class="active" data-section="home"><span>⌂</span>Home</button>
+<button data-section="sessions"><span>◫</span>Sessions</button>
+<button data-section="workspaces"><span>▦</span>Workspace</button>
+<button data-section="ai"><span>✦</span>AI</button>
+<button data-section="settings"><span>⚙</span>Settings</button>
+</div>
+<div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+setTimeout(()=>$('#splash').classList.add('hide'),1400);
+const defaults=[['s1','Session 1','07.00–09.00','ACC Tech Broadcast'],['s2','Session 2','10.00–12.00','Royal Gambler'],['s3','Session 3','13.00–15.00','Jejak Nusantara'],['s4','Session 4','15.30–17.30','Nadya Gaming'],['s5','Session 5','19.00–21.00','Aku Cinta Malam']];
+const state=JSON.parse(localStorage.getItem('acc006')||'{}');
+state.missions=state.missions||defaults.map(x=>({id:x[0],session:x[1],time:x[2],title:x[3],done:false}));
+state.artifact=state.artifact??8;state.approval=state.approval??2;
+state.activity=state.activity||['Build 006 Enterprise Command Deck aktif','Session Manager siap','GitHub dan Netlify terhubung'];
+state.notices=state.notices||[
+{title:'Approval Queue',body:'2 artifact menunggu keputusan owner',read:false},
+{title:'Production Engine',body:'Session 2 siap dijalankan',read:false},
+{title:'System Update',body:'Build 006 berhasil dimuat',read:false}
+];
+const save=()=>localStorage.setItem('acc006',JSON.stringify(state));
+function toast(x){$('#toast').textContent=x;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',1800)}
+function addActivity(x){state.activity.push(x);if(state.activity.length>20)state.activity.shift();save();render();toast(x)}
+function showSection(id){$$('.section').forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active');$$('[data-section]').forEach(b=>b.classList.toggle('active',b.dataset.section===id))}
+$$('[data-section]').forEach(b=>b.onclick=()=>showSection(b.dataset.section));
+$$('[data-action]').forEach(b=>b.onclick=()=>addActivity('Action: '+b.dataset.action));
+['workspace','channel','role'].forEach(id=>{const e=$('#'+id),v=localStorage.getItem('acc.'+id);if(v)e.value=v;e.onchange=()=>{localStorage.setItem('acc.'+id,e.value);addActivity(id.toUpperCase()+' → '+e.value)}});
+setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),1000);
+
+const workspaces=[['ACC Enterprise','4 modules','ready'],['AM Studio','18 channels','ready'],['Papa Sauce Lab','Accounting active','progressing'],['Sandbox','Testing only','pending']];
+function render(){
+const done=state.missions.filter(x=>x.done).length;
+$('#doneCount').textContent=done;$('#approvalCount').textContent=state.approval;$('#artifactCount').textContent=state.artifact;$('#progressLabel').textContent=done+'/5 selesai';$('#progressBar').style.width=(done/5*100)+'%';
+$('#activityList').innerHTML='';[...state.activity].reverse().slice(0,7).forEach((a,i)=>{let d=document.createElement('div');d.className='activity';d.innerHTML='<div class="ico">'+(i?'✓':'⚡')+'</div><div><b>'+a+'</b><div class="muted">ACC Event Stream</div></div>';$('#activityList').appendChild(d)});
+$('#missionList').innerHTML='';state.missions.forEach(m=>{let l=document.createElement('label');l.className='mission';l.innerHTML='<input type="checkbox" '+(m.done?'checked':'')+'><div><b>'+m.title+'</b><div class="muted">'+m.session+' • '+m.time+'</div></div>';l.querySelector('input').onchange=e=>{m.done=e.target.checked;addActivity((m.done?'Selesai: ':'Dibuka kembali: ')+m.title);save();render()};$('#missionList').appendChild(l)});
+$('#sessionList').innerHTML='';state.missions.forEach(m=>{let d=document.createElement('div');d.className='session';d.innerHTML='<strong>'+m.session+'</strong><div class="muted">'+m.time+'<br>'+m.title+'</div><span class="badge '+(m.done?'ready':'progressing')+'">'+(m.done?'DONE':'ACTIVE')+'</span>';$('#sessionList').appendChild(d)});
+$('#workspaceList').innerHTML='';workspaces.forEach(w=>{let d=document.createElement('div');d.className='workspace';d.innerHTML='<strong>'+w[0]+'</strong><div class="muted">'+w[1]+'</div><span class="badge '+w[2]+'">'+(w[2]=='ready'?'ONLINE':w[2]=='progressing'?'SYNCING':'IDLE')+'</span>';$('#workspaceList').appendChild(d)});
+$('#noticeList').innerHTML='';state.notices.forEach(n=>{let d=document.createElement('div');d.className='notice';d.innerHTML='<strong>'+n.title+'</strong><div class="muted">'+n.body+'</div><span class="badge '+(n.read?'ready':'progressing')+'">'+(n.read?'READ':'NEW')+'</span>';d.onclick=()=>{n.read=true;save();render()};$('#noticeList').appendChild(d)});
+$('#noticeCount').textContent=state.notices.filter(n=>!n.read).length+' active';
+}
+$('#resetMissions').onclick=()=>{state.missions.forEach(m=>m.done=false);addActivity('Mission hari ini di-reset');render()};
+$('#sendKai').onclick=()=>{const t=$('#kaiInput').value.trim();if(!t){toast('Masukkan perintah dulu');return}addActivity('KAI menerima: '+t);$('#kaiInput').value=''};
+$('#clearNotices').onclick=()=>{state.notices.forEach(n=>n.read=true);save();render();toast('Semua notifikasi dibaca')};
+$('#deployButton').onclick=()=>toast('Deploy Center siap disambungkan pada Build 007');
+$('#reloadButton').onclick=()=>location.reload();
+$('#clearData').onclick=()=>{localStorage.removeItem('acc006');toast('Data lokal dibersihkan');setTimeout(()=>location.reload(),700)};
+let dp=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e});$('#installButton').onclick=async()=>{if(dp){dp.prompt();await dp.userChoice;dp=null}else toast('Gunakan menu Chrome → Install app')};
+if(matchMedia('(display-mode:standalone)').matches){$('#installMode').textContent='INSTALLED PWA';$('#installButton').disabled=true;$('#installButton').textContent='ACC OS X INSTALLED'}
+function online(){ $('#offline').style.display=navigator.onLine?'none':'block' }addEventListener('online',online);addEventListener('offline',online);online();
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'));
+render();
+</script>
+</body>
+</html>
