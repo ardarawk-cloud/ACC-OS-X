@@ -4,7 +4,7 @@
 :root{color-scheme:dark;--bg:#050713;--panel:#10182d;--panel2:#080f20;--line:#273452;--text:#f5f7ff;--muted:#98a4bd;--vio:#a855f7;--blue:#4e9cff;--green:#35dfae;--gold:#f3c75f;--red:#ff637d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 90% 0,#291454 0,transparent 32%),radial-gradient(circle at 0 80%,#07324a 0,transparent 28%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh;padding-bottom:max(88px,env(safe-area-inset-bottom))}button,select,input,textarea{font:inherit}.hidden{display:none!important}
 #splash{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:radial-gradient(circle,#24104c 0,#050713 60%);transition:.45s}#splash.hide{opacity:0;visibility:hidden}.splash{text-align:center}.splash img{width:108px;filter:drop-shadow(0 0 26px #9b4dff)}.loader{width:180px;height:7px;border-radius:99px;background:#11172c;overflow:hidden;margin:20px auto}.loader:after{content:"";display:block;width:46%;height:100%;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));animation:move .8s infinite alternate}@keyframes move{to{transform:translateX(120%)}}
 header{padding:18px;background:linear-gradient(180deg,#111b39f2,#0b1024ef);border-bottom:1px solid var(--line)}.brand{display:flex;gap:13px;align-items:center}.brand img{width:58px;filter:drop-shadow(0 0 18px #9b4dff99)}h1{font-size:29px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:5px}.statusrow{display:flex;justify-content:space-between;align-items:center;margin-top:14px}.online{display:flex;gap:8px;align-items:center;color:var(--green);font-weight:900;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 13px var(--green)}.clock{color:#ddb5ff;font-weight:900}.selectors{display:grid;gap:9px;margin-top:14px}select,input,textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:#090f20;color:var(--text)}textarea{min-height:92px;resize:vertical}
-nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#070b18ef;border-bottom:1px solid var(--line)}nav button{flex:0 0 auto;padding:15px 16px;border:0;background:transparent;color:var(--muted);font-weight:900}nav button.active{color:#efd9ff;border-bottom:3px solid var(--vio)}main{padding:17px;max-width:900px;margin:auto}.page{display:none}.page.active{display:block}.card{background:linear-gradient(145deg,#151e38e6,#0d1328e6);border:1px solid #2b3653;border-radius:21px;padding:17px;margin-bottom:14px;box-shadow:0 14px 34px #0006}.hero{background:linear-gradient(135deg,#30195e,#111b3d 55%,#073349)}.hero h2{font-size:27px;margin:10px 0 7px}.tag{display:inline-flex;padding:6px 10px;border-radius:99px;background:#073d32;border:1px solid #3d8f75;color:#5af0bd;font-weight:900;font-size:11px}.muted{color:var(--muted);line-height:1.5}.title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px}.title h3{margin:0}.title span{font-size:12px;color:var(--muted)}.stats,.grid2,.grid3{display:grid;gap:10px}.stats,.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}.stat,.tile{background:var(--panel2);border:1px solid var(--line);border-radius:17px;padding:14px}.stat small{color:var(--muted)}.stat b{display:block;font-size:27px;margin-top:6px;color:var(--blue)}.stat:nth-child(2)b{color:var(--green)}.stat:nth-child(3)b{color:var(--gold)}.stat:nth-child(4)b{color:#d8a5ff}.primary,.secondary,.danger,.action{width:100%;padding:14px;border-radius:14px;font-weight:900}.primary{border:0;background:linear-gradient(135deg,#645cff,#a436ef);color:#fff}.secondary{border:1px solid var(--line);background:#121a2c;color:#fff}.danger{border:1px solid #713044;background:#2a0d19;color:#ff9db0}.action{border:1px solid #5f388b;background:linear-gradient(145deg,#281145,#17102c);color:#eddcff}.btnrow{display:flex;flex-wrap:wrap;gap:8px}.btnrow button{width:auto;flex:1 1 135px}.progress-bg{height:13px;border:1px solid var(--line);border-radius:99px;background:#050817;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));transition:.3s}.list{display:grid;gap:9px}.item,.worker,.knowledge,.artifact,.event,.graphnode{background:#090f20;border:1px solid var(--line);border-radius:16px;padding:13px}.itemhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.b-ready,.b-success,.b-active{background:#073d32;color:#56edbb}.b-running,.b-warning,.b-waiting{background:#3a280b;color:#ffd37a}.b-failed,.b-blocked,.b-cancelled{background:#3b1020;color:#ff9db0}.b-paused,.b-idle{background:#162241;color:#9ec4ff}.b-locked{background:#231536;color:#d7a4ff}.stagebar{display:flex;overflow-x:auto;gap:7px;padding:4px 0 9px}.stage{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#090f20;font-size:11px}.stage.SUCCESS{border-color:#23886b;color:#56edbb}.stage.RUNNING{border-color:#a87b20;color:#ffd37a}.stage.FAILED,.stage.BLOCKED{border-color:#8b2c47;color:#ff9db0}.stage.READY{border-color:#6b42a0;color:#d7a4ff}.stage.LOCKED{opacity:.55}.code{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;background:#040817;border:1px solid var(--line);padding:11px;border-radius:12px;max-height:260px;overflow:auto}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(6,1fr);background:#080d1cf4;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}.bottom button{border:0;background:transparent;color:var(--muted);padding:10px 2px;font-size:10px;font-weight:900}.bottom span{display:block;font-size:20px;margin-bottom:3px}.bottom button.active{color:#e1c3ff}.toast,.offline{display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:50;padding:13px;border-radius:14px;text-align:center}.toast{background:#142440;border:1px solid #537caf}.offline{background:#5c2700;border:1px solid #e68700}.modal{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:end center;padding:14px}.modalbox{width:min(720px,100%);max-height:88vh;overflow:auto;background:#0c1429;border:1px solid var(--line);border-radius:22px;padding:17px}.diag-pass{color:var(--green)}.diag-fail{color:var(--red)}@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}.btnrow button{flex-basis:120px}}
+nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#070b18ef;border-bottom:1px solid var(--line)}nav button{flex:0 0 auto;padding:15px 16px;border:0;background:transparent;color:var(--muted);font-weight:900}nav button.active{color:#efd9ff;border-bottom:3px solid var(--vio)}main{padding:17px;max-width:900px;margin:auto}.page{display:none}.page.active{display:block}.card{background:linear-gradient(145deg,#151e38e6,#0d1328e6);border:1px solid #2b3653;border-radius:21px;padding:17px;margin-bottom:14px;box-shadow:0 14px 34px #0006}.hero{background:linear-gradient(135deg,#30195e,#111b3d 55%,#073349)}.hero h2{font-size:27px;margin:10px 0 7px}.tag{display:inline-flex;padding:6px 10px;border-radius:99px;background:#073d32;border:1px solid #3d8f75;color:#5af0bd;font-weight:900;font-size:11px}.muted{color:var(--muted);line-height:1.5}.title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px}.title h3{margin:0}.title span{font-size:12px;color:var(--muted)}.stats,.grid2,.grid3{display:grid;gap:10px}.stats,.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}.stat,.tile{background:var(--panel2);border:1px solid var(--line);border-radius:17px;padding:14px}.stat small{color:var(--muted)}.stat b{display:block;font-size:27px;margin-top:6px;color:var(--blue)}.stat:nth-child(2)b{color:var(--green)}.stat:nth-child(3)b{color:var(--gold)}.stat:nth-child(4)b{color:#d8a5ff}.primary,.secondary,.danger,.action{width:100%;padding:14px;border-radius:14px;font-weight:900}.primary{border:0;background:linear-gradient(135deg,#645cff,#a436ef);color:#fff}.secondary{border:1px solid var(--line);background:#121a2c;color:#fff}.danger{border:1px solid #713044;background:#2a0d19;color:#ff9db0}.action{border:1px solid #5f388b;background:linear-gradient(145deg,#281145,#17102c);color:#eddcff}.btnrow{display:flex;flex-wrap:wrap;gap:8px}.btnrow button{width:auto;flex:1 1 135px}.progress-bg{height:13px;border:1px solid var(--line);border-radius:99px;background:#050817;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));transition:.3s}.list{display:grid;gap:9px}.item,.worker,.knowledge,.artifact,.event,.graphnode{background:#090f20;border:1px solid var(--line);border-radius:16px;padding:13px}.itemhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.b-ready,.b-success,.b-active{background:#073d32;color:#56edbb}.b-running,.b-warning,.b-waiting{background:#3a280b;color:#ffd37a}.b-failed,.b-blocked,.b-cancelled{background:#3b1020;color:#ff9db0}.b-paused,.b-idle{background:#162241;color:#9ec4ff}.b-locked{background:#231536;color:#d7a4ff}.stagebar{display:flex;overflow-x:auto;gap:7px;padding:4px 0 9px}.stage{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#090f20;font-size:11px}.stage.SUCCESS{border-color:#23886b;color:#56edbb}.stage.RUNNING{border-color:#a87b20;color:#ffd37a}.stage.FAILED,.stage.BLOCKED{border-color:#8b2c47;color:#ff9db0}.stage.READY{border-color:#6b42a0;color:#d7a4ff}.stage.LOCKED{opacity:.55}.code{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;background:#040817;border:1px solid var(--line);padding:11px;border-radius:12px;max-height:260px;overflow:auto}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(7,1fr);background:#080d1cf4;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}.bottom button{border:0;background:transparent;color:var(--muted);padding:10px 2px;font-size:10px;font-weight:900}.bottom span{display:block;font-size:20px;margin-bottom:3px}.bottom button.active{color:#e1c3ff}.toast,.offline{display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:50;padding:13px;border-radius:14px;text-align:center}.toast{background:#142440;border:1px solid #537caf}.offline{background:#5c2700;border:1px solid #e68700}.modal{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:end center;padding:14px}.modalbox{width:min(720px,100%);max-height:88vh;overflow:auto;background:#0c1429;border:1px solid var(--line);border-radius:22px;padding:17px}.diag-pass{color:var(--green)}.diag-fail{color:var(--red)}@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}.btnrow button{flex-basis:120px}}
 
 .db-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .db-card{background:#080f20;border:1px solid var(--line);border-radius:18px;padding:15px}
@@ -18,10 +18,26 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 .db-pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#142440;color:#9fc5ff;font-size:10px;font-weight:900}
 .searchbox{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:#090f20;color:#fff;margin-bottom:12px}
 
+
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ai-card{background:linear-gradient(145deg,#0b1226,#15112c);border:1px solid #35405f;border-radius:18px;padding:15px}
+.ai-card h4{margin:0 0 5px;font-size:16px}
+.ai-role{font-size:11px;color:var(--muted);min-height:32px}
+.ai-status{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;margin-top:9px;font-size:10px;font-weight:900}
+.ai-idle{background:#102943;color:#78b9ff}.ai-online{background:#073d32;color:#56edbb}.ai-working{background:#3a290b;color:#ffd37a}.ai-busy{background:#3b1020;color:#ff9db0}.ai-offline{background:#202536;color:#9aa4bb}
+.ai-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.ai-metric{background:#070d1c;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+.ai-metric b{display:block;font-size:18px;color:#d7b8ff}
+.ai-queue{margin-top:10px;padding:10px;border-radius:12px;background:#080f20;border:1px solid var(--line)}
+.ai-command{width:100%;min-height:100px;padding:14px;border:1px solid var(--line);border-radius:15px;background:#090f20;color:#fff;resize:vertical}
+.router-log{max-height:310px;overflow:auto}
+.router-entry{padding:11px;border-bottom:1px solid var(--line)}
+.router-entry:last-child{border-bottom:0}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 009 Enterprise Database</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
-<nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="database">DATABASE</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 010 ACC AI Core</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
+<nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="database">DATABASE</button><button data-page="aicore">AI CORE</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
 <main>
 <section id="home" class="page active"><div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
 <section id="missions" class="page"><div class="card"><div class="title"><h3>Mission Center</h3><span>persistent</span></div><input id="missionTitle" placeholder="Judul mission"><textarea id="missionObjective" placeholder="Objective mission"></textarea><button id="createMission" class="primary">+ CREATE MISSION</button></div><div id="missionList" class="list"></div></section>
@@ -81,9 +97,62 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 009 DATA</button></div></section>
+
+<section id="aicore" class="page">
+  <div class="card hero">
+    <span class="tag">ACC AI CORE ACTIVE</span>
+    <h2>AI Organization terpusat</h2>
+    <div class="muted">KAI ONE, KAI NIBAN, KAI ONI, dan EVE bekerja melalui AI Router yang sama, dengan job queue, status, metrics, dan activity history terpisah.</div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>AI Core Overview</h3><span id="aiCoreStatus">4 agents registered</span></div>
+    <div class="db-grid">
+      <div class="db-card"><small>Online Agents</small><b id="aiOnlineCount">0</b></div>
+      <div class="db-card"><small>Queued Jobs</small><b id="aiQueuedCount">0</b></div>
+      <div class="db-card"><small>Completed Jobs</small><b id="aiCompletedCount">0</b></div>
+      <div class="db-card"><small>Failed Jobs</small><b id="aiFailedCount">0</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>AI Organization</h3><span>persistent registry</span></div>
+    <div id="aiAgentGrid" class="ai-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>AI Router Console</h3><span>local command routing</span></div>
+    <textarea id="aiCommandInput" class="ai-command" placeholder="Contoh: Buat mission produksi Royal Gambler untuk Session 2"></textarea>
+    <select id="aiTarget" style="margin-top:10px">
+      <option value="AUTO">AUTO ROUTER</option>
+      <option value="KAI_ONE">KAI ONE</option>
+      <option value="KAI_NIBAN">KAI NIBAN</option>
+      <option value="KAI_ONI">KAI ONI</option>
+      <option value="EVE">EVE</option>
+    </select>
+    <button id="routeAICommand" class="primary" style="margin-top:10px">ROUTE COMMAND</button>
+    <div class="muted" style="margin-top:10px">Build 010 memakai local orchestration engine. Belum mengirim permintaan ke model AI eksternal.</div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Router Activity</h3><span id="routerLogCount">0 events</span></div>
+    <div id="aiRouterLog" class="router-log"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>AI Core Controls</h3><span>owner actions</span></div>
+    <div class="db-actions">
+      <button id="startAllAI" class="secondary">SET ALL ONLINE</button>
+      <button id="pauseAllAI" class="secondary">PAUSE ALL</button>
+      <button id="processNextAI" class="secondary">PROCESS NEXT JOB</button>
+      <button id="resetAIQueues" class="secondary">RESET QUEUES</button>
+    </div>
+  </div>
+</section>
+
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 010 DATA</button></div></section>
 </main>
-<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
+<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
 (()=>{'use strict';
 const BUILD='008';const STORAGE='acc_os_x_enterprise_state_v008';const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);const now=()=>new Date().toISOString();const id=(p='id')=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);const clone=x=>JSON.parse(JSON.stringify(x));
@@ -124,7 +193,7 @@ let deferred=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();
 // ACC OS X Build 009 — Enterprise Database Engine
 const DB_KEY='acc_os_x_enterprise_db_v1';
 const dbDefaults=()=>({
-  schemaVersion:'ACC_DB_V1',
+  schemaVersion:'ACC_DB_V2_AI_CORE',
   updatedAt:new Date().toISOString(),
   workspaces:[
     {id:'ws-acc',name:'ACC Enterprise',status:'ACTIVE'},
@@ -312,4 +381,229 @@ setInterval(()=>{
 syncStateToDB();
 saveDB('BUILD_009_STARTUP');
 renderDatabase();
+
+// ACC OS X Build 010 — AI Core Engine
+const AI_CORE_KEY='acc_os_x_ai_core_v1';
+const makeAgent=(id,name,role,capabilities)=>({
+  id,name,role,capabilities,status:'ONLINE',currentJobId:null,
+  queue:[],history:[],totalRuns:0,successfulRuns:0,failedRuns:0,lastActivity:new Date().toISOString()
+});
+const defaultAICore=()=>({
+  schemaVersion:'AI_CORE_V1',
+  routerVersion:'LOCAL_ROUTER_V1',
+  agents:[
+    makeAgent('KAI_ONE','KAI ONE','Chief Technology Officer',['architecture','system','deployment','diagnostics']),
+    makeAgent('KAI_NIBAN','KAI NIBAN','Productions Department Lead',['mission','content','production','workflow']),
+    makeAgent('KAI_ONI','KAI ONI','Senior Visual Director',['poster','visual','comic','quality-control']),
+    makeAgent('EVE','EVE','Accounting Lead',['finance','stock','expense','reconciliation'])
+  ],
+  routerLog:[],
+  updatedAt:new Date().toISOString()
+});
+
+let aiCore;
+try{
+  aiCore=JSON.parse(localStorage.getItem(AI_CORE_KEY)||'null')||defaultAICore();
+}catch(e){
+  aiCore=defaultAICore();
+}
+
+function saveAICore(source='AI_CORE'){
+  aiCore.updatedAt=new Date().toISOString();
+  localStorage.setItem(AI_CORE_KEY,JSON.stringify(aiCore));
+  if(typeof enterpriseDB!=='undefined'){
+    enterpriseDB.workers=aiCore.agents.map(a=>({
+      id:a.id,type:a.name,role:a.role,status:a.status,
+      currentJobId:a.currentJobId,totalRuns:a.totalRuns,
+      successfulRuns:a.successfulRuns,failedRuns:a.failedRuns,
+      queueLength:a.queue.length,lastActivity:a.lastActivity
+    }));
+    enterpriseDB.activity.push({
+      id:'ai-act-'+Date.now(),
+      source,
+      action:'AI_CORE_UPDATED',
+      timestamp:aiCore.updatedAt
+    });
+    localStorage.setItem(DB_KEY,JSON.stringify(enterpriseDB));
+  }
+  renderAICore();
+}
+
+function routeTarget(command,target='AUTO'){
+  if(target!=='AUTO') return aiCore.agents.find(a=>a.id===target);
+  const q=command.toLowerCase();
+  if(/poster|visual|comic|gambar|desain|qc visual/.test(q)) return aiCore.agents.find(a=>a.id==='KAI_ONI');
+  if(/uang|stock|stok|pengeluaran|saldo|finance|accounting|psl/.test(q)) return aiCore.agents.find(a=>a.id==='EVE');
+  if(/deploy|system|database|github|netlify|build|architecture|error/.test(q)) return aiCore.agents.find(a=>a.id==='KAI_ONE');
+  return aiCore.agents.find(a=>a.id==='KAI_NIBAN');
+}
+
+function createAIJob(command,target='AUTO'){
+  const agent=routeTarget(command,target);
+  if(!agent) throw new Error('AI target tidak ditemukan');
+  const job={
+    id:'ai-job-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    command,
+    target:agent.id,
+    status:'QUEUED',
+    createdAt:new Date().toISOString(),
+    startedAt:null,
+    completedAt:null,
+    result:null
+  };
+  agent.queue.push(job);
+  agent.lastActivity=job.createdAt;
+  aiCore.routerLog.push({
+    id:'route-'+Date.now(),
+    type:'AI_COMMAND_ROUTED',
+    agentId:agent.id,
+    jobId:job.id,
+    message:`Command diarahkan ke ${agent.name}`,
+    timestamp:job.createdAt
+  });
+  saveAICore('ROUTE_COMMAND');
+  return job;
+}
+
+function processNextAIJob(){
+  const agent=aiCore.agents.find(a=>a.status!=='OFFLINE' && a.status!=='PAUSED' && a.queue.some(j=>j.status==='QUEUED'));
+  if(!agent){toast('Tidak ada AI job yang siap diproses');return;}
+  const job=agent.queue.find(j=>j.status==='QUEUED');
+  agent.status='WORKING';
+  agent.currentJobId=job.id;
+  job.status='RUNNING';
+  job.startedAt=new Date().toISOString();
+  agent.totalRuns++;
+  aiCore.routerLog.push({
+    id:'start-'+Date.now(),type:'AI_JOB_STARTED',agentId:agent.id,jobId:job.id,
+    message:`${agent.name} memulai job`,timestamp:job.startedAt
+  });
+  saveAICore('PROCESS_JOB_START');
+
+  setTimeout(()=>{
+    job.status='COMPLETED';
+    job.completedAt=new Date().toISOString();
+    job.result={
+      mode:'LOCAL_ORCHESTRATION',
+      summary:`${agent.name} menerima dan mengklasifikasikan command: ${job.command}`,
+      nextAction:agent.id==='KAI_ONE'?'SYSTEM_REVIEW':agent.id==='KAI_NIBAN'?'CREATE_MISSION':agent.id==='KAI_ONI'?'VISUAL_REVIEW':'ACCOUNTING_REVIEW'
+    };
+    agent.successfulRuns++;
+    agent.status='ONLINE';
+    agent.currentJobId=null;
+    agent.history.push({...job});
+    agent.queue=agent.queue.filter(j=>j.id!==job.id);
+    agent.lastActivity=job.completedAt;
+
+    aiCore.routerLog.push({
+      id:'complete-'+Date.now(),type:'AI_JOB_COMPLETED',agentId:agent.id,jobId:job.id,
+      message:`${agent.name} menyelesaikan job dalam local orchestration mode`,
+      timestamp:job.completedAt
+    });
+
+    if(typeof enterpriseDB!=='undefined'){
+      enterpriseDB.production.push({
+        id:'ai-prod-'+job.id,
+        title:job.command,
+        owner:agent.name,
+        status:'AI_ROUTED',
+        result:job.result,
+        createdAt:job.createdAt,
+        completedAt:job.completedAt
+      });
+    }
+    saveAICore('PROCESS_JOB_COMPLETE');
+    toast(`${agent.name} menyelesaikan job`);
+  },800);
+}
+
+function renderAICore(){
+  const grid=document.getElementById('aiAgentGrid');
+  if(!grid)return;
+
+  const online=aiCore.agents.filter(a=>['ONLINE','WORKING'].includes(a.status)).length;
+  const queued=aiCore.agents.reduce((n,a)=>n+a.queue.filter(j=>j.status==='QUEUED').length,0);
+  const completed=aiCore.agents.reduce((n,a)=>n+a.successfulRuns,0);
+  const failed=aiCore.agents.reduce((n,a)=>n+a.failedRuns,0);
+
+  document.getElementById('aiOnlineCount').textContent=online;
+  document.getElementById('aiQueuedCount').textContent=queued;
+  document.getElementById('aiCompletedCount').textContent=completed;
+  document.getElementById('aiFailedCount').textContent=failed;
+  document.getElementById('aiCoreStatus').textContent=`${online}/${aiCore.agents.length} online`;
+
+  grid.innerHTML='';
+  aiCore.agents.forEach(agent=>{
+    const cls=agent.status==='WORKING'?'ai-working':agent.status==='ONLINE'?'ai-online':agent.status==='PAUSED'?'ai-busy':'ai-offline';
+    const div=document.createElement('div');
+    div.className='ai-card';
+    div.innerHTML=`
+      <h4>${agent.name}</h4>
+      <div class="ai-role">${agent.role}</div>
+      <span class="ai-status ${cls}">● ${agent.status}</span>
+      <div class="ai-metrics">
+        <div class="ai-metric"><b>${agent.queue.length}</b><small>Queue</small></div>
+        <div class="ai-metric"><b>${agent.successfulRuns}</b><small>Success</small></div>
+        <div class="ai-metric"><b>${agent.failedRuns}</b><small>Failed</small></div>
+      </div>
+      <div class="ai-queue">
+        <small>Capabilities</small>
+        <div class="muted">${agent.capabilities.join(' • ')}</div>
+        <div class="muted" style="margin-top:6px">Current Job: ${agent.currentJobId||'None'}</div>
+      </div>
+      <button class="secondary aiToggle" data-agent="${agent.id}">${agent.status==='PAUSED'?'RESUME':'PAUSE'}</button>
+    `;
+    grid.appendChild(div);
+  });
+
+  const log=document.getElementById('aiRouterLog');
+  log.innerHTML='';
+  [...aiCore.routerLog].reverse().slice(0,30).forEach(entry=>{
+    const div=document.createElement('div');
+    div.className='router-entry';
+    div.innerHTML=`<b>${entry.type}</b><div class="muted">${entry.message}<br>${new Date(entry.timestamp).toLocaleString('id-ID')}</div>`;
+    log.appendChild(div);
+  });
+  if(!aiCore.routerLog.length) log.innerHTML='<div class="muted">Belum ada activity.</div>';
+  document.getElementById('routerLogCount').textContent=`${aiCore.routerLog.length} events`;
+}
+
+document.addEventListener('click',e=>{
+  if(e.target?.id==='routeAICommand'){
+    const input=document.getElementById('aiCommandInput');
+    const command=input.value.trim();
+    if(!command){toast('Masukkan command dulu');return;}
+    createAIJob(command,document.getElementById('aiTarget').value);
+    input.value='';
+    toast('Command masuk ke AI Router');
+  }
+  if(e.target?.id==='processNextAI') processNextAIJob();
+  if(e.target?.id==='startAllAI'){
+    aiCore.agents.forEach(a=>{if(a.status!=='WORKING')a.status='ONLINE'});
+    saveAICore('SET_ALL_ONLINE');
+    toast('Semua AI online');
+  }
+  if(e.target?.id==='pauseAllAI'){
+    aiCore.agents.forEach(a=>{if(a.status!=='WORKING')a.status='PAUSED'});
+    saveAICore('PAUSE_ALL');
+    toast('AI Core dipause');
+  }
+  if(e.target?.id==='resetAIQueues'){
+    aiCore.agents.forEach(a=>{a.queue=[];a.currentJobId=null;if(a.status!=='OFFLINE')a.status='ONLINE'});
+    aiCore.routerLog.push({id:'reset-'+Date.now(),type:'AI_QUEUES_RESET',message:'Semua AI queue direset',timestamp:new Date().toISOString()});
+    saveAICore('RESET_AI_QUEUES');
+    toast('AI queues direset');
+  }
+  if(e.target?.classList.contains('aiToggle')){
+    const agent=aiCore.agents.find(a=>a.id===e.target.dataset.agent);
+    if(agent){
+      agent.status=agent.status==='PAUSED'?'ONLINE':'PAUSED';
+      saveAICore('TOGGLE_AGENT');
+    }
+  }
+});
+
+renderAICore();
+
+renderAICore();
 </script></body></html>
