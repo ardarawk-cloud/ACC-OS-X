@@ -4,7 +4,7 @@
 :root{color-scheme:dark;--bg:#050713;--panel:#10182d;--panel2:#080f20;--line:#273452;--text:#f5f7ff;--muted:#98a4bd;--vio:#a855f7;--blue:#4e9cff;--green:#35dfae;--gold:#f3c75f;--red:#ff637d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 90% 0,#291454 0,transparent 32%),radial-gradient(circle at 0 80%,#07324a 0,transparent 28%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh;padding-bottom:max(88px,env(safe-area-inset-bottom))}button,select,input,textarea{font:inherit}.hidden{display:none!important}
 #splash{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:radial-gradient(circle,#24104c 0,#050713 60%);transition:.45s}#splash.hide{opacity:0;visibility:hidden}.splash{text-align:center}.splash img{width:108px;filter:drop-shadow(0 0 26px #9b4dff)}.loader{width:180px;height:7px;border-radius:99px;background:#11172c;overflow:hidden;margin:20px auto}.loader:after{content:"";display:block;width:46%;height:100%;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));animation:move .8s infinite alternate}@keyframes move{to{transform:translateX(120%)}}
 header{padding:18px;background:linear-gradient(180deg,#111b39f2,#0b1024ef);border-bottom:1px solid var(--line)}.brand{display:flex;gap:13px;align-items:center}.brand img{width:58px;filter:drop-shadow(0 0 18px #9b4dff99)}h1{font-size:29px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:5px}.statusrow{display:flex;justify-content:space-between;align-items:center;margin-top:14px}.online{display:flex;gap:8px;align-items:center;color:var(--green);font-weight:900;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 13px var(--green)}.clock{color:#ddb5ff;font-weight:900}.selectors{display:grid;gap:9px;margin-top:14px}select,input,textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:#090f20;color:var(--text)}textarea{min-height:92px;resize:vertical}
-nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#070b18ef;border-bottom:1px solid var(--line)}nav button{flex:0 0 auto;padding:15px 16px;border:0;background:transparent;color:var(--muted);font-weight:900}nav button.active{color:#efd9ff;border-bottom:3px solid var(--vio)}main{padding:17px;max-width:900px;margin:auto}.page{display:none}.page.active{display:block}.card{background:linear-gradient(145deg,#151e38e6,#0d1328e6);border:1px solid #2b3653;border-radius:21px;padding:17px;margin-bottom:14px;box-shadow:0 14px 34px #0006}.hero{background:linear-gradient(135deg,#30195e,#111b3d 55%,#073349)}.hero h2{font-size:27px;margin:10px 0 7px}.tag{display:inline-flex;padding:6px 10px;border-radius:99px;background:#073d32;border:1px solid #3d8f75;color:#5af0bd;font-weight:900;font-size:11px}.muted{color:var(--muted);line-height:1.5}.title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px}.title h3{margin:0}.title span{font-size:12px;color:var(--muted)}.stats,.grid2,.grid3{display:grid;gap:10px}.stats,.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}.stat,.tile{background:var(--panel2);border:1px solid var(--line);border-radius:17px;padding:14px}.stat small{color:var(--muted)}.stat b{display:block;font-size:27px;margin-top:6px;color:var(--blue)}.stat:nth-child(2)b{color:var(--green)}.stat:nth-child(3)b{color:var(--gold)}.stat:nth-child(4)b{color:#d8a5ff}.primary,.secondary,.danger,.action{width:100%;padding:14px;border-radius:14px;font-weight:900}.primary{border:0;background:linear-gradient(135deg,#645cff,#a436ef);color:#fff}.secondary{border:1px solid var(--line);background:#121a2c;color:#fff}.danger{border:1px solid #713044;background:#2a0d19;color:#ff9db0}.action{border:1px solid #5f388b;background:linear-gradient(145deg,#281145,#17102c);color:#eddcff}.btnrow{display:flex;flex-wrap:wrap;gap:8px}.btnrow button{width:auto;flex:1 1 135px}.progress-bg{height:13px;border:1px solid var(--line);border-radius:99px;background:#050817;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));transition:.3s}.list{display:grid;gap:9px}.item,.worker,.knowledge,.artifact,.event,.graphnode{background:#090f20;border:1px solid var(--line);border-radius:16px;padding:13px}.itemhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.b-ready,.b-success,.b-active{background:#073d32;color:#56edbb}.b-running,.b-warning,.b-waiting{background:#3a280b;color:#ffd37a}.b-failed,.b-blocked,.b-cancelled{background:#3b1020;color:#ff9db0}.b-paused,.b-idle{background:#162241;color:#9ec4ff}.b-locked{background:#231536;color:#d7a4ff}.stagebar{display:flex;overflow-x:auto;gap:7px;padding:4px 0 9px}.stage{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#090f20;font-size:11px}.stage.SUCCESS{border-color:#23886b;color:#56edbb}.stage.RUNNING{border-color:#a87b20;color:#ffd37a}.stage.FAILED,.stage.BLOCKED{border-color:#8b2c47;color:#ff9db0}.stage.READY{border-color:#6b42a0;color:#d7a4ff}.stage.LOCKED{opacity:.55}.code{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;background:#040817;border:1px solid var(--line);padding:11px;border-radius:12px;max-height:260px;overflow:auto}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(7,1fr);background:#080d1cf4;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}.bottom button{border:0;background:transparent;color:var(--muted);padding:10px 2px;font-size:10px;font-weight:900}.bottom span{display:block;font-size:20px;margin-bottom:3px}.bottom button.active{color:#e1c3ff}.toast,.offline{display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:50;padding:13px;border-radius:14px;text-align:center}.toast{background:#142440;border:1px solid #537caf}.offline{background:#5c2700;border:1px solid #e68700}.modal{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:end center;padding:14px}.modalbox{width:min(720px,100%);max-height:88vh;overflow:auto;background:#0c1429;border:1px solid var(--line);border-radius:22px;padding:17px}.diag-pass{color:var(--green)}.diag-fail{color:var(--red)}@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}.btnrow button{flex-basis:120px}}
+nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#070b18ef;border-bottom:1px solid var(--line)}nav button{flex:0 0 auto;padding:15px 16px;border:0;background:transparent;color:var(--muted);font-weight:900}nav button.active{color:#efd9ff;border-bottom:3px solid var(--vio)}main{padding:17px;max-width:900px;margin:auto}.page{display:none}.page.active{display:block}.card{background:linear-gradient(145deg,#151e38e6,#0d1328e6);border:1px solid #2b3653;border-radius:21px;padding:17px;margin-bottom:14px;box-shadow:0 14px 34px #0006}.hero{background:linear-gradient(135deg,#30195e,#111b3d 55%,#073349)}.hero h2{font-size:27px;margin:10px 0 7px}.tag{display:inline-flex;padding:6px 10px;border-radius:99px;background:#073d32;border:1px solid #3d8f75;color:#5af0bd;font-weight:900;font-size:11px}.muted{color:var(--muted);line-height:1.5}.title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px}.title h3{margin:0}.title span{font-size:12px;color:var(--muted)}.stats,.grid2,.grid3{display:grid;gap:10px}.stats,.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}.stat,.tile{background:var(--panel2);border:1px solid var(--line);border-radius:17px;padding:14px}.stat small{color:var(--muted)}.stat b{display:block;font-size:27px;margin-top:6px;color:var(--blue)}.stat:nth-child(2)b{color:var(--green)}.stat:nth-child(3)b{color:var(--gold)}.stat:nth-child(4)b{color:#d8a5ff}.primary,.secondary,.danger,.action{width:100%;padding:14px;border-radius:14px;font-weight:900}.primary{border:0;background:linear-gradient(135deg,#645cff,#a436ef);color:#fff}.secondary{border:1px solid var(--line);background:#121a2c;color:#fff}.danger{border:1px solid #713044;background:#2a0d19;color:#ff9db0}.action{border:1px solid #5f388b;background:linear-gradient(145deg,#281145,#17102c);color:#eddcff}.btnrow{display:flex;flex-wrap:wrap;gap:8px}.btnrow button{width:auto;flex:1 1 135px}.progress-bg{height:13px;border:1px solid var(--line);border-radius:99px;background:#050817;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));transition:.3s}.list{display:grid;gap:9px}.item,.worker,.knowledge,.artifact,.event,.graphnode{background:#090f20;border:1px solid var(--line);border-radius:16px;padding:13px}.itemhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.b-ready,.b-success,.b-active{background:#073d32;color:#56edbb}.b-running,.b-warning,.b-waiting{background:#3a280b;color:#ffd37a}.b-failed,.b-blocked,.b-cancelled{background:#3b1020;color:#ff9db0}.b-paused,.b-idle{background:#162241;color:#9ec4ff}.b-locked{background:#231536;color:#d7a4ff}.stagebar{display:flex;overflow-x:auto;gap:7px;padding:4px 0 9px}.stage{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#090f20;font-size:11px}.stage.SUCCESS{border-color:#23886b;color:#56edbb}.stage.RUNNING{border-color:#a87b20;color:#ffd37a}.stage.FAILED,.stage.BLOCKED{border-color:#8b2c47;color:#ff9db0}.stage.READY{border-color:#6b42a0;color:#d7a4ff}.stage.LOCKED{opacity:.55}.code{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;background:#040817;border:1px solid var(--line);padding:11px;border-radius:12px;max-height:260px;overflow:auto}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(8,1fr);background:#080d1cf4;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}.bottom button{border:0;background:transparent;color:var(--muted);padding:10px 2px;font-size:10px;font-weight:900}.bottom span{display:block;font-size:20px;margin-bottom:3px}.bottom button.active{color:#e1c3ff}.toast,.offline{display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:50;padding:13px;border-radius:14px;text-align:center}.toast{background:#142440;border:1px solid #537caf}.offline{background:#5c2700;border:1px solid #e68700}.modal{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:end center;padding:14px}.modalbox{width:min(720px,100%);max-height:88vh;overflow:auto;background:#0c1429;border:1px solid var(--line);border-radius:22px;padding:17px}.diag-pass{color:var(--green)}.diag-fail{color:var(--red)}@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}.btnrow button{flex-basis:120px}}
 
 .db-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .db-card{background:#080f20;border:1px solid var(--line);border-radius:18px;padding:15px}
@@ -49,9 +49,25 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 .status-queued{background:#12233f;color:#8dc2ff}.status-running{background:#3a290b;color:#ffd37a}.status-completed{background:#073d32;color:#56edbb}.status-failed{background:#3b1020;color:#ff9db0}
 .safe-hidden{display:none!important}
 
+
+.intent-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.intent-card{background:#080f20;border:1px solid var(--line);border-radius:17px;padding:14px}
+.intent-card b{display:block;font-size:15px;margin-bottom:4px}
+.intent-card small{color:var(--muted)}
+.intent-badge{display:inline-block;margin-top:8px;padding:5px 9px;border-radius:999px;background:#25133f;color:#d7b8ff;font-size:10px;font-weight:900}
+.command-result{background:linear-gradient(145deg,#111a33,#17102d);border:1px solid #45385f;border-radius:17px;padding:14px;margin-top:10px}
+.command-result h4{margin:0 0 7px}
+.queue-board{display:grid;gap:10px}
+.queue-item{background:#080f20;border:1px solid var(--line);border-radius:16px;padding:13px}
+.queue-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.queue-progress{height:9px;border-radius:99px;background:#050817;overflow:hidden;margin-top:10px;border:1px solid var(--line)}
+.queue-progress span{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--violet),var(--green))}
+.command-chip{border:1px solid #4b3b68;background:#15102b;color:#e7d8ff;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:900}
+.command-chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 011 Stable AI Core</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 012 AI Command Engine</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
 
 <div class="command-dock">
   <div class="command-wrap">
@@ -60,7 +76,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
   </div>
 </div>
 
-<nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="database">DATABASE</button><button data-page="aicore">AI CORE</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
+<nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="database">DATABASE</button><button data-page="commandengine">COMMAND</button><button data-page="aicore">AI CORE</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
 <main>
 <section id="home" class="page active"><div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
 <section id="missions" class="page"><div class="card"><div class="title"><h3>Mission Center</h3><span>persistent</span></div><input id="missionTitle" placeholder="Judul mission"><textarea id="missionObjective" placeholder="Objective mission"></textarea><button id="createMission" class="primary">+ CREATE MISSION</button></div><div id="missionList" class="list"></div></section>
@@ -120,6 +136,45 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
   </div>
 </section>
 
+
+
+<section id="commandengine" class="page">
+  <div class="card hero">
+    <span class="tag">COMMAND ENGINE ACTIVE</span>
+    <h2>Command berubah menjadi action nyata</h2>
+    <div class="muted">ACC OS X mengenali intent, target channel, workspace, dan workflow stage lalu memperbarui Enterprise State secara langsung.</div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Recognized Commands</h3><span>local intent engine</span></div>
+    <div class="intent-grid">
+      <div class="intent-card"><b>NEXT</b><small>Lanjut mission atau channel aktif.</small><span class="intent-badge">WORKFLOW</span></div>
+      <div class="intent-card"><b>KONTEN</b><small>Buat mission Content.</small><span class="intent-badge">PRODUCTION</span></div>
+      <div class="intent-card"><b>POSTER</b><small>Buka/lanjut tahap Poster.</small><span class="intent-badge">VISUAL</span></div>
+      <div class="intent-card"><b>CAPTION</b><small>Buka/lanjut tahap Caption.</small><span class="intent-badge">PUBLISHING</span></div>
+      <div class="intent-card"><b>PSL</b><small>Pindah ke Papa Sauce Lab.</small><span class="intent-badge">ACCOUNTING</span></div>
+      <div class="intent-card"><b>Nama Channel</b><small>Aktifkan channel dan tampilkan current state.</small><span class="intent-badge">NAVIGATION</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Last Command Result</h3><span id="commandEngineStatus">READY</span></div>
+    <div id="lastCommandResult" class="command-result">
+      <h4>Belum ada command</h4>
+      <div class="muted">Gunakan Global Command Bar di bagian atas.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Production Queue</h3><span id="commandQueueCount">0 items</span></div>
+    <div id="commandProductionQueue" class="queue-board"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Command History</h3><span id="commandHistoryCount">0 commands</span></div>
+    <div id="commandHistoryList"></div>
+  </div>
+</section>
 
 <section id="aicore" class="page">
   <div class="card hero">
@@ -190,9 +245,9 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 011 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 012 DATA</button></div></section>
 </main>
-<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
+<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
 (()=>{'use strict';
 const BUILD='008';const STORAGE='acc_os_x_enterprise_state_v008';const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);const now=()=>new Date().toISOString();const id=(p='id')=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);const clone=x=>JSON.parse(JSON.stringify(x));
@@ -429,8 +484,8 @@ const makeAgent=(id,name,role,capabilities)=>({
   queue:[],history:[],totalRuns:0,successfulRuns:0,failedRuns:0,lastActivity:new Date().toISOString()
 });
 const defaultAICore=()=>({
-  schemaVersion:'AI_CORE_V2_STABLE',
-  routerVersion:'LOCAL_ROUTER_V2_STABLE',
+  schemaVersion:'AI_CORE_V3_COMMAND_ENGINE',
+  routerVersion:'LOCAL_ROUTER_V3_COMMAND_ENGINE',
   agents:[
     makeAgent('KAI_ONE','KAI ONE','Chief Technology Officer',['architecture','system','deployment','diagnostics']),
     makeAgent('KAI_NIBAN','KAI NIBAN','Productions Department Lead',['mission','content','production','workflow']),
@@ -838,7 +893,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 011 Stable AI Core aktif');
+  stableLog('STARTUP','Build 012 AI Command Engine aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -851,5 +906,288 @@ if(originalSaveAICore){
     return result;
   };
 }
+
+
+// ACC OS X Build 012 — AI Command Engine
+const COMMAND_ENGINE_KEY='acc_os_x_command_engine_v1';
+let commandEngine;
+try{
+  commandEngine=JSON.parse(localStorage.getItem(COMMAND_ENGINE_KEY)||'null')||{
+    history:[],productionQueue:[],lastResult:null,updatedAt:new Date().toISOString()
+  };
+}catch(e){
+  commandEngine={history:[],productionQueue:[],lastResult:null,updatedAt:new Date().toISOString()};
+}
+
+const knownChannels=[
+  'ACC Tech Broadcast','Royal Gambler','Han Kera','Warung Republik','Balinightlife',
+  'Han You','Legenda Ling Tian','Nadya Gaming','Jejak Nusantara','Papa Sauce Lab'
+];
+
+function saveCommandEngine(){
+  commandEngine.updatedAt=new Date().toISOString();
+  localStorage.setItem(COMMAND_ENGINE_KEY,JSON.stringify(commandEngine));
+  renderCommandEngine();
+}
+
+function detectChannel(command){
+  const q=command.toLowerCase();
+  return knownChannels.find(ch=>q.includes(ch.toLowerCase()))||null;
+}
+
+function detectIntent(command){
+  const q=command.trim().toLowerCase();
+  if(q==='next'||q==='n'||q==='lanjut'||q==='l') return 'NEXT';
+  if(q.includes('konten')||q.includes('content')) return 'CONTENT';
+  if(q.includes('poster')) return 'POSTER';
+  if(q.includes('caption')) return 'CAPTION';
+  if(q==='psl'||q.includes('papa sauce')) return 'PSL';
+  if(q.includes('publish')) return 'PUBLISH';
+  if(q.includes('qc')) return 'QC';
+  if(detectChannel(command)) return 'OPEN_CHANNEL';
+  return 'CREATE_MISSION';
+}
+
+function currentChannelName(){
+  return byId('channel')?.value||'ACC Tech Broadcast';
+}
+
+function setActiveChannel(name){
+  const select=byId('channel');
+  if(!select) return;
+  let option=[...select.options].find(o=>o.value===name||o.textContent===name);
+  if(!option){
+    option=document.createElement('option');
+    option.value=name; option.textContent=name;
+    select.appendChild(option);
+  }
+  select.value=name;
+  select.dispatchEvent(new Event('change',{bubbles:true}));
+}
+
+function addProductionQueueItem({title,channel,stage,status='READY',progress=0,sourceCommand}){
+  const existing=commandEngine.productionQueue.find(x=>
+    x.channel===channel && x.stage===stage && !['COMPLETED','CANCELLED'].includes(x.status)
+  );
+  if(existing){
+    existing.updatedAt=new Date().toISOString();
+    existing.sourceCommand=sourceCommand;
+    return existing;
+  }
+  const item={
+    id:'cmd-prod-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    title,channel,stage,status,progress,sourceCommand,
+    createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
+  };
+  commandEngine.productionQueue.push(item);
+  return item;
+}
+
+function addMissionFromCommand(title,channel,session='AUTO'){
+  if(typeof state!=='undefined'){
+    state.missions=state.missions||[];
+    const duplicate=state.missions.find(m=>m.title===title && !m.done);
+    if(!duplicate){
+      state.missions.push({
+        id:Date.now(),
+        title,
+        session,
+        channel,
+        status:'READY',
+        progress:0,
+        done:false
+      });
+      if(typeof save==='function') save();
+      if(typeof render==='function') render();
+    }
+  }
+}
+
+function updateResult(command,intent,action,details,success=true){
+  const result={
+    id:'cmd-result-'+Date.now(),
+    command,intent,action,details,success,
+    timestamp:new Date().toISOString()
+  };
+  commandEngine.lastResult=result;
+  commandEngine.history.push(result);
+  if(commandEngine.history.length>100) commandEngine.history=commandEngine.history.slice(-100);
+  saveCommandEngine();
+  if(typeof enterpriseDB!=='undefined'){
+    enterpriseDB.activity.push({
+      id:'cmd-act-'+Date.now(),
+      source:'COMMAND_ENGINE',
+      action:intent,
+      payload:result,
+      timestamp:result.timestamp
+    });
+    localStorage.setItem(DB_KEY,JSON.stringify(enterpriseDB));
+  }
+  stableLog(success?'COMMAND_EXECUTED':'COMMAND_FAILED',`${command} → ${action}`,details);
+  safeToast(success?action:'Command gagal');
+  return result;
+}
+
+function executeCommand(command){
+  command=normalizeCommand(command);
+  if(!command) return updateResult('', 'INVALID','Command kosong','Ketik command terlebih dahulu.',false);
+
+  const intent=detectIntent(command);
+  const foundChannel=detectChannel(command);
+  const channel=foundChannel||currentChannelName();
+
+  try{
+    switch(intent){
+      case 'NEXT':{
+        const pending=(state?.missions||[]).find(m=>!m.done);
+        if(pending){
+          pending.status='RUNNING';
+          pending.progress=Math.max(pending.progress||0,10);
+          if(typeof save==='function') save();
+          if(typeof render==='function') render();
+          addProductionQueueItem({
+            title:pending.title,channel:pending.channel||channel,
+            stage:'NEXT',status:'RUNNING',progress:pending.progress,sourceCommand:command
+          });
+          show('missions');
+          return updateResult(command,intent,'Mission dilanjutkan',`${pending.title} sekarang RUNNING.`);
+        }
+        const title=`Mission ${channel}`;
+        addMissionFromCommand(title,channel,'AUTO');
+        addProductionQueueItem({title,channel,stage:'READY',status:'READY',progress:0,sourceCommand:command});
+        show('missions');
+        return updateResult(command,intent,'Mission baru dibuat',title);
+      }
+      case 'CONTENT':{
+        const title=`Konten ${channel}`;
+        addMissionFromCommand(title,channel,'AUTO');
+        addProductionQueueItem({title,channel,stage:'CONTENT',status:'READY',progress:0,sourceCommand:command});
+        show('production');
+        return updateResult(command,intent,'Content mission dibuat',`${title} masuk Production Queue.`);
+      }
+      case 'POSTER':{
+        const title=`Poster ${channel}`;
+        addMissionFromCommand(title,channel,'AUTO');
+        addProductionQueueItem({title,channel,stage:'POSTER',status:'READY',progress:25,sourceCommand:command});
+        show('production');
+        return updateResult(command,intent,'Tahap Poster dibuka',channel);
+      }
+      case 'CAPTION':{
+        const title=`Caption ${channel}`;
+        addMissionFromCommand(title,channel,'AUTO');
+        addProductionQueueItem({title,channel,stage:'CAPTION',status:'READY',progress:50,sourceCommand:command});
+        show('production');
+        return updateResult(command,intent,'Tahap Caption dibuka',channel);
+      }
+      case 'PSL':{
+        setActiveChannel('Papa Sauce Lab');
+        show('database');
+        return updateResult(command,intent,'Papa Sauce Lab aktif','Channel dan database context diarahkan ke PSL.');
+      }
+      case 'OPEN_CHANNEL':{
+        setActiveChannel(foundChannel);
+        show('home');
+        return updateResult(command,intent,`${foundChannel} dibuka`,'Active channel diperbarui.');
+      }
+      case 'QC':{
+        addProductionQueueItem({title:`QC ${channel}`,channel,stage:'QC',status:'READY',progress:75,sourceCommand:command});
+        show('production');
+        return updateResult(command,intent,'QC mission dibuat',channel);
+      }
+      case 'PUBLISH':{
+        addProductionQueueItem({title:`Publish ${channel}`,channel,stage:'PUBLISH',status:'AWAITING_APPROVAL',progress:90,sourceCommand:command});
+        show('production');
+        return updateResult(command,intent,'Publish menunggu approval',channel);
+      }
+      default:{
+        const title=command;
+        addMissionFromCommand(title,channel,'AUTO');
+        addProductionQueueItem({title,channel,stage:'READY',status:'READY',progress:0,sourceCommand:command});
+        show('missions');
+        return updateResult(command,intent,'Mission dibuat dari command',title);
+      }
+    }
+  }catch(error){
+    stableLog('COMMAND_ENGINE_ERROR',error.message,error.stack||'');
+    return updateResult(command,intent,'Execution failed',error.message,false);
+  }
+}
+
+function renderCommandEngine(){
+  const queue=byId('commandProductionQueue');
+  if(!queue) return;
+
+  const result=commandEngine.lastResult;
+  const resultBox=byId('lastCommandResult');
+  if(result){
+    resultBox.innerHTML=`
+      <h4>${result.action}</h4>
+      <div class="muted">${result.details}</div>
+      <div class="intent-badge">${result.intent}</div>
+    `;
+    byId('commandEngineStatus').textContent=result.success?'SUCCESS':'FAILED';
+  }
+
+  queue.innerHTML='';
+  [...commandEngine.productionQueue].reverse().forEach(item=>{
+    const el=document.createElement('div');
+    el.className='queue-item';
+    el.innerHTML=`
+      <div class="queue-head">
+        <div><b>${item.title}</b><div class="muted">${item.channel} • ${item.stage}</div></div>
+        <span class="db-pill">${item.status}</span>
+      </div>
+      <div class="queue-progress"><span style="width:${Math.min(100,item.progress||0)}%"></span></div>
+    `;
+    queue.appendChild(el);
+  });
+  if(!commandEngine.productionQueue.length) queue.innerHTML='<div class="muted">Production Queue masih kosong.</div>';
+  byId('commandQueueCount').textContent=`${commandEngine.productionQueue.length} items`;
+
+  const history=byId('commandHistoryList');
+  history.innerHTML='';
+  [...commandEngine.history].reverse().slice(0,30).forEach(item=>{
+    const el=document.createElement('div');
+    el.className='activity';
+    el.innerHTML=`<div class="ico">⌘</div><div><b>${item.command}</b><div class="muted">${item.action}<br>${new Date(item.timestamp).toLocaleString('id-ID')}</div></div>`;
+    history.appendChild(el);
+  });
+  if(!commandEngine.history.length) history.innerHTML='<div class="muted">Belum ada command history.</div>';
+  byId('commandHistoryCount').textContent=`${commandEngine.history.length} commands`;
+}
+
+function runCommandFromGlobal(){
+  const input=byId('globalCommandInput');
+  const command=normalizeCommand(input?.value);
+  if(!command){safeToast('Ketik command dulu.');return;}
+  executeCommand(command);
+  if(input) input.value='';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  // Replace Build 011 global behavior with direct command execution
+  const run=byId('globalCommandRun');
+  if(run){
+    const clone=run.cloneNode(true);
+    run.replaceWith(clone);
+    clone.addEventListener('click',runCommandFromGlobal);
+  }
+  const input=byId('globalCommandInput');
+  if(input){
+    const clone=input.cloneNode(true);
+    input.replaceWith(clone);
+    clone.addEventListener('keydown',e=>{if(e.key==='Enter')runCommandFromGlobal();});
+  }
+  document.querySelectorAll('[data-command]').forEach(button=>{
+    button.addEventListener('click',()=>{
+      const cmd=button.dataset.command;
+      const global=byId('globalCommandInput');
+      if(global)global.value=cmd;
+      executeCommand(cmd);
+    });
+  });
+  renderCommandEngine();
+  stableLog('STARTUP','Build 012 AI Command Engine aktif');
+});
 
 </script></body></html>
