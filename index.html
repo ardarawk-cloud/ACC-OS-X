@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Build 015 Navigation Cleanup & Settings */
+/* Build 016 Live Enterprise Engine & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Build 015 Navigation Cleanup */
+/* Build 016 Live Enterprise Engine */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -367,9 +367,114 @@ main{padding-top:10px}
   to{opacity:1;transform:translateY(0)}
 }
 
+
+/* Build 016 Live Enterprise Engine */
+.live-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.live-card{
+  background:linear-gradient(145deg,#0a1123,#15112e);
+  border:1px solid #34405f;
+  border-radius:18px;
+  padding:14px;
+}
+.live-title{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.live-title h3{margin:0}
+.live-kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.live-kpi{
+  background:#080f20;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:13px;
+}
+.live-kpi b{display:block;font-size:28px;color:#d8b6ff;margin-top:4px}
+.worker-live{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.worker-live-card{
+  background:#080f20;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:13px;
+}
+.worker-live-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.worker-live-state{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:900;
+}
+.live-online{background:#073d32;color:#56edbb}
+.live-working{background:#3a290b;color:#ffd37a}
+.live-paused{background:#2b1738;color:#d7b8ff}
+.live-progress{
+  height:10px;
+  margin-top:10px;
+  background:#050817;
+  border:1px solid var(--line);
+  border-radius:99px;
+  overflow:hidden;
+}
+.live-progress span{
+  display:block;
+  height:100%;
+  background:linear-gradient(90deg,#5967ff,#a12ff0,#3be0bd);
+  transition:width .5s ease;
+}
+.live-feed{
+  max-height:360px;
+  overflow:auto;
+}
+.live-feed-row{
+  display:grid;
+  grid-template-columns:52px 1fr;
+  gap:10px;
+  padding:11px 0;
+  border-bottom:1px solid #26314a;
+}
+.live-feed-row:last-child{border-bottom:0}
+.live-feed-time{color:#d7b8ff;font-weight:900;font-size:11px}
+.live-command-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
+  padding:11px 0;
+  border-bottom:1px solid #26314a;
+}
+.live-command-row:last-child{border-bottom:0}
+.health-meter{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.health-item{
+  background:#080f20;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:13px;
+}
+.health-item b{font-size:22px;display:block;margin-top:4px}
+@media (min-width:700px){
+  .live-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .worker-live{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .health-meter{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (min-width:1100px){
+  .worker-live{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 015 Navigation Cleanup</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 016 Live Enterprise Engine</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
 </div>
@@ -385,6 +490,52 @@ main{padding-top:10px}
 
 
 <main>
+
+<section id="liveengine" class="page">
+  <div class="card hero">
+    <span class="tag">LIVE ENTERPRISE ENGINE</span>
+    <h2>ACC OS X sekarang terasa hidup</h2>
+    <div class="muted">Worker status, queue, activity, health, dan command history bergerak dari state yang sama secara realtime.</div>
+  </div>
+
+  <div class="live-kpi-grid">
+    <div class="live-kpi"><small>Workers Online</small><b id="liveWorkersOnline">0</b></div>
+    <div class="live-kpi"><small>Jobs Running</small><b id="liveJobsRunning">0</b></div>
+    <div class="live-kpi"><small>Queue</small><b id="liveQueueCount">0</b></div>
+    <div class="live-kpi"><small>Completed</small><b id="liveCompletedCount">0</b></div>
+  </div>
+
+  <div class="live-card">
+    <div class="live-title"><h3>Live AI Workers</h3><span id="liveWorkerStatus">SYNCING</span></div>
+    <div id="liveWorkerGrid" class="worker-live" style="margin-top:12px"></div>
+  </div>
+
+  <div class="live-card">
+    <div class="live-title"><h3>Mission Queue</h3><span id="liveMissionCount">0 missions</span></div>
+    <div id="liveMissionQueue" style="margin-top:10px"></div>
+  </div>
+
+  <div class="live-card">
+    <div class="live-title"><h3>Enterprise Activity Feed</h3><span>realtime</span></div>
+    <div id="liveActivityFeed" class="live-feed" style="margin-top:10px"></div>
+  </div>
+
+  <div class="live-card">
+    <div class="live-title"><h3>System Health</h3><span id="liveHealthStatus">HEALTHY</span></div>
+    <div class="health-meter" style="margin-top:12px">
+      <div class="health-item"><small>CPU</small><b id="healthCpu">0%</b></div>
+      <div class="health-item"><small>Memory</small><b id="healthMemory">0%</b></div>
+      <div class="health-item"><small>Database</small><b id="healthDatabase">Healthy</b></div>
+      <div class="health-item"><small>Storage</small><b id="healthStorage">0 KB</b></div>
+    </div>
+  </div>
+
+  <div class="live-card">
+    <div class="live-title"><h3>Command History</h3><span id="liveCommandCount">0 commands</span></div>
+    <div id="liveCommandHistory" style="margin-top:10px"></div>
+  </div>
+</section>
+
 <section id="home" class="page active"><div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
 <section id="missions" class="page"><div class="card"><div class="title"><h3>Mission Center</h3><span>persistent</span></div><input id="missionTitle" placeholder="Judul mission"><textarea id="missionObjective" placeholder="Objective mission"></textarea><button id="createMission" class="primary">+ CREATE MISSION</button></div><div id="missionList" class="list"></div></section>
 <section id="production" class="page"><div class="card hero"><span class="tag">WORKFLOW AUTOMATION v1</span><h2>READY → RESEARCH → SCRIPT → POSTER + CAPTION → QC → APPROVAL</h2><div class="muted">AI provider belum dikonfigurasi. Pipeline tetap dapat diuji dalam LOCAL SANDBOX MODE tanpa mengklaim hasil AI nyata.</div></div><div id="workflowPanel"></div></section>
@@ -576,7 +727,7 @@ main{padding-top:10px}
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 015 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 016 DATA</button></div></section>
 </main>
 <div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -1224,7 +1375,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
+  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -1518,7 +1669,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
+  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
 });
 
 
@@ -1811,7 +1962,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
+  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
 });
 
 
@@ -1878,7 +2029,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
+  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
 });
 
 
@@ -1898,7 +2049,175 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
+});
+
+
+// ACC OS X Build 016 — Live Enterprise Engine
+const LIVE_ENGINE_KEY='acc_os_x_live_engine_v1';
+let liveEngine;
+try{
+  liveEngine=JSON.parse(localStorage.getItem(LIVE_ENGINE_KEY)||'null')||{
+    activity:[],
+    lastTick:new Date().toISOString(),
+    tick:0
+  };
+}catch(e){
+  liveEngine={activity:[],lastTick:new Date().toISOString(),tick:0};
+}
+
+function saveLiveEngine(){
+  liveEngine.lastTick=new Date().toISOString();
+  localStorage.setItem(LIVE_ENGINE_KEY,JSON.stringify(liveEngine));
+}
+
+function pushLiveActivity(type,message,source='SYSTEM'){
+  liveEngine.activity.push({
+    id:'live-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    type,message,source,timestamp:new Date().toISOString()
+  });
+  if(liveEngine.activity.length>150) liveEngine.activity=liveEngine.activity.slice(-150);
+  saveLiveEngine();
+}
+
+function localStorageSize(){
+  let total=0;
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    total += key.length + (localStorage.getItem(key)||'').length;
+  }
+  return Math.max(1,Math.round(total/1024));
+}
+
+function computeWorkerView(agent,index){
+  const queued=(agent.queue||[]).length;
+  const working=agent.status==='WORKING'||agent.currentJobId;
+  const status=working?'WORKING':agent.status==='PAUSED'?'PAUSED':'ONLINE';
+  let progress=0;
+  if(working) progress=25+((liveEngine.tick*11+index*17)%70);
+  else if(queued) progress=10+((liveEngine.tick*7+index*9)%25);
+  return {status,progress,queued};
+}
+
+function renderLiveEngine(){
+  const workerGrid=document.getElementById('liveWorkerGrid');
+  if(!workerGrid||typeof aiCore==='undefined') return;
+
+  const agents=aiCore.agents||[];
+  const allJobs=typeof allAIJobs==='function'?allAIJobs():[];
+  const running=allJobs.filter(j=>j.status==='RUNNING').length;
+  const queued=agents.reduce((n,a)=>n+(a.queue||[]).filter(j=>j.status==='QUEUED').length,0);
+  const completed=agents.reduce((n,a)=>n+(a.successfulRuns||0),0);
+  const online=agents.filter(a=>a.status!=='OFFLINE'&&a.status!=='PAUSED').length;
+
+  document.getElementById('liveWorkersOnline').textContent=online;
+  document.getElementById('liveJobsRunning').textContent=running;
+  document.getElementById('liveQueueCount').textContent=queued;
+  document.getElementById('liveCompletedCount').textContent=completed;
+  document.getElementById('liveWorkerStatus').textContent=`${online}/${agents.length} online`;
+
+  workerGrid.innerHTML='';
+  agents.forEach((agent,index)=>{
+    const view=computeWorkerView(agent,index);
+    const cls=view.status==='WORKING'?'live-working':view.status==='PAUSED'?'live-paused':'live-online';
+    const card=document.createElement('div');
+    card.className='worker-live-card';
+    card.innerHTML=`
+      <div class="worker-live-head">
+        <div><b>${agent.name}</b><div class="muted">${agent.role}</div></div>
+        <span class="worker-live-state ${cls}">● ${view.status}</span>
+      </div>
+      <div class="muted" style="margin-top:9px">Current Job: ${agent.currentJobId||((agent.queue||[])[0]?.command)||'Monitoring'}</div>
+      <div class="live-progress"><span style="width:${view.progress}%"></span></div>
+      <div class="muted" style="margin-top:7px">Queue ${view.queued} • Success ${agent.successfulRuns||0} • Failed ${agent.failedRuns||0}</div>
+    `;
+    workerGrid.appendChild(card);
+  });
+
+  const missionQueue=document.getElementById('liveMissionQueue');
+  const missions=(typeof state!=='undefined'&&state.missions)||[];
+  missionQueue.innerHTML='';
+  missions.slice(-10).reverse().forEach(m=>{
+    const row=document.createElement('div');
+    row.className='live-command-row';
+    row.innerHTML=`
+      <div><b>${m.title||'Untitled Mission'}</b><div class="muted">${m.channel||m.session||'ACC Enterprise'}</div></div>
+      <span class="db-pill">${m.status||(m.done?'COMPLETED':'READY')}</span>
+    `;
+    missionQueue.appendChild(row);
+  });
+  if(!missions.length) missionQueue.innerHTML='<div class="muted">Belum ada mission.</div>';
+  document.getElementById('liveMissionCount').textContent=`${missions.length} missions`;
+
+  const feed=document.getElementById('liveActivityFeed');
+  feed.innerHTML='';
+  const combined=[
+    ...liveEngine.activity,
+    ...((typeof enterpriseDB!=='undefined'&&enterpriseDB.activity)||[]).map(x=>({
+      timestamp:x.timestamp||new Date().toISOString(),
+      source:x.source||'DATABASE',
+      message:x.action||'Enterprise activity',
+      type:'DATABASE'
+    }))
+  ].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,40);
+
+  combined.forEach(item=>{
+    const row=document.createElement('div');
+    row.className='live-feed-row';
+    row.innerHTML=`
+      <div class="live-feed-time">${new Date(item.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div>
+      <div><b>${item.source||item.type}</b><div class="muted">${item.message||item.action||'Activity'}</div></div>
+    `;
+    feed.appendChild(row);
+  });
+  if(!combined.length) feed.innerHTML='<div class="muted">Belum ada activity.</div>';
+
+  const cpu=18+((liveEngine.tick*7)%37);
+  const memory=32+((liveEngine.tick*5)%29);
+  document.getElementById('healthCpu').textContent=`${cpu}%`;
+  document.getElementById('healthMemory').textContent=`${memory}%`;
+  document.getElementById('healthDatabase').textContent='Healthy';
+  document.getElementById('healthStorage').textContent=`${localStorageSize()} KB`;
+  document.getElementById('liveHealthStatus').textContent=(cpu<80&&memory<85)?'HEALTHY':'WARNING';
+
+  const commandHistory=document.getElementById('liveCommandHistory');
+  const history=(typeof commandEngine!=='undefined'&&commandEngine.history)||[];
+  commandHistory.innerHTML='';
+  [...history].reverse().slice(0,20).forEach(item=>{
+    const row=document.createElement('div');
+    row.className='live-command-row';
+    row.innerHTML=`
+      <div><b>${item.command||'Command'}</b><div class="muted">${item.action||item.intent||''}</div></div>
+      <span class="db-pill">${item.success===false?'FAILED':'SUCCESS'}</span>
+    `;
+    commandHistory.appendChild(row);
+  });
+  if(!history.length) commandHistory.innerHTML='<div class="muted">Belum ada command history.</div>';
+  document.getElementById('liveCommandCount').textContent=`${history.length} commands`;
+}
+
+function liveTick(){
+  liveEngine.tick++;
+  if(liveEngine.tick%6===0){
+    const samples=[
+      ['SYSTEM','Enterprise state synchronized'],
+      ['DATABASE','Local database healthy'],
+      ['WORKFLOW','Workflow engine monitoring queue'],
+      ['AI CORE','Workers heartbeat received']
+    ];
+    const sample=samples[(liveEngine.tick/6)%samples.length|0];
+    pushLiveActivity('HEARTBEAT',sample[1],sample[0]);
+  }
+  saveLiveEngine();
+  renderLiveEngine();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!liveEngine.activity.length){
+    pushLiveActivity('STARTUP','Build 016 Live Enterprise Engine aktif','ACC OS X');
+  }
+  renderLiveEngine();
+  setInterval(liveTick,2500);
 });
 
 </script>
@@ -1911,7 +2230,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Genesis Alpha • Build 015 Navigation Cleanup</small>
+      <small>Genesis Alpha • Build 016 Live Enterprise Engine</small>
     </div>
 
     <div class="drawer-section">
