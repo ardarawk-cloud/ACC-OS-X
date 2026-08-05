@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Build 014 Premium Navigation & Settings */
+/* Build 015 Navigation Cleanup & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -342,9 +342,34 @@ header{
   .bottom button{font-size:9.5px}
 }
 
+
+/* Build 015 Navigation Cleanup */
+nav:not(.bottom):has(button[data-page]){display:none!important}
+.tabs,.top-tabs,.primary-tabs{display:none!important}
+main{padding-top:10px}
+.command-dock{
+  border-bottom:1px solid #26314a;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);
+}
+.bottom{
+  background:rgba(7,11,25,.96);
+  backdrop-filter:blur(16px);
+  border-top:1px solid #26314a;
+}
+.bottom button{transition:.18s ease}
+.bottom button.active{
+  background:linear-gradient(180deg,rgba(118,88,255,.16),rgba(118,88,255,0));
+  border-radius:14px;
+}
+.page{animation:pageFade .18s ease}
+@keyframes pageFade{
+  from{opacity:0;transform:translateY(4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 014 Premium Navigation</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 015 Navigation Cleanup</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
 </div>
@@ -358,7 +383,7 @@ header{
   </div>
 </div>
 
-<nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="database">DATABASE</button><button data-page="workflow">WORKFLOW</button><button data-page="commandengine">COMMAND</button><button data-page="aicore">AI CORE</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
+
 <main>
 <section id="home" class="page active"><div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
 <section id="missions" class="page"><div class="card"><div class="title"><h3>Mission Center</h3><span>persistent</span></div><input id="missionTitle" placeholder="Judul mission"><textarea id="missionObjective" placeholder="Objective mission"></textarea><button id="createMission" class="primary">+ CREATE MISSION</button></div><div id="missionList" class="list"></div></section>
@@ -551,7 +576,7 @@ header{
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 014 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 015 DATA</button></div></section>
 </main>
 <div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -1199,7 +1224,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 014 Premium Navigation aktif');
+  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -1493,7 +1518,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Build 014 Premium Navigation aktif');
+  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
 });
 
 
@@ -1786,7 +1811,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Build 014 Premium Navigation aktif');
+  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
 });
 
 
@@ -1853,7 +1878,27 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Build 014 Premium Navigation aktif');
+  stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
+});
+
+
+// ACC OS X Build 015 — Navigation Cleanup
+function syncBottomNavActive(pageId){
+  document.querySelectorAll('.bottom button[data-page]').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.page===pageId);
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('nav').forEach(nav=>{
+    if(!nav.classList.contains('bottom') && nav.querySelectorAll('button[data-page]').length>=3){
+      nav.remove();
+    }
+  });
+  document.querySelectorAll('.bottom button[data-page]').forEach(btn=>{
+    btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
+  });
+  syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 015 Navigation Cleanup aktif');
 });
 
 </script>
@@ -1866,7 +1911,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Genesis Alpha • Build 014 Premium Navigation</small>
+      <small>Genesis Alpha • Build 015 Navigation Cleanup</small>
     </div>
 
     <div class="drawer-section">
