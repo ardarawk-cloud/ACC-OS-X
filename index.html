@@ -34,9 +34,32 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 .router-entry{padding:11px;border-bottom:1px solid var(--line)}
 .router-entry:last-child{border-bottom:0}
 
+
+.command-dock{position:sticky;top:0;z-index:30;padding:10px 14px;background:#060b18f2;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.command-wrap{display:grid;grid-template-columns:1fr auto;gap:8px;max-width:860px;margin:auto}
+.command-input{width:100%;padding:13px 14px;border-radius:14px;border:1px solid #485273;background:#090f20;color:#fff}
+.command-run{padding:0 18px;border:0;border-radius:14px;background:linear-gradient(135deg,#645cff,#a436ef);color:#fff;font-weight:900}
+.debug-panel{background:#130b1c;border:1px solid #613a70;border-radius:17px;padding:14px;margin-top:12px}
+.debug-line{font-size:11px;color:#d9b8ff;white-space:pre-wrap;word-break:break-word;border-bottom:1px solid #2e2138;padding:8px 0}
+.debug-line:last-child{border-bottom:0}
+.job-list{display:grid;gap:9px}
+.job-row{background:#080f20;border:1px solid var(--line);border-radius:15px;padding:12px}
+.job-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.job-status{font-size:10px;font-weight:900;padding:4px 8px;border-radius:999px}
+.status-queued{background:#12233f;color:#8dc2ff}.status-running{background:#3a290b;color:#ffd37a}.status-completed{background:#073d32;color:#56edbb}.status-failed{background:#3b1020;color:#ff9db0}
+.safe-hidden{display:none!important}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 010 ACC AI Core</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 011 Stable AI Core</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
+
+<div class="command-dock">
+  <div class="command-wrap">
+    <input id="globalCommandInput" class="command-input" placeholder="Ketik command: NEXT, Royal Gambler, PSL, Poster...">
+    <button id="globalCommandRun" class="command-run">RUN</button>
+  </div>
+</div>
+
 <nav><button class="active" data-page="home">HOME</button><button data-page="missions">MISSIONS</button><button data-page="production">PRODUCTION</button><button data-page="database">DATABASE</button><button data-page="aicore">AI CORE</button><button data-page="knowledge">KNOWLEDGE</button><button data-page="workers">AI WORKERS</button><button data-page="artifacts">ARTIFACTS</button><button data-page="graph">GRAPH</button><button data-page="qa">QA</button><button data-page="settings">SETTINGS</button></nav>
 <main>
 <section id="home" class="page active"><div class="card hero"><span class="tag">ACC CORE ENGINE ONLINE</span><h2>Enterprise State menjadi satu sumber data</h2><div class="muted">Mission, Jobs, Workers, Artifacts, Knowledge, Events, dan Memory Graph kini membaca state yang sama dan tersimpan setelah refresh.</div></div><div class="stats"><div class="stat"><small>Mission</small><b id="sMission">0</b></div><div class="stat"><small>Jobs sukses</small><b id="sJobs">0</b></div><div class="stat"><small>Artifacts</small><b id="sArtifacts">0</b></div><div class="stat"><small>Knowledge</small><b id="sKnowledge">0</b></div></div><div class="card"><div class="title"><h3>Active Mission Progress</h3><span id="homeProgressText">Tidak ada mission</span></div><div class="progress-bg"><div id="homeProgress" class="progress"></div></div></div><div class="card"><div class="title"><h3>Quick Command</h3><span>workflow aware</span></div><div class="grid2"><button class="action" data-command="NEXT">▶ NEXT</button><button class="action" data-command="KONTEN">✦ KONTEN</button><button class="action" data-command="POSTER">▣ POSTER</button><button class="action" data-command="CAPTION">✎ CAPTION</button></div></div><div class="card"><div class="title"><h3>Latest Events</h3><span>Event Bus</span></div><div id="homeEvents" class="list"></div></div></section>
@@ -134,7 +157,24 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
     <div class="muted" style="margin-top:10px">Build 010 memakai local orchestration engine. Belum mengirim permintaan ke model AI eksternal.</div>
   </div>
 
+  
   <div class="card">
+    <div class="title"><h3>AI Job Manager</h3><span id="stableJobCount">0 jobs</span></div>
+    <div id="stableJobList" class="job-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Debug & Recovery</h3><span id="debugStatus">READY</span></div>
+    <div class="db-actions">
+      <button id="runSelfTest" class="secondary">RUN SELF TEST</button>
+      <button id="copyDiagnostics" class="secondary">COPY DIAGNOSTICS</button>
+      <button id="clearDebugLog" class="secondary">CLEAR DEBUG LOG</button>
+      <button id="recoverAICore" class="secondary">RECOVER AI CORE</button>
+    </div>
+    <div id="debugPanel" class="debug-panel"></div>
+  </div>
+
+<div class="card">
     <div class="title"><h3>Router Activity</h3><span id="routerLogCount">0 events</span></div>
     <div id="aiRouterLog" class="router-log"></div>
   </div>
@@ -150,7 +190,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 010 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 011 DATA</button></div></section>
 </main>
 <div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -389,8 +429,8 @@ const makeAgent=(id,name,role,capabilities)=>({
   queue:[],history:[],totalRuns:0,successfulRuns:0,failedRuns:0,lastActivity:new Date().toISOString()
 });
 const defaultAICore=()=>({
-  schemaVersion:'AI_CORE_V1',
-  routerVersion:'LOCAL_ROUTER_V1',
+  schemaVersion:'AI_CORE_V2_STABLE',
+  routerVersion:'LOCAL_ROUTER_V2_STABLE',
   agents:[
     makeAgent('KAI_ONE','KAI ONE','Chief Technology Officer',['architecture','system','deployment','diagnostics']),
     makeAgent('KAI_NIBAN','KAI NIBAN','Productions Department Lead',['mission','content','production','workflow']),
@@ -569,14 +609,6 @@ function renderAICore(){
 }
 
 document.addEventListener('click',e=>{
-  if(e.target?.id==='routeAICommand'){
-    const input=document.getElementById('aiCommandInput');
-    const command=input.value.trim();
-    if(!command){toast('Masukkan command dulu');return;}
-    createAIJob(command,document.getElementById('aiTarget').value);
-    input.value='';
-    toast('Command masuk ke AI Router');
-  }
   if(e.target?.id==='processNextAI') processNextAIJob();
   if(e.target?.id==='startAllAI'){
     aiCore.agents.forEach(a=>{if(a.status!=='WORKING')a.status='ONLINE'});
@@ -606,4 +638,218 @@ document.addEventListener('click',e=>{
 renderAICore();
 
 renderAICore();
+
+// ACC OS X Build 011 — Stable AI Core & Global Command Bar
+const STABLE_DEBUG_KEY='acc_os_x_debug_log_v1';
+let stableDebugLog=[];
+try{ stableDebugLog=JSON.parse(localStorage.getItem(STABLE_DEBUG_KEY)||'[]'); }catch(e){ stableDebugLog=[]; }
+
+function stableLog(type,message,details=''){
+  const entry={
+    id:'dbg-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    type,message,details:String(details||''),
+    timestamp:new Date().toISOString()
+  };
+  stableDebugLog.push(entry);
+  if(stableDebugLog.length>100) stableDebugLog=stableDebugLog.slice(-100);
+  localStorage.setItem(STABLE_DEBUG_KEY,JSON.stringify(stableDebugLog));
+  renderStableDebug();
+  return entry;
+}
+
+function safeToast(message){
+  try{
+    if(typeof toast==='function') toast(message);
+    else alert(message);
+  }catch(e){ alert(message); }
+}
+
+function byId(id){ return document.getElementById(id); }
+
+function safeBind(id,eventName,handler){
+  const el=byId(id);
+  if(!el){
+    stableLog('BIND_WARNING',`Element ${id} tidak ditemukan`);
+    return false;
+  }
+  if(el.dataset.boundStable===eventName) return true;
+  el.addEventListener(eventName,async event=>{
+    try{
+      await handler(event,el);
+    }catch(error){
+      stableLog('HANDLER_ERROR',`${id}: ${error.message}`,error.stack||'');
+      safeToast('Terjadi error. Lihat Debug & Recovery.');
+    }
+  });
+  el.dataset.boundStable=eventName;
+  return true;
+}
+
+function allAIJobs(){
+  if(typeof aiCore==='undefined'||!Array.isArray(aiCore.agents)) return [];
+  const jobs=[];
+  aiCore.agents.forEach(agent=>{
+    (agent.queue||[]).forEach(job=>jobs.push({...job,agentName:agent.name,agentId:agent.id}));
+    (agent.history||[]).forEach(job=>jobs.push({...job,agentName:agent.name,agentId:agent.id}));
+  });
+  return jobs.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+}
+
+function renderStableJobs(){
+  const list=byId('stableJobList');
+  if(!list) return;
+  const jobs=allAIJobs();
+  byId('stableJobCount').textContent=`${jobs.length} jobs`;
+  list.innerHTML='';
+  if(!jobs.length){
+    list.innerHTML='<div class="muted">Belum ada AI job.</div>';
+    return;
+  }
+  jobs.slice(0,40).forEach(job=>{
+    const row=document.createElement('div');
+    row.className='job-row';
+    const cls='status-'+String(job.status||'QUEUED').toLowerCase();
+    row.innerHTML=`
+      <div class="job-top">
+        <div>
+          <b>${job.command||'Untitled command'}</b>
+          <div class="muted">${job.agentName||job.target||'-'} • ${job.id}</div>
+        </div>
+        <span class="job-status ${cls}">${job.status||'QUEUED'}</span>
+      </div>
+      ${job.result?`<div class="muted" style="margin-top:8px">${job.result.summary||''}</div>`:''}
+    `;
+    list.appendChild(row);
+  });
+}
+
+function renderStableDebug(){
+  const panel=byId('debugPanel');
+  if(!panel) return;
+  panel.innerHTML='';
+  [...stableDebugLog].reverse().slice(0,30).forEach(entry=>{
+    const line=document.createElement('div');
+    line.className='debug-line';
+    line.textContent=`[${new Date(entry.timestamp).toLocaleTimeString('id-ID')}] ${entry.type}: ${entry.message}${entry.details?'\n'+entry.details:''}`;
+    panel.appendChild(line);
+  });
+  if(!stableDebugLog.length) panel.innerHTML='<div class="muted">Belum ada error. Sistem siap.</div>';
+}
+
+function normalizeCommand(command){
+  return String(command||'').trim().replace(/\s+/g,' ');
+}
+
+function routeStableCommand(command,target='AUTO'){
+  const normalized=normalizeCommand(command);
+  if(!normalized){
+    safeToast('Ketik command dulu.');
+    stableLog('VALIDATION','Command kosong ditolak');
+    return null;
+  }
+  if(typeof createAIJob!=='function'){
+    stableLog('CORE_ERROR','createAIJob tidak tersedia');
+    safeToast('AI Router belum siap.');
+    return null;
+  }
+  const job=createAIJob(normalized,target);
+  stableLog('COMMAND_ROUTED',`${normalized} → ${job.target}`,job.id);
+  renderStableJobs();
+  safeToast('Command masuk ke AI Router');
+  return job;
+}
+
+function handleGlobalCommand(){
+  const input=byId('globalCommandInput');
+  const command=normalizeCommand(input?.value);
+  const job=routeStableCommand(command,'AUTO');
+  if(job && input) input.value='';
+}
+
+function handleAICoreCommand(){
+  const input=byId('aiCommandInput');
+  const target=byId('aiTarget')?.value||'AUTO';
+  const command=normalizeCommand(input?.value);
+  const job=routeStableCommand(command,target);
+  if(job && input) input.value='';
+}
+
+function runStableSelfTest(){
+  const checks=[
+    ['AI Core exists',typeof aiCore!=='undefined'],
+    ['Agent registry',Array.isArray(aiCore?.agents)&&aiCore.agents.length===4],
+    ['Router function',typeof createAIJob==='function'],
+    ['Processor function',typeof processNextAIJob==='function'],
+    ['Global command input',!!byId('globalCommandInput')],
+    ['AI command input',!!byId('aiCommandInput')],
+    ['Enterprise DB',typeof enterpriseDB!=='undefined']
+  ];
+  checks.forEach(([name,ok])=>stableLog(ok?'TEST_PASS':'TEST_FAIL',name));
+  const pass=checks.every(x=>x[1]);
+  byId('debugStatus').textContent=pass?'PASS':'FAIL';
+  safeToast(pass?'Stable AI Core self-test PASS':'Self-test menemukan masalah');
+}
+
+function recoverStableCore(){
+  try{
+    if(typeof aiCore==='undefined'||!Array.isArray(aiCore.agents)) throw new Error('AI Core rusak');
+    aiCore.agents.forEach(agent=>{
+      agent.queue=Array.isArray(agent.queue)?agent.queue:[];
+      agent.history=Array.isArray(agent.history)?agent.history:[];
+      if(agent.status==='WORKING' && !agent.currentJobId) agent.status='ONLINE';
+    });
+    if(typeof saveAICore==='function') saveAICore('STABLE_RECOVERY');
+    stableLog('RECOVERY','AI Core berhasil dinormalisasi');
+    safeToast('AI Core recovered');
+  }catch(error){
+    stableLog('RECOVERY_FAILED',error.message,error.stack||'');
+    safeToast('Recovery gagal. Lihat debug.');
+  }
+}
+
+window.addEventListener('error',event=>{
+  stableLog('WINDOW_ERROR',event.message,`${event.filename||''}:${event.lineno||''}`);
+});
+window.addEventListener('unhandledrejection',event=>{
+  stableLog('PROMISE_ERROR',event.reason?.message||String(event.reason),event.reason?.stack||'');
+});
+
+document.addEventListener('DOMContentLoaded',()=>{
+  safeBind('globalCommandRun','click',handleGlobalCommand);
+  safeBind('globalCommandInput','keydown',event=>{ if(event.key==='Enter') handleGlobalCommand(); });
+  safeBind('routeAICommand','click',handleAICoreCommand);
+  safeBind('aiCommandInput','keydown',event=>{ if(event.key==='Enter' && (event.ctrlKey||event.metaKey)) handleAICoreCommand(); });
+  safeBind('processNextAI','click',()=>{ processNextAIJob(); setTimeout(renderStableJobs,1000); });
+  safeBind('runSelfTest','click',runStableSelfTest);
+  safeBind('copyDiagnostics','click',async()=>{
+    const payload=JSON.stringify({build:'011',aiCore,debug:stableDebugLog.slice(-30)},null,2);
+    await navigator.clipboard.writeText(payload);
+    safeToast('Diagnostics disalin');
+  });
+  safeBind('clearDebugLog','click',()=>{
+    stableDebugLog=[];
+    localStorage.setItem(STABLE_DEBUG_KEY,'[]');
+    renderStableDebug();
+    safeToast('Debug log dibersihkan');
+  });
+  safeBind('recoverAICore','click',recoverStableCore);
+
+  // Neutralize the older direct route handler to avoid duplicate job creation.
+  const oldRoute=byId('routeAICommand');
+  if(oldRoute) oldRoute.dataset.stableRouter='active';
+
+  stableLog('STARTUP','Build 011 Stable AI Core aktif');
+  renderStableJobs();
+  renderStableDebug();
+});
+
+const originalSaveAICore = typeof saveAICore==='function' ? saveAICore : null;
+if(originalSaveAICore){
+  saveAICore=function(source='AI_CORE'){
+    const result=originalSaveAICore(source);
+    renderStableJobs();
+    return result;
+  };
+}
+
 </script></body></html>
