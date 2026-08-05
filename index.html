@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Build 016 Live Enterprise Engine & Settings */
+/* Build 017 Workspace Notification Center & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Build 016 Live Enterprise Engine */
+/* Build 017 Workspace Notification Center */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* Build 016 Live Enterprise Engine */
+/* Build 017 Workspace Notification Center */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -472,10 +472,94 @@ main{padding-top:10px}
   .worker-live{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 
+
+/* Build 017 Workspace & Notification Center */
+.workspace-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.workspace-card{
+  background:linear-gradient(145deg,#0a1123,#15112e);
+  border:1px solid #34405f;
+  border-radius:18px;
+  padding:14px;
+}
+.workspace-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.workspace-icon{
+  width:44px;height:44px;border-radius:14px;
+  display:grid;place-items:center;
+  background:linear-gradient(145deg,#18134a,#30205d);
+  border:1px solid #594b7a;
+  font-size:22px;
+}
+.workspace-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.workspace-kpi{
+  background:#080f20;border:1px solid var(--line);
+  border-radius:13px;padding:9px;text-align:center
+}
+.workspace-kpi b{display:block;font-size:18px;color:#d7b8ff}
+.workspace-active{box-shadow:0 0 0 1px #8c5bff inset,0 0 24px rgba(133,83,255,.18)}
+.notification-btn{
+  position:relative;
+  width:48px;height:48px;border-radius:16px;
+  border:1px solid #44506e;
+  background:linear-gradient(145deg,#111a31,#211443);
+  color:#fff;display:grid;place-items:center;font-size:21px;
+  box-shadow:0 10px 28px rgba(0,0,0,.28)
+}
+.notification-badge{
+  position:absolute;top:-6px;right:-6px;
+  min-width:20px;height:20px;padding:0 5px;border-radius:999px;
+  background:#ff456b;color:#fff;border:2px solid #0a1020;
+  font-size:10px;font-weight:900;display:grid;place-items:center
+}
+.notification-panel-backdrop{
+  position:fixed;inset:0;background:rgba(2,5,13,.66);
+  backdrop-filter:blur(6px);z-index:210;
+  opacity:0;pointer-events:none;transition:.22s ease
+}
+.notification-panel-backdrop.open{opacity:1;pointer-events:auto}
+.notification-panel{
+  position:absolute;top:0;right:0;width:min(92vw,430px);height:100%;
+  background:linear-gradient(180deg,#0c1328,#090d1c 55%,#080b16);
+  border-left:1px solid #35405c;box-shadow:-18px 0 45px rgba(0,0,0,.4);
+  transform:translateX(100%);transition:.28s ease;overflow-y:auto;
+  padding:18px 18px calc(28px + env(safe-area-inset-bottom))
+}
+.notification-panel-backdrop.open .notification-panel{transform:translateX(0)}
+.notification-item{
+  background:#0b1224;border:1px solid #2e3a56;border-radius:16px;
+  padding:13px;margin-bottom:10px
+}
+.notification-item.unread{box-shadow:0 0 0 1px #7458ff inset}
+.notification-top{display:flex;justify-content:space-between;gap:10px}
+.notification-type{
+  display:inline-block;padding:4px 8px;border-radius:999px;
+  font-size:10px;font-weight:900;background:#16233e;color:#9fc5ff
+}
+.notification-actions{display:flex;gap:8px;margin-top:12px}
+.notification-actions button{
+  flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);
+  background:#121a2c;color:#fff;font-weight:800
+}
+.overview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.overview-card{background:#080f20;border:1px solid var(--line);border-radius:16px;padding:13px}
+.overview-card b{display:block;font-size:28px;color:#d7b8ff;margin-top:4px}
+@media (min-width:700px){
+  .workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .overview-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (min-width:1100px){
+  .workspace-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 016 Live Enterprise Engine</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 017 Workspace Notification Center</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
+  <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
 </div>
 
@@ -490,6 +574,32 @@ main{padding-top:10px}
 
 
 <main>
+
+
+<section id="workspaces" class="page">
+  <div class="card hero">
+    <span class="tag">WORKSPACE MANAGER ACTIVE</span>
+    <h2>Semua divisi ACC dalam satu ruang kerja</h2>
+    <div class="muted">Pilih workspace, simpan pilihan terakhir, lihat status, queue, mission, dan worker khusus setiap unit.</div>
+  </div>
+
+  <div class="overview-grid">
+    <div class="overview-card"><small>Active Workspace</small><b id="workspaceActiveCount">1</b></div>
+    <div class="overview-card"><small>Total Missions</small><b id="workspaceMissionTotal">0</b></div>
+    <div class="overview-card"><small>Total Queue</small><b id="workspaceQueueTotal">0</b></div>
+    <div class="overview-card"><small>Workers Online</small><b id="workspaceWorkersTotal">0</b></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Workspace Directory</h3><span id="workspaceDirectoryCount">0 workspaces</span></div>
+    <div id="workspaceDirectory" class="workspace-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Active Workspace Overview</h3><span id="activeWorkspaceStatus">READY</span></div>
+    <div id="activeWorkspaceOverview"></div>
+  </div>
+</section>
 
 <section id="liveengine" class="page">
   <div class="card hero">
@@ -727,7 +837,7 @@ main{padding-top:10px}
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 016 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 017 DATA</button></div></section>
 </main>
 <div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -1375,7 +1485,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
+  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -1669,7 +1779,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
+  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
 });
 
 
@@ -1962,7 +2072,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
+  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
 });
 
 
@@ -2029,7 +2139,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
+  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
 });
 
 
@@ -2049,7 +2159,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 016 Live Enterprise Engine aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
 });
 
 
@@ -2214,10 +2324,269 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','Build 016 Live Enterprise Engine aktif','ACC OS X');
+    pushLiveActivity('STARTUP','Build 017 Workspace Notification Center aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
+});
+
+
+// ACC OS X Build 017 — Workspace & Notification Center
+const WORKSPACE_KEY='acc_os_x_workspace_manager_v1';
+const NOTIFICATION_KEY='acc_os_x_notification_center_v1';
+
+const defaultWorkspaces=()=>[
+  {id:'acc',name:'ACC Enterprise',icon:'🏢',status:'ACTIVE',workers:4,queue:0,missions:0,description:'Enterprise command and operating layer'},
+  {id:'amstudio',name:'AM Studio',icon:'🎨',status:'ACTIVE',workers:3,queue:0,missions:0,description:'Creative production and visual studio'},
+  {id:'psl',name:'Papa Sauce Lab',icon:'💰',status:'ACTIVE',workers:1,queue:0,missions:0,description:'Accounting, stock, expense, distribution'},
+  {id:'income',name:'Income Lab',icon:'📈',status:'READY',workers:1,queue:0,missions:0,description:'Digital income and monetization laboratory'},
+  {id:'production',name:'Productions Department',icon:'🎬',status:'ACTIVE',workers:2,queue:0,missions:0,description:'Mission, production, QC, publish'},
+  {id:'accounting',name:'Accounting',icon:'📊',status:'READY',workers:1,queue:0,missions:0,description:'Financial control and reporting'},
+  {id:'aicore',name:'AI Core',icon:'🧠',status:'ACTIVE',workers:4,queue:0,missions:0,description:'AI workers, router, jobs, diagnostics'}
+];
+
+let workspaceState;
+try{
+  workspaceState=JSON.parse(localStorage.getItem(WORKSPACE_KEY)||'null')||{
+    activeWorkspaceId:'acc',
+    workspaces:defaultWorkspaces(),
+    updatedAt:new Date().toISOString()
+  };
+}catch(e){
+  workspaceState={activeWorkspaceId:'acc',workspaces:defaultWorkspaces(),updatedAt:new Date().toISOString()};
+}
+
+let notificationState;
+try{
+  notificationState=JSON.parse(localStorage.getItem(NOTIFICATION_KEY)||'null')||{
+    items:[],
+    updatedAt:new Date().toISOString()
+  };
+}catch(e){
+  notificationState={items:[],updatedAt:new Date().toISOString()};
+}
+
+function saveWorkspaceState(){
+  workspaceState.updatedAt=new Date().toISOString();
+  localStorage.setItem(WORKSPACE_KEY,JSON.stringify(workspaceState));
+  renderWorkspaceManager();
+}
+
+function pushNotification(type,title,message,workspaceId='acc',priority='INFO'){
+  const item={
+    id:'notif-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    type,title,message,workspaceId,priority,
+    read:false,
+    createdAt:new Date().toISOString()
+  };
+  notificationState.items.push(item);
+  if(notificationState.items.length>200) notificationState.items=notificationState.items.slice(-200);
+  notificationState.updatedAt=new Date().toISOString();
+  localStorage.setItem(NOTIFICATION_KEY,JSON.stringify(notificationState));
+  renderNotificationCenter();
+  return item;
+}
+
+function saveNotificationState(){
+  notificationState.updatedAt=new Date().toISOString();
+  localStorage.setItem(NOTIFICATION_KEY,JSON.stringify(notificationState));
+  renderNotificationCenter();
+}
+
+function syncWorkspaceMetrics(){
+  const missions=(typeof state!=='undefined'&&state.missions)||[];
+  const queue=(typeof commandEngine!=='undefined'&&commandEngine.productionQueue)||[];
+  const agents=(typeof aiCore!=='undefined'&&aiCore.agents)||[];
+
+  workspaceState.workspaces.forEach(ws=>{
+    if(ws.id==='acc'){
+      ws.missions=missions.length;
+      ws.queue=queue.length;
+      ws.workers=agents.length;
+    }else if(ws.id==='amstudio'){
+      ws.missions=missions.filter(m=>/royal|han|warung|studio|poster|caption/i.test(JSON.stringify(m))).length;
+      ws.queue=queue.filter(q=>/royal|han|warung|studio|poster|caption/i.test(JSON.stringify(q))).length;
+      ws.workers=3;
+    }else if(ws.id==='psl'||ws.id==='accounting'){
+      ws.missions=missions.filter(m=>/psl|stock|stok|expense|pengeluaran|account/i.test(JSON.stringify(m))).length;
+      ws.queue=queue.filter(q=>/psl|stock|stok|expense|pengeluaran|account/i.test(JSON.stringify(q))).length;
+      ws.workers=1;
+    }else if(ws.id==='production'){
+      ws.missions=missions.length;
+      ws.queue=queue.length;
+      ws.workers=Math.max(2,agents.filter(a=>['KAI_NIBAN','KAI_ONI'].includes(a.id)).length);
+    }else if(ws.id==='aicore'){
+      ws.missions=(typeof allAIJobs==='function'?allAIJobs():[]).length;
+      ws.queue=agents.reduce((n,a)=>n+(a.queue||[]).length,0);
+      ws.workers=agents.length;
+    }
+  });
+}
+
+function activeWorkspace(){
+  return workspaceState.workspaces.find(w=>w.id===workspaceState.activeWorkspaceId)||workspaceState.workspaces[0];
+}
+
+function setActiveWorkspace(id){
+  const ws=workspaceState.workspaces.find(w=>w.id===id);
+  if(!ws) return;
+  workspaceState.activeWorkspaceId=id;
+  saveWorkspaceState();
+
+  const select=document.getElementById('workspace');
+  if(select){
+    let option=[...select.options].find(o=>o.value===ws.name||o.textContent===ws.name);
+    if(!option){
+      option=document.createElement('option');
+      option.value=ws.name;option.textContent=ws.name;
+      select.appendChild(option);
+    }
+    select.value=ws.name;
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+
+  pushNotification('WORKSPACE',`${ws.name} activated`,ws.description,ws.id,'INFO');
+  premiumToast(`${ws.name} aktif`);
+}
+
+function renderWorkspaceManager(){
+  syncWorkspaceMetrics();
+  const directory=document.getElementById('workspaceDirectory');
+  if(!directory) return;
+  directory.innerHTML='';
+
+  workspaceState.workspaces.forEach(ws=>{
+    const card=document.createElement('div');
+    card.className='workspace-card'+(ws.id===workspaceState.activeWorkspaceId?' workspace-active':'');
+    card.innerHTML=`
+      <div class="workspace-head">
+        <div style="display:flex;gap:11px">
+          <div class="workspace-icon">${ws.icon}</div>
+          <div><b>${ws.name}</b><div class="muted">${ws.description}</div></div>
+        </div>
+        <span class="db-pill">${ws.status}</span>
+      </div>
+      <div class="workspace-meta">
+        <div class="workspace-kpi"><b>${ws.missions||0}</b><small>Missions</small></div>
+        <div class="workspace-kpi"><b>${ws.queue||0}</b><small>Queue</small></div>
+        <div class="workspace-kpi"><b>${ws.workers||0}</b><small>Workers</small></div>
+      </div>
+      <button class="secondary workspaceOpenBtn" data-workspace="${ws.id}" style="margin-top:10px">${ws.id===workspaceState.activeWorkspaceId?'ACTIVE':'OPEN WORKSPACE'}</button>
+    `;
+    directory.appendChild(card);
+  });
+
+  const ws=activeWorkspace();
+  const totalMissions=workspaceState.workspaces.reduce((n,w)=>n+(w.missions||0),0);
+  const totalQueue=workspaceState.workspaces.reduce((n,w)=>n+(w.queue||0),0);
+  const totalWorkers=workspaceState.workspaces.reduce((n,w)=>n+(w.workers||0),0);
+
+  document.getElementById('workspaceActiveCount').textContent=1;
+  document.getElementById('workspaceMissionTotal').textContent=totalMissions;
+  document.getElementById('workspaceQueueTotal').textContent=totalQueue;
+  document.getElementById('workspaceWorkersTotal').textContent=totalWorkers;
+  document.getElementById('workspaceDirectoryCount').textContent=`${workspaceState.workspaces.length} workspaces`;
+  document.getElementById('activeWorkspaceStatus').textContent=ws.status;
+
+  document.getElementById('activeWorkspaceOverview').innerHTML=`
+    <div class="workspace-card workspace-active">
+      <div class="workspace-head">
+        <div style="display:flex;gap:11px">
+          <div class="workspace-icon">${ws.icon}</div>
+          <div><b>${ws.name}</b><div class="muted">${ws.description}</div></div>
+        </div>
+        <span class="db-pill">${ws.status}</span>
+      </div>
+      <div class="workspace-meta">
+        <div class="workspace-kpi"><b>${ws.missions||0}</b><small>Missions</small></div>
+        <div class="workspace-kpi"><b>${ws.queue||0}</b><small>Queue</small></div>
+        <div class="workspace-kpi"><b>${ws.workers||0}</b><small>Workers</small></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderNotificationCenter(){
+  const list=document.getElementById('notificationList');
+  if(!list) return;
+  const unread=notificationState.items.filter(n=>!n.read).length;
+  const total=notificationState.items.length;
+
+  document.getElementById('notificationBadge').textContent=unread;
+  document.getElementById('notificationBadge').style.display=unread?'grid':'none';
+  document.getElementById('notificationUnreadCount').textContent=unread;
+  document.getElementById('notificationTotalCount').textContent=total;
+
+  list.innerHTML='';
+  [...notificationState.items].reverse().forEach(item=>{
+    const ws=workspaceState.workspaces.find(w=>w.id===item.workspaceId);
+    const el=document.createElement('div');
+    el.className='notification-item'+(item.read?'':' unread');
+    el.innerHTML=`
+      <div class="notification-top">
+        <div>
+          <span class="notification-type">${item.type}</span>
+          <b style="display:block;margin-top:7px">${item.title}</b>
+        </div>
+        <small class="muted">${new Date(item.createdAt).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</small>
+      </div>
+      <div class="muted" style="margin-top:7px">${item.message}</div>
+      <div class="muted" style="margin-top:6px">${ws?ws.name:'ACC Enterprise'} • ${item.priority}</div>
+      ${item.read?'':'<button class="secondary markNotificationRead" data-notification="'+item.id+'" style="margin-top:10px">MARK READ</button>'}
+    `;
+    list.appendChild(el);
+  });
+  if(!total) list.innerHTML='<div class="muted">Belum ada notifikasi.</div>';
+}
+
+function openNotificationPanel(){
+  document.getElementById('notificationPanelBackdrop')?.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeNotificationPanel(){
+  document.getElementById('notificationPanelBackdrop')?.classList.remove('open');
+  document.body.style.overflow='';
+}
+
+document.addEventListener('click',e=>{
+  const open=e.target.closest('[data-workspace]');
+  if(open) setActiveWorkspace(open.dataset.workspace);
+
+  const mark=e.target.closest('[data-notification]');
+  if(mark){
+    const item=notificationState.items.find(n=>n.id===mark.dataset.notification);
+    if(item){item.read=true;saveNotificationState();}
+  }
+});
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('openNotificationPanel')?.addEventListener('click',openNotificationPanel);
+  document.getElementById('closeNotificationPanel')?.addEventListener('click',closeNotificationPanel);
+  document.getElementById('notificationPanelBackdrop')?.addEventListener('click',e=>{
+    if(e.target.id==='notificationPanelBackdrop') closeNotificationPanel();
+  });
+  document.getElementById('markAllNotificationsRead')?.addEventListener('click',()=>{
+    notificationState.items.forEach(n=>n.read=true);
+    saveNotificationState();
+  });
+  document.getElementById('clearAllNotifications')?.addEventListener('click',()=>{
+    notificationState.items=[];
+    saveNotificationState();
+  });
+
+  if(!notificationState.items.length){
+    pushNotification('SYSTEM','Build 017 active','Workspace Manager and Notification Center are online.','acc','INFO');
+  }
+
+  renderWorkspaceManager();
+  renderNotificationCenter();
+
+  setInterval(()=>{
+    syncWorkspaceMetrics();
+    saveWorkspaceState();
+  },5000);
+
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
 });
 
 </script>
@@ -2230,7 +2599,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Genesis Alpha • Build 016 Live Enterprise Engine</small>
+      <small>Genesis Alpha • Build 017 Workspace Notification Center</small>
     </div>
 
     <div class="drawer-section">
@@ -2280,5 +2649,37 @@ document.addEventListener('DOMContentLoaded',()=>{
 </div>
 
 <div id="premiumToast" class="premium-toast"></div>
+
+
+<div id="notificationPanelBackdrop" class="notification-panel-backdrop">
+  <aside class="notification-panel" role="dialog" aria-modal="true" aria-label="Notifications">
+    <div class="drawer-head">
+      <h3>Notifications</h3>
+      <button id="closeNotificationPanel" class="drawer-close">×</button>
+    </div>
+
+    <div class="drawer-build">
+      <b>ACC OS X Notification Center</b>
+      <small>Build 017 • Workspace-aware activity stream</small>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Unread</b><small>Notifications requiring attention</small></div>
+        <span id="notificationUnreadCount" class="db-pill">0</span>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Total</b><small>Stored notification records</small></div>
+        <span id="notificationTotalCount" class="db-pill">0</span>
+      </div>
+      <div class="notification-actions">
+        <button id="markAllNotificationsRead">MARK ALL READ</button>
+        <button id="clearAllNotifications">CLEAR ALL</button>
+      </div>
+    </div>
+
+    <div id="notificationList"></div>
+  </aside>
+</div>
 
 </body></html>
