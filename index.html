@@ -184,9 +184,172 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
   .ai-card{padding:14px}
 }
 
+
+/* Build 014 Premium Navigation & Settings */
+:root{
+  --header-glass:rgba(7,12,28,.86);
+  --panel-glass:rgba(12,19,40,.94);
+}
+header{
+  position:relative;
+  padding-right:78px;
+}
+.header-actions{
+  position:absolute;
+  top:20px;
+  right:18px;
+  display:flex;
+  gap:10px;
+  z-index:40;
+}
+.header-icon-btn{
+  width:48px;
+  height:48px;
+  border-radius:16px;
+  border:1px solid #44506e;
+  background:linear-gradient(145deg,#111a31,#211443);
+  color:#fff;
+  display:grid;
+  place-items:center;
+  font-size:22px;
+  box-shadow:0 10px 28px rgba(0,0,0,.28);
+}
+.header-icon-btn:active{transform:scale(.96)}
+.bottom{
+  grid-template-columns:repeat(8,minmax(64px,1fr))!important;
+  overflow-x:auto;
+  gap:2px;
+  padding-left:14px!important;
+  padding-right:14px!important;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom))!important;
+  scrollbar-width:none;
+}
+.bottom::-webkit-scrollbar{display:none}
+.bottom button{
+  min-width:64px;
+  padding:9px 5px 8px!important;
+}
+.bottom button:last-child{margin-right:10px}
+.settings-drawer-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(2,5,13,.66);
+  backdrop-filter:blur(6px);
+  z-index:200;
+  opacity:0;
+  pointer-events:none;
+  transition:.22s ease;
+}
+.settings-drawer-backdrop.open{
+  opacity:1;
+  pointer-events:auto;
+}
+.settings-drawer{
+  position:absolute;
+  top:0;
+  right:0;
+  width:min(92vw,420px);
+  height:100%;
+  background:linear-gradient(180deg,#0c1328,#090d1c 55%,#080b16);
+  border-left:1px solid #35405c;
+  box-shadow:-18px 0 45px rgba(0,0,0,.4);
+  transform:translateX(100%);
+  transition:.28s ease;
+  overflow-y:auto;
+  padding:18px 18px calc(28px + env(safe-area-inset-bottom));
+}
+.settings-drawer-backdrop.open .settings-drawer{transform:translateX(0)}
+.drawer-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:18px;
+}
+.drawer-head h3{
+  margin:0;
+  font-size:24px;
+}
+.drawer-close{
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:#131a2c;
+  color:#fff;
+  font-size:22px;
+}
+.drawer-section{
+  background:linear-gradient(145deg,#10182d,#15112d);
+  border:1px solid #33405d;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.drawer-section h4{margin:0 0 9px}
+.drawer-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px 0;
+  border-bottom:1px solid #26324a;
+}
+.drawer-item:last-child{border-bottom:0}
+.drawer-label b{display:block}
+.drawer-label small{color:var(--muted)}
+.drawer-action{
+  border:1px solid #4b3b68;
+  border-radius:12px;
+  padding:8px 11px;
+  background:#18122d;
+  color:#e4d5ff;
+  font-weight:800;
+}
+.drawer-build{
+  background:linear-gradient(135deg,#5d5cff,#a52cf0);
+  border-radius:18px;
+  padding:16px;
+  color:white;
+  margin-bottom:14px;
+}
+.drawer-build b{font-size:20px;display:block}
+.drawer-build small{opacity:.85}
+.premium-toast{
+  position:fixed;
+  left:50%;
+  bottom:calc(88px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(20px);
+  background:#10182c;
+  color:#fff;
+  border:1px solid #45506d;
+  border-radius:14px;
+  padding:12px 16px;
+  z-index:500;
+  opacity:0;
+  pointer-events:none;
+  transition:.2s ease;
+  box-shadow:0 18px 40px rgba(0,0,0,.35);
+}
+.premium-toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+@media (max-width:520px){
+  header{padding-right:66px}
+  .header-actions{top:18px;right:12px}
+  .header-icon-btn{width:44px;height:44px;border-radius:14px}
+  .bottom button{font-size:9.5px}
+}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 013 Mobile Workflow Engine</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div></header>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 014 Premium Navigation</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<div class="header-actions">
+  <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
+</div>
+
+</header>
 
 <div class="command-dock">
   <div class="command-wrap">
@@ -388,9 +551,9 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 013 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 014 DATA</button></div></section>
 </main>
-<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button><button data-page="settings"><span>⚙</span>Settings</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
+<div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
 (()=>{'use strict';
 const BUILD='008';const STORAGE='acc_os_x_enterprise_state_v008';const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);const now=()=>new Date().toISOString();const id=(p='id')=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);const clone=x=>JSON.parse(JSON.stringify(x));
@@ -627,8 +790,8 @@ const makeAgent=(id,name,role,capabilities)=>({
   queue:[],history:[],totalRuns:0,successfulRuns:0,failedRuns:0,lastActivity:new Date().toISOString()
 });
 const defaultAICore=()=>({
-  schemaVersion:'AI_CORE_V4_MOBILE_WORKFLOW',
-  routerVersion:'LOCAL_ROUTER_V4_WORKFLOW',
+  schemaVersion:'AI_CORE_V5_PREMIUM_NAV',
+  routerVersion:'LOCAL_ROUTER_V5_PREMIUM_NAV',
   agents:[
     makeAgent('KAI_ONE','KAI ONE','Chief Technology Officer',['architecture','system','deployment','diagnostics']),
     makeAgent('KAI_NIBAN','KAI NIBAN','Productions Department Lead',['mission','content','production','workflow']),
@@ -1036,7 +1199,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 013 Mobile Workflow Engine aktif');
+  stableLog('STARTUP','Build 014 Premium Navigation aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -1330,7 +1493,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Build 013 Mobile Workflow Engine aktif');
+  stableLog('STARTUP','Build 014 Premium Navigation aktif');
 });
 
 
@@ -1623,7 +1786,135 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Build 013 Mobile Workflow Engine aktif');
+  stableLog('STARTUP','Build 014 Premium Navigation aktif');
 });
 
-</script></body></html>
+
+// ACC OS X Build 014 — Premium Settings Drawer
+function premiumToast(message){
+  const el=document.getElementById('premiumToast');
+  if(!el) return;
+  el.textContent=message;
+  el.classList.add('show');
+  clearTimeout(window.__premiumToastTimer);
+  window.__premiumToastTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+function openSettingsDrawer(){
+  document.getElementById('settingsDrawerBackdrop')?.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSettingsDrawer(){
+  document.getElementById('settingsDrawerBackdrop')?.classList.remove('open');
+  document.body.style.overflow='';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('openSettingsDrawer')?.addEventListener('click',openSettingsDrawer);
+  document.getElementById('closeSettingsDrawer')?.addEventListener('click',closeSettingsDrawer);
+  document.getElementById('settingsDrawerBackdrop')?.addEventListener('click',e=>{
+    if(e.target.id==='settingsDrawerBackdrop') closeSettingsDrawer();
+  });
+
+  document.getElementById('drawerOpenFullSettings')?.addEventListener('click',()=>{
+    closeSettingsDrawer();
+    show('settings');
+  });
+
+  document.getElementById('drawerForceUpdate')?.addEventListener('click',()=>{
+    const btn=[...document.querySelectorAll('button')].find(b=>/FORCE UPDATE NOW/i.test(b.textContent));
+    closeSettingsDrawer();
+    if(btn) btn.click();
+    else location.reload(true);
+  });
+
+  document.getElementById('drawerExportState')?.addEventListener('click',()=>{
+    const btn=[...document.querySelectorAll('button')].find(b=>/EXPORT STATE JSON/i.test(b.textContent));
+    if(btn) btn.click();
+    else premiumToast('Export button not found');
+  });
+
+  document.getElementById('drawerDiagnostics')?.addEventListener('click',()=>{
+    closeSettingsDrawer();
+    show('aicore');
+    setTimeout(()=>{
+      const btn=document.getElementById('runSelfTest');
+      if(btn) btn.click();
+      else premiumToast('Diagnostics unavailable');
+    },150);
+  });
+
+  document.getElementById('drawerBackup')?.addEventListener('click',()=>{
+    if(typeof backupDatabase==='function'){
+      backupDatabase();
+      premiumToast('Database backup created');
+    }else{
+      premiumToast('Backup engine unavailable');
+    }
+  });
+
+  stableLog('STARTUP','Build 014 Premium Navigation aktif');
+});
+
+</script>
+<div id="settingsDrawerBackdrop" class="settings-drawer-backdrop">
+  <aside class="settings-drawer" role="dialog" aria-modal="true" aria-label="ACC OS X Settings">
+    <div class="drawer-head">
+      <h3>Settings</h3>
+      <button id="closeSettingsDrawer" class="drawer-close">×</button>
+    </div>
+
+    <div class="drawer-build">
+      <b>ACC OS X</b>
+      <small>Genesis Alpha • Build 014 Premium Navigation</small>
+    </div>
+
+    <div class="drawer-section">
+      <h4>Application</h4>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Open Full Settings</b><small>Update, export, reset, diagnostics</small></div>
+        <button id="drawerOpenFullSettings" class="drawer-action">OPEN</button>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Force Update</b><small>Reload latest GitHub/Netlify build</small></div>
+        <button id="drawerForceUpdate" class="drawer-action">RUN</button>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Export State</b><small>Download enterprise state JSON</small></div>
+        <button id="drawerExportState" class="drawer-action">EXPORT</button>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <h4>System</h4>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>AI Runtime</b><small>Local orchestration mode</small></div>
+        <span class="db-pill">ACTIVE</span>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Database</b><small>Centralized local engine</small></div>
+        <span class="db-pill">HEALTHY</span>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Workflow</b><small>Mobile workflow engine</small></div>
+        <span class="db-pill">ONLINE</span>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <h4>Owner Tools</h4>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Diagnostics</b><small>Run Build 014 system test</small></div>
+        <button id="drawerDiagnostics" class="drawer-action">TEST</button>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-label"><b>Backup Database</b><small>Download local database backup</small></div>
+        <button id="drawerBackup" class="drawer-action">BACKUP</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div id="premiumToast" class="premium-toast"></div>
+
+</body></html>
