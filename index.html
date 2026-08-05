@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Build 017 Workspace Notification Center & Settings */
+/* Build 018 Live Command Engine & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Build 017 Workspace Notification Center */
+/* Build 018 Live Command Engine */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* Build 017 Workspace Notification Center */
+/* Build 018 Live Command Engine */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -555,9 +555,113 @@ main{padding-top:10px}
   .workspace-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
+
+/* Build 018 Header Refinement + Live Command Engine */
+header{
+  padding-right:124px!important;
+}
+.header-actions{
+  top:14px!important;
+  right:12px!important;
+  gap:7px!important;
+}
+.header-icon-btn,
+.notification-btn{
+  width:42px!important;
+  height:42px!important;
+  border-radius:13px!important;
+  font-size:18px!important;
+}
+.notification-badge{
+  top:-4px!important;
+  right:-4px!important;
+  min-width:17px!important;
+  height:17px!important;
+  padding:0 4px!important;
+  font-size:9px!important;
+}
+header h1,
+header .brand-title{
+  max-width:calc(100% - 10px);
+}
+.command-suggest-box{
+  position:absolute;
+  left:14px;
+  right:14px;
+  top:calc(100% - 2px);
+  z-index:80;
+  background:#0b1224;
+  border:1px solid #384560;
+  border-radius:0 0 16px 16px;
+  box-shadow:0 16px 38px rgba(0,0,0,.35);
+  display:none;
+  overflow:hidden;
+}
+.command-suggest-box.open{display:block}
+.command-suggestion{
+  width:100%;
+  text-align:left;
+  padding:12px 14px;
+  border:0;
+  border-bottom:1px solid #25314a;
+  background:#0b1224;
+  color:#fff;
+}
+.command-suggestion:last-child{border-bottom:0}
+.command-suggestion small{display:block;color:var(--muted);margin-top:3px}
+.favorite-grid{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.favorite-chip{
+  flex:0 0 auto;
+  border:1px solid #4b3b68;
+  background:#15102b;
+  color:#e7d8ff;
+  border-radius:999px;
+  padding:9px 12px;
+  font-size:11px;
+  font-weight:900;
+}
+.command-console{
+  background:#060a14;
+  border:1px solid #2b3855;
+  border-radius:16px;
+  padding:14px;
+  font-family:monospace;
+  min-height:190px;
+  max-height:340px;
+  overflow:auto;
+}
+.command-console-line{
+  padding:5px 0;
+  color:#b9c8e8;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.command-console-line.success{color:#59e7b8}
+.command-console-line.running{color:#ffd27a}
+.command-console-line.failed{color:#ff98ae}
+.command-queue-item{
+  background:#080f20;
+  border:1px solid var(--line);
+  border-radius:15px;
+  padding:12px;
+  margin-bottom:9px;
+}
+.command-queue-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+@media(max-width:520px){
+  header{padding-right:110px!important}
+  .header-actions{top:12px!important;right:10px!important}
+  .header-icon-btn,.notification-btn{
+    width:39px!important;height:39px!important;font-size:17px!important
+  }
+}
+
 </style></head><body>
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 017 Workspace Notification Center</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 018 Live Command Engine</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
@@ -565,7 +669,7 @@ main{padding-top:10px}
 
 </header>
 
-<div class="command-dock">
+<div class="command-dock" style="position:relative">
   <div class="command-wrap">
     <input id="globalCommandInput" class="command-input" placeholder="Ketik command: NEXT, Royal Gambler, PSL, Poster...">
     <button id="globalCommandRun" class="command-run">RUN</button>
@@ -575,6 +679,35 @@ main{padding-top:10px}
 
 <main>
 
+
+
+<section id="commandcenter" class="page">
+  <div class="card hero">
+    <span class="tag">LIVE COMMAND ENGINE</span>
+    <h2>Satu command, satu action nyata</h2>
+    <div class="muted">Autocomplete, favorite commands, execution queue, parser, dan console log berjalan dari state yang sama.</div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Favorite Commands</h3><span>quick access</span></div>
+    <div id="favoriteCommandGrid" class="favorite-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Command Queue</h3><span id="commandQueueLiveCount">0 queued</span></div>
+    <div id="commandQueueLive"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Execution Console</h3><span id="commandConsoleStatus">READY</span></div>
+    <div id="commandConsole" class="command-console"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Recent Commands</h3><span id="recentCommandCount">0 items</span></div>
+    <div id="recentCommandList"></div>
+  </div>
+</section>
 
 <section id="workspaces" class="page">
   <div class="card hero">
@@ -837,7 +970,7 @@ main{padding-top:10px}
   </div>
 </section>
 
-<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 017 DATA</button></div></section>
+<section id="settings" class="page"><div class="card"><h3>Settings & Update</h3><div class="muted">Application: ACC OS X<br>Release: Genesis Alpha<br>Build: 008 Enterprise Core<br>State: CENTRALIZED<br>Persistence: LOCAL STORAGE<br>AI Runtime: NOT CONFIGURED<br>Mode: <span id="installMode">BROWSER</span></div><button id="installButton" class="primary" style="margin-top:14px">INSTALL ACC OS X</button><button id="forceUpdate" class="secondary" style="margin-top:9px">FORCE UPDATE NOW</button><button id="exportState" class="secondary" style="margin-top:9px">EXPORT STATE JSON</button><button id="clearState" class="danger" style="margin-top:9px">RESET BUILD 018 DATA</button></div></section>
 </main>
 <div class="bottom"><button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="missions"><span>◫</span>Missions</button><button data-page="production"><span>▶</span>Production</button><button data-page="database"><span>▦</span>Database</button><button data-page="workflow"><span>⇢</span>Workflow</button><button data-page="commandengine"><span>⌘</span>Command</button><button data-page="aicore"><span>✦</span>AI Core</button><button data-page="knowledge"><span>▤</span>Knowledge</button></div><div id="toast" class="toast"></div><div id="offline" class="offline">OFFLINE — AI SERVICES UNAVAILABLE</div><div id="modal" class="modal hidden"><div class="modalbox"><div class="title"><h3 id="modalTitle">Inspector</h3><button id="closeModal" class="secondary" style="width:auto">CLOSE</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -1485,7 +1618,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
+  stableLog('STARTUP','Build 018 Live Command Engine aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -1779,7 +1912,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
+  stableLog('STARTUP','Build 018 Live Command Engine aktif');
 });
 
 
@@ -2072,7 +2205,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
+  stableLog('STARTUP','Build 018 Live Command Engine aktif');
 });
 
 
@@ -2139,7 +2272,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
+  stableLog('STARTUP','Build 018 Live Command Engine aktif');
 });
 
 
@@ -2159,7 +2292,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 018 Live Command Engine aktif');
 });
 
 
@@ -2324,7 +2457,7 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','Build 017 Workspace Notification Center aktif','ACC OS X');
+    pushLiveActivity('STARTUP','Build 018 Live Command Engine aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
@@ -2586,7 +2719,231 @@ document.addEventListener('DOMContentLoaded',()=>{
     saveWorkspaceState();
   },5000);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Build 017 Workspace Notification Center aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 018 Live Command Engine aktif');
+});
+
+
+// ACC OS X Build 018 — Live Command Engine
+const LIVE_COMMAND_KEY='acc_os_x_live_command_engine_v1';
+
+let liveCommandState;
+try{
+  liveCommandState=JSON.parse(localStorage.getItem(LIVE_COMMAND_KEY)||'null')||{
+    queue:[],
+    console:[],
+    favorites:['NEXT','KONTEN','POSTER','CAPTION','PSL STOCK','REPORT','OWNER'],
+    recent:[],
+    updatedAt:new Date().toISOString()
+  };
+}catch(e){
+  liveCommandState={
+    queue:[],console:[],favorites:['NEXT','KONTEN','POSTER','CAPTION','PSL STOCK','REPORT','OWNER'],
+    recent:[],updatedAt:new Date().toISOString()
+  };
+}
+
+const commandCatalog=[
+  {command:'NEXT',description:'Lanjut workflow aktif'},
+  {command:'KONTEN',description:'Buat atau buka tahap Content'},
+  {command:'POSTER',description:'Buka tahap Poster'},
+  {command:'CAPTION',description:'Buka tahap Caption'},
+  {command:'QC',description:'Masuk tahap Quality Control'},
+  {command:'PUBLISH',description:'Masuk publish queue'},
+  {command:'PSL STOCK',description:'Buka konteks Papa Sauce Lab Stock'},
+  {command:'REPORT',description:'Buka Enterprise Live view'},
+  {command:'OWNER',description:'Aktifkan role Owner'},
+  {command:'ROYAL GAMBLER',description:'Aktifkan channel Royal Gambler'},
+  {command:'HAN YOU',description:'Aktifkan channel Han You'},
+  {command:'WARUNG REPUBLIK',description:'Aktifkan channel Warung Republik'}
+];
+
+function saveLiveCommandState(){
+  liveCommandState.updatedAt=new Date().toISOString();
+  localStorage.setItem(LIVE_COMMAND_KEY,JSON.stringify(liveCommandState));
+  renderLiveCommandEngine();
+}
+
+function addConsoleLine(message,status='running'){
+  liveCommandState.console.push({
+    id:'console-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),
+    message,status,timestamp:new Date().toISOString()
+  });
+  if(liveCommandState.console.length>120) liveCommandState.console=liveCommandState.console.slice(-120);
+  saveLiveCommandState();
+}
+
+function enqueueLiveCommand(command){
+  const item={
+    id:'live-cmd-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    command,
+    status:'QUEUED',
+    progress:0,
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString()
+  };
+  liveCommandState.queue.push(item);
+  liveCommandState.recent.push(command);
+  liveCommandState.recent=[...new Set(liveCommandState.recent.slice(-30).reverse())].reverse();
+
+  addConsoleLine(`> ${command}`,'running');
+  addConsoleLine('Parsing command...','running');
+  saveLiveCommandState();
+
+  setTimeout(()=>{
+    item.status='RUNNING';item.progress=30;item.updatedAt=new Date().toISOString();
+    addConsoleLine('Intent detected. Routing to engine...','running');
+    saveLiveCommandState();
+  },250);
+
+  setTimeout(()=>{
+    item.progress=65;item.updatedAt=new Date().toISOString();
+    addConsoleLine('Workspace and worker resolved...','running');
+    saveLiveCommandState();
+  },650);
+
+  setTimeout(()=>{
+    try{
+      if(typeof executeWorkflowAwareCommand==='function') executeWorkflowAwareCommand(command);
+      else if(typeof executeCommand==='function') executeCommand(command);
+      item.status='SUCCESS';item.progress=100;item.updatedAt=new Date().toISOString();
+      addConsoleLine(`SUCCESS: ${command}`,'success');
+      if(typeof pushNotification==='function'){
+        pushNotification('COMMAND',`${command} completed`,'Command Engine finished execution.','acc','INFO');
+      }
+    }catch(error){
+      item.status='FAILED';item.progress=100;item.updatedAt=new Date().toISOString();
+      addConsoleLine(`FAILED: ${error.message}`,'failed');
+    }
+    saveLiveCommandState();
+  },1100);
+}
+
+function renderSuggestions(value){
+  const box=document.getElementById('commandSuggestBox');
+  if(!box) return;
+  const q=String(value||'').trim().toLowerCase();
+  if(!q){box.classList.remove('open');box.innerHTML='';return;}
+  const matches=commandCatalog.filter(x=>
+    x.command.toLowerCase().includes(q)||x.description.toLowerCase().includes(q)
+  ).slice(0,6);
+  box.innerHTML='';
+  matches.forEach(item=>{
+    const btn=document.createElement('button');
+    btn.className='command-suggestion';
+    btn.innerHTML=`<b>${item.command}</b><small>${item.description}</small>`;
+    btn.addEventListener('click',()=>{
+      const input=document.getElementById('globalCommandInput');
+      if(input) input.value=item.command;
+      box.classList.remove('open');
+    });
+    box.appendChild(btn);
+  });
+  box.classList.toggle('open',matches.length>0);
+}
+
+function renderLiveCommandEngine(){
+  const fav=document.getElementById('favoriteCommandGrid');
+  if(fav){
+    fav.innerHTML='';
+    liveCommandState.favorites.forEach(cmd=>{
+      const btn=document.createElement('button');
+      btn.className='favorite-chip';
+      btn.textContent='★ '+cmd;
+      btn.addEventListener('click',()=>enqueueLiveCommand(cmd));
+      fav.appendChild(btn);
+    });
+  }
+
+  const queue=document.getElementById('commandQueueLive');
+  if(queue){
+    queue.innerHTML='';
+    [...liveCommandState.queue].reverse().slice(0,30).forEach(item=>{
+      const row=document.createElement('div');
+      row.className='command-queue-item';
+      row.innerHTML=`
+        <div class="command-queue-head">
+          <div><b>${item.command}</b><div class="muted">${new Date(item.createdAt).toLocaleTimeString('id-ID')}</div></div>
+          <span class="db-pill">${item.status}</span>
+        </div>
+        <div class="live-progress"><span style="width:${item.progress}%"></span></div>
+      `;
+      queue.appendChild(row);
+    });
+    if(!liveCommandState.queue.length) queue.innerHTML='<div class="muted">Command Queue masih kosong.</div>';
+    document.getElementById('commandQueueLiveCount').textContent=
+      `${liveCommandState.queue.filter(x=>['QUEUED','RUNNING'].includes(x.status)).length} active`;
+  }
+
+  const consoleEl=document.getElementById('commandConsole');
+  if(consoleEl){
+    consoleEl.innerHTML='';
+    liveCommandState.console.slice(-60).forEach(line=>{
+      const div=document.createElement('div');
+      div.className=`command-console-line ${line.status}`;
+      div.textContent=`[${new Date(line.timestamp).toLocaleTimeString('id-ID')}] ${line.message}`;
+      consoleEl.appendChild(div);
+    });
+    if(!liveCommandState.console.length){
+      consoleEl.innerHTML='<div class="command-console-line">ACC OS X Command Console ready.</div>';
+    }
+    consoleEl.scrollTop=consoleEl.scrollHeight;
+  }
+
+  const recent=document.getElementById('recentCommandList');
+  if(recent){
+    recent.innerHTML='';
+    [...liveCommandState.recent].reverse().slice(0,20).forEach(cmd=>{
+      const row=document.createElement('div');
+      row.className='live-command-row';
+      row.innerHTML=`<div><b>${cmd}</b><div class="muted">Tap to run again</div></div><button class="drawer-action rerunLiveCommand" data-cmd="${cmd}">RUN</button>`;
+      recent.appendChild(row);
+    });
+    if(!liveCommandState.recent.length) recent.innerHTML='<div class="muted">Belum ada recent commands.</div>';
+    document.getElementById('recentCommandCount').textContent=`${liveCommandState.recent.length} items`;
+  }
+
+  const active=liveCommandState.queue.find(x=>x.status==='RUNNING');
+  document.getElementById('commandConsoleStatus').textContent=active?'RUNNING':'READY';
+}
+
+function runLiveCommandFromInput(){
+  const input=document.getElementById('globalCommandInput');
+  const command=String(input?.value||'').trim();
+  if(!command){premiumToast('Ketik command dulu.');return;}
+  enqueueLiveCommand(command);
+  input.value='';
+  renderSuggestions('');
+}
+
+document.addEventListener('click',e=>{
+  const rerun=e.target.closest('[data-cmd]');
+  if(rerun) enqueueLiveCommand(rerun.dataset.cmd);
+});
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const oldRun=document.getElementById('globalCommandRun');
+  if(oldRun){
+    const clone=oldRun.cloneNode(true);
+    oldRun.replaceWith(clone);
+    clone.addEventListener('click',runLiveCommandFromInput);
+  }
+
+  const oldInput=document.getElementById('globalCommandInput');
+  if(oldInput){
+    const clone=oldInput.cloneNode(true);
+    oldInput.replaceWith(clone);
+    clone.addEventListener('input',e=>renderSuggestions(e.target.value));
+    clone.addEventListener('keydown',e=>{
+      if(e.key==='Enter') runLiveCommandFromInput();
+      if(e.key==='Escape') renderSuggestions('');
+    });
+  }
+
+  renderLiveCommandEngine();
+  if(!liveCommandState.console.length){
+    addConsoleLine('Build 018 Live Command Engine active.','success');
+  }
+  if(typeof stableLog==='function') stableLog('STARTUP','Build 018 Live Command Engine aktif');
 });
 
 </script>
@@ -2599,7 +2956,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Genesis Alpha • Build 017 Workspace Notification Center</small>
+      <small>Genesis Alpha • Build 018 Live Command Engine</small>
     </div>
 
     <div class="drawer-section">
