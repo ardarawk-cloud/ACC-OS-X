@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d1530">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icons/icon-192.png">
+<link rel="icon" href="./icon-192.png">
 <title>ACC OS X</title>
 <style>
 :root{color-scheme:dark;--bg:#050713;--p:#10182d;--p2:#0a1022;--line:#26314a;--txt:#f7f8fc;--muted:#93a0bb;--vio:#9b4dff;--blue:#4e9cff;--green:#35dfae;--gold:#f3c75f;--red:#ff637d}
@@ -23,9 +23,9 @@ main{padding:18px;max-width:860px;margin:auto}.section{display:none}.section.act
 </style>
 </head>
 <body>
-<div id="splash"><div class="splash-box"><img src="./icons/icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Command Deck</div><div class="loader"></div></div></div>
+<div id="splash"><div class="splash-box"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Command Deck</div><div class="loader"></div></div></div>
 <header>
-<div class="brand"><img src="./icons/icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 006 Enterprise Command Deck</div></div></div>
+<div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • Build 007 Source Direct</div></div></div>
 <div class="statusline"><div class="online"><span class="dot"></span> SYSTEM READY</div><div id="clock" class="clock">--:--</div></div>
 <div class="selectors">
 <select id="workspace"><option>ACC Enterprise</option><option>AM Studio</option><option>Papa Sauce Lab</option><option>Sandbox Environment</option></select>
@@ -74,7 +74,7 @@ main{padding:18px;max-width:860px;margin:auto}.section{display:none}.section.act
 </section>
 
 <section id="settings" class="section">
-<div class="card"><h3>System & Deployment</h3><div class="muted">Application: ACC OS X<br>Build: 006 Enterprise Command Deck<br>GitHub: CONNECTED<br>Netlify: AUTO DEPLOY ACTIVE<br>Mode: <span id="installMode">BROWSER</span></div>
+<div class="card"><h3>System & Deployment</h3><div class="muted">Application: ACC OS X<br>Build: 006 Enterprise Command Deck<br>GitHub: ROOT SOURCE ACTIVE<br>Netlify: DIRECT PUBLISH ACTIVE<br>Mode: <span id="installMode">BROWSER</span></div>
 <button id="installButton" class="primary" style="margin-top:15px">INSTALL ACC OS X</button>
 <button id="deployButton" class="secondary">🚀 DEPLOY BUILD</button>
 <button id="reloadButton" class="secondary">RELOAD UPDATE</button>
@@ -98,7 +98,7 @@ const defaults=[['s1','Session 1','07.00–09.00','ACC Tech Broadcast'],['s2','S
 const state=JSON.parse(localStorage.getItem('acc006')||'{}');
 state.missions=state.missions||defaults.map(x=>({id:x[0],session:x[1],time:x[2],title:x[3],done:false}));
 state.artifact=state.artifact??8;state.approval=state.approval??2;
-state.activity=state.activity||['Build 006 Enterprise Command Deck aktif','Session Manager siap','GitHub dan Netlify terhubung'];
+state.activity=state.activity||['Build 007 Source Direct aktif','Session Manager siap','GitHub dan Netlify terhubung'];
 state.notices=state.notices||[
 {title:'Approval Queue',body:'2 artifact menunggu keputusan owner',read:false},
 {title:'Production Engine',body:'Session 2 siap dijalankan',read:false},
@@ -128,12 +128,12 @@ $('#resetMissions').onclick=()=>{state.missions.forEach(m=>m.done=false);addActi
 $('#sendKai').onclick=()=>{const t=$('#kaiInput').value.trim();if(!t){toast('Masukkan perintah dulu');return}addActivity('KAI menerima: '+t);$('#kaiInput').value=''};
 $('#clearNotices').onclick=()=>{state.notices.forEach(n=>n.read=true);save();render();toast('Semua notifikasi dibaca')};
 $('#deployButton').onclick=()=>toast('Deploy Center siap disambungkan pada Build 007');
-$('#reloadButton').onclick=()=>location.reload();
+$('#reloadButton').onclick=async()=>{toast('Memeriksa update...');if('serviceWorker'in navigator){const regs=await navigator.serviceWorker.getRegistrations();for(const reg of regs){await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING')}}const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));setTimeout(()=>location.replace('./index.html?v='+Date.now()),500)};
 $('#clearData').onclick=()=>{localStorage.removeItem('acc006');toast('Data lokal dibersihkan');setTimeout(()=>location.reload(),700)};
 let dp=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e});$('#installButton').onclick=async()=>{if(dp){dp.prompt();await dp.userChoice;dp=null}else toast('Gunakan menu Chrome → Install app')};
 if(matchMedia('(display-mode:standalone)').matches){$('#installMode').textContent='INSTALLED PWA';$('#installButton').disabled=true;$('#installButton').textContent='ACC OS X INSTALLED'}
 function online(){ $('#offline').style.display=navigator.onLine?'none':'block' }addEventListener('online',online);addEventListener('offline',online);online();
-if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'));
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=007').then(reg=>reg.update()));
 render();
 </script>
 </body>

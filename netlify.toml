@@ -1,8 +1,17 @@
 [build]
-  command = "rm -rf dist && mkdir dist && unzip -o acc-os-x-release.zip -d dist"
-  publish = "dist"
+  publish = "."
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
   for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
   [headers.values]
     Cache-Control = "no-cache"
