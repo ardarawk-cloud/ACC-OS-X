@@ -1,0 +1,8 @@
+[build]
+  command = "rm -rf dist && mkdir dist && unzip -o acc-os-x-release.zip -d dist"
+  publish = "dist"
+
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
