@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Enterprise Productivity v1.1 & Settings */
+/* Enterprise Productivity v1.1 Final & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Enterprise Productivity v1.1 */
+/* Enterprise Productivity v1.1 Final */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* Enterprise Productivity v1.1 */
+/* Enterprise Productivity v1.1 Final */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -759,7 +759,7 @@ header .brand-title{
 }
 
 
-/* Release 1.1 — Enterprise Productivity v1.1 */
+/* v1.1.0 — Enterprise Productivity v1.1 Final */
 :root{
   --stable-glow:rgba(142,91,255,.22);
 }
@@ -981,20 +981,42 @@ button:active{
 @media(min-width:700px){.asset-toolbar{grid-template-columns:2fr 1fr 1fr}.asset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.asset-project-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(min-width:1100px){.asset-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
+
+/* ACC OS X v1.1 Final — Mobile First Productivity */
+.productivity-stack{display:grid;grid-template-columns:1fr;gap:12px}
+.caption-card,.package-card,.activity-card{background:linear-gradient(145deg,#0a1123,#15112e);border:1px solid #34405f;border-radius:18px;padding:14px}
+.caption-head,.package-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.caption-body{white-space:pre-wrap;background:#080f20;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px;color:#d9e2f4}
+.caption-actions,.package-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.caption-actions button,.package-actions button{padding:11px;border-radius:12px;border:1px solid var(--line);background:#121a2c;color:#fff;font-weight:900}
+.package-progress{height:10px;background:#050817;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:11px}
+.package-progress span{display:block;height:100%;background:linear-gradient(90deg,#5967ff,#a12ff0,#3be0bd)}
+.package-checklist{display:grid;grid-template-columns:1fr;gap:7px;margin-top:12px}
+.package-step{display:flex;justify-content:space-between;align-items:center;background:#080f20;border:1px solid var(--line);border-radius:13px;padding:10px 11px}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:7px}
+.tag-pill{border:1px solid #4b3b68;background:#15102b;color:#e7d8ff;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:900}
+.favorite-star{font-size:20px;background:none;border:0;color:#ffd36b;padding:0}
+.activity-row{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:11px 0;border-bottom:1px solid #26314a}
+.activity-row:last-child{border-bottom:0}.activity-time{font-size:11px;color:#d7b8ff;font-weight:900}
+.full-mobile-form{display:grid;grid-template-columns:1fr;gap:10px}
+.full-mobile-form input,.full-mobile-form select,.full-mobile-form textarea{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:#090f20;color:#fff}
+.full-mobile-form textarea{min-height:110px;resize:vertical}.no-horizontal{max-width:100%;overflow-x:hidden!important}
+@media(max-width:699px){.asset-toolbar{grid-template-columns:1fr!important}.asset-grid{grid-template-columns:1fr!important}.asset-project-grid{grid-template-columns:1fr 1fr!important}.caption-actions,.package-actions{grid-template-columns:1fr!important}}
+
 </style></head><body>
 
 <div id="finalSplash020">
   <div class="splash020-wrap">
     <img class="splash020-logo" src="./icon-192.png" alt="ACC OS X">
     <div class="splash020-title">ACC OS X</div>
-    <div class="splash020-sub">Enterprise Productivity • v1.1</div>
+    <div class="splash020-sub">Enterprise Productivity • v1.1 Final</div>
     <div class="splash020-progress"><span id="splash020Bar"></span></div>
     <div id="splash020Log" class="splash020-log"></div>
   </div>
 </div>
 
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Enterprise Productivity • v1.1</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Enterprise Productivity • v1.1 Final</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
@@ -1153,6 +1175,17 @@ button:active{
   </div>
 </section>
 
+
+
+<section id="productivity" class="page no-horizontal">
+  <div class="card hero"><span class="tag">ENTERPRISE PRODUCTIVITY v1.1</span><h2>Asset, caption, dan production package dalam satu alur</h2><div class="muted">Satu project, satu episode, satu paket lengkap. Semua dirancang vertikal untuk HP.</div></div>
+  <div class="card"><div class="title"><h3>Caption Manager</h3><span id="captionCountV11">0 captions</span></div><div class="full-mobile-form">
+    <input id="captionProjectV11" placeholder="Project"><input id="captionEpisodeV11" placeholder="Episode"><select id="captionLanguageV11"><option value="ID">Indonesia</option><option value="EN">English</option></select><input id="captionTitleV11" placeholder="Judul caption"><textarea id="captionTextV11" placeholder="Tulis caption"></textarea><input id="captionHashtagsV11" placeholder="#hashtag1 #hashtag2"><button id="saveCaptionV11" class="primary">SAVE CAPTION</button></div><div id="captionListV11" class="productivity-stack" style="margin-top:12px"></div></div>
+  <div class="card"><div class="title"><h3>Production Packages</h3><span id="packageCountV11">0 packages</span></div><div class="full-mobile-form"><input id="packageProjectV11" placeholder="Project"><input id="packageEpisodeV11" placeholder="Episode"><input id="packageTitleV11" placeholder="Package title"><input id="packageTagsV11" placeholder="Tags, pisahkan dengan koma"><button id="createPackageV11" class="primary">CREATE PACKAGE</button></div><div id="packageListV11" class="productivity-stack" style="margin-top:12px"></div></div>
+  <div class="card"><div class="title"><h3>Tags & Favorites</h3><span>quick access</span></div><div id="tagCloudV11" class="tag-cloud"></div></div>
+  <div class="card"><div class="title"><h3>Recent Activity</h3><span>local timeline</span></div><div id="activityListV11"></div></div>
+  <div class="card"><div class="title"><h3>Productivity Tools</h3><span>backup</span></div><div class="db-actions"><button id="exportProductivityV11" class="secondary">EXPORT PRODUCTIVITY JSON</button><label class="secondary" style="display:grid;place-items:center;margin:0">IMPORT PRODUCTIVITY JSON<input id="importProductivityV11" type="file" accept="application/json" style="display:none"></label><button id="clearProductivityV11" class="secondary">CLEAR PRODUCTIVITY DATA</button></div></div>
+</section>
 
 <section id="assetlibrary" class="page">
   <div class="card hero">
@@ -1436,7 +1469,7 @@ button:active{
   <div class="release-card">
     <div class="release-emblem">🏆</div>
     <h2 style="margin:0">ACC OS X</h2>
-    <div class="muted">Enterprise Productivity v1.1</div>
+    <div class="muted">Enterprise Productivity v1.1 Final</div>
 
     <div class="release-meta">
       <div><small>Version</small><b>1.0.0</b></div>
@@ -2107,7 +2140,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -2401,7 +2434,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
 });
 
 
@@ -2694,7 +2727,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
 });
 
 
@@ -2761,7 +2794,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
 });
 
 
@@ -2781,7 +2814,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
 });
 
 
@@ -2946,7 +2979,7 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','Enterprise Productivity v1.1 aktif','ACC OS X');
+    pushLiveActivity('STARTUP','Enterprise Productivity v1.1 Final aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
@@ -3208,7 +3241,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     saveWorkspaceState();
   },5000);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
 });
 
 
@@ -3430,9 +3463,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderLiveCommandEngine();
   if(!liveCommandState.console.length){
-    addConsoleLine('Enterprise Productivity v1.1 active.','success');
+    addConsoleLine('Enterprise Productivity v1.1 Final active.','success');
   }
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
 });
 
 
@@ -3672,7 +3705,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(!workerState019.activity.length){
-    workerLog019('KAI_ONE','Enterprise Productivity v1.1 active','STARTUP');
+    workerLog019('KAI_ONE','Enterprise Productivity v1.1 Final active','STARTUP');
   }
 
   renderWorkers019();
@@ -3685,11 +3718,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderWorkers019();
   },1800);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
 });
 
 
-// ACC OS X Release 1.1 — Enterprise Productivity v1.1
+// ACC OS X v1.1.0 — Enterprise Productivity v1.1 Final
 const RELEASE_020_KEY='acc_os_x_release_020_v1';
 
 function stableMetrics020(){
@@ -3766,7 +3799,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       pushNotification(
         'RELEASE',
         'Genesis Alpha v1.0 Released',
-        'ACC OS X Release 1.1 Stable is now active.',
+        'ACC OS X v1.1.0 Stable is now active.',
         'acc',
         'INFO'
       );
@@ -3774,7 +3807,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(typeof stableLog==='function'){
-    stableLog('RELEASE','ACC OS X Enterprise Productivity v1.1 aktif');
+    stableLog('RELEASE','ACC OS X Enterprise Productivity v1.1 Final aktif');
   }
 });
 
@@ -3849,6 +3882,23 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderAssetLibrary();
 });
 
+
+const PRODUCTIVITY_V11_KEY='acc_os_x_productivity_v11';
+let productivityV11;try{productivityV11=JSON.parse(localStorage.getItem(PRODUCTIVITY_V11_KEY)||'null')||{captions:[],packages:[],activity:[],updatedAt:new Date().toISOString()};}catch(e){productivityV11={captions:[],packages:[],activity:[],updatedAt:new Date().toISOString()};}
+const packageStagesV11=['STORY','POSTER','COMIC','CAPTION','MUSIC','PUBLISH'];
+function saveProductivityV11(){productivityV11.updatedAt=new Date().toISOString();localStorage.setItem(PRODUCTIVITY_V11_KEY,JSON.stringify(productivityV11));renderProductivityV11();}
+function logActivityV11(type,message,project='ACC'){productivityV11.activity.push({id:'act-'+Date.now(),type,message,project,timestamp:new Date().toISOString()});if(productivityV11.activity.length>120)productivityV11.activity=productivityV11.activity.slice(-120);}
+function saveCaptionV11(){const project=document.getElementById('captionProjectV11').value.trim(),episode=document.getElementById('captionEpisodeV11').value.trim(),language=document.getElementById('captionLanguageV11').value,title=document.getElementById('captionTitleV11').value.trim(),body=document.getElementById('captionTextV11').value.trim(),hashtags=document.getElementById('captionHashtagsV11').value.trim();if(!project||!title||!body){premiumToast('Project, judul, dan caption wajib diisi');return;}productivityV11.captions.push({id:'cap-'+Date.now(),project,episode,language,title,text:body,hashtags,favorite:false,published:false,createdAt:new Date().toISOString()});logActivityV11('CAPTION',title+' saved',project);document.getElementById('captionTitleV11').value='';document.getElementById('captionTextV11').value='';document.getElementById('captionHashtagsV11').value='';saveProductivityV11();premiumToast('Caption disimpan');}
+function createPackageV11(){const project=document.getElementById('packageProjectV11').value.trim(),episode=document.getElementById('packageEpisodeV11').value.trim(),title=document.getElementById('packageTitleV11').value.trim(),tags=document.getElementById('packageTagsV11').value.split(',').map(x=>x.trim()).filter(Boolean);if(!project||!title){premiumToast('Project dan package title wajib diisi');return;}productivityV11.packages.push({id:'pkg-'+Date.now(),project,episode,title,tags,favorite:false,stages:Object.fromEntries(packageStagesV11.map(s=>[s,false])),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});logActivityV11('PACKAGE',title+' created',project);document.getElementById('packageTitleV11').value='';document.getElementById('packageTagsV11').value='';saveProductivityV11();premiumToast('Production package dibuat');}
+function packageProgressV11(pkg){return Math.round(Object.values(pkg.stages).filter(Boolean).length/packageStagesV11.length*100)}
+function toggleStageV11(id,stage){const p=productivityV11.packages.find(x=>x.id===id);if(!p)return;p.stages[stage]=!p.stages[stage];p.updatedAt=new Date().toISOString();logActivityV11('STAGE',p.title+': '+stage+' '+(p.stages[stage]?'completed':'reopened'),p.project);saveProductivityV11();}
+function renderProductivityV11(){const list=document.getElementById('captionListV11');if(!list)return;document.getElementById('captionCountV11').textContent=productivityV11.captions.length+' captions';document.getElementById('packageCountV11').textContent=productivityV11.packages.length+' packages';list.innerHTML='';[...productivityV11.captions].sort((a,b)=>Number(b.favorite)-Number(a.favorite)||new Date(b.createdAt)-new Date(a.createdAt)).forEach(c=>{const el=document.createElement('div');el.className='caption-card';el.innerHTML=`<div class="caption-head"><div><b>${c.title}</b><div class="muted">${c.project} • Episode ${c.episode||'-'} • ${c.language}</div></div><button class="favorite-star" data-caption-fav-v11="${c.id}">${c.favorite?'★':'☆'}</button></div><div class="caption-body">${c.text}${c.hashtags?'\n\n'+c.hashtags:''}</div><div class="caption-actions"><button data-caption-copy-v11="${c.id}">COPY</button><button data-caption-publish-v11="${c.id}">${c.published?'PUBLISHED':'MARK PUBLISHED'}</button><button data-caption-delete-v11="${c.id}">DELETE</button></div>`;list.appendChild(el)});if(!productivityV11.captions.length)list.innerHTML='<div class="asset-empty">Belum ada caption.</div>';
+const pkgList=document.getElementById('packageListV11');pkgList.innerHTML='';[...productivityV11.packages].sort((a,b)=>Number(b.favorite)-Number(a.favorite)||new Date(b.createdAt)-new Date(a.createdAt)).forEach(p=>{const progress=packageProgressV11(p),el=document.createElement('div');el.className='package-card';el.innerHTML=`<div class="package-head"><div><b>${p.title}</b><div class="muted">${p.project} • Episode ${p.episode||'-'}</div></div><button class="favorite-star" data-package-fav-v11="${p.id}">${p.favorite?'★':'☆'}</button></div><div class="package-progress"><span style="width:${progress}%"></span></div><div class="muted" style="margin-top:7px">${progress}% complete</div><div class="package-checklist">${packageStagesV11.map(s=>`<button class="package-step" data-package-stage-v11="${p.id}" data-stage-v11="${s}"><span>${s}</span><span>${p.stages[s]?'✅':'⏳'}</span></button>`).join('')}</div><div class="asset-tags">${(p.tags||[]).map(t=>`<span class="asset-tag">${t}</span>`).join('')}</div><div class="package-actions"><button data-package-delete-v11="${p.id}">DELETE PACKAGE</button></div>`;pkgList.appendChild(el)});if(!productivityV11.packages.length)pkgList.innerHTML='<div class="asset-empty">Belum ada production package.</div>';
+const tags=[...new Set(productivityV11.packages.flatMap(p=>p.tags||[]))].sort();document.getElementById('tagCloudV11').innerHTML=tags.map(t=>`<span class="tag-pill">${t}</span>`).join('')||'<div class="muted">Belum ada tags.</div>';const activity=document.getElementById('activityListV11');activity.innerHTML='';[...productivityV11.activity].reverse().slice(0,40).forEach(a=>{const row=document.createElement('div');row.className='activity-row';row.innerHTML=`<div class="activity-time">${new Date(a.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div><div><b>${a.project}</b><div class="muted">${a.message}</div></div>`;activity.appendChild(row)});if(!productivityV11.activity.length)activity.innerHTML='<div class="muted">Belum ada aktivitas.</div>';}
+function exportProductivityV11(){const blob=new Blob([JSON.stringify(productivityV11,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ACC_OS_X_PRODUCTIVITY_V1_1.json';a.click();URL.revokeObjectURL(a.href);}
+document.addEventListener('click',async e=>{let x=e.target.closest('[data-caption-fav-v11]');if(x){const c=productivityV11.captions.find(v=>v.id===x.dataset.captionFavV11);if(c){c.favorite=!c.favorite;saveProductivityV11()}}x=e.target.closest('[data-caption-copy-v11]');if(x){const c=productivityV11.captions.find(v=>v.id===x.dataset.captionCopyV11);if(c){await navigator.clipboard.writeText(c.text+(c.hashtags?'\n\n'+c.hashtags:''));premiumToast('Caption disalin')}}x=e.target.closest('[data-caption-publish-v11]');if(x){const c=productivityV11.captions.find(v=>v.id===x.dataset.captionPublishV11);if(c){c.published=!c.published;logActivityV11('PUBLISH',c.title+' '+(c.published?'published':'unpublished'),c.project);saveProductivityV11()}}x=e.target.closest('[data-caption-delete-v11]');if(x){productivityV11.captions=productivityV11.captions.filter(v=>v.id!==x.dataset.captionDeleteV11);saveProductivityV11()}x=e.target.closest('[data-package-fav-v11]');if(x){const p=productivityV11.packages.find(v=>v.id===x.dataset.packageFavV11);if(p){p.favorite=!p.favorite;saveProductivityV11()}}x=e.target.closest('[data-package-stage-v11]');if(x)toggleStageV11(x.dataset.packageStageV11,x.dataset.stageV11);x=e.target.closest('[data-package-delete-v11]');if(x){productivityV11.packages=productivityV11.packages.filter(v=>v.id!==x.dataset.packageDeleteV11);saveProductivityV11()}});
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('saveCaptionV11')?.addEventListener('click',saveCaptionV11);document.getElementById('createPackageV11')?.addEventListener('click',createPackageV11);document.getElementById('exportProductivityV11')?.addEventListener('click',exportProductivityV11);document.getElementById('clearProductivityV11')?.addEventListener('click',()=>{productivityV11={captions:[],packages:[],activity:[],updatedAt:new Date().toISOString()};saveProductivityV11();premiumToast('Productivity data dikosongkan')});document.getElementById('importProductivityV11')?.addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const p=JSON.parse(await f.text());if(!Array.isArray(p.captions)||!Array.isArray(p.packages))throw Error();productivityV11=p;saveProductivityV11();premiumToast('Productivity data berhasil diimport')}catch(err){premiumToast('Import gagal')}e.target.value=''});renderProductivityV11();});
+
 </script>
 <div id="settingsDrawerBackdrop" class="settings-drawer-backdrop">
   <aside class="settings-drawer" role="dialog" aria-modal="true" aria-label="ACC OS X Settings">
@@ -3859,7 +3909,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Enterprise Productivity • v1.1</small>
+      <small>Enterprise Productivity • v1.1 Final</small>
     </div>
 
     <div class="drawer-section">
