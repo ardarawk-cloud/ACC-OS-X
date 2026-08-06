@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d1530"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png"><title>ACC OS X — Build 008</title>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d1530"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png"><title>ACC OS X — v1.2.1 PWA Stabilization</title>
 <style>
 :root{color-scheme:dark;--bg:#050713;--panel:#10182d;--panel2:#080f20;--line:#273452;--text:#f5f7ff;--muted:#98a4bd;--vio:#a855f7;--blue:#4e9cff;--green:#35dfae;--gold:#f3c75f;--red:#ff637d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 90% 0,#291454 0,transparent 32%),radial-gradient(circle at 0 80%,#07324a 0,transparent 28%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh;padding-bottom:max(88px,env(safe-area-inset-bottom))}button,select,input,textarea{font:inherit}.hidden{display:none!important}
 #splash{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:radial-gradient(circle,#24104c 0,#050713 60%);transition:.45s}#splash.hide{opacity:0;visibility:hidden}.splash{text-align:center}.splash img{width:108px;filter:drop-shadow(0 0 26px #9b4dff)}.loader{width:180px;height:7px;border-radius:99px;background:#11172c;overflow:hidden;margin:20px auto}.loader:after{content:"";display:block;width:46%;height:100%;background:linear-gradient(90deg,var(--blue),var(--vio),var(--green));animation:move .8s infinite alternate}@keyframes move{to{transform:translateX(120%)}}
@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* AI Operating System v1.2 & Settings */
+/* PWA Stabilization v1.2.1 & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* AI Operating System v1.2 */
+/* PWA Stabilization v1.2.1 */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* AI Operating System v1.2 */
+/* PWA Stabilization v1.2.1 */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -759,7 +759,7 @@ header .brand-title{
 }
 
 
-/* v1.2.0 — AI Operating System v1.2 */
+/* v1.2.0 — PWA Stabilization v1.2.1 */
 :root{
   --stable-glow:rgba(142,91,255,.22);
 }
@@ -1062,20 +1062,35 @@ button:active{
   body{overflow-x:hidden!important}
 }
 
+
+/* ACC OS X v1.2.1 — PWA Stabilization */
+.sync-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sync-card{background:#080f20;border:1px solid var(--line);border-radius:16px;padding:13px;min-width:0}
+.sync-card b{display:block;font-size:22px;color:#d7b8ff;margin-top:5px;word-break:break-word}
+.dev-stack{display:grid;grid-template-columns:1fr;gap:10px}
+.dev-action{width:100%;padding:13px;border-radius:14px;border:1px solid var(--line);background:#121a2c;color:#fff;font-weight:900;text-align:left}
+.dev-action small{display:block;color:var(--muted);margin-top:4px;font-weight:500}
+.version-box{background:#050817;border:1px solid var(--line);border-radius:14px;padding:12px;font-family:ui-monospace,monospace;font-size:11px;white-space:pre-wrap;word-break:break-word}
+.sync-status{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;font-size:10px;font-weight:900}
+.sync-ok{background:#073d32;color:#56edbb}.sync-warn{background:#3a290b;color:#ffd37a}.sync-bad{background:#3b1020;color:#ff9db0}
+.storage-list{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px}
+.storage-row{display:flex;justify-content:space-between;gap:12px;padding:10px 11px;background:#080f20;border:1px solid var(--line);border-radius:13px}
+@media(max-width:699px){.sync-grid{grid-template-columns:1fr 1fr!important}body{overflow-x:hidden!important}.dev-stack{grid-template-columns:1fr!important}}
+
 </style></head><body>
 
 <div id="finalSplash020">
   <div class="splash020-wrap">
     <img class="splash020-logo" src="./icon-192.png" alt="ACC OS X">
     <div class="splash020-title">ACC OS X</div>
-    <div class="splash020-sub">AI Operating System • v1.2</div>
+    <div class="splash020-sub">PWA Stabilization • v1.2.1</div>
     <div class="splash020-progress"><span id="splash020Bar"></span></div>
     <div id="splash020Log" class="splash020-log"></div>
   </div>
 </div>
 
-<div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">AI Operating System • v1.2</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">PWA Stabilization • v1.2.1</div><div class="loader"></div></div></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">PWA Stabilization • v1.2.1</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
@@ -1591,7 +1606,7 @@ button:active{
   <div class="release-card">
     <div class="release-emblem">🏆</div>
     <h2 style="margin:0">ACC OS X</h2>
-    <div class="muted">AI Operating System v1.2</div>
+    <div class="muted">PWA Stabilization v1.2.1</div>
 
     <div class="release-meta">
       <div><small>Version</small><b>1.0.0</b></div>
@@ -1611,6 +1626,45 @@ button:active{
         <div class="drawer-label"><b>Powered by</b><small>ACC Enterprise</small></div>
       </div>
     </div>
+  </div>
+</section>
+
+
+<section id="stability121" class="page">
+  <div class="card hero">
+    <span class="tag">PWA STABILIZATION v1.2.1</span>
+    <h2>Web dan PWA memakai versi aplikasi yang sama</h2>
+    <div class="muted">Network-first navigation, cache versioning, update detection, dan developer recovery tools.</div>
+  </div>
+
+  <div class="sync-grid">
+    <div class="sync-card"><small>App Version</small><b id="syncAppVersion">1.2.1</b></div>
+    <div class="sync-card"><small>Cache Version</small><b id="syncCacheVersion">checking</b></div>
+    <div class="sync-card"><small>Mode</small><b id="syncDisplayMode">WEB</b></div>
+    <div class="sync-card"><small>Service Worker</small><b id="syncWorkerState">CHECK</b></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Version Health</h3><span id="syncHealthBadge" class="sync-status sync-warn">CHECKING</span></div>
+    <div id="syncVersionDetails" class="version-box">Checking application files...</div>
+    <button id="syncCheckNow" class="primary" style="margin-top:10px">CHECK VERSION NOW</button>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Developer Recovery Tools</h3><span>safe operations</span></div>
+    <div class="dev-stack">
+      <button id="syncForceUpdate" class="dev-action">FORCE UPDATE & RELOAD<small>Install waiting service worker, clear old ACC caches, reload latest network build.</small></button>
+      <button id="syncClearCache" class="dev-action">CLEAR APP CACHE<small>Remove cached application files without deleting missions or local records.</small></button>
+      <button id="syncReloadWorker" class="dev-action">REINSTALL SERVICE WORKER<small>Unregister old worker, register v1.2.1 worker, then reload.</small></button>
+      <button id="syncExportAll" class="dev-action">EXPORT ALL LOCAL DATA<small>Create one JSON snapshot containing every ACC localStorage key.</small></button>
+      <label class="dev-action">IMPORT LOCAL SNAPSHOT<small>Restore a previously exported local snapshot.</small><input id="syncImportAll" type="file" accept="application/json" style="display:none"></label>
+      <button id="syncResetUiOnly" class="dev-action">RESET UI SESSION ONLY<small>Reset active page/session preferences without deleting business data.</small></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Local Storage Inspector</h3><span id="syncStorageCount">0 keys</span></div>
+    <div id="syncStorageList" class="storage-list"></div>
   </div>
 </section>
 
@@ -1651,7 +1705,7 @@ $$('[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('#createM
 $$('[data-command]').forEach(b=>b.onclick=()=>{const c=b.dataset.command,m=activeMission();if(!m)return toast('Tidak ada mission aktif');showPage('production');if(c==='NEXT')runNext(m);else toast(c+' membuka Production Engine')});
 $('#runDiagnostics').onclick=()=>{const s=engine.state;const tests=[['Mission integrity',s.missions.every(m=>m.missionId&&m.workspaceId&&m.channelId)],['Queue integrity',new Set(s.jobs.map(j=>j.idempotencyKey)).size===s.jobs.length],['Artifact integrity',s.artifacts.every(a=>s.jobs.some(j=>j.jobId===a.sourceJobId)&&s.missions.some(m=>m.missionId===a.missionId))],['Event Bus integrity',s.events.every(e=>e.eventId&&e.eventType&&e.timestamp)],['Persistence integrity',!!localStorage.getItem(STORAGE)],['Duplicate artifacts',new Set(s.artifacts.map(a=>a.sourceJobId+':'+a.attempt)).size===s.artifacts.length],['Orphan graph nodes',s.graph.links.every(l=>s.graph.nodes.some(n=>n.nodeId===l.from)&&s.graph.nodes.some(n=>n.nodeId===l.to))]];const did=id('diag');engine.mutate('DIAGNOSTICS','CREATED','Diagnostics',st=>{st.diagnostics.lastDiagnosticId=did;st.diagnostics.lastRun=now();st.diagnostics.results=tests.map(([name,pass])=>({name,pass}))});$('#diagnosticResult').innerHTML=tests.map(([n,p])=>`<div class="item"><b class="${p?'diag-pass':'diag-fail'}">${p?'PASS':'FAIL'} — ${n}</b></div>`).join('')+`<div class="item"><b>${tests.every(x=>x[1])?'ACC OS X ENTERPRISE CORE ENGINE ACTIVE':'FOUNDATION REQUIRES ATTENTION'}</b><div class="muted">Diagnostic ID: ${did}</div></div>`};
 function setupSelectors(){const s=engine.state;$('#workspaceSelect').innerHTML=s.workspaces.map(w=>`<option value="${w.workspaceId}">${w.name}</option>`).join('');$('#workspaceSelect').value=s.session.workspaceId;function channels(){const list=s.channels.filter(c=>c.workspaceId===$('#workspaceSelect').value);$('#channelSelect').innerHTML=list.map(c=>`<option value="${c.channelId}">${c.name}</option>`).join('');$('#channelSelect').value=list.some(c=>c.channelId===s.session.channelId)?s.session.channelId:list[0]?.channelId||''}channels();$('#roleSelect').value=s.session.role;$('#workspaceSelect').onchange=()=>{channels();engine.mutate('UI','UPDATED','Session',x=>{x.session.workspaceId=$('#workspaceSelect').value;x.session.channelId=$('#channelSelect').value})};$('#channelSelect').onchange=()=>engine.mutate('UI','UPDATED','Session',x=>x.session.channelId=$('#channelSelect').value);$('#roleSelect').onchange=()=>engine.mutate('UI','UPDATED','Session',x=>x.session.role=$('#roleSelect').value)}
-let deferred=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e});$('#installButton').onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null}else toast('Gunakan menu Chrome → Install app')};if(matchMedia('(display-mode:standalone)').matches){$('#installMode').textContent='INSTALLED PWA';$('#installButton').disabled=true;$('#installButton').textContent='ACC OS X INSTALLED'}$('#forceUpdate').onclick=async()=>{toast('Memeriksa update...');if('serviceWorker'in navigator){const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs){await r.update();if(r.waiting)r.waiting.postMessage('SKIP_WAITING')}}const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));setTimeout(()=>location.replace('./index.html?v='+Date.now()),500)};$('#exportState').onclick=()=>{const blob=new Blob([JSON.stringify(engine.state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='acc-os-x-state-build008.json';a.click();URL.revokeObjectURL(a.href)};$('#clearState').onclick=()=>{if(confirm('Reset seluruh data Build 008?')){localStorage.removeItem(STORAGE);location.reload()}};function network(){ $('#offline').style.display=navigator.onLine?'none':'block'}addEventListener('online',network);addEventListener('offline',network);network();setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),1000);if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=008').then(r=>r.update()).catch(console.error));engine.subscribe(render);setupSelectors();showPage(engine.state.session.activePage||'home');render();setTimeout(()=>$('#splash').classList.add('hide'),1150);
+let deferred=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e});$('#installButton').onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null}else toast('Gunakan menu Chrome → Install app')};if(matchMedia('(display-mode:standalone)').matches){$('#installMode').textContent='INSTALLED PWA';$('#installButton').disabled=true;$('#installButton').textContent='ACC OS X INSTALLED'}$('#forceUpdate').onclick=()=>window.ACCSyncManager?.forceUpdate();$('#exportState').onclick=()=>{const blob=new Blob([JSON.stringify(engine.state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='acc-os-x-state-v1.2.1.json';a.click();URL.revokeObjectURL(a.href)};$('#clearState').onclick=()=>{if(confirm('Reset seluruh data lokal ACC?')){localStorage.removeItem(STORAGE);location.reload()}};function network(){ $('#offline').style.display=navigator.onLine?'none':'block'}addEventListener('online',network);addEventListener('offline',network);network();setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),1000);if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=121').then(r=>r.update()).catch(console.error));engine.subscribe(render);setupSelectors();showPage(engine.state.session.activePage||'home');render();setTimeout(()=>$('#splash').classList.add('hide'),1150);
 })();
 
 // ACC OS X Build 009 — Enterprise Database Engine
@@ -2262,7 +2316,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','AI Operating System v1.2 aktif');
+  stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -2556,7 +2610,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','AI Operating System v1.2 aktif');
+  stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
 });
 
 
@@ -2849,7 +2903,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','AI Operating System v1.2 aktif');
+  stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
 });
 
 
@@ -2916,7 +2970,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','AI Operating System v1.2 aktif');
+  stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
 });
 
 
@@ -2936,7 +2990,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
 });
 
 
@@ -3101,7 +3155,7 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','AI Operating System v1.2 aktif','ACC OS X');
+    pushLiveActivity('STARTUP','PWA Stabilization v1.2.1 aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
@@ -3363,7 +3417,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     saveWorkspaceState();
   },5000);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
 });
 
 
@@ -3585,9 +3639,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderLiveCommandEngine();
   if(!liveCommandState.console.length){
-    addConsoleLine('AI Operating System v1.2 active.','success');
+    addConsoleLine('PWA Stabilization v1.2.1 active.','success');
   }
-  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
 });
 
 
@@ -3827,7 +3881,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(!workerState019.activity.length){
-    workerLog019('KAI_ONE','AI Operating System v1.2 active','STARTUP');
+    workerLog019('KAI_ONE','PWA Stabilization v1.2.1 active','STARTUP');
   }
 
   renderWorkers019();
@@ -3840,11 +3894,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderWorkers019();
   },1800);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','PWA Stabilization v1.2.1 aktif');
 });
 
 
-// ACC OS X v1.2.0 — AI Operating System v1.2
+// ACC OS X v1.2.0 — PWA Stabilization v1.2.1
 const RELEASE_020_KEY='acc_os_x_release_020_v1';
 
 function stableMetrics020(){
@@ -3929,7 +3983,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(typeof stableLog==='function'){
-    stableLog('RELEASE','ACC OS X AI Operating System v1.2 aktif');
+    stableLog('RELEASE','ACC OS X PWA Stabilization v1.2.1 aktif');
   }
 });
 
@@ -4261,6 +4315,123 @@ document.addEventListener('DOMContentLoaded',()=>{
   v12Save();
 });
 
+
+// ACC OS X v1.2.1 — PWA Stabilization Manager
+const ACC_APP_VERSION='1.2.1';
+const ACC_CACHE_VERSION='acc-os-x-v1.2.1-stable';
+const ACC_BUILD_ID='2026.08.07.001';
+
+window.ACCSyncManager={
+  async clearCaches(){
+    if(!('caches' in window)) return 0;
+    const keys=await caches.keys();
+    const accKeys=keys.filter(k=>k.startsWith('acc-os-x'));
+    await Promise.all(accKeys.map(k=>caches.delete(k)));
+    return accKeys.length;
+  },
+  async forceUpdate(){
+    premiumToast?.('Memasang versi terbaru...');
+    try{
+      if('serviceWorker' in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        for(const reg of regs){
+          await reg.update();
+          if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+        }
+      }
+      await this.clearCaches();
+      const u=new URL(location.href);
+      u.searchParams.set('appv',ACC_BUILD_ID);
+      setTimeout(()=>location.replace(u.toString()),350);
+    }catch(e){
+      console.error(e); location.reload();
+    }
+  },
+  async reinstallWorker(){
+    if(!('serviceWorker' in navigator)){premiumToast?.('Service Worker tidak didukung');return;}
+    const regs=await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r=>r.unregister()));
+    await this.clearCaches();
+    await navigator.serviceWorker.register('./service-worker.js?v=121',{updateViaCache:'none'});
+    setTimeout(()=>location.reload(),400);
+  },
+  exportAll(){
+    const data={schema:'ACC_LOCAL_SNAPSHOT_V1',appVersion:ACC_APP_VERSION,createdAt:new Date().toISOString(),origin:location.origin,storage:{}};
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);data.storage[k]=localStorage.getItem(k);}
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ACC_LOCAL_SNAPSHOT_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);
+  },
+  async importAll(file){
+    const parsed=JSON.parse(await file.text());
+    if(parsed.schema!=='ACC_LOCAL_SNAPSHOT_V1'||!parsed.storage) throw new Error('Invalid snapshot');
+    Object.entries(parsed.storage).forEach(([k,v])=>localStorage.setItem(k,v));
+    location.reload();
+  }
+};
+
+function storageFingerprint121(){
+  const rows=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i),value=localStorage.getItem(key)||'';
+    rows.push([key,value.length]);
+  }
+  rows.sort((a,b)=>a[0].localeCompare(b[0]));
+  let h=2166136261;
+  JSON.stringify(rows).split('').forEach(c=>{h^=c.charCodeAt(0);h=Math.imul(h,16777619)});
+  return (h>>>0).toString(16).padStart(8,'0');
+}
+
+async function checkVersion121(){
+  const badge=document.getElementById('syncHealthBadge');
+  const details=document.getElementById('syncVersionDetails');
+  if(!badge||!details)return;
+  badge.className='sync-status sync-warn';badge.textContent='CHECKING';
+  let remote=null,controller=!!navigator.serviceWorker?.controller,registration=null;
+  try{
+    const r=await fetch('./build-info.json?t='+Date.now(),{cache:'no-store'});
+    if(r.ok) remote=await r.json();
+  }catch(e){}
+  if('serviceWorker' in navigator) registration=await navigator.serviceWorker.getRegistration();
+  const same=!remote||remote.version===ACC_APP_VERSION;
+  badge.className='sync-status '+(same?'sync-ok':'sync-bad');
+  badge.textContent=same?'CURRENT':'UPDATE AVAILABLE';
+  document.getElementById('syncCacheVersion').textContent=ACC_CACHE_VERSION.replace('acc-os-x-','');
+  document.getElementById('syncWorkerState').textContent=registration?(controller?'ACTIVE':'REGISTERED'):'MISSING';
+  document.getElementById('syncDisplayMode').textContent=matchMedia('(display-mode:standalone)').matches?'PWA':'WEB';
+  details.textContent=[
+    'Local version : '+ACC_APP_VERSION,
+    'Remote version: '+(remote?.version||'unavailable'),
+    'Build ID      : '+ACC_BUILD_ID,
+    'Remote build  : '+(remote?.buildId||'unavailable'),
+    'Service worker: '+(registration?'registered':'missing'),
+    'Controller    : '+(controller?'active':'not controlling'),
+    'Origin        : '+location.origin,
+    'Storage hash  : '+storageFingerprint121()
+  ].join('\n');
+}
+
+function renderStorage121(){
+  const list=document.getElementById('syncStorageList');if(!list)return;
+  const keys=[];for(let i=0;i<localStorage.length;i++)keys.push(localStorage.key(i));keys.sort();
+  document.getElementById('syncStorageCount').textContent=keys.length+' keys';
+  list.innerHTML=keys.map(k=>`<div class="storage-row"><span>${k}</span><b>${(localStorage.getItem(k)||'').length} B</b></div>`).join('')||'<div class="muted">Belum ada local data.</div>';
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  document.getElementById('syncCheckNow')?.addEventListener('click',checkVersion121);
+  document.getElementById('syncForceUpdate')?.addEventListener('click',()=>ACCSyncManager.forceUpdate());
+  document.getElementById('syncClearCache')?.addEventListener('click',async()=>{const n=await ACCSyncManager.clearCaches();premiumToast?.(`${n} cache dihapus`);await checkVersion121();});
+  document.getElementById('syncReloadWorker')?.addEventListener('click',()=>ACCSyncManager.reinstallWorker());
+  document.getElementById('syncExportAll')?.addEventListener('click',()=>ACCSyncManager.exportAll());
+  document.getElementById('syncImportAll')?.addEventListener('change',async e=>{try{await ACCSyncManager.importAll(e.target.files[0]);}catch(err){premiumToast?.('Snapshot tidak valid');}e.target.value='';});
+  document.getElementById('syncResetUiOnly')?.addEventListener('click',()=>{localStorage.removeItem('acc_os_x_workspace_manager_v1');sessionStorage.clear();location.reload();});
+  renderStorage121();await checkVersion121();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());
+    navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='NEW_VERSION')checkVersion121();});
+  }
+});
+
 </script>
 <div id="settingsDrawerBackdrop" class="settings-drawer-backdrop">
   <aside class="settings-drawer" role="dialog" aria-modal="true" aria-label="ACC OS X Settings">
@@ -4271,7 +4442,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>AI Operating System • v1.2</small>
+      <small>PWA Stabilization • v1.2.1</small>
     </div>
 
     <div class="drawer-section">
