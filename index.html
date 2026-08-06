@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Enterprise Productivity v1.1 Final & Settings */
+/* AI Operating System v1.2 & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Enterprise Productivity v1.1 Final */
+/* AI Operating System v1.2 */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* Enterprise Productivity v1.1 Final */
+/* AI Operating System v1.2 */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -759,7 +759,7 @@ header .brand-title{
 }
 
 
-/* v1.1.0 — Enterprise Productivity v1.1 Final */
+/* v1.2.0 — AI Operating System v1.2 */
 :root{
   --stable-glow:rgba(142,91,255,.22);
 }
@@ -1003,20 +1003,79 @@ button:active{
 .full-mobile-form textarea{min-height:110px;resize:vertical}.no-horizontal{max-width:100%;overflow-x:hidden!important}
 @media(max-width:699px){.asset-toolbar{grid-template-columns:1fr!important}.asset-grid{grid-template-columns:1fr!important}.asset-project-grid{grid-template-columns:1fr 1fr!important}.caption-actions,.package-actions{grid-template-columns:1fr!important}}
 
+
+/* ACC OS X v1.2 — AI Operating System */
+.v12-stack{display:grid;grid-template-columns:1fr;gap:12px}
+.v12-card{
+  background:linear-gradient(145deg,#0a1123,#15112e);
+  border:1px solid #34405f;border-radius:18px;padding:14px
+}
+.v12-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.v12-form{display:grid;grid-template-columns:1fr;gap:10px}
+.v12-form input,.v12-form select,.v12-form textarea{
+  width:100%;padding:13px 14px;border-radius:14px;
+  border:1px solid var(--line);background:#090f20;color:#fff
+}
+.v12-form textarea{min-height:90px;resize:vertical}
+.v12-status{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 9px;
+  border-radius:999px;font-size:10px;font-weight:900
+}
+.v12-online{background:#073d32;color:#56edbb}
+.v12-working{background:#3a290b;color:#ffd37a}
+.v12-qc{background:#251a48;color:#cdb8ff}
+.v12-offline{background:#361727;color:#ff99b2}
+.v12-progress{
+  height:10px;background:#050817;border:1px solid var(--line);
+  border-radius:99px;overflow:hidden;margin-top:10px
+}
+.v12-progress span{
+  display:block;height:100%;
+  background:linear-gradient(90deg,#5967ff,#a12ff0,#3be0bd);
+  transition:width .45s ease
+}
+.v12-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.v12-stat{background:#080f20;border:1px solid var(--line);border-radius:13px;padding:9px;text-align:center}
+.v12-stat b{display:block;color:#d7b8ff;font-size:18px}
+.v12-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.v12-actions button{padding:11px;border-radius:12px;border:1px solid var(--line);background:#121a2c;color:#fff;font-weight:900}
+.v12-priority{font-weight:900;font-size:10px;padding:5px 8px;border-radius:999px}
+.priority-critical{background:#4b1320;color:#ff9bad}
+.priority-high{background:#472a0c;color:#ffc77b}
+.priority-normal{background:#182a47;color:#a7c9ff}
+.priority-low{background:#202735;color:#c3cad8}
+.v12-stage-list{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px}
+.v12-stage{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 11px;border-radius:13px;background:#080f20;border:1px solid var(--line)
+}
+.v12-log-row{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:11px 0;border-bottom:1px solid #26314a}
+.v12-log-row:last-child{border-bottom:0}
+.v12-time{font-size:11px;color:#d7b8ff;font-weight:900}
+.v12-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v12-summary-card{background:#080f20;border:1px solid var(--line);border-radius:16px;padding:13px}
+.v12-summary-card b{display:block;font-size:24px;color:#d7b8ff;margin-top:5px}
+@media(max-width:699px){
+  .v12-stack,.v12-form,.v12-stage-list{grid-template-columns:1fr!important}
+  .v12-actions{grid-template-columns:1fr!important}
+  .v12-summary{grid-template-columns:1fr 1fr!important}
+  body{overflow-x:hidden!important}
+}
+
 </style></head><body>
 
 <div id="finalSplash020">
   <div class="splash020-wrap">
     <img class="splash020-logo" src="./icon-192.png" alt="ACC OS X">
     <div class="splash020-title">ACC OS X</div>
-    <div class="splash020-sub">Enterprise Productivity • v1.1 Final</div>
+    <div class="splash020-sub">AI Operating System • v1.2</div>
     <div class="splash020-progress"><span id="splash020Bar"></span></div>
     <div id="splash020Log" class="splash020-log"></div>
   </div>
 </div>
 
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Enterprise Productivity • v1.1 Final</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">AI Operating System • v1.2</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
@@ -1176,6 +1235,69 @@ button:active{
 </section>
 
 
+
+
+<section id="aiosv12" class="page">
+  <div class="card hero">
+    <span class="tag">AI OPERATING SYSTEM v1.2</span>
+    <h2>Worker, mission, dan queue sekarang bekerja sebagai satu mesin</h2>
+    <div class="muted">Semua mission mengikuti lifecycle yang sama dan diarahkan ke worker sesuai workspace.</div>
+  </div>
+
+  <div class="v12-summary">
+    <div class="v12-summary-card"><small>Workers</small><b id="v12WorkersCount">0</b></div>
+    <div class="v12-summary-card"><small>Active Missions</small><b id="v12ActiveMissions">0</b></div>
+    <div class="v12-summary-card"><small>Queue</small><b id="v12QueueCount">0</b></div>
+    <div class="v12-summary-card"><small>Completed</small><b id="v12CompletedCount">0</b></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Create Mission</h3><span>mobile first</span></div>
+    <div class="v12-form">
+      <input id="v12MissionTitle" placeholder="Mission title">
+      <input id="v12MissionProject" placeholder="Project">
+      <input id="v12MissionEpisode" placeholder="Episode">
+      <select id="v12MissionWorkspace">
+        <option>STUDIO</option><option>ENTERPRISE</option><option>FINANCE</option>
+        <option>NIGHTLIFE</option><option>NEWS</option><option>CIVIC</option>
+      </select>
+      <select id="v12MissionPriority">
+        <option>CRITICAL</option><option>HIGH</option><option selected>NORMAL</option><option>LOW</option>
+      </select>
+      <select id="v12MissionWorker"></select>
+      <textarea id="v12MissionNotes" placeholder="Mission notes"></textarea>
+      <button id="v12CreateMission" class="primary">CREATE & QUEUE MISSION</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>AI Workers</h3><span id="v12WorkerLabel">0 workers</span></div>
+    <div id="v12WorkerList" class="v12-stack"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Mission Queue</h3><span id="v12QueueLabel">0 missions</span></div>
+    <div id="v12MissionList" class="v12-stack"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>Activity Timeline</h3><span>automatic events</span></div>
+    <div id="v12ActivityList"></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><h3>AI OS Tools</h3><span>backup</span></div>
+    <div class="db-actions">
+      <button id="v12SeedDemo" class="secondary">ADD DEMO MISSIONS</button>
+      <button id="v12Export" class="secondary">EXPORT AI OS JSON</button>
+      <label class="secondary" style="display:grid;place-items:center;margin:0">
+        IMPORT AI OS JSON
+        <input id="v12Import" type="file" accept="application/json" style="display:none">
+      </label>
+      <button id="v12Clear" class="secondary">CLEAR AI OS DATA</button>
+    </div>
+  </div>
+</section>
 
 <section id="productivity" class="page no-horizontal">
   <div class="card hero"><span class="tag">ENTERPRISE PRODUCTIVITY v1.1</span><h2>Asset, caption, dan production package dalam satu alur</h2><div class="muted">Satu project, satu episode, satu paket lengkap. Semua dirancang vertikal untuk HP.</div></div>
@@ -1469,7 +1591,7 @@ button:active{
   <div class="release-card">
     <div class="release-emblem">🏆</div>
     <h2 style="margin:0">ACC OS X</h2>
-    <div class="muted">Enterprise Productivity v1.1 Final</div>
+    <div class="muted">AI Operating System v1.2</div>
 
     <div class="release-meta">
       <div><small>Version</small><b>1.0.0</b></div>
@@ -2140,7 +2262,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  stableLog('STARTUP','AI Operating System v1.2 aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -2434,7 +2556,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  stableLog('STARTUP','AI Operating System v1.2 aktif');
 });
 
 
@@ -2727,7 +2849,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  stableLog('STARTUP','AI Operating System v1.2 aktif');
 });
 
 
@@ -2794,7 +2916,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  stableLog('STARTUP','AI Operating System v1.2 aktif');
 });
 
 
@@ -2814,7 +2936,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
 });
 
 
@@ -2979,7 +3101,7 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','Enterprise Productivity v1.1 Final aktif','ACC OS X');
+    pushLiveActivity('STARTUP','AI Operating System v1.2 aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
@@ -3241,7 +3363,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     saveWorkspaceState();
   },5000);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
 });
 
 
@@ -3463,9 +3585,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderLiveCommandEngine();
   if(!liveCommandState.console.length){
-    addConsoleLine('Enterprise Productivity v1.1 Final active.','success');
+    addConsoleLine('AI Operating System v1.2 active.','success');
   }
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
 });
 
 
@@ -3705,7 +3827,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(!workerState019.activity.length){
-    workerLog019('KAI_ONE','Enterprise Productivity v1.1 Final active','STARTUP');
+    workerLog019('KAI_ONE','AI Operating System v1.2 active','STARTUP');
   }
 
   renderWorkers019();
@@ -3718,11 +3840,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderWorkers019();
   },1800);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 Final aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','AI Operating System v1.2 aktif');
 });
 
 
-// ACC OS X v1.1.0 — Enterprise Productivity v1.1 Final
+// ACC OS X v1.2.0 — AI Operating System v1.2
 const RELEASE_020_KEY='acc_os_x_release_020_v1';
 
 function stableMetrics020(){
@@ -3799,7 +3921,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       pushNotification(
         'RELEASE',
         'Genesis Alpha v1.0 Released',
-        'ACC OS X v1.1.0 Stable is now active.',
+        'ACC OS X v1.2.0 Stable is now active.',
         'acc',
         'INFO'
       );
@@ -3807,7 +3929,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(typeof stableLog==='function'){
-    stableLog('RELEASE','ACC OS X Enterprise Productivity v1.1 Final aktif');
+    stableLog('RELEASE','ACC OS X AI Operating System v1.2 aktif');
   }
 });
 
@@ -3899,6 +4021,246 @@ function exportProductivityV11(){const blob=new Blob([JSON.stringify(productivit
 document.addEventListener('click',async e=>{let x=e.target.closest('[data-caption-fav-v11]');if(x){const c=productivityV11.captions.find(v=>v.id===x.dataset.captionFavV11);if(c){c.favorite=!c.favorite;saveProductivityV11()}}x=e.target.closest('[data-caption-copy-v11]');if(x){const c=productivityV11.captions.find(v=>v.id===x.dataset.captionCopyV11);if(c){await navigator.clipboard.writeText(c.text+(c.hashtags?'\n\n'+c.hashtags:''));premiumToast('Caption disalin')}}x=e.target.closest('[data-caption-publish-v11]');if(x){const c=productivityV11.captions.find(v=>v.id===x.dataset.captionPublishV11);if(c){c.published=!c.published;logActivityV11('PUBLISH',c.title+' '+(c.published?'published':'unpublished'),c.project);saveProductivityV11()}}x=e.target.closest('[data-caption-delete-v11]');if(x){productivityV11.captions=productivityV11.captions.filter(v=>v.id!==x.dataset.captionDeleteV11);saveProductivityV11()}x=e.target.closest('[data-package-fav-v11]');if(x){const p=productivityV11.packages.find(v=>v.id===x.dataset.packageFavV11);if(p){p.favorite=!p.favorite;saveProductivityV11()}}x=e.target.closest('[data-package-stage-v11]');if(x)toggleStageV11(x.dataset.packageStageV11,x.dataset.stageV11);x=e.target.closest('[data-package-delete-v11]');if(x){productivityV11.packages=productivityV11.packages.filter(v=>v.id!==x.dataset.packageDeleteV11);saveProductivityV11()}});
 document.addEventListener('DOMContentLoaded',()=>{document.getElementById('saveCaptionV11')?.addEventListener('click',saveCaptionV11);document.getElementById('createPackageV11')?.addEventListener('click',createPackageV11);document.getElementById('exportProductivityV11')?.addEventListener('click',exportProductivityV11);document.getElementById('clearProductivityV11')?.addEventListener('click',()=>{productivityV11={captions:[],packages:[],activity:[],updatedAt:new Date().toISOString()};saveProductivityV11();premiumToast('Productivity data dikosongkan')});document.getElementById('importProductivityV11')?.addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const p=JSON.parse(await f.text());if(!Array.isArray(p.captions)||!Array.isArray(p.packages))throw Error();productivityV11=p;saveProductivityV11();premiumToast('Productivity data berhasil diimport')}catch(err){premiumToast('Import gagal')}e.target.value=''});renderProductivityV11();});
 
+
+// ACC OS X v1.2 — AI Operating System
+const V12_KEY='acc_os_x_ai_os_v12';
+const V12_STAGES=['NEW','READY','WORKING','QC','PUBLISHED','ARCHIVED'];
+
+const v12DefaultWorkers=[
+  {id:'KAI_ONE',name:'KAI ONE',role:'System Architect',workspace:'ENTERPRISE',status:'ONLINE',currentMissionId:null,success:0,failed:0},
+  {id:'KAI_ZERO',name:'KAI ZERO',role:'Creative Director',workspace:'STUDIO',status:'ONLINE',currentMissionId:null,success:0,failed:0},
+  {id:'KAI_NIBAN',name:'KAI NIBAN',role:'Production Lead',workspace:'STUDIO',status:'ONLINE',currentMissionId:null,success:0,failed:0},
+  {id:'KAI_ONI',name:'KAI ONI',role:'Visual Director',workspace:'STUDIO',status:'ONLINE',currentMissionId:null,success:0,failed:0},
+  {id:'EVE',name:'EVE',role:'Accounting Lead',workspace:'FINANCE',status:'ONLINE',currentMissionId:null,success:0,failed:0},
+  {id:'KAI_SANBAN',name:'KAI SANBAN',role:'Financial Consultant',workspace:'FINANCE',status:'ONLINE',currentMissionId:null,success:0,failed:0}
+];
+
+let v12;
+try{
+  v12=JSON.parse(localStorage.getItem(V12_KEY)||'null')||{
+    workers:v12DefaultWorkers,missions:[],activity:[],tick:0,updatedAt:new Date().toISOString()
+  };
+}catch(e){
+  v12={workers:v12DefaultWorkers,missions:[],activity:[],tick:0,updatedAt:new Date().toISOString()};
+}
+
+function v12Save(){
+  v12.updatedAt=new Date().toISOString();
+  localStorage.setItem(V12_KEY,JSON.stringify(v12));
+  v12Render();
+}
+
+function v12Log(type,message,source='SYSTEM'){
+  v12.activity.push({
+    id:'evt-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),
+    type,message,source,timestamp:new Date().toISOString()
+  });
+  if(v12.activity.length>180)v12.activity=v12.activity.slice(-180);
+}
+
+function v12CreateMission(){
+  const title=document.getElementById('v12MissionTitle').value.trim();
+  const project=document.getElementById('v12MissionProject').value.trim();
+  const episode=document.getElementById('v12MissionEpisode').value.trim();
+  const workspace=document.getElementById('v12MissionWorkspace').value;
+  const priority=document.getElementById('v12MissionPriority').value;
+  const workerId=document.getElementById('v12MissionWorker').value;
+  const notes=document.getElementById('v12MissionNotes').value.trim();
+
+  if(!title||!project){premiumToast('Mission title dan project wajib diisi');return;}
+
+  const mission={
+    id:'MIS-'+Date.now(),
+    title,project,episode,workspace,priority,workerId,notes,
+    status:'NEW',progress:0,
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
+    history:[{status:'NEW',timestamp:new Date().toISOString()}]
+  };
+
+  v12.missions.push(mission);
+  v12Log('MISSION',`${title} created`,project);
+  document.getElementById('v12MissionTitle').value='';
+  document.getElementById('v12MissionNotes').value='';
+  v12Save();
+  premiumToast('Mission masuk queue');
+}
+
+function v12NextStatus(id){
+  const m=v12.missions.find(x=>x.id===id); if(!m)return;
+  const idx=V12_STAGES.indexOf(m.status);
+  const next=V12_STAGES[Math.min(idx+1,V12_STAGES.length-1)];
+  m.status=next;
+  m.progress=Math.round((V12_STAGES.indexOf(next)/(V12_STAGES.length-1))*100);
+  m.updatedAt=new Date().toISOString();
+  m.history.push({status:next,timestamp:new Date().toISOString()});
+  const worker=v12.workers.find(w=>w.id===m.workerId);
+  if(next==='WORKING'){
+    worker.status='WORKING';
+    worker.currentMissionId=m.id;
+  }
+  if(next==='QC') worker.status='QC';
+  if(next==='PUBLISHED'||next==='ARCHIVED'){
+    worker.status='ONLINE';
+    worker.currentMissionId=null;
+    if(next==='ARCHIVED')worker.success++;
+  }
+  v12Log('STATUS',`${m.title} → ${next}`,worker?.name||'SYSTEM');
+  v12Save();
+}
+
+function v12PriorityClass(p){
+  return p==='CRITICAL'?'priority-critical':p==='HIGH'?'priority-high':p==='LOW'?'priority-low':'priority-normal';
+}
+function v12StatusClass(s){
+  return s==='WORKING'?'v12-working':s==='QC'?'v12-qc':s==='OFFLINE'?'v12-offline':'v12-online';
+}
+
+function v12Render(){
+  const workerSelect=document.getElementById('v12MissionWorker');
+  if(!workerSelect)return;
+  const current=workerSelect.value;
+  workerSelect.innerHTML='';
+  v12.workers.forEach(w=>{
+    const o=document.createElement('option');
+    o.value=w.id;o.textContent=`${w.name} — ${w.role}`;
+    workerSelect.appendChild(o);
+  });
+  if([...workerSelect.options].some(o=>o.value===current))workerSelect.value=current;
+
+  const workerList=document.getElementById('v12WorkerList');
+  workerList.innerHTML='';
+  v12.workers.forEach(w=>{
+    const currentMission=v12.missions.find(m=>m.id===w.currentMissionId);
+    const queue=v12.missions.filter(m=>m.workerId===w.id&&!['PUBLISHED','ARCHIVED'].includes(m.status)).length;
+    const card=document.createElement('div');
+    card.className='v12-card';
+    card.innerHTML=`
+      <div class="v12-head">
+        <div><b>${w.name}</b><div class="muted">${w.role} • ${w.workspace}</div></div>
+        <span class="v12-status ${v12StatusClass(w.status)}">● ${w.status}</span>
+      </div>
+      <div class="muted" style="margin-top:10px">Current Mission: ${currentMission?.title||'Monitoring'}</div>
+      <div class="v12-progress"><span style="width:${currentMission?.progress||0}%"></span></div>
+      <div class="v12-stats">
+        <div class="v12-stat"><b>${queue}</b><small>Queue</small></div>
+        <div class="v12-stat"><b>${w.success}</b><small>Success</small></div>
+        <div class="v12-stat"><b>${w.failed}</b><small>Failed</small></div>
+      </div>
+    `;
+    workerList.appendChild(card);
+  });
+
+  const missionList=document.getElementById('v12MissionList');
+  missionList.innerHTML='';
+  [...v12.missions].sort((a,b)=>{
+    const rank={CRITICAL:0,HIGH:1,NORMAL:2,LOW:3};
+    return rank[a.priority]-rank[b.priority]||new Date(b.createdAt)-new Date(a.createdAt);
+  }).forEach(m=>{
+    const worker=v12.workers.find(w=>w.id===m.workerId);
+    const card=document.createElement('div');
+    card.className='v12-card';
+    card.innerHTML=`
+      <div class="v12-head">
+        <div><b>${m.title}</b><div class="muted">${m.project} • Episode ${m.episode||'-'}</div></div>
+        <span class="v12-priority ${v12PriorityClass(m.priority)}">${m.priority}</span>
+      </div>
+      <div class="muted" style="margin-top:8px">Worker: ${worker?.name||'-'} • Workspace: ${m.workspace}</div>
+      <div class="v12-progress"><span style="width:${m.progress}%"></span></div>
+      <div class="muted" style="margin-top:7px">${m.status} • ${m.progress}%</div>
+      <div class="v12-stage-list">
+        ${V12_STAGES.map(s=>`<div class="v12-stage"><span>${s}</span><span>${V12_STAGES.indexOf(s)<=V12_STAGES.indexOf(m.status)?'✅':'⏳'}</span></div>`).join('')}
+      </div>
+      <div class="v12-actions">
+        <button data-v12-next="${m.id}">NEXT STATUS</button>
+        <button data-v12-delete="${m.id}">DELETE MISSION</button>
+      </div>
+    `;
+    missionList.appendChild(card);
+  });
+  if(!v12.missions.length)missionList.innerHTML='<div class="asset-empty">Belum ada mission.</div>';
+
+  const activity=document.getElementById('v12ActivityList');
+  activity.innerHTML='';
+  [...v12.activity].reverse().slice(0,50).forEach(a=>{
+    const row=document.createElement('div');
+    row.className='v12-log-row';
+    row.innerHTML=`<div class="v12-time">${new Date(a.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div><div><b>${a.source}</b><div class="muted">${a.message}</div></div>`;
+    activity.appendChild(row);
+  });
+  if(!v12.activity.length)activity.innerHTML='<div class="muted">Belum ada activity.</div>';
+
+  const active=v12.missions.filter(m=>!['PUBLISHED','ARCHIVED'].includes(m.status)).length;
+  const queued=v12.missions.filter(m=>['NEW','READY'].includes(m.status)).length;
+  const completed=v12.missions.filter(m=>m.status==='ARCHIVED').length;
+  document.getElementById('v12WorkersCount').textContent=v12.workers.length;
+  document.getElementById('v12ActiveMissions').textContent=active;
+  document.getElementById('v12QueueCount').textContent=queued;
+  document.getElementById('v12CompletedCount').textContent=completed;
+  document.getElementById('v12WorkerLabel').textContent=`${v12.workers.length} workers`;
+  document.getElementById('v12QueueLabel').textContent=`${v12.missions.length} missions`;
+}
+
+function v12Export(){
+  const blob=new Blob([JSON.stringify(v12,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='ACC_OS_X_AI_OS_V1_2.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function v12Seed(){
+  const demos=[
+    ['Han You Episode 008','Han You','008','STUDIO','HIGH','KAI_NIBAN'],
+    ['Royal Gambler Poster','Royal Gambler','021','STUDIO','NORMAL','KAI_ONI'],
+    ['PSL Stock Reconciliation','Papa Sauce Lab','-','FINANCE','CRITICAL','EVE'],
+    ['Bali Nightlife Campaign','Bali Nightlife','-','NIGHTLIFE','HIGH','KAI_ZERO']
+  ];
+  demos.forEach(d=>v12.missions.push({
+    id:'MIS-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),
+    title:d[0],project:d[1],episode:d[2],workspace:d[3],priority:d[4],workerId:d[5],
+    notes:'Demo mission',status:'NEW',progress:0,
+    createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),
+    history:[{status:'NEW',timestamp:new Date().toISOString()}]
+  }));
+  v12Log('SYSTEM','Demo missions added','ACC OS X');
+  v12Save();
+  premiumToast('Demo missions ditambahkan');
+}
+
+document.addEventListener('click',e=>{
+  const next=e.target.closest('[data-v12-next]');
+  if(next)v12NextStatus(next.dataset.v12Next);
+  const del=e.target.closest('[data-v12-delete]');
+  if(del){
+    v12.missions=v12.missions.filter(m=>m.id!==del.dataset.v12Delete);
+    v12Log('MISSION','Mission deleted','SYSTEM');
+    v12Save();
+  }
+});
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('v12CreateMission')?.addEventListener('click',v12CreateMission);
+  document.getElementById('v12SeedDemo')?.addEventListener('click',v12Seed);
+  document.getElementById('v12Export')?.addEventListener('click',v12Export);
+  document.getElementById('v12Clear')?.addEventListener('click',()=>{
+    v12={workers:v12DefaultWorkers,missions:[],activity:[],tick:0,updatedAt:new Date().toISOString()};
+    v12Save();premiumToast('AI OS data dikosongkan');
+  });
+  document.getElementById('v12Import')?.addEventListener('change',async e=>{
+    const f=e.target.files[0];if(!f)return;
+    try{
+      const parsed=JSON.parse(await f.text());
+      if(!Array.isArray(parsed.workers)||!Array.isArray(parsed.missions))throw new Error();
+      v12=parsed;v12Save();premiumToast('AI OS berhasil diimport');
+    }catch(err){premiumToast('Import gagal');}
+    e.target.value='';
+  });
+  if(!v12.activity.length)v12Log('STARTUP','ACC OS X v1.2 AI Operating System active','KAI ONE');
+  v12Save();
+});
+
 </script>
 <div id="settingsDrawerBackdrop" class="settings-drawer-backdrop">
   <aside class="settings-drawer" role="dialog" aria-modal="true" aria-label="ACC OS X Settings">
@@ -3909,7 +4271,7 @@ document.addEventListener('DOMContentLoaded',()=>{document.getElementById('saveC
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Enterprise Productivity • v1.1 Final</small>
+      <small>AI Operating System • v1.2</small>
     </div>
 
     <div class="drawer-section">
