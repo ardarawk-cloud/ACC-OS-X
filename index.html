@@ -185,7 +185,7 @@ nav{display:flex;overflow-x:auto;position:sticky;top:0;z-index:10;background:#07
 }
 
 
-/* Genesis Alpha v1.0 Stable & Settings */
+/* Enterprise Productivity v1.1 & Settings */
 :root{
   --header-glass:rgba(7,12,28,.86);
   --panel-glass:rgba(12,19,40,.94);
@@ -343,7 +343,7 @@ header{
 }
 
 
-/* Genesis Alpha v1.0 Stable */
+/* Enterprise Productivity v1.1 */
 nav:not(.bottom):has(button[data-page]){display:none!important}
 .tabs,.top-tabs,.primary-tabs{display:none!important}
 main{padding-top:10px}
@@ -368,7 +368,7 @@ main{padding-top:10px}
 }
 
 
-/* Genesis Alpha v1.0 Stable */
+/* Enterprise Productivity v1.1 */
 .live-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .live-card{
   background:linear-gradient(145deg,#0a1123,#15112e);
@@ -759,7 +759,7 @@ header .brand-title{
 }
 
 
-/* Build 020 — Genesis Alpha v1.0 Stable */
+/* Release 1.1 — Enterprise Productivity v1.1 */
 :root{
   --stable-glow:rgba(142,91,255,.22);
 }
@@ -954,20 +954,47 @@ button:active{
   .stable-health-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 
+
+.asset-toolbar{display:grid;grid-template-columns:1fr;gap:10px}
+.asset-search,.asset-select,.asset-input,.asset-textarea{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:#090f20;color:#fff}
+.asset-textarea{min-height:100px;resize:vertical}
+.asset-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.asset-card{background:linear-gradient(145deg,#0a1123,#15112e);border:1px solid #34405f;border-radius:18px;overflow:hidden}
+.asset-thumb{aspect-ratio:9/16;background:#080f20;display:grid;place-items:center;overflow:hidden}
+.asset-thumb img{width:100%;height:100%;object-fit:cover}
+.asset-placeholder{font-size:42px;opacity:.75}
+.asset-meta{padding:13px}.asset-meta h4{margin:0 0 5px}
+.asset-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.asset-tag{padding:5px 8px;border-radius:999px;background:#1d173a;color:#d9c4ff;font-size:10px;font-weight:900}
+.asset-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+.asset-actions button{padding:11px;border-radius:12px;border:1px solid var(--line);background:#121a2c;color:#fff;font-weight:900}
+.asset-project-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.asset-project{background:#080f20;border:1px solid var(--line);border-radius:16px;padding:13px}
+.asset-project b{display:block;font-size:20px;color:#d7b8ff}
+.asset-modal-backdrop{position:fixed;inset:0;background:rgba(2,5,13,.74);backdrop-filter:blur(6px);z-index:260;opacity:0;pointer-events:none;transition:.2s}
+.asset-modal-backdrop.open{opacity:1;pointer-events:auto}
+.asset-modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,520px);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#0c1328,#090d1c);border:1px solid #3d4967;border-radius:20px;padding:18px}
+.asset-preview-large{width:100%;border-radius:16px;display:block;background:#080f20}
+.asset-empty{text-align:center;padding:30px 16px;border:1px dashed #40506f;border-radius:18px;color:var(--muted)}
+.file-picker-label{display:block;padding:13px 14px;border:1px dashed #5c4a82;border-radius:14px;text-align:center;background:#15102b;color:#e8dcff;font-weight:900}
+.file-picker-label input{display:none}
+@media(min-width:700px){.asset-toolbar{grid-template-columns:2fr 1fr 1fr}.asset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.asset-project-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:1100px){.asset-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
 </style></head><body>
 
 <div id="finalSplash020">
   <div class="splash020-wrap">
     <img class="splash020-logo" src="./icon-192.png" alt="ACC OS X">
     <div class="splash020-title">ACC OS X</div>
-    <div class="splash020-sub">Genesis Alpha • v1.0 Stable</div>
+    <div class="splash020-sub">Enterprise Productivity • v1.1</div>
     <div class="splash020-progress"><span id="splash020Bar"></span></div>
     <div id="splash020Log" class="splash020-log"></div>
   </div>
 </div>
 
 <div id="splash"><div class="splash"><img src="./icon-192.png"><h2>ACC OS X</h2><div class="muted">Enterprise Core Engine • Build 008</div><div class="loader"></div></div></div>
-<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Genesis Alpha • v1.0 Stable</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
+<header><div class="brand"><img src="./icon-192.png"><div><h1>ACC OS X</h1><div class="sub">Enterprise Productivity • v1.1</div></div></div><div class="statusrow"><div class="online"><span class="dot"></span> ENTERPRISE STATE ACTIVE</div><div id="clock" class="clock">--:--</div></div><div class="selectors"><select id="workspaceSelect"></select><select id="channelSelect"></select><select id="roleSelect"><option>OWNER</option><option>PRODUCTION</option><option>REVIEWER</option></select></div>
 <div class="header-actions">
   <button id="openNotificationPanel" class="notification-btn" aria-label="Open Notifications">🔔<span id="notificationBadge" class="notification-badge">0</span></button>
   <button id="openSettingsDrawer" class="header-icon-btn" aria-label="Open Settings">⚙</button>
@@ -1123,6 +1150,51 @@ button:active{
   <div class="live-card">
     <div class="live-title"><h3>Command History</h3><span id="liveCommandCount">0 commands</span></div>
     <div id="liveCommandHistory" style="margin-top:10px"></div>
+  </div>
+</section>
+
+
+<section id="assetlibrary" class="page">
+  <div class="card hero">
+    <span class="tag">ASSET LIBRARY ACTIVE</span>
+    <h2>Semua karya ACC tersimpan dalam satu galeri</h2>
+    <div class="muted">Poster, comic, caption, logo, dan asset lain bisa dikelompokkan per project, episode, dan kategori.</div>
+  </div>
+  <div class="asset-project-grid">
+    <div class="asset-project"><small>Total Assets</small><b id="assetTotal">0</b></div>
+    <div class="asset-project"><small>Projects</small><b id="assetProjects">0</b></div>
+    <div class="asset-project"><small>Posters</small><b id="assetPosters">0</b></div>
+    <div class="asset-project"><small>Captions</small><b id="assetCaptions">0</b></div>
+  </div>
+  <div class="card">
+    <div class="title"><h3>Add New Asset</h3><span>local-first</span></div>
+    <div class="asset-toolbar">
+      <input id="assetProjectInput" class="asset-input" placeholder="Project, contoh: Royal Gambler">
+      <input id="assetEpisodeInput" class="asset-input" placeholder="Episode, contoh: 018">
+      <select id="assetTypeInput" class="asset-select"><option>POSTER</option><option>COMIC</option><option>CAPTION</option><option>LOGO</option><option>COVER</option><option>OTHER</option></select>
+    </div>
+    <input id="assetTitleInput" class="asset-input" style="margin-top:10px" placeholder="Judul asset">
+    <textarea id="assetCaptionInput" class="asset-textarea" style="margin-top:10px" placeholder="Caption atau catatan asset"></textarea>
+    <label class="file-picker-label" style="margin-top:10px">PILIH GAMBAR DARI HP<input id="assetFileInput" type="file" accept="image/*"></label>
+    <button id="saveAssetButton" class="primary" style="margin-top:10px">SAVE TO ASSET LIBRARY</button>
+  </div>
+  <div class="card">
+    <div class="title"><h3>Media Gallery</h3><span id="assetVisibleCount">0 visible</span></div>
+    <div class="asset-toolbar">
+      <input id="assetSearchInput" class="asset-search" placeholder="Cari project, episode, judul...">
+      <select id="assetFilterType" class="asset-select"><option value="ALL">ALL TYPES</option><option>POSTER</option><option>COMIC</option><option>CAPTION</option><option>LOGO</option><option>COVER</option></select>
+      <select id="assetFilterProject" class="asset-select"><option value="ALL">ALL PROJECTS</option></select>
+    </div>
+    <div id="assetGrid" class="asset-grid" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="title"><h3>Library Tools</h3><span>backup & restore</span></div>
+    <div class="db-actions">
+      <button id="exportAssetLibrary" class="secondary">EXPORT LIBRARY JSON</button>
+      <label class="secondary" style="display:grid;place-items:center;margin:0">IMPORT LIBRARY JSON<input id="importAssetLibrary" type="file" accept="application/json" style="display:none"></label>
+      <button id="clearAssetLibrary" class="secondary">CLEAR LIBRARY</button>
+      <button id="seedDemoAssets" class="secondary">ADD DEMO ASSETS</button>
+    </div>
   </div>
 </section>
 
@@ -1364,7 +1436,7 @@ button:active{
   <div class="release-card">
     <div class="release-emblem">🏆</div>
     <h2 style="margin:0">ACC OS X</h2>
-    <div class="muted">Genesis Alpha v1.0 Stable</div>
+    <div class="muted">Enterprise Productivity v1.1</div>
 
     <div class="release-meta">
       <div><small>Version</small><b>1.0.0</b></div>
@@ -2035,7 +2107,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const oldRoute=byId('routeAICommand');
   if(oldRoute) oldRoute.dataset.stableRouter='active';
 
-  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
   renderStableJobs();
   renderStableDebug();
 });
@@ -2329,7 +2401,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
   renderCommandEngine();
-  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
 });
 
 
@@ -2622,7 +2694,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderWorkflowEngine();
-  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
 });
 
 
@@ -2689,7 +2761,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
 });
 
 
@@ -2709,7 +2781,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     btn.addEventListener('click',()=>syncBottomNavActive(btn.dataset.page));
   });
   syncBottomNavActive(document.querySelector('.page.active')?.id || 'home');
-  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
 });
 
 
@@ -2874,7 +2946,7 @@ function liveTick(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   if(!liveEngine.activity.length){
-    pushLiveActivity('STARTUP','Genesis Alpha v1.0 Stable aktif','ACC OS X');
+    pushLiveActivity('STARTUP','Enterprise Productivity v1.1 aktif','ACC OS X');
   }
   renderLiveEngine();
   setInterval(liveTick,2500);
@@ -3136,7 +3208,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     saveWorkspaceState();
   },5000);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
 });
 
 
@@ -3358,9 +3430,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderLiveCommandEngine();
   if(!liveCommandState.console.length){
-    addConsoleLine('Genesis Alpha v1.0 Stable active.','success');
+    addConsoleLine('Enterprise Productivity v1.1 active.','success');
   }
-  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
 });
 
 
@@ -3600,7 +3672,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(!workerState019.activity.length){
-    workerLog019('KAI_ONE','Genesis Alpha v1.0 Stable active','STARTUP');
+    workerLog019('KAI_ONE','Enterprise Productivity v1.1 active','STARTUP');
   }
 
   renderWorkers019();
@@ -3613,11 +3685,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderWorkers019();
   },1800);
 
-  if(typeof stableLog==='function') stableLog('STARTUP','Genesis Alpha v1.0 Stable aktif');
+  if(typeof stableLog==='function') stableLog('STARTUP','Enterprise Productivity v1.1 aktif');
 });
 
 
-// ACC OS X Build 020 — Genesis Alpha v1.0 Stable
+// ACC OS X Release 1.1 — Enterprise Productivity v1.1
 const RELEASE_020_KEY='acc_os_x_release_020_v1';
 
 function stableMetrics020(){
@@ -3694,7 +3766,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       pushNotification(
         'RELEASE',
         'Genesis Alpha v1.0 Released',
-        'ACC OS X Build 020 Stable is now active.',
+        'ACC OS X Release 1.1 Stable is now active.',
         'acc',
         'INFO'
       );
@@ -3702,8 +3774,79 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   if(typeof stableLog==='function'){
-    stableLog('RELEASE','ACC OS X Genesis Alpha v1.0 Stable aktif');
+    stableLog('RELEASE','ACC OS X Enterprise Productivity v1.1 aktif');
   }
+});
+
+
+const ASSET_LIBRARY_KEY='acc_os_x_asset_library_v1';
+let assetLibrary;
+try{assetLibrary=JSON.parse(localStorage.getItem(ASSET_LIBRARY_KEY)||'null')||{assets:[],updatedAt:new Date().toISOString()};}
+catch(e){assetLibrary={assets:[],updatedAt:new Date().toISOString()};}
+function saveAssetLibrary(){assetLibrary.updatedAt=new Date().toISOString();localStorage.setItem(ASSET_LIBRARY_KEY,JSON.stringify(assetLibrary));renderAssetLibrary();}
+function fileToDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});}
+function uniqueProjects(){return [...new Set(assetLibrary.assets.map(a=>a.project).filter(Boolean))].sort();}
+function renderAssetLibrary(){
+  const grid=document.getElementById('assetGrid'); if(!grid)return;
+  const q=(document.getElementById('assetSearchInput')?.value||'').toLowerCase();
+  const type=document.getElementById('assetFilterType')?.value||'ALL';
+  const project=document.getElementById('assetFilterProject')?.value||'ALL';
+  const filtered=assetLibrary.assets.filter(a=>(!q||JSON.stringify(a).toLowerCase().includes(q))&&(type==='ALL'||a.type===type)&&(project==='ALL'||a.project===project));
+  document.getElementById('assetTotal').textContent=assetLibrary.assets.length;
+  document.getElementById('assetProjects').textContent=uniqueProjects().length;
+  document.getElementById('assetPosters').textContent=assetLibrary.assets.filter(a=>a.type==='POSTER').length;
+  document.getElementById('assetCaptions').textContent=assetLibrary.assets.filter(a=>a.type==='CAPTION').length;
+  document.getElementById('assetVisibleCount').textContent=`${filtered.length} visible`;
+  const sel=document.getElementById('assetFilterProject'); const cur=sel.value; sel.innerHTML='<option value="ALL">ALL PROJECTS</option>';
+  uniqueProjects().forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;sel.appendChild(o);}); if([...sel.options].some(o=>o.value===cur))sel.value=cur;
+  grid.innerHTML='';
+  filtered.slice().reverse().forEach(a=>{
+    const card=document.createElement('div'); card.className='asset-card';
+    const thumb=a.imageData?`<img src="${a.imageData}" alt="${a.title}">`:`<div class="asset-placeholder">${a.type==='CAPTION'?'✎':'▧'}</div>`;
+    card.innerHTML=`<div class="asset-thumb">${thumb}</div><div class="asset-meta"><h4>${a.title}</h4><div class="muted">${a.project} • Episode ${a.episode||'-'}</div><div class="asset-tags"><span class="asset-tag">${a.type}</span></div><div class="asset-actions"><button data-asset-open="${a.id}">OPEN</button><button data-asset-delete="${a.id}">DELETE</button></div></div>`;
+    grid.appendChild(card);
+  });
+  if(!filtered.length)grid.innerHTML='<div class="asset-empty">Belum ada asset.<br>Tambahkan poster atau caption dari HP.</div>';
+}
+async function addAssetFromForm(){
+  const project=document.getElementById('assetProjectInput').value.trim();
+  const episode=document.getElementById('assetEpisodeInput').value.trim();
+  const type=document.getElementById('assetTypeInput').value;
+  const title=document.getElementById('assetTitleInput').value.trim();
+  const caption=document.getElementById('assetCaptionInput').value.trim();
+  const file=document.getElementById('assetFileInput').files[0];
+  if(!project){premiumToast('Isi nama project dulu.');return;}
+  if(!title){premiumToast('Isi judul asset dulu.');return;}
+  if(type!=='CAPTION'&&!file){premiumToast('Pilih gambar dari HP.');return;}
+  const imageData=file?await fileToDataUrl(file):null;
+  assetLibrary.assets.push({id:'asset-'+Date.now(),project,episode,type,title,caption,imageData,fileName:file?.name||null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+  saveAssetLibrary();
+  document.getElementById('assetTitleInput').value='';document.getElementById('assetCaptionInput').value='';document.getElementById('assetFileInput').value='';
+  premiumToast('Asset berhasil disimpan');
+}
+function openAssetModal(id){
+  const a=assetLibrary.assets.find(x=>x.id===id); if(!a)return;
+  document.getElementById('assetModalTitle').textContent=a.title;
+  document.getElementById('assetModalBody').innerHTML=`${a.imageData?`<img class="asset-preview-large" src="${a.imageData}">`:''}<div class="drawer-section" style="margin-top:12px"><div class="drawer-item"><div class="drawer-label"><b>Project</b><small>${a.project}</small></div></div><div class="drawer-item"><div class="drawer-label"><b>Episode</b><small>${a.episode||'-'}</small></div></div><div class="drawer-item"><div class="drawer-label"><b>Type</b><small>${a.type}</small></div></div></div>${a.caption?`<div class="drawer-section"><h4>Caption / Notes</h4><div class="muted" style="white-space:pre-wrap">${a.caption}</div><button id="copyAssetCaption" class="secondary" style="margin-top:10px">COPY CAPTION</button></div>`:''}`;
+  document.getElementById('assetModalBackdrop').classList.add('open');document.body.style.overflow='hidden';
+  document.getElementById('copyAssetCaption')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(a.caption||'');premiumToast('Caption disalin');});
+}
+function closeAssetModal(){document.getElementById('assetModalBackdrop').classList.remove('open');document.body.style.overflow='';}
+function exportAssetLibrary(){const b=new Blob([JSON.stringify(assetLibrary,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ACC_OS_X_ASSET_LIBRARY.json';a.click();URL.revokeObjectURL(a.href);}
+function seedDemoAssets(){['Royal Gambler','Han You','ACC OS X'].forEach((p,i)=>assetLibrary.assets.push({id:'demo-'+Date.now()+'-'+i,project:p,episode:String(i+1).padStart(3,'0'),type:i===1?'CAPTION':'POSTER',title:p+' Demo Asset',caption:'Demo asset metadata.',imageData:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));saveAssetLibrary();premiumToast('Demo assets ditambahkan');}
+document.addEventListener('click',e=>{const o=e.target.closest('[data-asset-open]');if(o)openAssetModal(o.dataset.assetOpen);const d=e.target.closest('[data-asset-delete]');if(d){assetLibrary.assets=assetLibrary.assets.filter(a=>a.id!==d.dataset.assetDelete);saveAssetLibrary();premiumToast('Asset dihapus');}});
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('saveAssetButton')?.addEventListener('click',addAssetFromForm);
+  document.getElementById('assetSearchInput')?.addEventListener('input',renderAssetLibrary);
+  document.getElementById('assetFilterType')?.addEventListener('change',renderAssetLibrary);
+  document.getElementById('assetFilterProject')?.addEventListener('change',renderAssetLibrary);
+  document.getElementById('closeAssetModal')?.addEventListener('click',closeAssetModal);
+  document.getElementById('assetModalBackdrop')?.addEventListener('click',e=>{if(e.target.id==='assetModalBackdrop')closeAssetModal();});
+  document.getElementById('exportAssetLibrary')?.addEventListener('click',exportAssetLibrary);
+  document.getElementById('clearAssetLibrary')?.addEventListener('click',()=>{assetLibrary={assets:[],updatedAt:new Date().toISOString()};saveAssetLibrary();premiumToast('Asset Library dikosongkan');});
+  document.getElementById('seedDemoAssets')?.addEventListener('click',seedDemoAssets);
+  document.getElementById('importAssetLibrary')?.addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const p=JSON.parse(await f.text());if(!Array.isArray(p.assets))throw Error();assetLibrary=p;saveAssetLibrary();premiumToast('Asset Library berhasil diimport');}catch(err){premiumToast('Import gagal');}e.target.value='';});
+  renderAssetLibrary();
 });
 
 </script>
@@ -3716,7 +3859,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="drawer-build">
       <b>ACC OS X</b>
-      <small>Genesis Alpha • v1.0 Stable</small>
+      <small>Enterprise Productivity • v1.1</small>
     </div>
 
     <div class="drawer-section">
@@ -3812,6 +3955,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     </div>
     <div id="workerDetailBody019"></div>
   </aside>
+</div>
+
+
+<div id="assetModalBackdrop" class="asset-modal-backdrop">
+  <div class="asset-modal">
+    <div class="drawer-head"><h3 id="assetModalTitle">Asset Preview</h3><button id="closeAssetModal" class="drawer-close">×</button></div>
+    <div id="assetModalBody"></div>
+  </div>
 </div>
 
 </body></html>
