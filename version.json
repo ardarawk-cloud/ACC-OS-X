@@ -1,8 +1,8 @@
 {
   "version": 214,
-  "name": "ACC AI Console \u2014 Owner Action Feedback Fix",
+  "name": "ACC AI — Cloudflare Workers AI Connection",
   "channel": "beta",
-  "releasedAt": "2026-08-07T12:31:00+08:00",
+  "releasedAt": "2026-08-07T13:44:00+08:00",
   "minimumSchema": 210,
-  "revision": "R4"
+  "revision": "R5"
 }

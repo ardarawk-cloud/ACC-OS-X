@@ -1,24 +1,25 @@
-# ACC OS X Build 214 R3 — ACC AI Context Isolation Fix
+# ACC OS X Build 214 R5 — Cloudflare Workers AI
 
-## Fixes
+## Added
+- Real generative KAI chat through same-origin `/api/acc-ai`.
+- Cloudflare Workers AI binding (`env.AI`) — no OpenAI API key required.
+- Server-side owner access-code validation.
+- Active ACC workspace/profile/workflow/Knowledge Vault context injection.
+- Local Safe fallback remains available if Workers AI is unavailable or daily allocation is exhausted.
+- `/api/acc-ai` GET status endpoint for deployment diagnostics.
 
-- Fixed LOCAL SAFE assistant reporting `Workspace undefined`; active workspace now resolves from ACC workspace state.
-- ACC AI Notes saved to Knowledge Vault are now `HISTORY ONLY` records and are never injected automatically into AI context.
-- Existing `ACC AI Note — ...` records from R2 are migrated automatically to history-only mode.
-- Active AI context is now limited to production context such as Production Profile Passport, Current State, Workflow Rules and Brand & Canon Lock.
-- Knowledge Vault shows injected context count separately from AI Notes.
-- System Control build label updated to Build 214 R3.
-- Service worker cache revision bumped so installed PWA detects the R3 update.
+## Provider
+Default model: `@cf/meta/llama-3.1-8b-instruct-fast`.
+The model can be changed with `ACC_AI_MODEL` in Wrangler/Cloudflare variables.
 
-## Data safety
+## Security
+`ACC_AI_ACCESS_CODE` must be configured as a Cloudflare secret/secret variable. Never commit it to GitHub.
 
-- Same PWA identity (`/`).
-- Same Build 214 storage key; no registry reset.
-- Existing queue, assets, archives, chat history, backups and production state are preserved.
-- Build 213 migration keys remain available.
-
-## R4 — Owner Action Feedback Fix
-- Makes Save to Vault, Send to Queue, and Apply to Pipeline explicitly tap-safe on mobile.
-- Adds persistent in-console success feedback after each owner action.
-- Raises toast notifications above the AI modal so confirmations are visible.
-- Bumps service worker cache revision to R4.
+## Preserved
+- Build 214 registry and migration state
+- PWA identity `/`
+- Local data and backups
+- Save to Vault
+- Send to Queue
+- Apply to Pipeline
+- Mobile responsive fixes
