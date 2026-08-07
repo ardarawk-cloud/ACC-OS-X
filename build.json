@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "ACC OS X — Worker Execution Engine",
+  "milestone": "ACC OS X — Founder Theme Deck",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.5",
+  "packageRevision": "214-R6.6",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
@@ -83,5 +83,25 @@
   "workerTaskVisibilityPolish": true,
   "workerReadyStateVisible": true,
   "workerRealExecutionEndpoint": "same-origin /api/acc-ai",
-  "workerFallbackPolicy": "fail-safe; no fake success when server AI unavailable"
+  "workerFallbackPolicy": "fail-safe; no fake success when server AI unavailable",
+  "themeDeck": true,
+  "themePresetCount": 12,
+  "themePresetNames": [
+    "Neon X",
+    "Hikayat Pohon Ganja",
+    "Electric Blue",
+    "Gold Black",
+    "Crimson Core",
+    "Cyber Mint",
+    "Midnight Club",
+    "Ember",
+    "Ice",
+    "Matrix",
+    "Sakura",
+    "Monochrome"
+  ],
+  "customThemeMixer": true,
+  "randomThemeButton": true,
+  "themePersistence": "state.settings + backup/restore",
+  "themeSafety": "visual only; production data and AI workflow untouched"
 }

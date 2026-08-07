@@ -1,5 +1,10 @@
-# Upload Build 214 R6.5
+# Upload Build 214 R6.6
 
-Extract this ZIP and upload **all files** to the root of the public GitHub repository connected to the existing Cloudflare Worker. Commit to `main`; Cloudflare auto-deploy handles the rest.
+1. Extract this ZIP.
+2. Upload all files in this package to the **root** of the public `ACC-OS-X` GitHub repository, replacing files with the same names.
+3. Commit to `main`.
+4. Cloudflare auto-deploys.
+5. Open the installed PWA and use **UPDATE ACC OS X** when the update is detected.
+6. Open **SYSTEM → THEME DECK** and choose a skin.
 
-Do not create a new Worker. Do not put `ACC_AI_ACCESS_CODE` in GitHub. The existing Cloudflare Secret and AI binding are reused.
+No Cloudflare Secret, Worker binding or deployment setting needs to be changed.

@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.5";
+  const PACKAGE_REVISION = "R6.6";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -19,6 +19,24 @@
     "acc_os_x_safe_scroll_v201"
   ];
   const RECOVERY_KEY = "acc_os_x_recovery_payload";
+
+
+  const THEME_PRESETS = [
+    {id:"neon-x",name:"NEON X",tag:"ACC DEFAULT",vars:{bg:"#020617",panel:"#10192d",panel2:"#071023",panel3:"#02081a",line:"#25324a",line2:"#40506a",text:"#f8fafc",muted:"#8390aa",accent:"#a855f7",accentStrong:"#7e22ce",accentBright:"#d084ff",accentSoft:"#3b0764",accentSoft2:"#17112c",accentHot:"#9d0cff",accent2:"#3b82f6",accent2Bright:"#60a5fa"}},
+    {id:"hikayat",name:"HIKAYAT POHON GANJA",tag:"FOREST HERITAGE",vars:{bg:"#061109",panel:"#0d1d12",panel2:"#0b2211",panel3:"#07140a",line:"#24452d",line2:"#3f6748",text:"#f3faef",muted:"#91a991",accent:"#79c267",accentStrong:"#2f7d32",accentBright:"#b7f397",accentSoft:"#17391d",accentSoft2:"#102816",accentHot:"#4fae4e",accent2:"#c4a84b",accent2Bright:"#e8d27a"}},
+    {id:"electric-blue",name:"ELECTRIC BLUE",tag:"TECH MODE",vars:{bg:"#020712",panel:"#09172a",panel2:"#061425",panel3:"#020b18",line:"#17365a",line2:"#2d5b86",text:"#f3f8ff",muted:"#8297b6",accent:"#2f8cff",accentStrong:"#1557b8",accentBright:"#77baff",accentSoft:"#082955",accentSoft2:"#071d38",accentHot:"#1478ff",accent2:"#22d3ee",accent2Bright:"#67e8f9"}},
+    {id:"gold-black",name:"GOLD BLACK",tag:"EXECUTIVE",vars:{bg:"#080704",panel:"#17140c",panel2:"#121008",panel3:"#0c0a05",line:"#40391f",line2:"#675b2a",text:"#fffaf0",muted:"#a89d7f",accent:"#d7b64a",accentStrong:"#92751d",accentBright:"#ffe28a",accentSoft:"#3a2f0d",accentSoft2:"#241f0c",accentHot:"#e8be2f",accent2:"#f59e0b",accent2Bright:"#fcd34d"}},
+    {id:"crimson-core",name:"CRIMSON CORE",tag:"RED ALERT",vars:{bg:"#100408",panel:"#251018",panel2:"#1d0b12",panel3:"#12060b",line:"#5a2434",line2:"#83384d",text:"#fff5f6",muted:"#b78c98",accent:"#fb4d6d",accentStrong:"#b51f43",accentBright:"#ff8aa1",accentSoft:"#551128",accentSoft2:"#35101c",accentHot:"#ff315c",accent2:"#f97316",accent2Bright:"#fdba74"}},
+    {id:"cyber-mint",name:"CYBER MINT",tag:"CLEAN SIGNAL",vars:{bg:"#03100f",panel:"#0a211f",panel2:"#071a19",panel3:"#041311",line:"#22504b",line2:"#3c766f",text:"#effcf9",muted:"#86aaa4",accent:"#2dd4bf",accentStrong:"#0f766e",accentBright:"#7ff4e7",accentSoft:"#0c3b37",accentSoft2:"#0a2b28",accentHot:"#14b8a6",accent2:"#38bdf8",accent2Bright:"#7dd3fc"}},
+    {id:"midnight-club",name:"MIDNIGHT CLUB",tag:"NIGHTLIFE",vars:{bg:"#06030f",panel:"#171028",panel2:"#100a21",panel3:"#090516",line:"#3b275b",line2:"#62418a",text:"#fff5ff",muted:"#a391b9",accent:"#ec4899",accentStrong:"#a21caf",accentBright:"#f9a8d4",accentSoft:"#4a103d",accentSoft2:"#2d1234",accentHot:"#d946ef",accent2:"#22d3ee",accent2Bright:"#67e8f9"}},
+    {id:"ember",name:"EMBER",tag:"HOT ENGINE",vars:{bg:"#100804",panel:"#24150d",panel2:"#1b1009",panel3:"#120a05",line:"#58361e",line2:"#82502d",text:"#fff8ef",muted:"#b39a83",accent:"#f97316",accentStrong:"#c2410c",accentBright:"#fdba74",accentSoft:"#54230b",accentSoft2:"#35190c",accentHot:"#fb5d0b",accent2:"#fbbf24",accent2Bright:"#fde68a"}},
+    {id:"ice",name:"ICE",tag:"ARCTIC GLASS",vars:{bg:"#020b13",panel:"#0b1b29",panel2:"#071522",panel3:"#03101a",line:"#27485f",line2:"#47708a",text:"#f4fbff",muted:"#8ea7b8",accent:"#7dd3fc",accentStrong:"#0369a1",accentBright:"#bae6fd",accentSoft:"#0a3550",accentSoft2:"#09283d",accentHot:"#38bdf8",accent2:"#a5b4fc",accent2Bright:"#c7d2fe"}},
+    {id:"matrix",name:"MATRIX",tag:"TERMINAL GREEN",vars:{bg:"#010802",panel:"#071608",panel2:"#051205",panel3:"#020b03",line:"#1f4724",line2:"#376d3d",text:"#ecffec",muted:"#7ca17e",accent:"#39ff63",accentStrong:"#12852a",accentBright:"#9affaa",accentSoft:"#0b3b15",accentSoft2:"#09280f",accentHot:"#20df49",accent2:"#16a34a",accent2Bright:"#86efac"}},
+    {id:"sakura",name:"SAKURA",tag:"SOFT NEON",vars:{bg:"#10070e",panel:"#251522",panel2:"#1d101a",panel3:"#120810",line:"#563249",line2:"#7c4c6c",text:"#fff7fb",muted:"#b197a9",accent:"#f472b6",accentStrong:"#be185d",accentBright:"#fbcfe8",accentSoft:"#501631",accentSoft2:"#351421",accentHot:"#ec4899",accent2:"#c084fc",accent2Bright:"#e9d5ff"}},
+    {id:"monochrome",name:"MONOCHROME",tag:"NO DISTRACTION",vars:{bg:"#08090b",panel:"#17191d",panel2:"#111317",panel3:"#0b0d10",line:"#343840",line2:"#555b65",text:"#f5f5f5",muted:"#9a9ea6",accent:"#d4d4d8",accentStrong:"#71717a",accentBright:"#fafafa",accentSoft:"#303036",accentSoft2:"#232328",accentHot:"#a1a1aa",accent2:"#94a3b8",accent2Bright:"#cbd5e1"}}
+  ];
+
+  const DEFAULT_CUSTOM_THEME = {accent:"#a855f7",accent2:"#3b82f6",bg:"#020617",panel:"#10192d"};
 
   const INITIALIZED_PROFILE_IDS = [
     "ch-ardmrn-insight",
@@ -289,7 +307,9 @@ Mission: ${profile.mission||"—"}`},
       autoBackup:true,
       lastBackupAt:null,
       lastUpdateCheck:null,
-      permanentPwaIdentity:true
+      permanentPwaIdentity:true,
+      themeId:"neon-x",
+      customTheme:{...DEFAULT_CUSTOM_THEME}
     }
   });
 
@@ -385,6 +405,55 @@ Mission: ${profile.mission||"—"}`},
   };
 
   let state = loadState();
+
+
+  const hexColor = (value,fallback) => /^#[0-9a-f]{6}$/i.test(String(value||"")) ? String(value) : fallback;
+  const customTheme = () => {
+    const custom={...DEFAULT_CUSTOM_THEME,...(state.settings.customTheme||{})};
+    const accent=hexColor(custom.accent,DEFAULT_CUSTOM_THEME.accent);
+    const accent2=hexColor(custom.accent2,DEFAULT_CUSTOM_THEME.accent2);
+    const bg=hexColor(custom.bg,DEFAULT_CUSTOM_THEME.bg);
+    const panel=hexColor(custom.panel,DEFAULT_CUSTOM_THEME.panel);
+    return {id:"custom",name:"CUSTOM MIX",tag:"FOUNDER MIX",vars:{
+      bg,panel,panel2:panel,panel3:bg,line:"#40506a",line2:"#526078",text:"#f8fafc",muted:"#94a3b8",
+      accent,accentStrong:accent,accentBright:accent,accentSoft:panel,accentSoft2:panel,accentHot:accent,accent2,accent2Bright:accent2
+    }};
+  };
+  const currentTheme = () => state.settings.themeId === "custom"
+    ? customTheme()
+    : (THEME_PRESETS.find(theme=>theme.id===state.settings.themeId) || THEME_PRESETS[0]);
+  const applyTheme = () => {
+    const theme=currentTheme();
+    const root=document.documentElement;
+    root.dataset.accTheme=theme.id;
+    Object.entries(theme.vars).forEach(([key,value])=>{
+      const cssName=key.replace(/[A-Z]/g,letter=>`-${letter.toLowerCase()}`);
+      root.style.setProperty(`--${cssName}`,value);
+    });
+    root.style.colorScheme="dark";
+  };
+  const setTheme = themeId => {
+    const theme=THEME_PRESETS.find(item=>item.id===themeId);
+    if(!theme)return;
+    state.settings.themeId=theme.id;
+    save();applyTheme();showToast(`Theme aktif: ${theme.name}`);
+  };
+  const setRandomTheme = () => {
+    const choices=THEME_PRESETS.filter(item=>item.id!==state.settings.themeId);
+    const theme=choices[Math.floor(Math.random()*choices.length)] || THEME_PRESETS[0];
+    state.settings.themeId=theme.id;
+    save();applyTheme();showToast(`Surprise theme: ${theme.name}`);
+  };
+  const setCustomTheme = () => {
+    const existing={...DEFAULT_CUSTOM_THEME,...(state.settings.customTheme||{})};
+    const read=(id,fallback)=>hexColor(document.getElementById(id)?.value,fallback);
+    state.settings.customTheme={
+      accent:read("theme-custom-accent",existing.accent),accent2:read("theme-custom-accent2",existing.accent2),
+      bg:read("theme-custom-bg",existing.bg),panel:read("theme-custom-panel",existing.panel)
+    };
+    state.settings.themeId="custom";
+    save();applyTheme();showToast("CUSTOM MIX diterapkan.");
+  };
 
   const snapshotPayload = () => {
     const clone = JSON.parse(JSON.stringify(state));
@@ -1293,12 +1362,35 @@ Operational rules:
     return `<section class="section mono"><div class="card"><div class="eyebrow">SYSTEM DIAGNOSTICS</div><h2 class="card-title">SYSTEM HEALTH</h2><div class="grid health-grid" style="margin-top:16px">${checks.map(([label,value,status])=>`<div class="health-card"><div class="row"><span class="health-dot ${status==="warn"?"warn":status==="bad"?"bad":""}"></span><span class="muted tiny">${label}</span></div><strong style="display:block;margin-top:9px">${escapeHtml(value)}</strong></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="create-backup">CREATE SAFETY BACKUP</button><button class="btn dark mono" data-action="clear-caches">CLEAR OLD CACHE</button></div></div></section>`;
   };
 
+
+  const themeCenterHtml=()=>{
+    const active=currentTheme();
+    const custom={...DEFAULT_CUSTOM_THEME,...(state.settings.customTheme||{})};
+    const themeCards=THEME_PRESETS.map(theme=>`<button class="theme-card ${active.id===theme.id?"active":""}" data-action="set-theme" data-value="${theme.id}">
+      <div class="theme-swatches"><span style="background:${theme.vars.bg}"></span><span style="background:${theme.vars.panel}"></span><span style="background:${theme.vars.accent}"></span><span style="background:${theme.vars.accent2}"></span></div>
+      <strong>${escapeHtml(theme.name)}</strong><small>${escapeHtml(theme.tag)}</small>
+    </button>`).join("");
+    return `<div class="card theme-center" style="margin-top:16px"><div class="row between wrap"><div><div class="eyebrow">FOUNDER PERSONALIZATION</div><h2 class="card-title">THEME DECK</h2></div><span class="badge">${escapeHtml(active.name)}</span></div>
+      <p class="muted small">Ganti skin ACC OS X kapan saja tanpa edit GitHub/CSS. Data produksi, KAI, Queue dan Pipeline tidak berubah.</p>
+      <div class="theme-grid">${themeCards}</div>
+      <div class="divider"></div>
+      <div class="row between wrap"><div><div class="eyebrow">CUSTOM MIX</div><strong class="small">Racik warna sendiri</strong></div><span class="status ready">LOCAL ONLY</span></div>
+      <div class="theme-custom-grid">
+        <label class="theme-color"><span>ACCENT</span><input id="theme-custom-accent" type="color" value="${escapeHtml(custom.accent)}"></label>
+        <label class="theme-color"><span>SECONDARY</span><input id="theme-custom-accent2" type="color" value="${escapeHtml(custom.accent2)}"></label>
+        <label class="theme-color"><span>BACKGROUND</span><input id="theme-custom-bg" type="color" value="${escapeHtml(custom.bg)}"></label>
+        <label class="theme-color"><span>PANEL</span><input id="theme-custom-panel" type="color" value="${escapeHtml(custom.panel)}"></label>
+      </div>
+      <div class="actions theme-actions"><button class="btn primary mono" data-action="apply-custom-theme">APPLY CUSTOM</button><button class="btn dark mono" data-action="random-theme">SURPRISE ME</button></div>
+    </div>`;
+  };
+
   const systemHtml=()=>{
     const m=metrics();
     return `<section class="section mono"><div class="card"><h2 class="card-title">SYSTEM CONTROL</h2><div class="list" style="margin-top:15px">${[
-      ["APPLICATION","ACC OS X"],["BUILD",`214 ${PACKAGE_REVISION} Worker Execution Engine`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
+      ["APPLICATION","ACC OS X"],["BUILD",`214 ${PACKAGE_REVISION} Theme Deck`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
       ["AI MODE",state.ai.providerMode],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
-    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button></div></div></section>`;
+    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button></div></div></section>${themeCenterHtml()}`;
   };
 
   const getAiAccessCode=()=>localStorage.getItem(AI_ACCESS_STORAGE_KEY)||"";
@@ -1446,6 +1538,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   };
 
   const render=()=>{
+    applyTheme();
     const scroll=window.scrollY;
     ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD 214</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka ACC AI"><span>✦</span><small>AI</small></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
     bindEvents();
@@ -1542,6 +1635,9 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"remove-backup":removeBackup(data.id);break;
       case"check-updates":checkUpdates();break;
       case"apply-update":applyUpdate();break;
+      case"set-theme":setTheme(data.value);break;
+      case"random-theme":setRandomTheme();break;
+      case"apply-custom-theme":setCustomTheme();break;
       case"clear-caches":clearOldCaches();break;
     }
   };
