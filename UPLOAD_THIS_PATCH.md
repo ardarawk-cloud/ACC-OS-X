@@ -1,11 +1,10 @@
-# Upload to GitHub
+# Upload to GitHub root — branch main
 
-Upload/replace these files in the root of `ardarawk-cloud/ACC-OS-X` on branch `main`:
+Upload/replace these files only:
+- app.js
+- service-worker.js
+- version.json
+- build.json
+- RELEASE_NOTES_214_R6_4.md
 
-- `app.js`
-- `service-worker.js`
-- `version.json`
-- `build.json`
-- `RELEASE_NOTES_214_R6_3.md`
-
-Cloudflare should auto-deploy. Then open ACC OS X and apply the in-app update if prompted. No Cloudflare secret changes are required.
+Cloudflare will auto-deploy. Then open ACC OS X and press UPDATE when offered.

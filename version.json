@@ -1,8 +1,8 @@
 {
   "version": 214,
-  "name": "ACC OS X — Context Registry Sync / Channel Passport v5",
+  "name": "ACC OS X \u2014 Backup & Recovery Hardening",
   "channel": "beta",
-  "releasedAt": "2026-08-07T17:20:00+08:00",
+  "releasedAt": "2026-08-07T17:38:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.3"
+  "revision": "R6.4"
 }

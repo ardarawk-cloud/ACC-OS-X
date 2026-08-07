@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "ACC OS X — Context Registry Sync",
+  "milestone": "ACC OS X \u2014 Backup & Recovery Hardening",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,8 +30,8 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.3",
-  "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
+  "packageRevision": "214-R6.4",
+  "registryCorrection": "Added PL-307 Shui Yue \u2014 Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
   "floatingAiLauncher": true,
@@ -52,7 +52,7 @@
   "openAiApiKeyRequired": false,
   "workersAiModel": "@cf/meta/llama-3.1-8b-instruct-fast",
   "workersAiFreeTierCompatible": true,
-  "brandIdentity": "Neon X Shield — polished adaptive icon",
+  "brandIdentity": "Neon X Shield \u2014 polished adaptive icon",
   "unifiedLogoAsset": true,
   "headerLogoUsesPwaIcon": true,
   "pwaIconCacheBust": true,
@@ -67,5 +67,12 @@
   "contextSyncScope": "28 ACC Enterprise channels",
   "contextSyncPreservesCustomNotes": true,
   "fiveSeriesBatchContextPrecision": true,
-  "semestaBerbisikExactSeriesNames": true
+  "semestaBerbisikExactSeriesNames": true,
+  "backupRecoveryHardening": true,
+  "versionedBackupEnvelope": true,
+  "legacyBackupImportCompatible": true,
+  "preImportSafetyBackup": true,
+  "preRestoreSafetyBackup": true,
+  "backupValidationLayer": true,
+  "backupExportFilenameFix": true
 }

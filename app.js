@@ -4,6 +4,8 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
+  const PACKAGE_REVISION = "R6.4";
+  const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
   const LEGACY_KEYS = [
@@ -836,14 +838,42 @@ ${contextLine}`
     state.schedules=state.schedules.filter(item=>item.id!==scheduleId);save();showToast("Schedule dihapus.");
   };
 
+  const validateBackupState = candidate => {
+    if(!candidate || typeof candidate!=="object" || Array.isArray(candidate)) throw new Error("Format backup tidak valid");
+    const knownWorkspaceIds=new Set(WORKSPACES.map(item=>item.id));
+    if(candidate.activeWorkspaceId && !knownWorkspaceIds.has(candidate.activeWorkspaceId)) throw new Error("Workspace backup tidak dikenali");
+    if(candidate.queue && !Array.isArray(candidate.queue)) throw new Error("Queue backup rusak");
+    if(candidate.assets && !Array.isArray(candidate.assets)) throw new Error("Asset backup rusak");
+    if(candidate.archives && !Array.isArray(candidate.archives)) throw new Error("Archive backup rusak");
+    return candidate;
+  };
+
+  const unpackBackupFile = parsed => {
+    if(parsed?.format===BACKUP_FORMAT && parsed?.state){
+      return validateBackupState(parsed.state);
+    }
+    // Backward compatibility: Build 210–R6.3 exported the raw state object.
+    return validateBackupState(parsed);
+  };
+
   const exportData = () => {
-    const payload=JSON.stringify(snapshotPayload(),null,2);
+    const envelope={
+      format:BACKUP_FORMAT,
+      product:"ACC OS X",
+      build:CURRENT_VERSION,
+      revision:PACKAGE_REVISION,
+      exportedAt:now(),
+      state:snapshotPayload()
+    };
+    const payload=JSON.stringify(envelope,null,2);
     const blob=new Blob([payload],{type:"application/json"});
     const url=URL.createObjectURL(blob);
     const anchor=document.createElement("a");
-    anchor.href=url;anchor.download=`ACC_OS_X_Backup_Build210_${new Date().toISOString().slice(0,10)}.json`;
+    const date=new Date().toISOString().slice(0,10);
+    anchor.href=url;anchor.download=`ACC_OS_X_Backup_Build${CURRENT_VERSION}_${PACKAGE_REVISION.replace(".","-")}_${date}.json`;
     document.body.appendChild(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(url);
-    notify("Backup Exported","File JSON berhasil dibuat.","SUCCESS");save();showToast("Backup JSON diekspor.");
+    state.settings.lastBackupAt=now();
+    notify("Backup Exported",`Build ${CURRENT_VERSION} ${PACKAGE_REVISION} JSON berhasil dibuat.`,"SUCCESS");save();showToast("Backup JSON aman diekspor.");
   };
 
   const importData = file => {
@@ -852,13 +882,15 @@ ${contextLine}`
     reader.onload=()=>{
       try{
         const parsed=JSON.parse(String(reader.result));
-        if(!parsed||typeof parsed!=="object")throw new Error("Invalid backup");
+        const importedState=unpackBackupFile(parsed);
         createBackup("Pre-Import Safety Backup",true);
-        const preservedBackups=state.backups;
-        state=normalizeState(parsed);
+        const preservedBackups=[...state.backups];
+        state=normalizeState(importedState);
         state.backups=[...preservedBackups,...state.backups].slice(0,5);
-        notify("Backup Imported","Data berhasil dipulihkan dari file JSON.","SUCCESS");
-        save();showToast("Import berhasil. Data dipulihkan.");render();
+        ensureAllContexts();
+        isolateAiNotes();
+        notify("Backup Imported",`Data dipulihkan dan dinormalisasi ke Build ${CURRENT_VERSION}.`,"SUCCESS");
+        save();showToast("Import berhasil — safety backup tersimpan.");render();
       }catch(error){showToast(`Import gagal: ${error.message}`);}
     };
     reader.readAsText(file);
@@ -867,13 +899,17 @@ ${contextLine}`
   const restoreBackup = backupId => {
     const backup=state.backups.find(item=>item.id===backupId);
     if(!backup?.payload)return showToast("Payload backup tidak tersedia.");
-    if(!confirm(`Restore ${backup.label}?`))return;
+    if(!confirm(`Restore ${backup.label}? Safety backup kondisi sekarang akan dibuat otomatis.`))return;
     try{
+      createBackup("Pre-Restore Safety Backup",true);
       const retained=[...state.backups];
-      state=normalizeState(JSON.parse(backup.payload));
+      const restoredState=validateBackupState(JSON.parse(backup.payload));
+      state=normalizeState(restoredState);
       state.backups=retained;
-      notify("Backup Restored",`${backup.label} berhasil dipulihkan.`,"SUCCESS");
-      save();showToast("Backup berhasil direstore.");render();
+      ensureAllContexts();
+      isolateAiNotes();
+      notify("Backup Restored",`${backup.label} berhasil dipulihkan. Rollback safety backup tersedia.`,"SUCCESS");
+      save();showToast("Restore berhasil — rollback backup tersedia.");render();
     }catch(error){showToast(`Restore gagal: ${error.message}`);}
   };
 
@@ -1170,7 +1206,7 @@ ${contextLine}`
 
   const notificationsHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">OPERATIONAL ALERTS</div><h2 class="card-title">NOTIFICATION CENTER</h2></div><span class="badge">${state.notifications.filter(item=>!item.read).length} UNREAD</span></div><div class="actions"><button class="btn purple mono" data-action="mark-read">MARK ALL READ</button><button class="btn dark mono" data-action="clear-notifications">CLEAR ALL</button></div></div><div class="list" style="margin-top:16px">${state.notifications.map(item=>`<div class="item notification ${item.read?"":"unread"}"><div class="row between"><div class="row grow"><span class="notification-dot"></span><div class="grow"><div class="item-title">${escapeHtml(item.title)}</div><div class="meta">${escapeHtml(item.message)}</div></div></div><span class="muted tiny">${formatTime(item.createdAt)}</span></div></div>`).join("")||`<div class="empty">Tidak ada notifikasi.</div>`}</div></section>`;
 
-  const backupHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">DATA CONTINUITY</div><h2 class="card-title">BACKUP CENTER</h2></div><span class="badge">${state.backups.length}/5 LOCAL</span></div><p class="muted small">Create snapshots before major changes. Export JSON for an external backup or import it to restore data.</p><div class="actions"><button class="btn purple mono" data-action="create-backup">CREATE LOCAL BACKUP</button><button class="btn cyan mono" data-action="export-data">EXPORT JSON</button><button class="btn dark mono" data-action="trigger-import">IMPORT JSON</button></div><input id="backup-file" class="backup-file" type="file" accept="application/json"></div><div class="list" style="margin-top:16px">${state.backups.map(item=>`<div class="item"><div class="row between"><div class="grow"><div class="item-title">${escapeHtml(item.label)}</div><div class="meta">${formatTime(item.createdAt)} • ${(item.size/1024).toFixed(1)} KB • Schema ${item.schemaVersion}</div></div><span class="status completed">READY</span></div><div class="task-actions"><button class="btn green small-btn mono" data-action="restore-backup" data-id="${item.id}">RESTORE</button><button class="btn red small-btn mono" data-action="remove-backup" data-id="${item.id}">DELETE</button></div></div>`).join("")||`<div class="empty">Belum ada backup lokal.</div>`}</div></section>`;
+  const backupHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">DATA CONTINUITY • ${PACKAGE_REVISION}</div><h2 class="card-title">BACKUP CENTER</h2></div><span class="badge">${state.backups.length}/5 LOCAL</span></div><p class="muted small">Local snapshots now create rollback protection before restore/import. Export JSON uses a versioned ACC OS X backup envelope while remaining compatible with older raw-state backups.</p><div class="actions"><button class="btn purple mono" data-action="create-backup">CREATE LOCAL BACKUP</button><button class="btn cyan mono" data-action="export-data">EXPORT JSON</button><button class="btn dark mono" data-action="trigger-import">IMPORT JSON</button></div><input id="backup-file" class="backup-file" type="file" accept="application/json"></div><div class="list" style="margin-top:16px">${state.backups.map(item=>`<div class="item"><div class="row between"><div class="grow"><div class="item-title">${escapeHtml(item.label)}</div><div class="meta">${formatTime(item.createdAt)} • ${(item.size/1024).toFixed(1)} KB • Schema ${item.schemaVersion}</div></div><span class="status completed">READY</span></div><div class="task-actions"><button class="btn green small-btn mono" data-action="restore-backup" data-id="${item.id}">RESTORE</button><button class="btn red small-btn mono" data-action="remove-backup" data-id="${item.id}">DELETE</button></div></div>`).join("")||`<div class="empty">Belum ada backup lokal.</div>`}</div></section>`;
 
   const updatesHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">PERMANENT PWA IDENTITY</div><h2 class="card-title">UPDATE CENTER</h2></div><span class="badge">BUILD ${CURRENT_VERSION}</span></div><div class="list" style="margin-top:15px"><div class="item row between"><span>Manifest ID</span><strong>/</strong></div><div class="item row between"><span>Update Channel</span><strong>${escapeHtml(state.settings.updateChannel)}</strong></div><div class="item row between"><span>Last Check</span><strong>${formatTime(state.settings.lastUpdateCheck)}</strong></div><div class="item row between"><span>New Version</span><strong>${ui.updateVersion||"—"}</strong></div></div><div class="actions"><button class="btn purple mono" data-action="check-updates">CHECK UPDATE</button><button class="btn green mono" data-action="apply-update" ${!(ui.updateAvailable||ui.swWaiting)?"disabled":""}>UPDATE ACC OS X</button><button class="btn dark mono" data-action="clear-caches">CLEAR OLD CACHE</button></div></div><div class="card" style="margin-top:16px"><h3 class="card-title">UPDATE POLICY</h3><div class="code-box">One domain → one permanent PWA identity → future builds update inside the installed ACC OS X. No reinstall required.</div></div></section>`;
 
@@ -1192,7 +1228,7 @@ ${contextLine}`
   const systemHtml=()=>{
     const m=metrics();
     return `<section class="section mono"><div class="card"><h2 class="card-title">SYSTEM CONTROL</h2><div class="list" style="margin-top:15px">${[
-      ["APPLICATION","ACC OS X"],["BUILD","214 R5 Cloudflare Workers AI"],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
+      ["APPLICATION","ACC OS X"],["BUILD",`214 ${PACKAGE_REVISION} Backup & Recovery`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
       ["AI MODE",state.ai.providerMode],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
     ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button></div></div></section>`;
   };
