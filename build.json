@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "ACC AI Console — No-Agent Cloudflare Ready",
+  "milestone": "ACC AI Console — Context Isolation Fix",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R2",
+  "packageRevision": "214-R3",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Provider-neutral server endpoint /api/acc-ai (Cloudflare Worker or Netlify Function)",
   "aiConsole": true,
@@ -42,5 +42,8 @@
   "netlifyAgentRequired": false,
   "mobileResponsiveBenchmark": "Workflow navigation standard",
   "externalAiReady": true,
-  "ownerAccessCodeRequiredForServerAi": true
+  "ownerAccessCodeRequiredForServerAi": true,
+  "aiContextIsolation": true,
+  "aiNotesHistoryOnly": true,
+  "workspaceContextFix": true
 }

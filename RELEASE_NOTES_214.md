@@ -1,19 +1,18 @@
-# ACC OS X Build 214 R2 — ACC AI Console / No-Agent
+# ACC OS X Build 214 R3 — ACC AI Context Isolation Fix
 
-## Added
-- Floating **KAI — ACC AI** launcher.
-- Per-profile local chat history.
-- Automatic workspace/profile/workflow/Knowledge Vault context package.
-- Free **LOCAL SAFE** assistant mode that does not require a backend.
-- Optional same-origin server AI endpoint `/api/acc-ai`.
-- **Save to Vault**, **Send to Queue**, and **Apply to Pipeline** actions.
-- Cloudflare Worker backend template and Wrangler configuration.
-- Netlify Function retained only as an optional secondary deployment path.
+## Fixes
 
-## Mobile fix
-Navigation follows the approved Workflow-page responsive behavior. Main tabs and production/module tabs use flexible mobile grids and do not require horizontal page scrolling.
+- Fixed LOCAL SAFE assistant reporting `Workspace undefined`; active workspace now resolves from ACC workspace state.
+- ACC AI Notes saved to Knowledge Vault are now `HISTORY ONLY` records and are never injected automatically into AI context.
+- Existing `ACC AI Note — ...` records from R2 are migrated automatically to history-only mode.
+- Active AI context is now limited to production context such as Production Profile Passport, Current State, Workflow Rules and Brand & Canon Lock.
+- Knowledge Vault shows injected context count separately from AI Notes.
+- System Control build label updated to Build 214 R3.
+- Service worker cache revision bumped so installed PWA detects the R3 update.
 
-## Continuity
-- Manifest ID remains `/`.
-- Build 213 is a migration source.
-- Registry classification and seven Ling Tian planned series remain intact.
+## Data safety
+
+- Same PWA identity (`/`).
+- Same Build 214 storage key; no registry reset.
+- Existing queue, assets, archives, chat history, backups and production state are preserved.
+- Build 213 migration keys remain available.

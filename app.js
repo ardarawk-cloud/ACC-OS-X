@@ -425,16 +425,29 @@ Mission: ${profile.mission||"—"}`},
     if(!channel) return [];
     if(!state.ai.contexts[channelId]) state.ai.contexts[channelId] = defaultContexts(channel);
     const entries=state.ai.contexts[channelId];
-    const custom=entries.filter(item=>item.type==="CUSTOM");
-    const systemTypes=new Set(entries.filter(item=>item.type!=="CUSTOM").map(item=>item.type));
+    const preserved=entries.filter(item=>item.type==="CUSTOM"||item.type==="AI_NOTE");
+    const systemTypes=new Set(entries.filter(item=>item.type!=="CUSTOM"&&item.type!=="AI_NOTE").map(item=>item.type));
     defaultContexts(channel).forEach(entry=>{if(!systemTypes.has(entry.type))entries.push(entry);});
     const targetVersion=channel.passportVersion||3;
     if(!entries.some(item=>item.type==="CHANNEL_PASSPORT"&&item.version>=targetVersion)){
-      state.ai.contexts[channelId]=[...defaultContexts(channel),...custom];
+      state.ai.contexts[channelId]=[...defaultContexts(channel),...preserved];
     }
     return state.ai.contexts[channelId];
   };
   const ensureAllContexts = () => Object.keys(channelMap).forEach(channelId=>ensureContexts(channelId));
+  const isolateAiNotes = () => {
+    Object.values(state.ai.contexts||{}).forEach(entries=>{
+      if(!Array.isArray(entries))return;
+      entries.forEach(entry=>{
+        if(entry?.type==="AI_NOTE" || /^ACC AI Note\s*[—-]/i.test(String(entry?.title||""))){
+          entry.type="AI_NOTE";
+          entry.active=false;
+          entry.source=entry.source||"ACC_AI_CONSOLE";
+        }
+      });
+    });
+  };
+  const injectableContexts = channelId => ensureContexts(channelId).filter(item=>item.active && item.type!=="AI_NOTE" && !/^ACC AI Note\s*[—-]/i.test(String(item.title||"")));
 
   const addActivity = (action,channelId=activeChannel().id,stage=null) => {
     const wf = workflowFor(channelId);
@@ -1057,8 +1070,8 @@ ${contextLine}`
   const taskCard=task=>`<div class="item task-card ${task.status.toLowerCase()}"><div class="row between wrap"><div class="grow"><div class="eyebrow">${escapeHtml(task.stage)} • ${escapeHtml(task.workerType)}</div><div class="item-title truncate">${escapeHtml(task.goal)}</div><div class="meta">${escapeHtml(task.workerName)} • Context ${task.contextIds.length} • Attempt ${task.attempts} • Retry ${task.retries}</div></div><span class="${statusClass(task.status)}">${escapeHtml(task.status)}</span></div>${task.error?`<div class="context-content red">${escapeHtml(task.error)}</div>`:""}${task.output?`<div class="output-preview">${escapeHtml(task.output.slice(0,260))}${task.output.length>260?"…":""}</div>`:""}<div class="task-actions">${task.status==="READY"?`<button class="btn green small-btn mono" data-action="run-task" data-id="${task.id}">RUN</button><button class="btn red small-btn mono" data-action="fail-task" data-id="${task.id}">TEST FAIL</button>`:""}${task.status==="FAILED"?`<button class="btn amber small-btn mono" data-action="retry-task" data-id="${task.id}">RETRY</button>`:""}${task.status==="SUCCESS"?`<button class="btn purple small-btn mono" data-action="inspect-task" data-id="${task.id}">INSPECT OUTPUT</button><button class="btn cyan small-btn mono" data-action="apply-task" data-id="${task.id}" ${task.applied?"disabled":""}>${task.applied?"APPLIED":"APPLY OUTPUT"}</button>`:""}</div></div>`;
 
   const contextHtml=()=>{
-    const channel=activeChannel(),contexts=ensureContexts(channel.id),activeCount=contexts.filter(item=>item.active).length;
-    return `<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">${channel.code} • KNOWLEDGE VAULT</div><h2 class="card-title">CONTEXT PACKAGE</h2></div><span class="badge">${activeCount}/${contexts.length} ACTIVE</span></div><p class="muted small">Only active entries are injected into AI Worker tasks. Context stays local and channel-scoped.</p><div class="divider"></div><div class="form-grid"><input id="context-title" class="input mono" placeholder="Custom context title" value="${escapeHtml(ui.contextDraftTitle)}"><textarea id="context-content" class="textarea mono" placeholder="Context instructions, canon, rules, current state...">${escapeHtml(ui.contextDraftContent)}</textarea><button class="btn purple mono" data-action="add-context">ADD CONTEXT ENTRY</button></div></div><div class="list" style="margin-top:17px">${contexts.map(entry=>`<div class="item"><div class="row between wrap"><div class="grow"><div class="eyebrow">${escapeHtml(entry.type)} • v${entry.version}</div><div class="item-title">${escapeHtml(entry.title)}</div></div><button class="toggle ${entry.active?"on":""}" data-action="toggle-context" data-id="${entry.id}"></button></div><div class="context-content">${escapeHtml(entry.content)}</div>${entry.type==="CUSTOM"?`<button class="btn red small-btn mono" style="margin-top:11px" data-action="remove-context" data-id="${entry.id}">DELETE CUSTOM CONTEXT</button>`:""}</div>`).join("")}</div></section>`;
+    const channel=activeChannel(),contexts=ensureContexts(channel.id),activeCount=injectableContexts(channel.id).length;
+    return `<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">${channel.code} • KNOWLEDGE VAULT</div><h2 class="card-title">CONTEXT PACKAGE</h2></div><span class="badge">${activeCount} INJECTED</span></div><p class="muted small">Only active production context is injected into AI tasks. ACC AI Notes are stored as history-only records and never reinjected automatically.</p><div class="divider"></div><div class="form-grid"><input id="context-title" class="input mono" placeholder="Custom context title" value="${escapeHtml(ui.contextDraftTitle)}"><textarea id="context-content" class="textarea mono" placeholder="Context instructions, canon, rules, current state...">${escapeHtml(ui.contextDraftContent)}</textarea><button class="btn purple mono" data-action="add-context">ADD CONTEXT ENTRY</button></div></div><div class="list" style="margin-top:17px">${contexts.map(entry=>`<div class="item"><div class="row between wrap"><div class="grow"><div class="eyebrow">${escapeHtml(entry.type)} • v${entry.version}</div><div class="item-title">${escapeHtml(entry.title)}</div></div>${entry.type==="AI_NOTE"?`<span class="status ready">HISTORY ONLY</span>`:`<button class="toggle ${entry.active?"on":""}" data-action="toggle-context" data-id="${entry.id}"></button>`}</div><div class="context-content">${escapeHtml(entry.content)}</div>${entry.type==="CUSTOM"||entry.type==="AI_NOTE"?`<button class="btn red small-btn mono" style="margin-top:11px" data-action="remove-context" data-id="${entry.id}">DELETE ${entry.type==="AI_NOTE"?"AI NOTE":"CUSTOM CONTEXT"}</button>`:""}</div>`).join("")}</div></section>`;
   };
 
   const assetsHtml=()=>{
@@ -1133,8 +1146,8 @@ ${contextLine}`
   const geminiHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">EMBEDDED INTELLIGENCE LAYER</div><h2 class="card-title">ACC AI CONSOLE</h2></div><span class="badge">${escapeHtml(ui.aiStatus)}</span></div><p class="muted small">Chat directly inside ACC OS X. Local Safe Mode works without an API. When /api/acc-ai is connected, the same active workspace, profile, workflow and Knowledge Vault context is sent to the server AI.</p><div class="code-box">Floating AI Launcher → Active Profile Context → Local Safe Mode / Server AI → Owner Actions</div><div class="actions"><button class="btn primary mono" data-action="open-ai-console">OPEN ACC AI CHAT</button><button class="btn purple mono" data-action="open-ai">OPEN AI WORKERS</button><button class="btn dark mono" data-action="open-context">OPEN KNOWLEDGE VAULT</button></div></div></section>`;
 
   const vaultModuleHtml=()=>{
-    const count=Object.values(state.ai.contexts).flat().length,active=Object.values(state.ai.contexts).flat().filter(item=>item.active).length;
-    return `<section class="section mono"><div class="grid stats">${statCard("TOTAL ENTRIES",count,"purple")}${statCard("ACTIVE",active,"green")}${statCard("CHANNELS",Object.keys(state.ai.contexts).length,"blue")}${statCard("CUSTOM",Object.values(state.ai.contexts).flat().filter(item=>item.type==="CUSTOM").length,"cyan")}</div><div class="card" style="margin-top:16px"><h2 class="card-title">KNOWLEDGE VAULT</h2><p class="muted small">Passport, current state, workflow rules and canon stay separated by channel.</p><button class="btn purple mono" style="width:100%;margin-top:15px" data-action="open-context">OPEN ACTIVE CHANNEL CONTEXT</button></div></section>`;
+    const all=Object.values(state.ai.contexts).flat(),count=all.length,active=all.filter(item=>item.active&&item.type!=="AI_NOTE").length,notes=all.filter(item=>item.type==="AI_NOTE").length;
+    return `<section class="section mono"><div class="grid stats">${statCard("TOTAL ENTRIES",count,"purple")}${statCard("INJECTED",active,"green")}${statCard("CHANNELS",Object.keys(state.ai.contexts).length,"blue")}${statCard("AI NOTES",notes,"cyan")}</div><div class="card" style="margin-top:16px"><h2 class="card-title">KNOWLEDGE VAULT</h2><p class="muted small">Passport, current state, workflow rules and canon stay separated by profile. AI Notes remain history-only unless manually converted into a Custom Context.</p><button class="btn purple mono" style="width:100%;margin-top:15px" data-action="open-context">OPEN ACTIVE CHANNEL CONTEXT</button></div></section>`;
   };
 
   const graphHtml=()=>`<section class="section mono"><div class="card"><div class="eyebrow">SYSTEM RELATIONSHIP MAP</div><h2 class="card-title">GRAPH INSPECTOR</h2><p class="muted small">Visual inspection of the ACC Core architecture and production data flow.</p></div><div class="graph-shell" style="margin-top:16px">
@@ -1178,7 +1191,7 @@ ${contextLine}`
   const systemHtml=()=>{
     const m=metrics();
     return `<section class="section mono"><div class="card"><h2 class="card-title">SYSTEM CONTROL</h2><div class="list" style="margin-top:15px">${[
-      ["APPLICATION","ACC OS X"],["BUILD","213 Batch Profile Initialization"],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
+      ["APPLICATION","ACC OS X"],["BUILD","214 R3 ACC AI Context Isolation"],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
       ["AI MODE",state.ai.providerMode],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
     ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button></div></div></section>`;
   };
@@ -1198,7 +1211,7 @@ ${contextLine}`
   const lastAssistantMessage=()=>[...aiHistory()].reverse().find(item=>item.role==="assistant");
   const buildAiContext=()=>{
     const profile=activeChannel(),workspace=activeWorkspace(),wf=currentWorkflow();
-    const contexts=ensureContexts(profile.id).filter(item=>item.active).slice(0,8);
+    const contexts=injectableContexts(profile.id).slice(0,8);
     return {
       owner:"Arda",
       workspace:{id:workspace.id,name:workspace.name},
@@ -1227,8 +1240,8 @@ ${contextLine}`
     const message=lastAssistantMessage();
     if(!message)return showToast("Belum ada output AI untuk disimpan.");
     const list=ensureContexts(activeChannel().id);
-    list.unshift({id:id("ctx"),type:"CUSTOM",title:`ACC AI Note — ${new Date().toLocaleString("id-ID")}`,version:1,active:true,content:message.content});
-    save();showToast("Output AI disimpan ke Knowledge Vault.");
+    list.unshift({id:id("ctx"),type:"AI_NOTE",title:`ACC AI Note — ${new Date().toLocaleString("id-ID")}`,version:1,active:false,source:"ACC_AI_CONSOLE",content:message.content});
+    save();showToast("Output AI disimpan ke Vault sebagai history note (tidak diinjeksi otomatis).");
   };
   const sendAiToQueue=()=>{
     const message=lastAssistantMessage();
@@ -1246,7 +1259,7 @@ ${contextLine}`
     const q=String(text||"").toLowerCase();
     const base=`Mode LOCAL SAFE aktif untuk ${channel.name}. Saya bisa membaca konteks ACC yang tersimpan di PWA, membantu status/struktur, menyimpan catatan ke Vault, dan mengirim output ke Queue. Generasi AI bebas memerlukan endpoint /api/acc-ai.`;
     if(/status|progress|tahap|stage/.test(q))return `${channel.name}: stage ${wf.stage}, progress ${wf.progress}%, status ${wf.status}. Queue global ${m.queue}, assets ${m.assets}, approval ${m.approval}.`;
-    if(/profile|profil|passport|konteks|context/.test(q)){const ctx=ensureContexts(channel.id).filter(x=>x.active);return `Profil aktif: ${channel.code} — ${channel.name}. Workspace ${channel.workspaceName}. ${ctx.length} context aktif: ${ctx.map(x=>x.title).join(", ")}.`; }
+    if(/profile|profil|passport|konteks|context/.test(q)){const ctx=injectableContexts(channel.id),workspace=activeWorkspace();return `Profil aktif: ${channel.code} — ${channel.name}. Workspace ${workspace.name}. ${ctx.length} context aktif: ${ctx.map(x=>x.title).join(", ")}.`; }
     if(/workflow|alur|next|konten|poster|caption|qc/.test(q))return `Workflow terkunci ${channel.name}: ${channel.workflow||"READY → RESEARCH → SCRIPT → POSTER → CAPTION → QC → APPROVAL → COMPLETED"}. Tahap saat ini ${wf.stage}.`;
     if(/registry|channel|series|planned|corporate/.test(q))return `Registry ringkas: ${m.channels} channels, ${m.series} Studio Series, ${m.planned} planned series, ${m.creative} creative projects, ${m.business} business projects, ${m.corporate} corporate units.`;
     if(/help|bisa apa|fitur|menu/.test(q))return `${base} Coba: “status”, “profil aktif”, “workflow”, atau “registry”. Untuk output ini tersedia Save to Vault, Send to Queue, dan Apply to Pipeline.`;
@@ -1428,10 +1441,12 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   window.addEventListener("offline",render);
 
   if(!channelMap[state.activeChannelId]){state.activeWorkspaceId="acc-enterprise";state.activeChannelId="ch-techverse";}
+  isolateAiNotes();
   ensureAllContexts();
   ensureContexts(state.activeChannelId);
-  if(!state.notifications.length){
-    notify("ACC AI Console Ready","Build 214 R2 aktif. Local Safe Mode, floating AI launcher, active-profile context, Vault, Queue dan Pipeline actions tersedia.","SUCCESS");
+  if(!state.settings.aiContextIsolationR3){
+    state.settings.aiContextIsolationR3=true;
+    notify("ACC AI Context Fix Applied","Build 214 R3 memperbaiki Workspace context dan memisahkan ACC AI Notes dari context injection otomatis.","SUCCESS");
   }
   save();
   render();
