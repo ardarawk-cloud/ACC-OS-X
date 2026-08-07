@@ -1,27 +1,39 @@
 {
-  "id": "./",
-  "name": "ACC OS X \u2014 PWA Stabilization",
+  "id": "/",
   "short_name": "ACC OS X",
-  "description": "ACC OS X v1.2.1 PWA Stabilization",
-  "start_url": "./index.html?source=pwa&v=121",
+  "name": "ACC OS X",
+  "description": "ACC OS X — ACC AI Console, Cloudflare-ready no-Agent build",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#050713",
-  "theme_color": "#0d1530",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#020617",
+  "theme_color": "#020617",
   "orientation": "portrait-primary",
+  "lang": "id-ID",
+  "categories": [
+    "business",
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "./maskable-512.png",
+      "src": "icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
