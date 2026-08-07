@@ -301,7 +301,7 @@ html,body,#root,.shell,.main,.header{width:100%;max-width:100vw;min-width:0}
 }
 
 
-/* ACC EXPERIENCE OS R6.7 */
+/* ACC EXPERIENCE OS R6.8 */
 :root{--atmosphere-opacity:.35}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:var(--atmosphere-opacity);transition:opacity .25s ease,background .35s ease}
 html[data-acc-atmosphere="FOREST"] body::before{background:radial-gradient(circle at 20% 20%,rgba(34,197,94,.20),transparent 33%),radial-gradient(circle at 80% 75%,rgba(132,204,22,.12),transparent 40%),linear-gradient(135deg,rgba(5,46,22,.35),transparent 55%)}
@@ -318,3 +318,15 @@ html[data-acc-atmosphere="MILITARY"] body::before{background:linear-gradient(35d
 .badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .achievement-badge{min-height:74px;border:1px solid var(--line);background:#02081a;border-radius:16px;padding:12px;display:flex;align-items:center;gap:10px}.achievement-badge span{font-size:22px}.achievement-badge strong{font-size:10px}
 @media(min-width:700px){.badge-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+
+/* ACC EXPERIENCE OS R6.8 — Adaptive Identity + Wallpaper Lab */
+:root{--wallpaper-opacity:.18;--wallpaper-blur:3px;--wallpaper-dim:.45}
+.logo-shield{width:58px;height:58px;flex:0 0 auto;display:grid;place-items:center;color:var(--purple);filter:drop-shadow(0 0 10px color-mix(in srgb,var(--purple) 55%,transparent))}
+.acc-adaptive-logo{display:block;overflow:visible}
+html[data-acc-wallpaper="ON"] body::after{content:"";position:fixed;inset:-24px;z-index:-2;pointer-events:none;background-image:linear-gradient(rgba(2,6,23,var(--wallpaper-dim)),rgba(2,6,23,var(--wallpaper-dim))),var(--acc-wallpaper);background-size:cover;background-position:center;background-attachment:fixed;opacity:var(--wallpaper-opacity);filter:blur(var(--wallpaper-blur)) saturate(1.05);transform:scale(1.04)}
+.wallpaper-preview{min-height:170px;margin-top:15px;border:1px solid var(--line);border-radius:22px;background:#02081a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;overflow:hidden;background-size:cover;background-position:center;position:relative}
+.wallpaper-preview:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(2,6,23,.42));pointer-events:none}.wallpaper-preview>*{position:relative;z-index:1}
+.wallpaper-preview-logo{color:var(--purple);filter:drop-shadow(0 0 12px color-mix(in srgb,var(--purple) 60%,transparent))}.wallpaper-preview strong{letter-spacing:.18em}
+.experience-control-grid{display:grid;gap:12px;margin-top:15px}.experience-control{border:1px solid var(--line);background:#02081a;border-radius:16px;padding:13px;display:grid;gap:10px}.experience-control span{display:flex;justify-content:space-between;color:var(--muted);font-size:10px}.experience-control input{width:100%;accent-color:var(--purple)}
+@media(min-width:700px){.experience-control-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

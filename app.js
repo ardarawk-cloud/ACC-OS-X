@@ -253,6 +253,10 @@
     soundPack: "CYBER",
     atmosphere: "NONE",
     atmosphereIntensity: 35,
+    wallpaperData: "",
+    wallpaperOpacity: 18,
+    wallpaperBlur: 3,
+    wallpaperDim: 45,
     badges: ["FOUNDER", "EARLY_ADOPTER", "FIRST_PRODUCTION"],
     plugins: { production:true, themeDeck:true, kai:true, backup:true, scheduler:true }
   };
@@ -320,12 +324,27 @@
     root.dataset.accPersonality=exp.personality;
     root.dataset.accAtmosphere=exp.atmosphere;
     root.style.setProperty("--atmosphere-opacity",String(Math.max(0,Math.min(100,Number(exp.atmosphereIntensity||35)))/100));
+    root.style.setProperty("--wallpaper-opacity",String(Math.max(0,Math.min(100,Number(exp.wallpaperOpacity??18)))/100));
+    root.style.setProperty("--wallpaper-blur",`${Math.max(0,Math.min(30,Number(exp.wallpaperBlur??3)))}px`);
+    root.style.setProperty("--wallpaper-dim",String(Math.max(0,Math.min(90,Number(exp.wallpaperDim??45)))/100));
+    if(exp.wallpaperData){root.style.setProperty("--acc-wallpaper",`url("${String(exp.wallpaperData).replaceAll('"','%22')}")`);root.dataset.accWallpaper="ON";}else{root.style.removeProperty("--acc-wallpaper");root.dataset.accWallpaper="OFF";}
   };
 
   const awardBadge=(badge)=>{
     const exp=ensureExperience();
     if(!exp.badges.includes(badge)){exp.badges.push(badge);save();notify("Badge Unlocked",badge.replaceAll("_"," "),"SUCCESS");}
   };
+
+
+  const compressWallpaperFile=(file)=>new Promise((resolve,reject)=>{
+    if(!file || !String(file.type||"").startsWith("image/")) return reject(new Error("Pilih file gambar."));
+    const reader=new FileReader();reader.onerror=()=>reject(new Error("File tidak dapat dibaca."));reader.onload=()=>{
+      const img=new Image();img.onerror=()=>reject(new Error("Gambar tidak valid."));img.onload=()=>{
+        const maxW=1600,maxH=1600,scale=Math.min(1,maxW/img.width,maxH/img.height),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+        const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;canvas.getContext("2d").drawImage(img,0,0,w,h);resolve(canvas.toDataURL("image/jpeg",.78));};img.src=String(reader.result);};reader.readAsDataURL(file);
+  });
+  const setWallpaperFile=async(file)=>{try{const data=await compressWallpaperFile(file);if(data.length>2500000)return showToast("Wallpaper terlalu besar. Pilih gambar lain.");saveExperience({wallpaperData:data});awardBadge("WALLPAPER_CREATOR");showToast("Wallpaper ACC berhasil dipasang.");render();}catch(err){showToast(err.message||"Wallpaper gagal dipasang.");}};
+  const clearWallpaper=()=>{saveExperience({wallpaperData:""});showToast("Wallpaper dikembalikan ke default.");render();};
 
   const personalityInstruction=()=>{
     const exp=ensureExperience(),p=EXPERIENCE_PERSONALITIES[exp.personality]||EXPERIENCE_PERSONALITIES.FOUNDER;
@@ -1480,7 +1499,7 @@ Operational rules:
 
   const experienceHtml=()=>{
     const exp=ensureExperience();
-    const badgeNames={FOUNDER:"Founder",EARLY_ADOPTER:"Early Adopter",FIRST_PRODUCTION:"First Production",BUILD_214_STABLE:"Build 214 Stable",THEME_CREATOR:"Theme Creator"};
+    const badgeNames={FOUNDER:"Founder",EARLY_ADOPTER:"Early Adopter",FIRST_PRODUCTION:"First Production",BUILD_214_STABLE:"Build 214 Stable",THEME_CREATOR:"Theme Creator",WALLPAPER_CREATOR:"Wallpaper Creator"};
     return `<section class="section mono">
       <div class="card experience-hero">
         <div class="row between wrap">
@@ -1514,6 +1533,18 @@ Operational rules:
         <div class="eyebrow">SOUND PACK</div><h3 class="card-title">UI Feedback</h3>
         <div class="grid module-grid" style="margin-top:14px">
           ${Object.entries(EXPERIENCE_SOUND_PACKS).map(([key,item])=>`<button class="module-card mono ${exp.soundPack===key?"experience-selected":""}" data-action="experience-sound" data-value="${key}"><div class="module-icon">${item.icon}</div><div class="module-name">${item.name}</div></button>`).join("")}
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="row between wrap"><div><div class="eyebrow">WALLPAPER LAB</div><h3 class="card-title">Personal Background</h3><p class="muted small">Upload wallpaper sendiri. ACC otomatis mengompres agar tetap ringan.</p></div><span class="badge">${exp.wallpaperData?"CUSTOM ACTIVE":"DEFAULT"}</span></div>
+        <div class="wallpaper-preview ${exp.wallpaperData?"has-wallpaper":""}" style="${exp.wallpaperData?`background-image:linear-gradient(rgba(2,6,23,.36),rgba(2,6,23,.36)),url('${exp.wallpaperData}')`:``}"><div class="wallpaper-preview-logo">${shieldSvg()}</div><strong>ACC OS X</strong></div>
+        <div class="actions"><button class="btn purple mono" data-action="choose-wallpaper">UPLOAD WALLPAPER</button><button class="btn dark mono" data-action="clear-wallpaper" ${!exp.wallpaperData?"disabled":""}>REMOVE WALLPAPER</button></div>
+        <input id="experience-wallpaper-file" type="file" accept="image/*" class="backup-file">
+        <div class="experience-control-grid">
+          <label class="experience-control"><span>Opacity <strong>${Number(exp.wallpaperOpacity??18)}%</strong></span><input id="wallpaper-opacity" type="range" min="0" max="70" value="${Number(exp.wallpaperOpacity??18)}"></label>
+          <label class="experience-control"><span>Blur <strong>${Number(exp.wallpaperBlur??3)}px</strong></span><input id="wallpaper-blur" type="range" min="0" max="20" value="${Number(exp.wallpaperBlur??3)}"></label>
+          <label class="experience-control"><span>Dim <strong>${Number(exp.wallpaperDim??45)}%</strong></span><input id="wallpaper-dim" type="range" min="0" max="80" value="${Number(exp.wallpaperDim??45)}"></label>
         </div>
       </div>
 
@@ -1717,6 +1748,10 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
     bindValue("schedule-title",value=>ui.scheduleTitle=value);
     bindValue("schedule-when",value=>ui.scheduleWhen=value);
     bindValue("experience-intensity",value=>{state.experience={...ensureExperience(),atmosphereIntensity:Number(value)};save();applyExperience();},"input");
+    bindValue("wallpaper-opacity",value=>{state.experience={...ensureExperience(),wallpaperOpacity:Number(value)};save();applyExperience();},"input");
+    bindValue("wallpaper-blur",value=>{state.experience={...ensureExperience(),wallpaperBlur:Number(value)};save();applyExperience();},"input");
+    bindValue("wallpaper-dim",value=>{state.experience={...ensureExperience(),wallpaperDim:Number(value)};save();applyExperience();},"input");
+    document.getElementById("experience-wallpaper-file")?.addEventListener("change",event=>setWallpaperFile(event.target.files?.[0]));
     bindValue("ai-console-input",value=>ui.aiInput=value);
     bindValue("ai-access-code",value=>ui.aiAccessDraft=value);
 
@@ -1788,6 +1823,8 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"experience-personality":saveExperience({personality:data.value});playUiSound("success");showToast(`Personality: ${EXPERIENCE_PERSONALITIES[data.value]?.name||data.value}`);render();break;
       case"experience-atmosphere":saveExperience({atmosphere:data.value});playUiSound("tap");showToast(`Atmosphere: ${EXPERIENCE_ATMOSPHERES[data.value]?.name||data.value}`);render();break;
       case"experience-sound":saveExperience({soundPack:data.value});playUiSound("success");showToast(`Sound Pack: ${EXPERIENCE_SOUND_PACKS[data.value]?.name||data.value}`);render();break;
+      case"choose-wallpaper":document.getElementById("experience-wallpaper-file")?.click();break;
+      case"clear-wallpaper":clearWallpaper();break;
     }
   };
 

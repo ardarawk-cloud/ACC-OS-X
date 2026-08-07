@@ -1,8 +1,8 @@
 {
   "version": 214,
-  "name": "ACC Experience OS Foundation",
+  "name": "Adaptive Identity + Wallpaper Lab",
   "channel": "beta",
   "releasedAt": "2026-08-07T21:55:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.7"
+  "revision": "R6.8"
 }

@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "ACC Experience OS Foundation",
+  "milestone": "Adaptive Identity + Wallpaper Lab",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -104,13 +104,13 @@
   "randomThemeButton": true,
   "themePersistence": "state.settings + backup/restore",
   "themeSafety": "visual only; production data and AI workflow untouched",
-  "revision": "R6.7",
+  "revision": "R6.8",
   "features": [
-    "ACC DNA",
-    "AI Personality Pack",
-    "Sound Pack",
-    "Workspace Atmosphere",
-    "Achievement Badges",
-    "Plugin Foundation"
+    "Adaptive transparent X logo",
+    "Theme-aware logo color",
+    "Custom Wallpaper Lab",
+    "Wallpaper compression",
+    "Opacity/Blur/Dim controls",
+    "Wallpaper badge"
   ]
 }
