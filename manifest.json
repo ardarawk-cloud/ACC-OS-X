@@ -2,7 +2,7 @@
   "id": "/",
   "short_name": "ACC OS X",
   "name": "ACC OS X",
-  "description": "ACC OS X — ACC AI Console, Cloudflare Workers AI, Neon X Identity",
+  "description": "ACC OS X — ACC AI Console, Cloudflare Workers AI, Neon X Identity R6.2",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -21,19 +21,19 @@
   ],
   "icons": [
     {
-      "src": "icon-192-r61.png",
+      "src": "icon-192-r62.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512-r61.png",
+      "src": "icon-512-r62.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-maskable-512-r61.png",
+      "src": "icon-maskable-512-r62.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

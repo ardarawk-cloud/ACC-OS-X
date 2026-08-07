@@ -1,5 +1,10 @@
-# ACC OS X Build 214 R6.1 — PWA Icon Refresh
+# Upload this R6.2 patch
 
-Upload every file in this patch to the root of the `ACC-OS-X` GitHub repository on branch `main`, replacing same-name files when prompted. The three `*-r61.png` files are new and must be added. Cloudflare will auto-deploy.
+1. Extract this ZIP.
+2. Upload **all files inside** to the root of GitHub repository `ardarawk-cloud/ACC-OS-X`.
+3. Commit directly to branch `main`.
+4. Wait for Cloudflare deployment.
+5. Open ACC OS X and press **UPDATE** if offered.
+6. For the Android launcher icon, reinstall the PWA only if the launcher still keeps the older cached icon.
 
-This patch changes the PWA manifest and icon URLs to versioned filenames so Android/Chrome cannot reuse the old icon URL cache.
+No Cloudflare secret or AI configuration changes are required.

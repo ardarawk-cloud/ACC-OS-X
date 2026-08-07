@@ -964,7 +964,7 @@ ${contextLine}`
   const statusClass=value=>`status ${String(value||"READY").toLowerCase()}`;
   const priorityClass=value=>`priority ${String(value||"NORMAL").toLowerCase()}`;
 
-  const shieldSvg=()=>`<img class="brand-logo-img" src="./icon-192-r61.png" alt="ACC OS X" width="58" height="58" decoding="async" />`;
+  const shieldSvg=()=>`<img class="brand-logo-img" src="./icon-192-r62.png" alt="ACC OS X" width="58" height="58" decoding="async" />`;
 
   const headerHtml=()=>{
     const workspace=activeWorkspace(),channel=activeChannel();
@@ -988,7 +988,7 @@ ${contextLine}`
   };
 
   const tabButton=(value,label)=>`<button class="tab ${ui.tab===value?"active":""}" data-action="tab" data-value="${value}">${label}</button>`;
-  const navHtml=()=>`<div class="tabs mono">${tabButton("enterprise","⌁ ENTERPRISE")}${tabButton("channel","▣ CHANNEL")}${tabButton("production","◉ PRODUCTION")}${tabButton("ecosystem","✦ ECOSYSTEM")}${tabButton("system","⚙ SYSTEM")}</div>`;
+  const navHtml=()=>`<div class="tabs mono">${tabButton("enterprise","⌁ ENT")}${tabButton("channel","▣ CH")}${tabButton("production","◉ PROD")}${tabButton("ecosystem","✦ ECO")}${tabButton("system","⚙ SYSTEM")}</div>`;
   const subtabButton=(value,label)=>`<button class="subtab ${ui.productionTab===value?"active":""}" data-action="prod-tab" data-value="${value}">${label}</button>`;
   const productionNav=()=>`<div class="subtabs mono">${subtabButton("pipeline","PIPELINE")}${subtabButton("queue","QUEUE")}${subtabButton("ai","AI WORKERS")}${subtabButton("context","CONTEXT VAULT")}${subtabButton("assets","ASSETS")}${subtabButton("archive","ARCHIVE")}</div>`;
   const moduleTab=(value,label)=>`<button class="module-tab ${ui.ecosystemTab===value?"active":""}" data-action="module-tab" data-value="${value}">${label}</button>`;
