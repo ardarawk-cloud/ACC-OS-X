@@ -964,7 +964,7 @@ ${contextLine}`
   const statusClass=value=>`status ${String(value||"READY").toLowerCase()}`;
   const priorityClass=value=>`priority ${String(value||"NORMAL").toLowerCase()}`;
 
-  const shieldSvg=()=>`<svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>`;
+  const shieldSvg=()=>`<img class="brand-logo-img" src="./icon-192.png" alt="ACC OS X" width="58" height="58" decoding="async" />`;
 
   const headerHtml=()=>{
     const workspace=activeWorkspace(),channel=activeChannel();

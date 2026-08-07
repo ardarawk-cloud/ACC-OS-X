@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "ACC AI — Cloudflare Workers AI Connection",
+  "milestone": "ACC OS X — Neon X Identity",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R5",
+  "packageRevision": "214-R6",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
@@ -51,5 +51,8 @@
   "cloudflareWorkersAiBinding": true,
   "openAiApiKeyRequired": false,
   "workersAiModel": "@cf/meta/llama-3.1-8b-instruct-fast",
-  "workersAiFreeTierCompatible": true
+  "workersAiFreeTierCompatible": true,
+  "brandIdentity": "Neon X Shield",
+  "unifiedLogoAsset": true,
+  "headerLogoUsesPwaIcon": true
 }

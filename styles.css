@@ -40,7 +40,8 @@ button:disabled{cursor:default;opacity:.36}
 }
 .header{background:#10192d;border-bottom:1px solid var(--line);padding:16px 22px 20px}
 .brand-row{display:flex;align-items:center;gap:14px;min-width:0}
-.logo-shield{width:52px;height:52px;flex:0 0 auto;display:grid;place-items:center;color:#c084fc}
+.logo-shield{width:60px;height:60px;flex:0 0 auto;display:grid;place-items:center;overflow:visible}
+.brand-logo-img{width:58px;height:58px;display:block;object-fit:cover;border-radius:15px;filter:drop-shadow(0 0 8px rgba(168,85,247,.55)) drop-shadow(0 0 18px rgba(126,34,206,.22));transform:translateZ(0)}
 .brand-copy{min-width:0;flex:1}
 .brand-line{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .brand-title{font-size:26px;font-weight:900;letter-spacing:.07em;white-space:nowrap}
