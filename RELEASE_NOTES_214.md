@@ -16,3 +16,9 @@
 - Same Build 214 storage key; no registry reset.
 - Existing queue, assets, archives, chat history, backups and production state are preserved.
 - Build 213 migration keys remain available.
+
+## R4 — Owner Action Feedback Fix
+- Makes Save to Vault, Send to Queue, and Apply to Pipeline explicitly tap-safe on mobile.
+- Adds persistent in-console success feedback after each owner action.
+- Raises toast notifications above the AI modal so confirmations are visible.
+- Bumps service worker cache revision to R4.

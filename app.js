@@ -221,7 +221,8 @@
     aiError:"",
     aiStatus:"LOCAL_SAFE",
     aiAccessDraft:"",
-    aiAccessOpen:false
+    aiAccessOpen:false,
+    aiActionFeedback:""
   };
 
   const id = prefix => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1226,11 +1227,12 @@ ${contextLine}`
   const openAiConsole=()=>{
     ui.aiConsoleOpen=true;
     ui.aiError="";
+    ui.aiActionFeedback="";
     ui.aiStatus=getAiAccessCode()?"ONLINE_READY":"LOCAL_SAFE";
     ui.aiAccessOpen=false;
     render();
   };
-  const closeAiConsole=()=>{ui.aiConsoleOpen=false;ui.aiError="";render();};
+  const closeAiConsole=()=>{ui.aiConsoleOpen=false;ui.aiError="";ui.aiActionFeedback="";render();};
   const clearAiChat=()=>{
     if(!confirm(`Hapus riwayat ACC AI untuk ${activeChannel().name}?`))return;
     state.aiConsole.histories[activeChannel().id]=[];
@@ -1241,7 +1243,7 @@ ${contextLine}`
     if(!message)return showToast("Belum ada output AI untuk disimpan.");
     const list=ensureContexts(activeChannel().id);
     list.unshift({id:id("ctx"),type:"AI_NOTE",title:`ACC AI Note — ${new Date().toLocaleString("id-ID")}`,version:1,active:false,source:"ACC_AI_CONSOLE",content:message.content});
-    save();showToast("Output AI disimpan ke Vault sebagai history note (tidak diinjeksi otomatis).");
+    save();ui.aiActionFeedback="✓ Tersimpan ke Knowledge Vault sebagai AI history note.";showToast("Output AI disimpan ke Vault.");
   };
   const sendAiToQueue=()=>{
     const message=lastAssistantMessage();
@@ -1249,7 +1251,7 @@ ${contextLine}`
     const channel=activeChannel();
     state.queue.push({id:id("queue"),title:`ACC AI Mission — ${message.content.slice(0,70)}`,priority:"NORMAL",status:"WAITING",createdAt:now(),updatedAt:now(),channelId:channel.id,channelName:channel.name,workspaceId:channel.workspaceId,source:"ACC_AI_CONSOLE",brief:message.content});
     addActivity("ACC AI output sent to Production Queue",channel.id,"READY");
-    save();showToast("Output AI dikirim ke Production Queue.");
+    save();ui.aiActionFeedback="✓ Dikirim ke Production Queue untuk "+channel.name+".";showToast("Output AI dikirim ke Production Queue.");
   };
   const extractAiError=async response=>{
     try{const data=await response.json();return data.error||data.message||`HTTP ${response.status}`;}catch{return `HTTP ${response.status}`;}
@@ -1272,7 +1274,7 @@ ${contextLine}`
     const stage=wf.stage==="READY"?"RESEARCH":wf.stage==="COMPLETED"?"RESEARCH":wf.stage;
     addAsset({channelId:channel.id,type:stage,title:`ACC AI ${stage} Draft — ${channel.name}`,stage,taskId:null,output:message.content,source:"ACC_AI_CONSOLE"});
     addActivity(`ACC AI draft applied to ${stage}`,channel.id,stage);
-    save();showToast("Output AI diterapkan ke Asset Library / pipeline tanpa auto-advance.");
+    save();ui.aiActionFeedback="✓ Diterapkan ke pipeline sebagai draft "+stage+" tanpa auto-advance.";showToast("Output AI diterapkan ke pipeline.");
   };
   const sendAiMessage=async()=>{
     const text=String(ui.aiInput||"").trim();
@@ -1310,7 +1312,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const aiConsoleHtml=()=>{
     if(!ui.aiConsoleOpen)return"";
     const channel=activeChannel(),history=aiHistory(),hasAccess=Boolean(getAiAccessCode());
-    return `<div class="ai-console-wrap"><section class="ai-console mono" role="dialog" aria-modal="true" aria-label="ACC AI Console"><header class="ai-console-header"><div class="grow"><div class="eyebrow">ACC CORE • EMBEDDED ASSISTANT</div><div class="ai-console-title">KAI — ACC AI</div><div class="meta truncate">${escapeHtml(channel.code)} • ${escapeHtml(channel.name)} • ${escapeHtml(ui.aiStatus)}</div></div><button class="ai-icon-btn" data-action="close-ai-console" aria-label="Tutup">×</button></header><div class="ai-toolbar"><span class="badge">${escapeHtml(hasAccess?"SERVER AI READY":"LOCAL SAFE")}</span><button class="btn dark small-btn mono" data-action="change-ai-access">${hasAccess?"AI ACCESS":"CONNECT AI"}</button><button class="btn dark small-btn mono" data-action="clear-ai-chat">CLEAR</button></div>${ui.aiAccessOpen?`<div class="ai-setup"><div class="item-title">OPTIONAL SERVER AI CONNECTION</div><p class="muted small">Local Safe Mode tidak butuh key. Untuk AI generatif, server /api/acc-ai harus memiliki secret ACC_AI_ACCESS_CODE + OPENAI_API_KEY. Kode akses saja yang disimpan lokal; API key tetap di server.</p><input id="ai-access-code" class="input mono" type="password" autocomplete="off" placeholder="ACC AI Access Code" value="${escapeHtml(ui.aiAccessDraft)}"><div class="ai-output-actions"><button class="btn purple small-btn mono" data-action="save-ai-access">SAVE ACCESS</button><button class="btn dark small-btn mono" data-action="close-ai-access">CANCEL</button></div></div>`:""}<div id="ai-message-list" class="ai-message-list">${history.length?history.map(item=>`<article class="ai-message ${item.role}"><div class="ai-message-role">${item.role==="assistant"?"KAI • ACC AI":"ARDA"}</div><div class="ai-message-content">${escapeHtml(item.content)}</div><div class="ai-message-time">${formatTime(item.createdAt)}${item.model?` • ${escapeHtml(item.model)}`:""}</div></article>`).join(""):`<div class="ai-empty"><div class="ai-orb">✦</div><strong>ACC AI siap.</strong><span>Local Safe Mode aktif tanpa biaya. Hubungkan server AI kapan saja untuk percakapan generatif.</span></div>`}${ui.aiLoading?`<article class="ai-message assistant thinking"><div class="ai-message-role">KAI • ACC AI</div><div class="ai-message-content">Memproses konteks ${escapeHtml(channel.name)}…</div></article>`:""}</div>${ui.aiError?`<div class="ai-error">${escapeHtml(ui.aiError)}</div>`:""}<footer class="ai-composer"><textarea id="ai-console-input" class="textarea mono" rows="2" maxlength="5000" placeholder="Tulis pesan untuk KAI…">${escapeHtml(ui.aiInput)}</textarea><button class="btn primary mono" data-action="send-ai-message" ${ui.aiLoading?"disabled":""}>${ui.aiLoading?"THINKING…":"SEND"}</button><div class="ai-output-actions"><button class="btn dark small-btn mono" data-action="save-ai-vault" ${lastAssistantMessage()?"":"disabled"}>SAVE TO VAULT</button><button class="btn cyan small-btn mono" data-action="send-ai-queue" ${lastAssistantMessage()?"":"disabled"}>SEND TO QUEUE</button><button class="btn purple small-btn mono" data-action="apply-ai-pipeline" ${lastAssistantMessage()?"":"disabled"}>APPLY TO PIPELINE</button></div></footer><div class="ai-disclaimer">ACC AI uses active ACC context and local chat history. Private ChatGPT history is not imported automatically.</div></section></div>`;
+    return `<div class="ai-console-wrap"><section class="ai-console mono" role="dialog" aria-modal="true" aria-label="ACC AI Console"><header class="ai-console-header"><div class="grow"><div class="eyebrow">ACC CORE • EMBEDDED ASSISTANT</div><div class="ai-console-title">KAI — ACC AI</div><div class="meta truncate">${escapeHtml(channel.code)} • ${escapeHtml(channel.name)} • ${escapeHtml(ui.aiStatus)}</div></div><button class="ai-icon-btn" data-action="close-ai-console" aria-label="Tutup">×</button></header><div class="ai-toolbar"><span class="badge">${escapeHtml(hasAccess?"SERVER AI READY":"LOCAL SAFE")}</span><button class="btn dark small-btn mono" data-action="change-ai-access">${hasAccess?"AI ACCESS":"CONNECT AI"}</button><button class="btn dark small-btn mono" data-action="clear-ai-chat">CLEAR</button></div>${ui.aiAccessOpen?`<div class="ai-setup"><div class="item-title">OPTIONAL SERVER AI CONNECTION</div><p class="muted small">Local Safe Mode tidak butuh key. Untuk AI generatif, server /api/acc-ai harus memiliki secret ACC_AI_ACCESS_CODE + OPENAI_API_KEY. Kode akses saja yang disimpan lokal; API key tetap di server.</p><input id="ai-access-code" class="input mono" type="password" autocomplete="off" placeholder="ACC AI Access Code" value="${escapeHtml(ui.aiAccessDraft)}"><div class="ai-output-actions"><button class="btn purple small-btn mono" data-action="save-ai-access">SAVE ACCESS</button><button class="btn dark small-btn mono" data-action="close-ai-access">CANCEL</button></div></div>`:""}<div id="ai-message-list" class="ai-message-list">${history.length?history.map(item=>`<article class="ai-message ${item.role}"><div class="ai-message-role">${item.role==="assistant"?"KAI • ACC AI":"ARDA"}</div><div class="ai-message-content">${escapeHtml(item.content)}</div><div class="ai-message-time">${formatTime(item.createdAt)}${item.model?` • ${escapeHtml(item.model)}`:""}</div></article>`).join(""):`<div class="ai-empty"><div class="ai-orb">✦</div><strong>ACC AI siap.</strong><span>Local Safe Mode aktif tanpa biaya. Hubungkan server AI kapan saja untuk percakapan generatif.</span></div>`}${ui.aiLoading?`<article class="ai-message assistant thinking"><div class="ai-message-role">KAI • ACC AI</div><div class="ai-message-content">Memproses konteks ${escapeHtml(channel.name)}…</div></article>`:""}</div>${ui.aiError?`<div class="ai-error">${escapeHtml(ui.aiError)}</div>`:""}<footer class="ai-composer"><textarea id="ai-console-input" class="textarea mono" rows="2" maxlength="5000" placeholder="Tulis pesan untuk KAI…">${escapeHtml(ui.aiInput)}</textarea><button class="btn primary mono" data-action="send-ai-message" ${ui.aiLoading?"disabled":""}>${ui.aiLoading?"THINKING…":"SEND"}</button><div class="ai-output-actions"><button type="button" class="btn dark small-btn mono" data-action="save-ai-vault" ${lastAssistantMessage()?"":"disabled"}>SAVE TO VAULT</button><button type="button" class="btn cyan small-btn mono" data-action="send-ai-queue" ${lastAssistantMessage()?"":"disabled"}>SEND TO QUEUE</button><button type="button" class="btn purple small-btn mono" data-action="apply-ai-pipeline" ${lastAssistantMessage()?"":"disabled"}>APPLY TO PIPELINE</button></div>${ui.aiActionFeedback?`<div class="ai-action-feedback">${escapeHtml(ui.aiActionFeedback)}</div>`:""}</footer><div class="ai-disclaimer">ACC AI uses active ACC context and local chat history. Private ChatGPT history is not imported automatically.</div></section></div>`;
   };
 
   const modalHtml=()=>{

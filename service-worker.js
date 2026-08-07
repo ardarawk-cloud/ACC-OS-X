@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "acc-os-x-build-214-r3";
+const CACHE_NAME = "acc-os-x-build-214-r4";
 const SHELL = [
   "./","./index.html","./app.js","./styles.css","./manifest.json","./version.json",
   "./icon-192.png","./icon-512.png","./icon-maskable-512.png"
