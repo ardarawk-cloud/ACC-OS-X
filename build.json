@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "ACC OS X — Founder Theme Deck",
+  "milestone": "ACC Experience OS Foundation",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -31,7 +31,7 @@
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
   "packageRevision": "214-R6.6",
-  "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
+  "registryCorrection": "Added PL-307 Shui Yue \u2014 Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
   "floatingAiLauncher": true,
@@ -52,7 +52,7 @@
   "openAiApiKeyRequired": false,
   "workersAiModel": "@cf/meta/llama-3.1-8b-instruct-fast",
   "workersAiFreeTierCompatible": true,
-  "brandIdentity": "Neon X Shield — polished adaptive icon",
+  "brandIdentity": "Neon X Shield \u2014 polished adaptive icon",
   "unifiedLogoAsset": true,
   "headerLogoUsesPwaIcon": true,
   "pwaIconCacheBust": true,
@@ -103,5 +103,14 @@
   "customThemeMixer": true,
   "randomThemeButton": true,
   "themePersistence": "state.settings + backup/restore",
-  "themeSafety": "visual only; production data and AI workflow untouched"
+  "themeSafety": "visual only; production data and AI workflow untouched",
+  "revision": "R6.7",
+  "features": [
+    "ACC DNA",
+    "AI Personality Pack",
+    "Sound Pack",
+    "Workspace Atmosphere",
+    "Achievement Badges",
+    "Plugin Foundation"
+  ]
 }

@@ -184,7 +184,8 @@
     {id:"notifications",icon:"◉",name:"Notification Center",desc:"Operational alerts, approvals, failures and update messages."},
     {id:"backup",icon:"⇩",name:"Backup Center",desc:"Local snapshots, JSON export, import and recovery mode."},
     {id:"updates",icon:"↻",name:"Update Center",desc:"Permanent PWA identity and future in-app update controls."},
-    {id:"health",icon:"♡",name:"System Health",desc:"PWA, network, storage, cache and data integrity status."}
+    {id:"health",icon:"♡",name:"System Health",desc:"PWA, network, storage, cache and data integrity status."},
+    {id:"experience",icon:"✧",name:"Experience OS",desc:"ACC DNA, personality, ambience, sound, badges and plugin identity."}
   ];
 
   const STAGES = ["READY","RESEARCH","SCRIPT","POSTER","CAPTION","QC","APPROVAL","COMPLETED"];
@@ -245,6 +246,93 @@
     aiActionFeedback:""
   };
 
+
+  const EXPERIENCE_DEFAULTS = {
+    dnaName: "Founder Edition",
+    personality: "FOUNDER",
+    soundPack: "CYBER",
+    atmosphere: "NONE",
+    atmosphereIntensity: 35,
+    badges: ["FOUNDER", "EARLY_ADOPTER", "FIRST_PRODUCTION"],
+    plugins: { production:true, themeDeck:true, kai:true, backup:true, scheduler:true }
+  };
+
+  const EXPERIENCE_PERSONALITIES = {
+    FOUNDER:{name:"Founder",icon:"⚡",tone:"Santai, cepat, kreatif, direct, tetap profesional."},
+    CEO:{name:"CEO",icon:"💼",tone:"Ringkas, strategis, fokus keputusan, risiko, dan hasil."},
+    NINJA:{name:"Ninja",icon:"🥷",tone:"Taktis, pendek, mission-oriented, minim basa-basi."},
+    WUXIA:{name:"Wuxia",icon:"☯",tone:"Elegan, tenang, metafora kultivasi ringan tanpa mengganggu kejelasan."},
+    CHILL:{name:"Chill",icon:"🌿",tone:"Santai, hangat, ringan, tetap produktif."}
+  };
+
+  const EXPERIENCE_SOUND_PACKS = {
+    OFF:{name:"Off",icon:"🔇"},
+    CYBER:{name:"Cyber Click",icon:"⚡"},
+    MATRIX:{name:"Matrix Beep",icon:"🟢"},
+    MILITARY:{name:"Tactical Radio",icon:"🎖️"},
+    WUXIA:{name:"Wuxia Chime",icon:"⚔️"},
+    CLUB:{name:"Night Club",icon:"🎧"}
+  };
+
+  const EXPERIENCE_ATMOSPHERES = {
+    NONE:{name:"None",icon:"○"},
+    FOREST:{name:"Forest Mist",icon:"🌿"},
+    COSMIC:{name:"Cosmic Dust",icon:"🌌"},
+    RAIN:{name:"Rain",icon:"🌧️"},
+    MATRIX:{name:"Digital Rain",icon:"🟢"},
+    EMBERS:{name:"Embers",icon:"🔥"},
+    NIGHT:{name:"Night City",icon:"🌃"},
+    MILITARY:{name:"Tactical Grid",icon:"🎖️"}
+  };
+
+  const ensureExperience=()=>{
+    state.experience={
+      ...EXPERIENCE_DEFAULTS,
+      ...(state.experience||{}),
+      plugins:{...EXPERIENCE_DEFAULTS.plugins,...((state.experience||{}).plugins||{})}
+    };
+    return state.experience;
+  };
+
+  const saveExperience=(next)=>{
+    state.experience={...ensureExperience(),...next,plugins:{...ensureExperience().plugins,...((next||{}).plugins||{})}};
+    save(); applyExperience();
+  };
+
+  const playUiSound=(kind="tap")=>{
+    const exp=ensureExperience(); if(exp.soundPack==="OFF")return;
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return;
+      const ctx=new AC(),osc=ctx.createOscillator(),gain=ctx.createGain();
+      const map={CYBER:[680,.045],MATRIX:[880,.035],MILITARY:[220,.05],WUXIA:[520,.07],CLUB:[110,.055]};
+      const [freq,dur]=map[exp.soundPack]||map.CYBER;
+      osc.type=exp.soundPack==="CLUB"?"square":"sine";
+      osc.frequency.value=kind==="success"?freq*1.35:freq;
+      gain.gain.setValueAtTime(.035,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+dur);
+      osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+dur);
+      setTimeout(()=>ctx.close(),150);
+    }catch{}
+  };
+
+  const applyExperience=()=>{
+    const exp=ensureExperience(),root=document.documentElement;
+    root.dataset.accPersonality=exp.personality;
+    root.dataset.accAtmosphere=exp.atmosphere;
+    root.style.setProperty("--atmosphere-opacity",String(Math.max(0,Math.min(100,Number(exp.atmosphereIntensity||35)))/100));
+  };
+
+  const awardBadge=(badge)=>{
+    const exp=ensureExperience();
+    if(!exp.badges.includes(badge)){exp.badges.push(badge);save();notify("Badge Unlocked",badge.replaceAll("_"," "),"SUCCESS");}
+  };
+
+  const personalityInstruction=()=>{
+    const exp=ensureExperience(),p=EXPERIENCE_PERSONALITIES[exp.personality]||EXPERIENCE_PERSONALITIES.FOUNDER;
+    return `ACC Personality: ${p.name}. Communication tone: ${p.tone}`;
+  };
+
+
   const id = prefix => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const now = () => new Date().toISOString();
   const emptyWorkflow = () => ({
@@ -302,6 +390,7 @@ Mission: ${profile.mission||"—"}`},
     notifications:[],
     schedules:[],
     backups:[],
+    experience:{...EXPERIENCE_DEFAULTS,plugins:{...EXPERIENCE_DEFAULTS.plugins}},
     settings:{
       updateChannel:"BETA",
       autoBackup:true,
@@ -371,6 +460,7 @@ Mission: ${profile.mission||"—"}`},
       notifications:Array.isArray(source.notifications) ? source.notifications : [],
       schedules:Array.isArray(source.schedules) ? source.schedules : [],
       backups:Array.isArray(source.backups) ? source.backups.slice(0,5) : [],
+      experience:{...EXPERIENCE_DEFAULTS,...(source.experience || {}),plugins:{...EXPERIENCE_DEFAULTS.plugins,...((source.experience || {}).plugins || {})}},
       settings:{...fresh.settings,...(source.settings || {})}
     };
   };
@@ -621,6 +711,7 @@ Mission: ${profile.mission||"—"}`},
     addAsset({channelId:channel.id,type:"PACKAGE",title:`Completed Production Package — ${channel.name}`,stage:"COMPLETED",
       output:"Human-approved final production package."});
     addActivity("Mission approved and completed",channel.id,"COMPLETED");
+    awardBadge("BUILD_214_STABLE");
     notify("Mission Completed",`${channel.name} selesai 100% dan siap diarsip.`,"SUCCESS");
     save();showToast("Mission completed.");
   };
@@ -726,7 +817,7 @@ Mission: ${profile.mission||"—"}`},
 
   const generateOutput = task => {
     const channel=channelMap[task.channelId];
-    const contextLine=task.contextTitles.length?`Injected context: ${task.contextTitles.join(", ")}.`:"No active context injected.";
+    const contextLine=(task.contextTitles.length?`Injected context: ${task.contextTitles.join(", ")}.`:"No active context injected.")+`\n${personalityInstruction()}`;
     const outputs={
       RESEARCH:`RESEARCH BRIEF — ${channel.name}
 
@@ -1258,7 +1349,7 @@ Operational rules:
     return `<section class="section mono"><input id="archive-search" class="input search mono" placeholder="Search archive..." value="${escapeHtml(ui.archiveSearch)}"><div class="list">${archives.map(item=>`<div class="item"><div class="row between"><div class="grow"><div class="item-title">${escapeHtml(item.channelName)}</div><div class="meta">Archived ${formatTime(item.archivedAt)}</div></div><span class="${statusClass(item.status)}">${escapeHtml(item.status)}</span></div><div class="worker-metrics"><div class="metric"><span class="muted tiny">PROGRESS</span><strong>${item.progress}%</strong></div><div class="metric"><span class="muted tiny">ASSETS</span><strong>${item.assetCount}</strong></div><div class="metric"><span class="muted tiny">STAGE</span><strong style="font-size:10px">${escapeHtml(item.stage)}</strong></div></div></div>`).join("")||`<div class="empty">Archive Center masih kosong.</div>`}</div></section>`;
   };
 
-  const ecosystemHtml=()=>`<div class="module-tabs mono">${moduleTab("launcher","MODULES")}${moduleTab("registry","REGISTRY")}${moduleTab("studio","STUDIO OS")}${moduleTab("gemini","AI CONSOLE")}${moduleTab("vault","KNOWLEDGE")}${moduleTab("graph","GRAPH")}${moduleTab("analytics","ANALYTICS")}${moduleTab("scheduler","SCHEDULER")}${moduleTab("notifications","NOTIFICATIONS")}${moduleTab("backup","BACKUP")}${moduleTab("updates","UPDATES")}${moduleTab("health","HEALTH")}</div>${ecosystemContent()}`;
+  const ecosystemHtml=()=>`<div class="module-tabs mono">${moduleTab("launcher","MODULES")}${moduleTab("registry","REGISTRY")}${moduleTab("studio","STUDIO OS")}${moduleTab("gemini","AI CONSOLE")}${moduleTab("vault","KNOWLEDGE")}${moduleTab("graph","GRAPH")}${moduleTab("analytics","ANALYTICS")}${moduleTab("scheduler","SCHEDULER")}${moduleTab("notifications","NOTIFICATIONS")}${moduleTab("backup","BACKUP")}${moduleTab("updates","UPDATES")}${moduleTab("health","HEALTH")}${moduleTab("experience","EXPERIENCE")}</div>${ecosystemContent()}`;
 
   const ecosystemContent=()=>{
     switch(ui.ecosystemTab){
@@ -1273,6 +1364,7 @@ Operational rules:
       case"backup":return backupHtml();
       case"updates":return updatesHtml();
       case"health":return healthHtml();
+      case"experience":return experienceHtml();
       default:return launcherHtml();
     }
   };
@@ -1384,6 +1476,59 @@ Operational rules:
       <div class="actions theme-actions"><button class="btn primary mono" data-action="apply-custom-theme">APPLY CUSTOM</button><button class="btn dark mono" data-action="random-theme">SURPRISE ME</button></div>
     </div>`;
   };
+
+
+  const experienceHtml=()=>{
+    const exp=ensureExperience();
+    const badgeNames={FOUNDER:"Founder",EARLY_ADOPTER:"Early Adopter",FIRST_PRODUCTION:"First Production",BUILD_214_STABLE:"Build 214 Stable",THEME_CREATOR:"Theme Creator"};
+    return `<section class="section mono">
+      <div class="card experience-hero">
+        <div class="row between wrap">
+          <div><div class="eyebrow">ACC EXPERIENCE OS</div><h2 class="card-title">ACC DNA</h2><p class="muted small">Professional doesn't have to be boring.</p></div>
+          <span class="badge">${escapeHtml(exp.dnaName)}</span>
+        </div>
+        <div class="grid stats" style="margin-top:18px">
+          ${statCard("PERSONALITY",EXPERIENCE_PERSONALITIES[exp.personality]?.name||exp.personality,"purple")}
+          ${statCard("SOUND",EXPERIENCE_SOUND_PACKS[exp.soundPack]?.name||exp.soundPack,"cyan")}
+          ${statCard("ATMOSPHERE",EXPERIENCE_ATMOSPHERES[exp.atmosphere]?.name||exp.atmosphere,"green")}
+          ${statCard("BADGES",exp.badges.length,"amber")}
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="eyebrow">AI PERSONALITY PACK</div><h3 class="card-title">KAI Personality</h3>
+        <div class="grid module-grid" style="margin-top:14px">
+          ${Object.entries(EXPERIENCE_PERSONALITIES).map(([key,item])=>`<button class="module-card mono ${exp.personality===key?"experience-selected":""}" data-action="experience-personality" data-value="${key}"><div class="module-icon">${item.icon}</div><div class="module-name">${item.name}</div><div class="module-desc">${item.tone}</div></button>`).join("")}
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="eyebrow">WORKSPACE ATMOSPHERE</div><h3 class="card-title">Ambient Layer</h3>
+        <div class="grid module-grid" style="margin-top:14px">
+          ${Object.entries(EXPERIENCE_ATMOSPHERES).map(([key,item])=>`<button class="module-card mono ${exp.atmosphere===key?"experience-selected":""}" data-action="experience-atmosphere" data-value="${key}"><div class="module-icon">${item.icon}</div><div class="module-name">${item.name}</div></button>`).join("")}
+        </div>
+        <div style="margin-top:15px"><div class="row between tiny"><span class="muted">ATMOSPHERE INTENSITY</span><strong>${Number(exp.atmosphereIntensity||35)}%</strong></div><input id="experience-intensity" class="experience-range" type="range" min="0" max="100" value="${Number(exp.atmosphereIntensity||35)}"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="eyebrow">SOUND PACK</div><h3 class="card-title">UI Feedback</h3>
+        <div class="grid module-grid" style="margin-top:14px">
+          ${Object.entries(EXPERIENCE_SOUND_PACKS).map(([key,item])=>`<button class="module-card mono ${exp.soundPack===key?"experience-selected":""}" data-action="experience-sound" data-value="${key}"><div class="module-icon">${item.icon}</div><div class="module-name">${item.name}</div></button>`).join("")}
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="eyebrow">ACHIEVEMENT SYSTEM</div><h3 class="card-title">Badges</h3>
+        <div class="badge-grid" style="margin-top:14px">${exp.badges.map(b=>`<div class="achievement-badge"><span>🏆</span><strong>${escapeHtml(badgeNames[b]||b.replaceAll("_"," "))}</strong></div>`).join("")}</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="eyebrow">PLUGIN FOUNDATION</div><h3 class="card-title">Installed Core Packs</h3>
+        <div class="list" style="margin-top:14px">${Object.entries(exp.plugins).map(([key,on])=>`<div class="item row between"><div><strong>${escapeHtml(key.toUpperCase())}</strong><div class="meta">ACC core plugin slot</div></div><span class="${statusClass(on?"READY":"PAUSED")}">${on?"ACTIVE":"PAUSED"}</span></div>`).join("")}</div>
+      </div>
+    </section>`;
+  };
+
 
   const systemHtml=()=>{
     const m=metrics();
@@ -1556,7 +1701,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
     });
     document.getElementById("channel-select")?.addEventListener("change",event=>{state.activeChannelId=event.target.value;ensureContexts(state.activeChannelId);save();render();});
     document.getElementById("role-select")?.addEventListener("change",event=>{state.activeRole=event.target.value;save();render();});
-    ROOT.querySelectorAll("[data-action]").forEach(button=>button.addEventListener("click",()=>handleAction(button.dataset)));
+    ROOT.querySelectorAll("[data-action]").forEach(button=>button.addEventListener("click",()=>{playUiSound("tap");handleAction(button.dataset);}));
 
     bindValue("approval-notes",value=>{setWorkflow(activeChannel().id,{approvalNotes:value});save();});
     bindValue("revision-target",value=>{setWorkflow(activeChannel().id,{revisionTarget:value});save();},"change");
@@ -1571,6 +1716,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
     bindValue("registry-search",value=>{ui.registrySearch=value;render();});
     bindValue("schedule-title",value=>ui.scheduleTitle=value);
     bindValue("schedule-when",value=>ui.scheduleWhen=value);
+    bindValue("experience-intensity",value=>{state.experience={...ensureExperience(),atmosphereIntensity:Number(value)};save();applyExperience();},"input");
     bindValue("ai-console-input",value=>ui.aiInput=value);
     bindValue("ai-access-code",value=>ui.aiAccessDraft=value);
 
@@ -1639,6 +1785,9 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"random-theme":setRandomTheme();break;
       case"apply-custom-theme":setCustomTheme();break;
       case"clear-caches":clearOldCaches();break;
+      case"experience-personality":saveExperience({personality:data.value});playUiSound("success");showToast(`Personality: ${EXPERIENCE_PERSONALITIES[data.value]?.name||data.value}`);render();break;
+      case"experience-atmosphere":saveExperience({atmosphere:data.value});playUiSound("tap");showToast(`Atmosphere: ${EXPERIENCE_ATMOSPHERES[data.value]?.name||data.value}`);render();break;
+      case"experience-sound":saveExperience({soundPack:data.value});playUiSound("success");showToast(`Sound Pack: ${EXPERIENCE_SOUND_PACKS[data.value]?.name||data.value}`);render();break;
     }
   };
 
@@ -1671,6 +1820,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
     notify("ACC AI Context Fix Applied","Build 214 R3 memperbaiki Workspace context dan memisahkan ACC AI Notes dari context injection otomatis.","SUCCESS");
   }
   save();
+  applyExperience();
   render();
   registerPwa();
 })();
