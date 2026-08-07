@@ -1,8 +1,8 @@
 {
   "version": 214,
-  "name": "ACC OS X \u2014 Backup & Recovery Hardening",
+  "name": "ACC OS X — Worker Execution Engine",
   "channel": "beta",
-  "releasedAt": "2026-08-07T17:38:00+08:00",
+  "releasedAt": "2026-08-07T20:55:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.4"
+  "revision": "R6.5"
 }

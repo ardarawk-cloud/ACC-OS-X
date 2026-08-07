@@ -95,6 +95,7 @@ button:disabled{cursor:default;opacity:.36}
   border:1px solid var(--line);font-size:9px;font-weight:900;white-space:nowrap
 }
 .status.ready,.worker-state.idle{color:#94a3b8;background:#02081a}
+.worker-state.ready{color:#fbbf24;border-color:#92400e;background:#451a03}
 .status.running,.worker-state.running{color:#60a5fa;border-color:#1d4ed8;background:#082f49}
 .status.paused{color:#fbbf24;border-color:#92400e;background:#451a03}
 .status.awaiting_approval{color:#d8b4fe;border-color:#7e22ce;background:#3b0764}

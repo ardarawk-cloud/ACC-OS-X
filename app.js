@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.4";
+  const PACKAGE_REVISION = "R6.5";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -617,24 +617,42 @@ Mission: ${profile.mission||"—"}`},
     state.queue=state.queue.filter(item=>item.id!==queueId);save();showToast("Queue item dihapus.");
   };
 
-  const routeTask = ({stage,goal,channelId=activeChannel().id}) => {
+  const routeTask = ({stage,goal,channelId=activeChannel().id,autoRun=false,autoApply=false,source="MANUAL_ROUTER"}) => {
     const route=ROUTES[stage];if(!route) return showToast("Stage tidak punya AI Worker.");
-    const contexts=ensureContexts(channelId).filter(entry=>entry.active);
+    const existing=state.ai.tasks.find(task=>task.channelId===channelId&&task.stage===stage&&!task.applied&&["READY","RUNNING"].includes(task.status));
+    if(existing){
+      existing.autoApply=Boolean(existing.autoApply||autoApply);
+      existing.source=existing.source||source;
+      ui.tab="production";ui.productionTab="ai";save();
+      showToast(existing.status==="RUNNING"?`${route.label} sedang RUNNING.`:`${route.label} task sudah READY.`);
+      if(autoRun&&existing.status==="READY")setTimeout(()=>runTask(existing.id,false,{autoApply:existing.autoApply}),80);
+      return existing;
+    }
+    const contexts=injectableContexts(channelId);
     const task={
       id:id("task"),channelId,channelName:channelMap[channelId].name,stage,workerType:route.worker,workerName:route.label,
       goal:goal?.trim()||`Generate ${stage} output`,status:"READY",attempts:0,retries:0,error:"",output:"",
       contextIds:contexts.map(entry=>entry.id),contextTitles:contexts.map(entry=>entry.title),
-      routedAt:now(),startedAt:null,completedAt:null,applied:false,providerMode:state.ai.providerMode
+      routedAt:now(),startedAt:null,completedAt:null,applied:false,appliedAt:null,
+      providerMode:state.ai.providerMode,provider:null,model:null,source,autoApply:Boolean(autoApply)
     };
     state.ai.tasks.unshift(task);state.ai.tasks=state.ai.tasks.slice(0,150);
     addActivity(`AI Router → ${route.label}`,channelId,stage);
-    save();ui.tab="production";ui.productionTab="ai";showToast(`Routed to ${route.label}.`);
+    save();ui.tab="production";ui.productionTab="ai";showToast(autoRun?`Routing + executing ${route.label}…`:`Routed to ${route.label}.`);
+    if(autoRun)setTimeout(()=>runTask(task.id,false,{autoApply:task.autoApply}),80);
+    return task;
   };
 
   const routeActiveStage = () => {
-    const wf=currentWorkflow();
+    const wf=currentWorkflow(),channel=activeChannel();
     if(!ROUTES[wf.stage]) return showToast("Stage aktif belum mendukung AI execution.");
-    routeTask({stage:wf.stage,goal:`Execute ${wf.stage} for ${activeChannel().name} using locked channel context.`});
+    const completed=state.ai.tasks.find(task=>task.channelId===channel.id&&task.stage===wf.stage&&task.status==="SUCCESS"&&!task.applied);
+    if(completed){
+      applyTask(completed.id,{silent:true});
+      ui.tab="production";ui.productionTab="pipeline";render();
+      return showToast(`${completed.workerName} output diterapkan — pipeline lanjut.`);
+    }
+    routeTask({stage:wf.stage,goal:`Execute ${wf.stage} for ${channel.name} using locked channel context and upstream production assets.`,autoRun:true,autoApply:true,source:"PIPELINE_ACTIVE_STAGE"});
   };
 
   const generateOutput = task => {
@@ -740,6 +758,30 @@ ${contextLine}`
     return outputs[task.stage]||`AI output for ${task.stage}\n\n${task.goal}\n\n${contextLine}`;
   };
 
+  const workerPrompt = task => {
+    const stageRules={
+      RESEARCH:"Create a grounded research brief with audience intent, content angles, factual/verification needs, risks, and a production recommendation. If current external facts are required, mark them VERIFICATION REQUIRED instead of inventing them.",
+      SCRIPT:"Create a production-ready script using the locked profile format and the latest upstream research asset. Preserve exact series names, batch counts, canon, tone, and workflow rules.",
+      POSTER:"Create poster direction and a production-ready image prompt only. Preserve the profile visual identity and exact batch/file rules. Do not claim an image file was generated.",
+      CAPTION:"Create publish-ready caption copy using the locked profile language, platform, credits/tag rules, CTA style, and exact batch requirements.",
+      QC:"Audit the upstream production package against locked profile context. Return PASS, PASS WITH REVISION, or FAIL with concise reasons and exact fixes. Never approve missing required assets.",
+      PUBLISHING:"Create a publishing checklist only. Never claim anything was posted or scheduled unless an executed ACC action proves it."
+    };
+    return `You are ${task.workerName}, specialized worker ${task.workerType} inside ACC OS X.
+
+STAGE: ${task.stage}
+MISSION: ${task.goal}
+
+${stageRules[task.stage]||"Execute the requested production stage."}
+
+Operational rules:
+- Injected ACC profile context is the source of truth.
+- Use upstreamAssets when present; do not restart the workflow from scratch.
+- Do not invent canon, current state, source verification, approvals, publication, or generated files.
+- Preserve exact locked names, counts, order, language, and format.
+- Return only the useful stage deliverable, not a discussion of these instructions.`;
+  };
+
   const updateWorkerStats = (workerType,result) => {
     const current=state.ai.workerStats[workerType]||{runs:0,success:0,failed:0};
     state.ai.workerStats[workerType]={
@@ -747,39 +789,65 @@ ${contextLine}`
     };
   };
 
-  const runTask = (taskId,forceFailure=false) => {
+  const runTask = async (taskId,forceFailure=false,options={}) => {
     const task=state.ai.tasks.find(item=>item.id===taskId);
     if(!task||task.status==="RUNNING") return;
-    task.status="RUNNING";task.attempts+=1;task.startedAt=now();task.error="";
+    task.autoApply=Boolean(options.autoApply??task.autoApply);
+    task.status="RUNNING";task.attempts+=1;task.startedAt=now();task.error="";task.provider=null;task.model=null;
     save();render();
-    setTimeout(()=>{
+
+    if(forceFailure){
+      await new Promise(resolve=>setTimeout(resolve,280));
       const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
-      if(forceFailure){
-        current.status="FAILED";current.error="Simulated worker timeout: context package acknowledged, output generation interrupted.";
-        current.completedAt=now();updateWorkerStats(current.workerType,"FAILED");
-        addActivity(`${current.workerName} failed`,current.channelId,current.stage);
-        notify("AI Worker Failed",`${current.workerName} gagal. Retry tersedia.`,"ERROR");
-        save();showToast("Worker failure captured. RETRY tersedia.");return;
-      }
-      current.status="SUCCESS";current.output=generateOutput(current);current.completedAt=now();
-      updateWorkerStats(current.workerType,"SUCCESS");addActivity(`${current.workerName} completed`,current.channelId,current.stage);
-      save();showToast("Worker execution success.");
-    },620);
+      current.status="FAILED";current.error="Simulated worker timeout: context package acknowledged, output generation interrupted.";
+      current.completedAt=now();updateWorkerStats(current.workerType,"FAILED");
+      addActivity(`${current.workerName} failed`,current.channelId,current.stage);
+      notify("AI Worker Failed",`${current.workerName} gagal. Retry tersedia.`,"ERROR");
+      save();render();showToast("Worker failure captured. RETRY tersedia.");return;
+    }
+
+    const accessCode=getAiAccessCode();
+    if(!accessCode){
+      task.status="FAILED";task.error="SERVER AI access belum terhubung. Hubungkan AI ACCESS agar specialized worker bisa dieksekusi.";
+      task.completedAt=now();task.provider="NO_SERVER_ACCESS";updateWorkerStats(task.workerType,"FAILED");
+      addActivity(`${task.workerName} blocked — AI access missing`,task.channelId,task.stage);
+      save();render();showToast("Worker belum bisa jalan — AI ACCESS belum terhubung.");return;
+    }
+
+    try{
+      const response=await fetch("/api/acc-ai",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:[{role:"user",content:workerPrompt(task)}],context:buildWorkerContext(task)})});
+      if(!response.ok)throw new Error(await extractAiError(response));
+      const data=await response.json();
+      if(!data.reply)throw new Error("AI worker response kosong.");
+      const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
+      current.status="SUCCESS";current.output=data.reply;current.completedAt=now();
+      current.provider=data.provider||"Cloudflare Workers AI";current.model=data.model||"server-ai";current.providerMode="SERVER_AI";
+      state.ai.providerMode="SERVER_AI";updateWorkerStats(current.workerType,"SUCCESS");
+      addActivity(`${current.workerName} completed via server AI`,current.channelId,current.stage);
+      if(current.autoApply)applyTask(current.id,{silent:true});
+      save();render();showToast(current.autoApply?"Worker SUCCESS — output applied, pipeline lanjut.":"Worker execution SUCCESS.");
+    }catch(error){
+      const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
+      current.status="FAILED";current.error=String(error?.message||error);current.completedAt=now();current.provider="SERVER_AI_ERROR";
+      updateWorkerStats(current.workerType,"FAILED");addActivity(`${current.workerName} failed`,current.channelId,current.stage);
+      notify("AI Worker Failed",`${current.workerName} gagal. Retry tersedia.`,"ERROR");
+      save();render();showToast("Worker gagal — cek task lalu RETRY.");
+    }
   };
 
   const retryTask = taskId => {
     const task=state.ai.tasks.find(item=>item.id===taskId);
     if(!task||task.status!=="FAILED")return;
-    task.retries+=1;task.status="READY";task.error="";save();runTask(taskId,false);
+    task.retries+=1;task.status="READY";task.error="";save();runTask(taskId,false,{autoApply:task.autoApply});
   };
 
-  const applyTask = taskId => {
+  const applyTask = (taskId,options={}) => {
     const task=state.ai.tasks.find(item=>item.id===taskId);
-    if(!task||task.status!=="SUCCESS")return showToast("Output belum SUCCESS.");
-    if(task.applied||state.assets.some(asset=>asset.taskId===taskId))return showToast("Output sudah diterapkan.");
+    if(!task||task.status!=="SUCCESS"){if(!options.silent)showToast("Output belum SUCCESS.");return false;}
+    if(task.applied||state.assets.some(asset=>asset.taskId===taskId)){if(!options.silent)showToast("Output sudah diterapkan.");return false;}
     const channel=channelMap[task.channelId];
     addAsset({channelId:task.channelId,type:task.stage,title:`${task.stage} Output — ${channel.name}`,stage:task.stage,taskId:task.id,output:task.output});
-    task.applied=true;
+    task.applied=true;task.appliedAt=now();
     const wf=workflowFor(task.channelId);
     if(wf.status==="RUNNING"&&wf.stage===task.stage){
       const next=STAGES[STAGES.indexOf(wf.stage)+1];
@@ -789,7 +857,7 @@ ${contextLine}`
         if(next==="APPROVAL")notify("Approval Required",`${channel.name} menunggu keputusan Owner.`,"WARNING");
       }
     } else addActivity("AI output saved as asset",task.channelId,task.stage);
-    save();showToast("Output diterapkan ke Asset Library dan pipeline.");
+    save();if(!options.silent)showToast("Output diterapkan ke Asset Library dan pipeline.");return true;
   };
 
   const addContext = () => {
@@ -967,7 +1035,7 @@ ${contextLine}`
     if(running)return "RUNNING";
     const latest=state.ai.tasks.find(task=>task.workerType===workerType);
     if(!latest)return "IDLE";
-    return latest.status==="FAILED"?"FAILED":latest.status==="SUCCESS"?"SUCCESS":"IDLE";
+    return latest.status==="FAILED"?"FAILED":latest.status==="SUCCESS"?"SUCCESS":latest.status==="READY"?"READY":"IDLE";
   };
 
   const metrics = () => {
@@ -1093,9 +1161,9 @@ ${contextLine}`
 
   const aiHtml=()=>{
     const channel=activeChannel(),contexts=ensureContexts(channel.id).filter(item=>item.active),tasks=state.ai.tasks.filter(task=>task.channelId===channel.id);
-    return `<section class="section mono"><div class="router-box"><div class="row between wrap"><div><div class="eyebrow">ACC AI ROUTER</div><h2 class="card-title">Route Mission to Specialized Worker</h2></div><span class="badge">${contexts.length} CONTEXT ACTIVE</span></div><div class="form-grid two" style="margin-top:17px"><select id="route-stage" class="select mono">${Object.keys(ROUTES).map(stage=>`<option value="${stage}" ${stage===ui.routeStage?"selected":""}>${stage}</option>`).join("")}</select><input id="route-goal" class="input mono" value="${escapeHtml(ui.routeGoal)}"></div><div class="router-route"><div class="route-node">${escapeHtml(channel.name)}</div><div class="route-arrow">→</div><div class="route-node">${escapeHtml(ROUTES[ui.routeStage]?.label||"Worker")}</div></div><button class="btn primary mono" style="width:100%;margin-top:17px" data-action="route-task">ROUTE TASK</button></div>
-      <div style="margin-top:23px"><div class="row between"><h3 class="card-title">AI WORKERS</h3><span class="muted tiny">${escapeHtml(state.ai.providerMode)}</span></div><div class="worker-grid" style="margin-top:14px">${WORKER_TYPES.map(worker=>workerCard(worker.worker,worker.label)).join("")}</div></div>
-      <div style="margin-top:27px"><div class="row between"><h3 class="card-title">EXECUTION TASKS</h3><span class="muted tiny">${tasks.length}/150</span></div><div class="list" style="margin-top:14px">${tasks.map(taskCard).join("")||`<div class="empty">Belum ada task. Gunakan AI Router.</div>`}</div></div>
+    return `<section class="section mono"><div class="router-box"><div class="row between wrap"><div><div class="eyebrow">ACC AI ROUTER</div><h2 class="card-title">Route Mission to Specialized Worker</h2></div><span class="badge">${contexts.length} CONTEXT ACTIVE</span></div><div class="form-grid two" style="margin-top:17px"><select id="route-stage" class="select mono">${Object.keys(ROUTES).map(stage=>`<option value="${stage}" ${stage===ui.routeStage?"selected":""}>${stage}</option>`).join("")}</select><input id="route-goal" class="input mono" value="${escapeHtml(ui.routeGoal)}"></div><div class="router-route"><div class="route-node">${escapeHtml(channel.name)}</div><div class="route-arrow">→</div><div class="route-node">${escapeHtml(ROUTES[ui.routeStage]?.label||"Worker")}</div></div><button class="btn primary mono" style="width:100%;margin-top:17px" data-action="route-task">ROUTE + RUN TASK</button></div>
+      <div style="margin-top:23px"><div class="row between"><h3 class="card-title">EXECUTION TASKS</h3><span class="muted tiny">${tasks.length}/150</span></div><div class="list" style="margin-top:14px">${tasks.map(taskCard).join("")||`<div class="empty">Belum ada task. Gunakan AI Router.</div>`}</div></div>
+      <div style="margin-top:27px"><div class="row between"><h3 class="card-title">AI WORKERS</h3><span class="muted tiny">${escapeHtml(state.ai.providerMode)}</span></div><div class="worker-grid" style="margin-top:14px">${WORKER_TYPES.map(worker=>workerCard(worker.worker,worker.label)).join("")}</div></div>
     </section>`;
   };
 
@@ -1104,7 +1172,7 @@ ${contextLine}`
     return `<div class="worker-card"><div class="row between"><div><div class="eyebrow">${escapeHtml(workerType)}</div><div class="item-title">${escapeHtml(label)}</div></div><span class="worker-state ${status.toLowerCase()}">${status}</span></div><div class="worker-metrics"><div class="metric"><span class="muted tiny">RUNS</span><strong>${stats.runs}</strong></div><div class="metric"><span class="muted tiny">SUCCESS</span><strong class="green">${stats.success}</strong></div><div class="metric"><span class="muted tiny">FAILED</span><strong class="red">${stats.failed}</strong></div></div></div>`;
   };
 
-  const taskCard=task=>`<div class="item task-card ${task.status.toLowerCase()}"><div class="row between wrap"><div class="grow"><div class="eyebrow">${escapeHtml(task.stage)} • ${escapeHtml(task.workerType)}</div><div class="item-title truncate">${escapeHtml(task.goal)}</div><div class="meta">${escapeHtml(task.workerName)} • Context ${task.contextIds.length} • Attempt ${task.attempts} • Retry ${task.retries}</div></div><span class="${statusClass(task.status)}">${escapeHtml(task.status)}</span></div>${task.error?`<div class="context-content red">${escapeHtml(task.error)}</div>`:""}${task.output?`<div class="output-preview">${escapeHtml(task.output.slice(0,260))}${task.output.length>260?"…":""}</div>`:""}<div class="task-actions">${task.status==="READY"?`<button class="btn green small-btn mono" data-action="run-task" data-id="${task.id}">RUN</button><button class="btn red small-btn mono" data-action="fail-task" data-id="${task.id}">TEST FAIL</button>`:""}${task.status==="FAILED"?`<button class="btn amber small-btn mono" data-action="retry-task" data-id="${task.id}">RETRY</button>`:""}${task.status==="SUCCESS"?`<button class="btn purple small-btn mono" data-action="inspect-task" data-id="${task.id}">INSPECT OUTPUT</button><button class="btn cyan small-btn mono" data-action="apply-task" data-id="${task.id}" ${task.applied?"disabled":""}>${task.applied?"APPLIED":"APPLY OUTPUT"}</button>`:""}</div></div>`;
+  const taskCard=task=>`<div class="item task-card ${task.status.toLowerCase()}"><div class="row between wrap"><div class="grow"><div class="eyebrow">${escapeHtml(task.stage)} • ${escapeHtml(task.workerType)}</div><div class="item-title truncate">${escapeHtml(task.goal)}</div><div class="meta">${escapeHtml(task.workerName)} • Context ${task.contextIds.length} • Attempt ${task.attempts} • Retry ${task.retries}${task.autoApply?" • AUTO APPLY":""}</div>${task.provider||task.model?`<div class="meta">${escapeHtml(task.provider||"")}${task.model?` • ${escapeHtml(task.model)}`:""}</div>`:""}</div><span class="${statusClass(task.status)}">${escapeHtml(task.status)}</span></div>${task.error?`<div class="context-content red">${escapeHtml(task.error)}</div>`:""}${task.output?`<div class="output-preview">${escapeHtml(task.output.slice(0,260))}${task.output.length>260?"…":""}</div>`:""}<div class="task-actions">${task.status==="READY"?`<button class="btn green small-btn mono" data-action="run-task" data-id="${task.id}">RUN WORKER</button><button class="btn red small-btn mono" data-action="fail-task" data-id="${task.id}">TEST FAIL</button>`:""}${task.status==="RUNNING"?`<span class="badge">SERVER AI EXECUTING</span>`:""}${task.status==="FAILED"?`<button class="btn amber small-btn mono" data-action="retry-task" data-id="${task.id}">RETRY</button>`:""}${task.status==="SUCCESS"?`<button class="btn purple small-btn mono" data-action="inspect-task" data-id="${task.id}">INSPECT OUTPUT</button><button class="btn cyan small-btn mono" data-action="apply-task" data-id="${task.id}" ${task.applied?"disabled":""}>${task.applied?"APPLIED":"APPLY OUTPUT"}</button>`:""}</div></div>`;
 
   const contextHtml=()=>{
     const channel=activeChannel(),contexts=ensureContexts(channel.id),activeCount=injectableContexts(channel.id).length;
@@ -1228,7 +1296,7 @@ ${contextLine}`
   const systemHtml=()=>{
     const m=metrics();
     return `<section class="section mono"><div class="card"><h2 class="card-title">SYSTEM CONTROL</h2><div class="list" style="margin-top:15px">${[
-      ["APPLICATION","ACC OS X"],["BUILD",`214 ${PACKAGE_REVISION} Backup & Recovery`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
+      ["APPLICATION","ACC OS X"],["BUILD",`214 ${PACKAGE_REVISION} Worker Execution Engine`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
       ["AI MODE",state.ai.providerMode],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
     ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button></div></div></section>`;
   };
@@ -1260,6 +1328,26 @@ ${contextLine}`
       client:{build:CURRENT_VERSION,language:"id-ID",timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Makassar"}
     };
   };
+  const buildWorkerContext=task=>{
+    const profile=channelMap[task.channelId],workspace=WORKSPACES.find(item=>item.id===profile?.workspaceId)||WORKSPACES[0],wf=workflowFor(task.channelId);
+    const contexts=injectableContexts(task.channelId).slice(0,8);
+    const upstreamAssets=state.assets.filter(item=>item.channelId===task.channelId&&item.output).slice(0,3).map(item=>({type:item.type,stage:item.stage,title:item.title,createdAt:item.createdAt,output:String(item.output||"").slice(0,2200)}));
+    const queueMission=state.queue.find(item=>item.channelId===task.channelId&&item.status==="RUNNING")||state.queue.find(item=>item.channelId===task.channelId&&item.status==="WAITING");
+    return {
+      owner:"Arda",
+      workspace:{id:workspace.id,name:workspace.name},
+      profile:{id:profile.id,code:profile.code,name:profile.name,kind:profile.kind,department:profile.dept,category:profile.category,status:profile.status,platform:profile.platform,cadence:profile.cadence,workflow:profile.workflow,productionFormat:profile.productionFormat,communication:profile.communication,mission:profile.mission,canon:profile.canon},
+      role:state.activeRole,
+      workflow:{status:wf.status,stage:wf.stage,progress:wf.progress,approvalNotes:wf.approvalNotes,revisionTarget:wf.revisionTarget},
+      workerTask:{id:task.id,stage:task.stage,workerType:task.workerType,workerName:task.workerName,goal:task.goal,source:task.source||"AI_ROUTER",autoApply:Boolean(task.autoApply)},
+      queueMission:queueMission?{title:queueMission.title,priority:queueMission.priority,status:queueMission.status,brief:String(queueMission.brief||"").slice(0,1600)}:null,
+      upstreamAssets,
+      contexts:contexts.map(item=>({type:item.type,title:item.title,version:item.version,content:String(item.content||"").slice(0,1800)})),
+      registry:{channels:metrics().channels,studioSeries:metrics().series,planned:metrics().planned},
+      client:{build:CURRENT_VERSION,revision:PACKAGE_REVISION,language:"id-ID",timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Makassar"}
+    };
+  };
+
   const openAiConsole=()=>{
     ui.aiConsoleOpen=true;
     ui.aiError="";
@@ -1432,7 +1520,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"start-queue":{const item=state.queue.find(queue=>queue.id===data.id);if(item)startProduction(item.channelId,item.id);break;}
       case"move-queue":moveQueue(data.id,Number(data.delta));break;
       case"remove-queue":removeQueue(data.id);break;
-      case"route-task":routeTask({stage:ui.routeStage,goal:ui.routeGoal});break;
+      case"route-task":routeTask({stage:ui.routeStage,goal:ui.routeGoal,autoRun:true,autoApply:false,source:"MANUAL_ROUTER"});break;
       case"run-task":runTask(data.id,false);break;
       case"fail-task":runTask(data.id,true);break;
       case"retry-task":retryTask(data.id);break;

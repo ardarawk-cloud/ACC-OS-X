@@ -1,10 +1,5 @@
-# Upload to GitHub root — branch main
+# Upload Build 214 R6.5
 
-Upload/replace these files only:
-- app.js
-- service-worker.js
-- version.json
-- build.json
-- RELEASE_NOTES_214_R6_4.md
+Extract this ZIP and upload **all files** to the root of the public GitHub repository connected to the existing Cloudflare Worker. Commit to `main`; Cloudflare auto-deploy handles the rest.
 
-Cloudflare will auto-deploy. Then open ACC OS X and press UPDATE when offered.
+Do not create a new Worker. Do not put `ACC_AI_ACCESS_CODE` in GitHub. The existing Cloudflare Secret and AI binding are reused.
