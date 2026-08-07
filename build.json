@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6",
+  "packageRevision": "214-R6.1",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
@@ -54,5 +54,8 @@
   "workersAiFreeTierCompatible": true,
   "brandIdentity": "Neon X Shield",
   "unifiedLogoAsset": true,
-  "headerLogoUsesPwaIcon": true
+  "headerLogoUsesPwaIcon": true,
+  "pwaIconCacheBust": true,
+  "pwaIconAssetVersion": "r61",
+  "pwaIconRefreshStrategy": "versioned manifest icon URLs + service worker cache bump"
 }

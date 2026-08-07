@@ -1,8 +1,8 @@
 {
   "version": 214,
-  "name": "ACC OS X — Neon X Identity",
+  "name": "ACC OS X — Neon X Identity / PWA Icon Refresh",
   "channel": "beta",
-  "releasedAt": "2026-08-07T14:45:00+08:00",
+  "releasedAt": "2026-08-07T14:58:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6"
+  "revision": "R6.1"
 }
