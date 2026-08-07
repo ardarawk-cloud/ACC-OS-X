@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "ACC OS X — Neon X Identity",
+  "milestone": "ACC OS X — Context Registry Sync",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.2",
+  "packageRevision": "214-R6.3",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
@@ -60,5 +60,12 @@
   "pwaIconRefreshStrategy": "versioned manifest icon URLs + clean maskable safe-zone + service worker cache bump",
   "mobilePrimaryNavigation": "ENT | CH | PROD | ECO | SYSTEM",
   "mobilePrimaryNavigationPolish": true,
-  "maskableIconSafeZonePolish": true
+  "maskableIconSafeZonePolish": true,
+  "publicChannelPassportVersion": 5,
+  "channelContextRegistrySync": true,
+  "channelContextPrecisionLayer": true,
+  "contextSyncScope": "28 ACC Enterprise channels",
+  "contextSyncPreservesCustomNotes": true,
+  "fiveSeriesBatchContextPrecision": true,
+  "semestaBerbisikExactSeriesNames": true
 }

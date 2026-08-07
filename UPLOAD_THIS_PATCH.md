@@ -1,10 +1,11 @@
-# Upload this R6.2 patch
+# Upload to GitHub
 
-1. Extract this ZIP.
-2. Upload **all files inside** to the root of GitHub repository `ardarawk-cloud/ACC-OS-X`.
-3. Commit directly to branch `main`.
-4. Wait for Cloudflare deployment.
-5. Open ACC OS X and press **UPDATE** if offered.
-6. For the Android launcher icon, reinstall the PWA only if the launcher still keeps the older cached icon.
+Upload/replace these files in the root of `ardarawk-cloud/ACC-OS-X` on branch `main`:
 
-No Cloudflare secret or AI configuration changes are required.
+- `app.js`
+- `service-worker.js`
+- `version.json`
+- `build.json`
+- `RELEASE_NOTES_214_R6_3.md`
+
+Cloudflare should auto-deploy. Then open ACC OS X and apply the in-app update if prompted. No Cloudflare secret changes are required.
