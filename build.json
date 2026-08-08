@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "Connector Backend Foundation",
+  "milestone": "Connector Backend Deploy Fix",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.10A",
+  "packageRevision": "214-R6.10A.1",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
@@ -104,7 +104,7 @@
   "randomThemeButton": true,
   "themePersistence": "state.settings + backup/restore",
   "themeSafety": "visual only; production data and AI workflow untouched",
-  "revision": "R6.10A",
+  "revision": "R6.10A.1",
   "features": [
     "Adaptive transparent X logo",
     "Theme-aware logo color",
@@ -115,6 +115,6 @@
   ],
   "publishCoreFoundation": true,
   "publishConnector": "SERVER_MOCK",
-  "publishCoreStatus": "SERVER_CONNECTOR_PROOF_READY",
-  "connectorApi": "/api/acc-publish"
+  "publishCoreStatus": "STANDALONE_WORKER_DEPLOY_READY",
+  "connectorApi": "configurable HTTPS Worker endpoint"
 }

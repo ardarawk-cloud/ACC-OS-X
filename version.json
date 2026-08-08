@@ -1,13 +1,13 @@
 {
   "version": 214,
-  "name": "Publish Core UI Trigger Fix",
+  "name": "Connector Backend Deploy Fix",
   "channel": "beta",
   "releasedAt": "2026-08-08T15:30:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.10A",
-  "packageRevision": "214-R6.10A",
-  "milestone": "Connector Backend Foundation",
+  "revision": "R6.10A.1",
+  "packageRevision": "214-R6.10A.1",
+  "milestone": "Connector Backend Deploy Fix",
   "publishConnector": "SERVER_MOCK",
-  "publishCoreStatus": "SERVER_CONNECTOR_PROOF_READY",
-  "connectorApi": "/api/acc-publish"
+  "publishCoreStatus": "STANDALONE_WORKER_DEPLOY_READY",
+  "connectorApi": "configurable HTTPS Worker endpoint"
 }

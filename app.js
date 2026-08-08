@@ -4,10 +4,11 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.9.1";
+  const PACKAGE_REVISION = "R6.10A.1";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
+  const PUBLISH_ENDPOINT_STORAGE_KEY = "acc_os_x_publish_endpoint_v1";
   const LEGACY_KEYS = [
     "acc_os_x_ecosystem_v213",
     "acc_os_x_ecosystem_v212",
@@ -1116,7 +1117,32 @@ Operational rules:
   };
 
 
-  // R6.10A — server-side Connector API bridge. Credentials stay on the server.
+  // R6.10A.1 — deployable standalone Connector API bridge. Credentials stay on the server.
+  const getPublishEndpoint=()=>localStorage.getItem(PUBLISH_ENDPOINT_STORAGE_KEY)||"/api/acc-publish";
+  const setPublishEndpoint=value=>{
+    const endpoint=String(value||"").trim();
+    if(endpoint)localStorage.setItem(PUBLISH_ENDPOINT_STORAGE_KEY,endpoint);else localStorage.removeItem(PUBLISH_ENDPOINT_STORAGE_KEY);
+  };
+  const configurePublishEndpoint=()=>{
+    const current=getPublishEndpoint();
+    const next=prompt("ACC Publish API URL\nContoh: https://acc-publish-api.<subdomain>.workers.dev",current);
+    if(next===null)return;
+    const value=String(next||"").trim();
+    if(value && !/^https:\/\//i.test(value) && !value.startsWith("/"))return showToast("Gunakan HTTPS URL atau path /api/...");
+    setPublishEndpoint(value||"/api/acc-publish");
+    render();showToast("Publish API endpoint disimpan.");
+  };
+  const testPublishEndpointHealth=async()=>{
+    const endpoint=getPublishEndpoint();
+    try{
+      const response=await fetch(endpoint,{method:"GET",headers:{"Accept":"application/json"}});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok||!data.ok)throw new Error(data?.error?.code||`HTTP ${response.status}`);
+      showToast(`PUBLISH API ONLINE ✅ ${data.revision||""}`.trim());
+    }catch(error){
+      showToast(`PUBLISH API OFFLINE — ${String(error?.message||error)}`);
+    }
+  };
   const runServerPublishWorkflow = async channelId => {
     let job=publishJobForWorkflow(channelId)||createPublishJobFromWorkflow(channelId);
     if(!job||job.status==="PUBLISHING")return;
@@ -1130,7 +1156,8 @@ Operational rules:
     addActivity("publish.started → SERVER",job.channelId,"PUBLISHING");save();render();
     try{
       const accessCode=String(state.settings?.ownerAccessCode||"");
-      const response=await fetch("/api/acc-publish",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify(job)});
+      const endpoint=getPublishEndpoint();
+      const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify(job)});
       const data=await response.json().catch(()=>({}));
       if(!response.ok||!data.ok)throw new Error(data?.error?.code||data?.error?.message||`HTTP ${response.status}`);
       const current=state.publishJobs.find(item=>item.id===job.id);if(!current)return;
@@ -1140,7 +1167,7 @@ Operational rules:
       save();render();showToast("R6.10A SERVER CONNECTOR: PUBLISHED ✅");
     }catch(error){
       const current=state.publishJobs.find(item=>item.id===job.id);if(current){current.status="FAILED";current.error=String(error?.message||error);current.updatedAt=now();}
-      addActivity(`publish.failed → ${String(error?.message||error)}`,job.channelId,"PUBLISHING");save();render();showToast("Server publish gagal — cek deployment / API.");
+      addActivity(`publish.failed → ${String(error?.message||error)}`,job.channelId,"PUBLISHING");save();render();showToast(`Server publish gagal — ${String(error?.message||error)}`);
     }
   };
 
@@ -1670,8 +1697,8 @@ Operational rules:
     const m=metrics();
     return `<section class="section mono"><div class="card"><h2 class="card-title">SYSTEM CONTROL</h2><div class="list" style="margin-top:15px">${[
       ["APPLICATION","ACC OS X"],["BUILD",`214 ${PACKAGE_REVISION} Theme Deck`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
-      ["AI MODE",state.ai.providerMode],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
-    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button></div></div></section>${themeCenterHtml()}`;
+      ["AI MODE",state.ai.providerMode],["PUBLISH API",getPublishEndpoint()],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
+    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small" style="max-width:62%;overflow-wrap:anywhere;text-align:right">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button><button class="btn amber mono" data-action="configure-publish-endpoint">SET PUBLISH API URL</button><button class="btn green mono" data-action="test-publish-endpoint">TEST PUBLISH API HEALTH</button></div></div></section>${themeCenterHtml()}`;
   };
 
   const getAiAccessCode=()=>localStorage.getItem(AI_ACCESS_STORAGE_KEY)||"";
@@ -1909,6 +1936,8 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"mock-publish":runMockPublish(data.id);break;
       case"mock-publish-workflow":runMockPublishWorkflow(data.id);break;
       case"server-publish-workflow":runServerPublishWorkflow(data.id);break;
+      case"configure-publish-endpoint":configurePublishEndpoint();break;
+      case"test-publish-endpoint":testPublishEndpointHealth();break;
       case"add-context":addContext();break;
       case"toggle-context":toggleContext(data.id);break;
       case"remove-context":removeContext(data.id);break;
