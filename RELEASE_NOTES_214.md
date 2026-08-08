@@ -9,3 +9,16 @@ Added:
 - Wallpaper Creator achievement
 
 Production Engine, Cloudflare Workers AI/KAI, Queue, Pipeline, Registry, Vault, Backup and Theme Deck are preserved.
+
+---
+
+## R6.9 — Publish Core Foundation (M001.1)
+
+- Preserves Build 214 R6.8 UI, PWA identity, channel registry, production engine, AI workers, vault, queue, backup and wallpaper systems.
+- Adds persistent `publishJobs` state with migration-safe normalization.
+- Adds M001 Publish Job contract fields: platform, status, attempts, idempotency key, connector, external post ID, timestamps and error.
+- Adds internal Mock Connector execution from a successful PUBLISHING worker task.
+- Adds idempotency guard so an already-published job is not emitted twice.
+- Emits publish lifecycle activity (`publish.started`, `publish.succeeded`) and stores a mock external post ID.
+- Adds `TEST PUBLISH CORE` action only to successful PUBLISHING tasks.
+- No real social-media credentials or API calls are included in R6.9. This revision is the internal proof-of-life gate before the first real connector.

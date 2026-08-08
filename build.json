@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "Adaptive Identity + Wallpaper Lab",
+  "milestone": "Publish Core Foundation",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,8 +30,8 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.6",
-  "registryCorrection": "Added PL-307 Shui Yue \u2014 Mutiara Samudra",
+  "packageRevision": "214-R6.9",
+  "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
   "floatingAiLauncher": true,
@@ -52,7 +52,7 @@
   "openAiApiKeyRequired": false,
   "workersAiModel": "@cf/meta/llama-3.1-8b-instruct-fast",
   "workersAiFreeTierCompatible": true,
-  "brandIdentity": "Neon X Shield \u2014 polished adaptive icon",
+  "brandIdentity": "Neon X Shield — polished adaptive icon",
   "unifiedLogoAsset": true,
   "headerLogoUsesPwaIcon": true,
   "pwaIconCacheBust": true,
@@ -104,7 +104,7 @@
   "randomThemeButton": true,
   "themePersistence": "state.settings + backup/restore",
   "themeSafety": "visual only; production data and AI workflow untouched",
-  "revision": "R6.8",
+  "revision": "R6.9",
   "features": [
     "Adaptive transparent X logo",
     "Theme-aware logo color",
@@ -112,5 +112,8 @@
     "Wallpaper compression",
     "Opacity/Blur/Dim controls",
     "Wallpaper badge"
-  ]
+  ],
+  "publishCoreFoundation": true,
+  "publishConnector": "MOCK",
+  "publishCoreStatus": "INTERNAL_PROOF_OF_LIFE_READY"
 }

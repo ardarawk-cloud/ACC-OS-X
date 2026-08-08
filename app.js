@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.6";
+  const PACKAGE_REVISION = "R6.9";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -404,6 +404,7 @@ Mission: ${profile.mission||"—"}`},
     assets:[],
     archives:[],
     activity:[],
+    publishJobs:[],
     ai:{tasks:[],contexts:{},workerStats:{},providerMode:"LOCAL_SAFE_READY"},
     aiConsole:{histories:{},lastModel:null,lastConnectedAt:null,totalMessages:0},
     notifications:[],
@@ -443,6 +444,7 @@ Mission: ${profile.mission||"—"}`},
     migrated.assets=(source.assets||[]).map(refreshScopedRecord);
     migrated.archives=(source.archives||[]).map(refreshScopedRecord);
     migrated.activity=(source.activity||[]).map(refreshScopedRecord);
+    migrated.publishJobs=(source.publishJobs||[]).map(refreshScopedRecord);
     migrated.schedules=(source.schedules||[]).map(refreshScopedRecord);
     migrated.ai={...(source.ai||{}),tasks:(source.ai?.tasks||[]).map(refreshScopedRecord),contexts:{}};
     Object.entries(source.ai?.contexts||{}).forEach(([channelId,entries])=>{migrated.ai.contexts[mapChannelId(channelId)]=entries;});
@@ -463,6 +465,7 @@ Mission: ${profile.mission||"—"}`},
       assets:Array.isArray(source.assets) ? source.assets : [],
       archives:Array.isArray(source.archives) ? source.archives : [],
       activity:Array.isArray(source.activity) ? source.activity : [],
+      publishJobs:Array.isArray(source.publishJobs) ? source.publishJobs : [],
       ai:{
         ...fresh.ai,
         ...(source.ai || {}),
@@ -1039,6 +1042,41 @@ Operational rules:
     save();if(!options.silent)showToast("Output diterapkan ke Asset Library dan pipeline.");return true;
   };
 
+  // M001 Publish Core Foundation — R6.9
+  // Internal proof-of-life only. No external social API call is made in this revision.
+  const publishJobForTask = taskId => state.publishJobs.find(job=>job.sourceTaskId===taskId);
+
+  const createPublishJobFromTask = taskId => {
+    const task=state.ai.tasks.find(item=>item.id===taskId);
+    if(!task||task.stage!=="PUBLISHING"||task.status!=="SUCCESS") return showToast("Publishing Worker harus SUCCESS dulu.");
+    const existing=publishJobForTask(taskId);
+    if(existing){showToast(`Publish Job sudah ada — ${existing.status}.`);return existing;}
+    const channel=channelMap[task.channelId];
+    const job={
+      id:id("publish"),sourceTaskId:task.id,channelId:task.channelId,channelName:channel.name,
+      workspaceId:channel.workspaceId||state.activeWorkspaceId,platform:String(channel.platform||"Facebook").toUpperCase(),
+      status:"QUEUED",attempts:0,idempotencyKey:`${task.channelId}:${task.id}:${String(channel.platform||"facebook").toLowerCase()}`,
+      externalPostId:null,publishedAt:null,error:null,createdAt:now(),updatedAt:now(),connector:"MOCK"
+    };
+    state.publishJobs.unshift(job);state.publishJobs=state.publishJobs.slice(0,250);
+    addActivity("Publish Core → job queued",task.channelId,"PUBLISHING");
+    save();render();showToast("Publish Job masuk M001 Queue.");return job;
+  };
+
+  const runMockPublish = async taskId => {
+    let job=publishJobForTask(taskId)||createPublishJobFromTask(taskId);
+    if(!job||job.status==="PUBLISHING")return;
+    if(job.status==="PUBLISHED")return showToast(`Idempotency guard — sudah PUBLISHED (${job.externalPostId}).`);
+    job.status="PUBLISHING";job.attempts+=1;job.error=null;job.updatedAt=now();
+    addActivity("publish.started → MOCK",job.channelId,"PUBLISHING");save();render();
+    await new Promise(resolve=>setTimeout(resolve,350));
+    const current=state.publishJobs.find(item=>item.id===job.id);if(!current)return;
+    current.status="PUBLISHED";current.externalPostId=`mock_${Date.now()}`;current.publishedAt=now();current.updatedAt=now();
+    addActivity(`publish.succeeded → ${current.externalPostId}`,current.channelId,"PUBLISHING");
+    notify("M001 Publish Core PASS",`${current.channelName} berhasil melewati Mock Connector. External Post ID tercatat.`,"SUCCESS");
+    save();render();showToast("M001 INTERNAL PROOF-OF-LIFE: PUBLISHED ✅");
+  };
+
   const addContext = () => {
     const channel=activeChannel();
     if(!ui.contextDraftTitle.trim()||!ui.contextDraftContent.trim())return showToast("Judul dan isi context wajib diisi.");
@@ -1351,7 +1389,7 @@ Operational rules:
     return `<div class="worker-card"><div class="row between"><div><div class="eyebrow">${escapeHtml(workerType)}</div><div class="item-title">${escapeHtml(label)}</div></div><span class="worker-state ${status.toLowerCase()}">${status}</span></div><div class="worker-metrics"><div class="metric"><span class="muted tiny">RUNS</span><strong>${stats.runs}</strong></div><div class="metric"><span class="muted tiny">SUCCESS</span><strong class="green">${stats.success}</strong></div><div class="metric"><span class="muted tiny">FAILED</span><strong class="red">${stats.failed}</strong></div></div></div>`;
   };
 
-  const taskCard=task=>`<div class="item task-card ${task.status.toLowerCase()}"><div class="row between wrap"><div class="grow"><div class="eyebrow">${escapeHtml(task.stage)} • ${escapeHtml(task.workerType)}</div><div class="item-title truncate">${escapeHtml(task.goal)}</div><div class="meta">${escapeHtml(task.workerName)} • Context ${task.contextIds.length} • Attempt ${task.attempts} • Retry ${task.retries}${task.autoApply?" • AUTO APPLY":""}</div>${task.provider||task.model?`<div class="meta">${escapeHtml(task.provider||"")}${task.model?` • ${escapeHtml(task.model)}`:""}</div>`:""}</div><span class="${statusClass(task.status)}">${escapeHtml(task.status)}</span></div>${task.error?`<div class="context-content red">${escapeHtml(task.error)}</div>`:""}${task.output?`<div class="output-preview">${escapeHtml(task.output.slice(0,260))}${task.output.length>260?"…":""}</div>`:""}<div class="task-actions">${task.status==="READY"?`<button class="btn green small-btn mono" data-action="run-task" data-id="${task.id}">RUN WORKER</button><button class="btn red small-btn mono" data-action="fail-task" data-id="${task.id}">TEST FAIL</button>`:""}${task.status==="RUNNING"?`<span class="badge">SERVER AI EXECUTING</span>`:""}${task.status==="FAILED"?`<button class="btn amber small-btn mono" data-action="retry-task" data-id="${task.id}">RETRY</button>`:""}${task.status==="SUCCESS"?`<button class="btn purple small-btn mono" data-action="inspect-task" data-id="${task.id}">INSPECT OUTPUT</button><button class="btn cyan small-btn mono" data-action="apply-task" data-id="${task.id}" ${task.applied?"disabled":""}>${task.applied?"APPLIED":"APPLY OUTPUT"}</button>`:""}</div></div>`;
+  const taskCard=task=>`<div class="item task-card ${task.status.toLowerCase()}"><div class="row between wrap"><div class="grow"><div class="eyebrow">${escapeHtml(task.stage)} • ${escapeHtml(task.workerType)}</div><div class="item-title truncate">${escapeHtml(task.goal)}</div><div class="meta">${escapeHtml(task.workerName)} • Context ${task.contextIds.length} • Attempt ${task.attempts} • Retry ${task.retries}${task.autoApply?" • AUTO APPLY":""}</div>${task.provider||task.model?`<div class="meta">${escapeHtml(task.provider||"")}${task.model?` • ${escapeHtml(task.model)}`:""}</div>`:""}</div><span class="${statusClass(task.status)}">${escapeHtml(task.status)}</span></div>${task.error?`<div class="context-content red">${escapeHtml(task.error)}</div>`:""}${task.output?`<div class="output-preview">${escapeHtml(task.output.slice(0,260))}${task.output.length>260?"…":""}</div>`:""}<div class="task-actions">${task.status==="READY"?`<button class="btn green small-btn mono" data-action="run-task" data-id="${task.id}">RUN WORKER</button><button class="btn red small-btn mono" data-action="fail-task" data-id="${task.id}">TEST FAIL</button>`:""}${task.status==="RUNNING"?`<span class="badge">SERVER AI EXECUTING</span>`:""}${task.status==="FAILED"?`<button class="btn amber small-btn mono" data-action="retry-task" data-id="${task.id}">RETRY</button>`:""}${task.status==="SUCCESS"?`<button class="btn purple small-btn mono" data-action="inspect-task" data-id="${task.id}">INSPECT OUTPUT</button><button class="btn cyan small-btn mono" data-action="apply-task" data-id="${task.id}" ${task.applied?"disabled":""}>${task.applied?"APPLIED":"APPLY OUTPUT"}</button>${task.stage==="PUBLISHING"?`<button class="btn green small-btn mono" data-action="mock-publish" data-id="${task.id}">${publishJobForTask(task.id)?.status==="PUBLISHED"?"PUBLISHED ✅":"TEST PUBLISH CORE"}</button>`:""}`:""}</div></div>`;
 
   const contextHtml=()=>{
     const channel=activeChannel(),contexts=ensureContexts(channel.id),activeCount=injectableContexts(channel.id).length;
@@ -1801,6 +1839,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"inspect-task":ui.modalTaskId=data.id;render();break;
       case"close-modal":ui.modalTaskId=null;render();break;
       case"apply-task":applyTask(data.id);ui.modalTaskId=null;render();break;
+      case"mock-publish":runMockPublish(data.id);break;
       case"add-context":addContext();break;
       case"toggle-context":toggleContext(data.id);break;
       case"remove-context":removeContext(data.id);break;

@@ -1,8 +1,8 @@
 {
   "version": 214,
-  "name": "Adaptive Identity + Wallpaper Lab",
+  "name": "Publish Core Foundation",
   "channel": "beta",
-  "releasedAt": "2026-08-07T21:55:00+08:00",
+  "releasedAt": "2026-08-08T15:30:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.8"
+  "revision": "R6.9"
 }
