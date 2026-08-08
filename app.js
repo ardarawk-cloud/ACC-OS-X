@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM5.7-PUBLISH-RUNKEY-FIX";
+  const PACKAGE_REVISION = "R6.10D-GM5.8-TRANSIENT-MEDIA";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -535,6 +535,16 @@ Mission: ${profile.mission||"—"}`},
 
   let state = loadState();
 
+  // GM5.8 — large AI image bytes are transient only.
+  // Never persist Base64 poster bytes inside localStorage.
+  const transientMediaStore = new Map();
+  const transientMediaForAsset = asset => asset?.id ? (transientMediaStore.get(asset.id) || null) : null;
+  const rememberTransientMedia = (asset,mediaBase64,mimeType) => {
+    if(asset?.id && mediaBase64){
+      transientMediaStore.set(asset.id,{mediaBase64,mimeType:mimeType||asset.mimeType||"image/jpeg"});
+      asset.hasMedia=true;
+    }
+  };
 
   const hexColor = (value,fallback) => /^#[0-9a-f]{6}$/i.test(String(value||"")) ? String(value) : fallback;
   const customTheme = () => {
@@ -595,6 +605,16 @@ Mission: ${profile.mission||"—"}`},
   const save = () => {
     state.schemaVersion = CURRENT_VERSION;
     state.appVersion = CURRENT_VERSION;
+
+    // GM5.8 storage guard: migrate any accidental image Base64 out of persistent state.
+    (state.assets||[]).forEach(asset=>{
+      if(asset?.mediaBase64){
+        rememberTransientMedia(asset,asset.mediaBase64,asset.mimeType);
+        asset.mediaBase64=null;
+        asset.hasMedia=true;
+      }
+    });
+
     localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
   };
 
@@ -661,12 +681,15 @@ Mission: ${profile.mission||"—"}`},
   };
 
   const addAsset = ({channelId,type,title,stage,taskId=null,output="",mediaBase64=null,mimeType=null,publicUrl=null}) => {
-    state.assets.unshift({
+    const asset={
       id:id("asset"),channelId,channelName:channelMap[channelId]?.name || channelId,
       workspaceId:channelMap[channelId]?.workspaceId || state.activeWorkspaceId,
-      type,title,stage,taskId,output,mediaBase64,mimeType,publicUrl,version:1,createdAt:now()
-    });
+      type,title,stage,taskId,output,mediaBase64:null,mimeType,publicUrl,hasMedia:Boolean(mediaBase64||publicUrl),version:1,createdAt:now()
+    };
+    state.assets.unshift(asset);
+    rememberTransientMedia(asset,mediaBase64,mimeType);
     state.assets = state.assets.slice(0,500);
+    return asset;
   };
 
   const createBackup = (label="Manual Backup",silent=false) => {
@@ -750,6 +773,7 @@ Mission: ${profile.mission||"—"}`},
     const freshChannel=activeChannel();
     if(freshChannel){
       const cid=freshChannel.id;
+      (state.assets||[]).filter(a=>a.channelId===cid).forEach(a=>transientMediaStore.delete(a.id));
       state.ai.tasks=(state.ai.tasks||[]).filter(t=>t.channelId!==cid);
       state.assets=(state.assets||[]).filter(a=>{
         if(a.channelId!==cid)return true;
@@ -1371,7 +1395,7 @@ Operational rules:
   };
   const hasRealPosterMedia = channelId => {
     const asset=latestAssetByStage(channelId,"POSTER");
-    return Boolean(asset?.mediaBase64 || directImageUrlFromAsset(asset));
+    return Boolean(transientMediaForAsset(asset)?.mediaBase64 || asset?.hasMedia || directImageUrlFromAsset(asset));
   };
 
   const buildPublishPayload = job => {
@@ -1380,8 +1404,9 @@ Operational rules:
     const posterAsset=latestAssetByStage(job.channelId,"POSTER");
     const message=sanitizeSocialText(captionAsset?.output||`ACC OS X publish test — ${job.channelName}`);
     const assetMediaUrl=directImageUrlFromAsset(posterAsset);
-    const imageBase64=posterAsset?.mediaBase64||null;
-    const mimeType=posterAsset?.mimeType||"image/jpeg";
+    const transientMedia=transientMediaForAsset(posterAsset);
+    const imageBase64=transientMedia?.mediaBase64||null;
+    const mimeType=transientMedia?.mimeType||posterAsset?.mimeType||"image/jpeg";
     if(!imageBase64 && !assetMediaUrl)throw new Error("ACTIVE_MISSION_POSTER_REQUIRED");
     const mediaUrl=imageBase64?null:assetMediaUrl;
     return {
@@ -1719,11 +1744,12 @@ Operational rules:
     const caption=latestAssetByStage(channel.id,"CAPTION");
     const poster=latestAssetByStage(channel.id,"POSTER");
     const assetMediaUrl=directImageUrlFromAsset(poster);
-    const mediaUrl=poster?.mediaBase64?`data:${poster.mimeType||"image/jpeg"};base64,${poster.mediaBase64}`:(assetMediaUrl||"");
+    const transientPosterMedia=transientMediaForAsset(poster);
+    const mediaUrl=transientPosterMedia?.mediaBase64?`[AI IMAGE IN MEMORY • ${(transientPosterMedia.mediaBase64.length/1024).toFixed(0)} KB]`:(assetMediaUrl||"");
     const status=job?.status||"READY";
     const published=job?.status==="PUBLISHED"&&job?.connector==="META_FACEBOOK";
     const canPublish=wf.status==="COMPLETED"&&!published;
-    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${assetMediaUrl?"PUBLIC POSTER URL READY":"ALPHA-2 TEST MEDIA READY"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
+    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${transientPosterMedia?.mediaBase64?"AI POSTER MEMORY READY":assetMediaUrl?"PUBLIC POSTER URL READY":"POSTER MEDIA MISSING"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
   };
 
   const gm5PipelinePanelHtml = channel => {
@@ -2022,7 +2048,7 @@ Operational rules:
   const buildWorkerContext=task=>{
     const profile=channelMap[task.channelId],workspace=WORKSPACES.find(item=>item.id===profile?.workspaceId)||WORKSPACES[0],wf=workflowFor(task.channelId);
     const contexts=injectableContexts(task.channelId).slice(0,8);
-    const upstreamAssets=state.assets.filter(item=>item.channelId===task.channelId&&item.output).slice(0,5).map(item=>({type:item.type,stage:item.stage,title:item.title,createdAt:item.createdAt,hasMedia:Boolean(item.mediaBase64||item.publicUrl),mimeType:item.mimeType||null,output:String(item.output||"").slice(0,2200)}));
+    const upstreamAssets=state.assets.filter(item=>item.channelId===task.channelId&&item.output).slice(0,5).map(item=>({type:item.type,stage:item.stage,title:item.title,createdAt:item.createdAt,hasMedia:Boolean(item.hasMedia||transientMediaForAsset(item)?.mediaBase64||item.publicUrl),mimeType:item.mimeType||null,output:String(item.output||"").slice(0,2200)}));
     const queueMission=state.queue.find(item=>item.channelId===task.channelId&&item.status==="RUNNING")||state.queue.find(item=>item.channelId===task.channelId&&item.status==="WAITING");
     return {
       owner:"Arda",
