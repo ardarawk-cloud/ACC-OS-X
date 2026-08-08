@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM5.5-ACTIVE-MISSION-PUBLISH";
+  const PACKAGE_REVISION = "R6.10C-GM5.6-FRESH-META-PUBLISH-JOB";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -810,15 +810,28 @@ Mission: ${profile.mission||"—"}`},
       }
 
       gm5SetStage("PUBLISH");
-      const publishingTask=await gm5RunWorkerStage("PUBLISH","PUBLISHING",channel.id);
-      let publishJob=publishJobForTask(publishingTask.id)||createPublishJobFromTask(publishingTask.id);
-      if(!publishJob)throw new Error("PUBLISH_JOB_CREATE_FAILED");
+      await gm5RunWorkerStage("PUBLISH","PUBLISHING",channel.id);
+
+      // GM5.6: never reuse an old workflow-level Meta publish job.
+      // Preserve old jobs as history, then create a fresh job for this mission.
+      (state.publishJobs||[]).forEach(j=>{
+        if(j.sourceWorkflowId===channel.id){
+          j.sourceWorkflowId=`${channel.id}:history:${j.id}`;
+          j.archivedMissionPublish=true;
+        }
+      });
+      save();
+
       await runServerPublishWorkflow(channel.id);
-      publishJob=(state.publishJobs||[]).find(j=>j.id===publishJob.id)||publishJob;
-      if(publishJob.status!=="PUBLISHED" || !publishJob.externalPostId)throw new Error(publishJob.error||"REAL_PUBLISH_NOT_CONFIRMED");
+
+      const publishJob=(state.publishJobs||[]).find(j=>j.sourceWorkflowId===channel.id);
+      if(!publishJob)throw new Error("FRESH_PUBLISH_JOB_MISSING");
+      if(publishJob.status!=="PUBLISHED" || !publishJob.externalPostId){
+        throw new Error(publishJob.error||"REAL_PUBLISH_NOT_CONFIRMED");
+      }
 
       gm5SetStage("VERIFY");
-      addActivity(`GM5.5 verified real Meta post ${publishJob.externalPostId}`,channel.id,"VERIFY");
+      addActivity(`GM5.6 verified fresh Meta post ${publishJob.externalPostId}`,channel.id,"VERIFY");
 
       gm5SetStage("DONE");
       setWorkflow(channel.id,{status:"COMPLETED",stage:"COMPLETED",progress:100,updatedAt:now()});
@@ -1279,7 +1292,7 @@ Operational rules:
   const createPublishJobFromWorkflow = channelId => {
     const channel=channelMap[channelId];
     const wf=workflowFor(channelId);
-    if(!channel||wf.status!=="COMPLETED") return showToast("Workflow harus COMPLETED dulu.");
+    if(!channel||(wf.status!=="COMPLETED"&&!ui.gm5Running)) return showToast("Workflow harus COMPLETED dulu.");
     const runKey=workflowRunKey(channelId);
     const existing=state.publishJobs.find(job=>job.sourceWorkflowRunKey===runKey);
     if(existing){showToast(`Publish Job sudah ada — ${existing.status}.`);return existing;}
@@ -1731,7 +1744,7 @@ Operational rules:
       const cls=failed?"red":done?"green":active?"purple":"muted";
       return `<div class="item" style="padding:10px 12px"><div class="row between"><strong class="${cls}">${mark} ${stage}</strong><span class="muted tiny">${index+1}/${GM5_STAGES.length}</span></div></div>`;
     }).join("");
-    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.5 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
+    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.6 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
   };
 
   const pipelineHtml=()=>{
