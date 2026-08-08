@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM4.3-REAL-MEDIA-PUBLISH";
+  const PACKAGE_REVISION = "R6.10C-GM5-ONE-BUTTON-PIPELINE";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -194,50 +194,20 @@
     {id:"experience",icon:"✧",name:"Experience OS",desc:"ACC DNA, personality, ambience, sound, badges and plugin identity."}
   ];
 
-  const STAGES = [
-  "READY",
-  "RESEARCH",
-  "SCRIPT",
-  "POSTER",
-  "CAPTION",
-  "QC",
-  "APPROVAL",
-  "COMPLETED"
-];
-
-const GM5_STAGES = [
-  "READY",
-  "RESEARCH",
-  "MATERIAL",
-  "POSTER",
-  "CAPTION",
-  "QC",
-  "PUBLISH",
-  "VERIFY",
-  "DONE"
-];
-
-const PROGRESS = {
-  READY: 0,
-  RESEARCH: 15,
-  SCRIPT: 30,
-  POSTER: 45,
-  CAPTION: 60,
-  QC: 75,
-  APPROVAL: 90,
-  COMPLETED: 100
-};
+  const STAGES = ["READY","RESEARCH","SCRIPT","POSTER","CAPTION","QC","APPROVAL","COMPLETED"];
+  const GM5_STAGES = ["READY","RESEARCH","MATERIAL","POSTER","CAPTION","QC","PUBLISH","VERIFY","DONE"];
+  const GM5_WORKER_MAP = {RESEARCH:"RESEARCH",MATERIAL:"SCRIPT",POSTER:"POSTER",CAPTION:"CAPTION",QC:"QC"};
+  const PROGRESS = {READY:0,RESEARCH:15,SCRIPT:30,POSTER:45,CAPTION:60,QC:75,APPROVAL:90,COMPLETED:100};
   const ROUTES = {
-  RESEARCH:{worker:"RESEARCH_WORKER",label:"Research Specialist"},
-  SCRIPT:{worker:"SCRIPT_WORKER",label:"Scriptwriter AI"},
-  MATERIAL:{worker:"SCRIPT_WORKER",label:"Material Creator"},
-  POSTER:{worker:"POSTER_WORKER",label:"Poster Creator"},
-  CAPTION:{worker:"CAPTION_WORKER",label:"Social Captioner"},
-  QC:{worker:"QC_WORKER",label:"Editorial QC Auditor"},
-  PUBLISH:{worker:"PUBLISHING_WORKER",label:"Publishing Agent"},
-  VERIFY:{worker:"QC_WORKER",label:"Publishing Verifier"},
-  PUBLISHING:{worker:"PUBLISHING_WORKER",label:"Publishing Agent"}
-};
+    RESEARCH:{worker:"RESEARCH_WORKER",label:"Research Specialist"},
+    SCRIPT:{worker:"SCRIPT_WORKER",label:"Scriptwriter AI"},
+    MATERIAL:{worker:"SCRIPT_WORKER",label:"Material Creator"},
+    POSTER:{worker:"POSTER_WORKER",label:"Poster Creator"},
+    CAPTION:{worker:"CAPTION_WORKER",label:"Social Captioner"},
+    QC:{worker:"QC_WORKER",label:"Editorial QC Auditor"},
+    PUBLISH:{worker:"PUBLISHING_WORKER",label:"Publishing Agent"},
+    VERIFY:{worker:"QC_WORKER",label:"Publish Verifier"},
+    PUBLISHING:{worker:"PUBLISHING_WORKER",label:"Publishing Agent"}
   };
   const WORKER_TYPES = Object.values(ROUTES);
   const PRIORITY_WEIGHT = {HIGH:3,NORMAL:2,LOW:1};
@@ -283,12 +253,15 @@ const PROGRESS = {
     aiError:"",
     aiStatus:"LOCAL_SAFE",
     aiAccessDraft:"",
-aiAccessOpen:false,
-aiActionFeedback:"",
-gm5Running:false,
-gm5Stage:"READY",
-gm5Error:"",
-gm5CompletedStages:[]
+    aiAccessOpen:false,
+    aiActionFeedback:"",
+    gm5Running:false,
+    gm5Stage:"READY",
+    gm5Error:"",
+    gm5CompletedStages:[],
+    gm5StartedAt:null,
+    gm5FinishedAt:null
+  };
 
 
   const EXPERIENCE_DEFAULTS = {
@@ -714,6 +687,91 @@ Mission: ${profile.mission||"—"}`},
     return entry;
   };
 
+  const gm5SetStage = stage => { ui.gm5Stage=stage; render(); };
+  const gm5CompleteStage = stage => { if(!ui.gm5CompletedStages.includes(stage))ui.gm5CompletedStages.push(stage); render(); };
+  const gm5Sleep = ms => new Promise(resolve=>setTimeout(resolve,ms));
+  const gm5WaitForTask = async taskId => {
+    const deadline=Date.now()+180000;
+    while(Date.now()<deadline){
+      const task=state.ai.tasks.find(item=>item.id===taskId);
+      if(!task)throw new Error("TASK_NOT_FOUND");
+      if(task.status==="SUCCESS")return task;
+      if(task.status==="FAILED")throw new Error(task.error||`${task.stage}_FAILED`);
+      await gm5Sleep(650);
+    }
+    throw new Error("TASK_TIMEOUT");
+  };
+  const gm5RunWorkerStage = async (displayStage,workerStage,channelId) => {
+    gm5SetStage(displayStage);
+    const task=routeTask({
+      stage:workerStage,
+      goal:`GM5 one-button production for ${channelMap[channelId].name}. Execute ${displayStage} using locked profile context and latest upstream assets.`,
+      channelId,autoRun:true,autoApply:true,source:"GM5_ONE_BUTTON",keepPipeline:true
+    });
+    if(!task?.id)throw new Error(`${displayStage}_ROUTE_FAILED`);
+    const done=await gm5WaitForTask(task.id);
+    gm5CompleteStage(displayStage);
+    return done;
+  };
+  const gm5QcDecision = output => {
+    const text=String(output||"").toUpperCase();
+    if(text.includes("FAIL"))return "FAIL";
+    if(text.includes("PASS WITH REVISION"))return "REVISION";
+    if(/\bPASS\b/.test(text))return "PASS";
+    return "UNKNOWN";
+  };
+  const runGM5Mission = async () => {
+    if(ui.gm5Running)return showToast("GM5 mission sedang berjalan.");
+    const channel=activeChannel();
+    if(!REAL_PUBLISH_TARGETS[channel.id])return showToast("GM5 real publish baru aktif untuk Golden Page.");
+    if(!getAiAccessCode())return showToast("AI ACCESS belum terhubung.");
+    if(!getPublishAccessCode())return showToast("Connector access belum terhubung.");
+
+    ui.gm5Running=true;ui.gm5Stage="READY";ui.gm5Error="";ui.gm5CompletedStages=[];ui.gm5StartedAt=now();ui.gm5FinishedAt=null;
+    ui.tab="production";ui.productionTab="pipeline";
+    try{
+      // Fresh production run. Previous completed run remains in assets/activity/publish history.
+      state.workflows[channel.id]=emptyWorkflow();
+      save();render();
+      gm5CompleteStage("READY");
+      startProduction(channel.id);
+      await gm5RunWorkerStage("RESEARCH","RESEARCH",channel.id);
+      await gm5RunWorkerStage("MATERIAL","SCRIPT",channel.id);
+      await gm5RunWorkerStage("POSTER","POSTER",channel.id);
+      await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
+      const qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
+      const decision=gm5QcDecision(qcTask.output);
+      if(decision!=="PASS")throw new Error(decision==="REVISION"?"QC_REVISION_REQUIRED":decision==="FAIL"?"QC_FAILED":"QC_DECISION_UNKNOWN");
+
+      // Critical safety: never silently reuse Alpha-2 test media for a GM5 real-content run.
+      if(!hasRealPosterMedia(channel.id))throw new Error("REAL_POSTER_PUBLIC_URL_REQUIRED");
+
+      setWorkflow(channel.id,{status:"COMPLETED",stage:"COMPLETED",progress:100,updatedAt:now()});
+      addActivity("GM5 QC PASS → automatic completion",channel.id,"COMPLETED");
+      save();
+
+      gm5SetStage("PUBLISH");
+      await runServerPublishWorkflow(channel.id);
+      const job=publishJobForWorkflow(channel.id);
+      if(!job||job.status!=="PUBLISHED"||job.connector!=="META_FACEBOOK")throw new Error(job?.error||"REAL_META_PUBLISH_NOT_CONFIRMED");
+      gm5CompleteStage("PUBLISH");
+
+      gm5SetStage("VERIFY");
+      if(!job.externalPostId)throw new Error("META_POST_ID_MISSING");
+      gm5CompleteStage("VERIFY");
+
+      gm5SetStage("DONE");gm5CompleteStage("DONE");ui.gm5FinishedAt=now();
+      addActivity(`GM5 mission complete → ${job.externalPostId}`,channel.id,"COMPLETED");
+      notify("GM5 ONE BUTTON PASS",`${channel.name} berhasil diproduksi, dipublish, dan diverifikasi.` ,"SUCCESS");
+      save();playUiSound("success");showToast("GM5 DONE ✅ REAL FACEBOOK PUBLISHED");
+    }catch(error){
+      ui.gm5Error=String(error?.message||error);ui.gm5FinishedAt=now();
+      addActivity(`GM5 stopped → ${ui.gm5Stage} → ${ui.gm5Error}`,channel.id,ui.gm5Stage);
+      notify("GM5 Mission Stopped",`${ui.gm5Stage}: ${ui.gm5Error}`,"ERROR");
+      save();showToast(`GM5 berhenti di ${ui.gm5Stage}`);
+    }finally{ui.gm5Running=false;render();}
+  };
+
   const startProduction = (channelId=activeChannel().id,queueId=null) => {
     const wf = workflowFor(channelId);
     if(wf.status !== "READY") return showToast("Workflow channel harus READY.");
@@ -849,13 +907,13 @@ Mission: ${profile.mission||"—"}`},
     state.queue=state.queue.filter(item=>item.id!==queueId);save();showToast("Queue item dihapus.");
   };
 
-  const routeTask = ({stage,goal,channelId=activeChannel().id,autoRun=false,autoApply=false,source="MANUAL_ROUTER"}) => {
+  const routeTask = ({stage,goal,channelId=activeChannel().id,autoRun=false,autoApply=false,source="MANUAL_ROUTER",keepPipeline=false}) => {
     const route=ROUTES[stage];if(!route) return showToast("Stage tidak punya AI Worker.");
     const existing=state.ai.tasks.find(task=>task.channelId===channelId&&task.stage===stage&&!task.applied&&["READY","RUNNING"].includes(task.status));
     if(existing){
       existing.autoApply=Boolean(existing.autoApply||autoApply);
       existing.source=existing.source||source;
-      ui.tab="production";ui.productionTab="ai";save();
+      if(!keepPipeline){ui.tab="production";ui.productionTab="ai";}save();
       showToast(existing.status==="RUNNING"?`${route.label} sedang RUNNING.`:`${route.label} task sudah READY.`);
       if(autoRun&&existing.status==="READY")setTimeout(()=>runTask(existing.id,false,{autoApply:existing.autoApply}),80);
       return existing;
@@ -870,7 +928,7 @@ Mission: ${profile.mission||"—"}`},
     };
     state.ai.tasks.unshift(task);state.ai.tasks=state.ai.tasks.slice(0,150);
     addActivity(`AI Router → ${route.label}`,channelId,stage);
-    save();ui.tab="production";ui.productionTab="ai";showToast(autoRun?`Routing + executing ${route.label}…`:`Routed to ${route.label}.`);
+    save();if(!keepPipeline){ui.tab="production";ui.productionTab="ai";}showToast(autoRun?`Routing + executing ${route.label}…`:`Routed to ${route.label}.`);
     if(autoRun)setTimeout(()=>runTask(task.id,false,{autoApply:task.autoApply}),80);
     return task;
   };
@@ -1130,19 +1188,25 @@ Operational rules:
   // R6.9.1 — Production UI trigger fix.
   // The production workflow ends at COMPLETED; PUBLISHING is a worker route, not a visible STAGES entry.
   // Therefore the internal Publish Core proof-of-life must be launchable directly from a completed workflow.
-  const publishJobForWorkflow = channelId => state.publishJobs.find(job=>job.sourceWorkflowId===channelId);
+  const workflowRunKey = channelId => `${channelId}:${workflowFor(channelId).startedAt||"legacy"}`;
+  const publishJobForWorkflow = channelId => {
+    const key=workflowRunKey(channelId);
+    return state.publishJobs.find(job=>job.sourceWorkflowRunKey===key) ||
+      state.publishJobs.find(job=>job.sourceWorkflowId===channelId && !job.sourceWorkflowRunKey);
+  };
 
   const createPublishJobFromWorkflow = channelId => {
     const channel=channelMap[channelId];
     const wf=workflowFor(channelId);
     if(!channel||wf.status!=="COMPLETED") return showToast("Workflow harus COMPLETED dulu.");
-    const existing=publishJobForWorkflow(channelId);
+    const runKey=workflowRunKey(channelId);
+    const existing=state.publishJobs.find(job=>job.sourceWorkflowRunKey===runKey);
     if(existing){showToast(`Publish Job sudah ada — ${existing.status}.`);return existing;}
     const latestAsset=state.assets.find(item=>item.channelId===channelId);
     const job={
-      id:id("publish"),sourceWorkflowId:channelId,sourceTaskId:null,channelId,channelName:channel.name,
+      id:id("publish"),sourceWorkflowId:channelId,sourceWorkflowRunKey:runKey,sourceTaskId:null,channelId,channelName:channel.name,
       workspaceId:channel.workspaceId||state.activeWorkspaceId,platform:String(channel.platform||"Facebook").toUpperCase(),
-      status:"QUEUED",attempts:0,idempotencyKey:`${channelId}:workflow-completed:${String(channel.platform||"facebook").toLowerCase()}`,
+      status:"QUEUED",attempts:0,idempotencyKey:`${runKey}:${String(channel.platform||"facebook").toLowerCase()}`,
       externalPostId:null,publishedAt:null,error:null,createdAt:now(),updatedAt:now(),connector:"MOCK",
       sourceAssetId:latestAsset?.id||null
     };
@@ -1221,6 +1285,8 @@ Operational rules:
     const match=text.match(/https:\/\/[^\s<>"]+\.(?:png|jpe?g|webp)(?:\?[^\s<>"]*)?/i);
     return match?.[0]||null;
   };
+  const hasRealPosterMedia = channelId => Boolean(directImageUrlFromAsset(latestAssetByStage(channelId,"POSTER")));
+
   const buildPublishPayload = job => {
     const target=REAL_PUBLISH_TARGETS[job.channelId]||null;
     const captionAsset=latestAssetByStage(job.channelId,"CAPTION");
@@ -1570,9 +1636,21 @@ Operational rules:
     return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${assetMediaUrl?"PUBLIC POSTER URL READY":"ALPHA-2 TEST MEDIA READY"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
   };
 
+  const gm5PipelinePanelHtml = channel => {
+    const activeIndex=GM5_STAGES.indexOf(ui.gm5Stage);
+    const stageHtml=GM5_STAGES.map((stage,index)=>{
+      const done=ui.gm5CompletedStages.includes(stage),active=ui.gm5Stage===stage&&ui.gm5Running,failed=ui.gm5Error&&ui.gm5Stage===stage;
+      const mark=failed?"✕":done?"✓":active?"●":"○";
+      const cls=failed?"red":done?"green":active?"purple":"muted";
+      return `<div class="item" style="padding:10px 12px"><div class="row between"><strong class="${cls}">${mark} ${stage}</strong><span class="muted tiny">${index+1}/${GM5_STAGES.length}</span></div></div>`;
+    }).join("");
+    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_PUBLIC_URL_REQUIRED"?"Poster Worker selesai, tetapi belum menghasilkan public HTTPS image URL. GM5 sengaja berhenti agar tidak mem-publish poster test Alpha-2 sebagai konten asli.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
+  };
+
   const pipelineHtml=()=>{
     const channel=activeChannel(),wf=currentWorkflow();
     return `<section class="section mono">
+      ${gm5PipelinePanelHtml(channel)}
       <div class="card"><div class="row between wrap"><div class="grow"><div class="eyebrow">${channel.code} • PRODUCTION ENGINE</div><h2 class="card-title truncate">${escapeHtml(channel.name)}</h2></div><span class="${statusClass(wf.status)}">${escapeHtml(wf.status)}</span></div>
       <div class="divider"></div><div class="row between small"><span class="muted">Workflow Progress</span><strong class="purple">${wf.progress}%</strong></div><div class="progress-line" style="margin-top:9px"><div class="progress-fill" style="width:${wf.progress}%"></div></div>
       <div class="stage-grid">${STAGES.map((stage,index)=>{const active=wf.stage===stage,done=wf.progress>=PROGRESS[stage]&&stage!=="READY";return `<div class="stage ${active?"active":done?"done":""}"><div><span class="stage-step">STEP ${index+1}</span><span class="stage-name">${stage}</span></div></div>`}).join("")}</div>
@@ -2035,6 +2113,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"save-ai-vault":saveAiToVault();break;
       case"send-ai-queue":sendAiToQueue();break;
       case"apply-ai-pipeline":applyAiToPipeline();break;
+      case"gm5-start":runGM5Mission();break;
       case"start-production":startProduction();break;
       case"manual-next":manualNext();break;
       case"route-active-stage":routeActiveStage();break;
