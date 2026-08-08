@@ -4,8 +4,8 @@
   "channel": "beta",
   "releasedAt": "2026-08-09T01:05:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.10C-GM4.2-REAL-META-STATE-FIX",
-  "packageRevision": "214-R6.10C-GM4.2-REAL-META-STATE-FIX",
+  "revision": "R6.10C-GM4.3-REAL-MEDIA-PUBLISH",
+  "packageRevision": "214-R6.10C-GM4.3-REAL-MEDIA-PUBLISH",
   "milestone": "Golden Master Candidate — X Logo + Real Publish Gate",
   "publishConnector": "META_FACEBOOK",
   "publishCoreStatus": "REAL_FACEBOOK_AUTO_GATE_READY",
@@ -20,5 +20,7 @@
   "workerEntrypoint": "worker.js",
   "workersAiBinding": "AI",
   "publishCorePreserved": true,
-  "realMetaStateMigration": true
+  "realMetaStateMigration": true,
+  "missionAlpha2": "REAL_MEDIA_PUBLISH",
+  "alpha2TestMedia": "alpha2-test-poster.png"
 }

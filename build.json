@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.10C-GM4.2-REAL-META-STATE-FIX",
+  "packageRevision": "214-R6.10C-GM4.3-REAL-MEDIA-PUBLISH",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
@@ -104,7 +104,7 @@
   "randomThemeButton": true,
   "themePersistence": "state.settings + backup/restore",
   "themeSafety": "visual only; production data and AI workflow untouched",
-  "revision": "R6.10C-GM4.2-REAL-META-STATE-FIX",
+  "revision": "R6.10C-GM4.3-REAL-MEDIA-PUBLISH",
   "features": [
     "Adaptive transparent X logo",
     "Theme-aware logo color",
@@ -131,5 +131,7 @@
   "workerEntrypoint": "worker.js",
   "workersAiBinding": "AI",
   "publishCorePreserved": true,
-  "realMetaStateMigration": true
+  "realMetaStateMigration": true,
+  "missionAlpha2": "REAL_MEDIA_PUBLISH",
+  "alpha2TestMedia": "alpha2-test-poster.png"
 }

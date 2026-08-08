@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM4.2-REAL-META-STATE-FIX";
+  const PACKAGE_REVISION = "R6.10C-GM4.3-REAL-MEDIA-PUBLISH";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -1167,6 +1167,14 @@ Operational rules:
       showToast(`PUBLISH API OFFLINE — ${String(error?.message||error)}`);
     }
   };
+  const sanitizeSocialText = value => String(value||"")
+    .replace(/\\*\\*(.*?)\\*\\*/g,"$1")
+    .replace(/__(.*?)__/g,"$1")
+    .replace(/^#{1,6}\\s+/gm,"")
+    .trim();
+
+  const alpha2TestMediaUrl = () => new URL("./alpha2-test-poster.png", window.location.href).href;
+
   const latestAssetByStage = (channelId,stage) => state.assets.find(item=>item.channelId===channelId&&item.stage===stage&&item.output);
   const directImageUrlFromAsset = asset => {
     if(!asset)return null;
@@ -1179,12 +1187,15 @@ Operational rules:
     const target=REAL_PUBLISH_TARGETS[job.channelId]||null;
     const captionAsset=latestAssetByStage(job.channelId,"CAPTION");
     const posterAsset=latestAssetByStage(job.channelId,"POSTER");
-    const message=String(captionAsset?.output||`ACC OS X publish test — ${job.channelName}`).trim();
+    const message=sanitizeSocialText(captionAsset?.output||`ACC OS X publish test — ${job.channelName}`);
+    const assetMediaUrl=directImageUrlFromAsset(posterAsset);
+    const mediaUrl=assetMediaUrl||alpha2TestMediaUrl();
     return {
       ...job,
       target,
-      content:{message,mediaUrl:directImageUrlFromAsset(posterAsset)},
-      clientRevision:PACKAGE_REVISION
+      content:{message,mediaUrl},
+      clientRevision:PACKAGE_REVISION,
+      mediaSource:assetMediaUrl?"POSTER_ASSET":"ALPHA2_TEST_MEDIA"
     };
   };
 
@@ -1513,11 +1524,12 @@ Operational rules:
     const job=publishJobForWorkflow(channel.id);
     const caption=latestAssetByStage(channel.id,"CAPTION");
     const poster=latestAssetByStage(channel.id,"POSTER");
-    const mediaUrl=directImageUrlFromAsset(poster);
+    const assetMediaUrl=directImageUrlFromAsset(poster);
+    const mediaUrl=assetMediaUrl||alpha2TestMediaUrl();
     const status=job?.status||"READY";
     const published=job?.status==="PUBLISHED"&&job?.connector==="META_FACEBOOK";
     const canPublish=wf.status==="COMPLETED"&&!published;
-    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="${mediaUrl?"green":"amber"}">${mediaUrl?"PUBLIC URL READY":"TEXT-ONLY FALLBACK"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
+    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${assetMediaUrl?"PUBLIC POSTER URL READY":"ALPHA-2 TEST MEDIA READY"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
   };
 
   const pipelineHtml=()=>{
