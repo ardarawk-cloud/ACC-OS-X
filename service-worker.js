@@ -1,8 +1,8 @@
 
-const CACHE_NAME = "acc-os-x-build-214-r610b-golden-master-2";
+const CACHE_NAME = "acc-os-x-build-214-r610b-gm31-x-logo-hotfix";
 const SHELL = [
   "./","./index.html","./app.js","./styles.css","./manifest.json","./version.json",
-  "./icon-192-r62.png","./icon-512-r62.png","./icon-maskable-512-r62.png"
+  "./icon-192-r63.png","./icon-512-r63.png","./icon-maskable-512-r63.png"
 ];
 
 self.addEventListener("install", event => {
