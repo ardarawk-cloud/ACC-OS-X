@@ -3,8 +3,8 @@
   "use strict";
 
   const ROOT = document.getElementById("root");
-  const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10D-GM5.9-META-DIAGNOSTICS";
+  const CURRENT_VERSION = 215;
+  const PACKAGE_REVISION = "R6.11A-LIVE-OPERATIONS-BETA";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -231,6 +231,7 @@
     tab:"enterprise",
     productionTab:"pipeline",
     ecosystemTab:"launcher",
+    developerMode:false,
     registrySearch:"",
     toast:"",
     modalTaskId:null,
@@ -535,16 +536,6 @@ Mission: ${profile.mission||"—"}`},
 
   let state = loadState();
 
-  // GM5.8 — large AI image bytes are transient only.
-  // Never persist Base64 poster bytes inside localStorage.
-  const transientMediaStore = new Map();
-  const transientMediaForAsset = asset => asset?.id ? (transientMediaStore.get(asset.id) || null) : null;
-  const rememberTransientMedia = (asset,mediaBase64,mimeType) => {
-    if(asset?.id && mediaBase64){
-      transientMediaStore.set(asset.id,{mediaBase64,mimeType:mimeType||asset.mimeType||"image/jpeg"});
-      asset.hasMedia=true;
-    }
-  };
 
   const hexColor = (value,fallback) => /^#[0-9a-f]{6}$/i.test(String(value||"")) ? String(value) : fallback;
   const customTheme = () => {
@@ -605,16 +596,6 @@ Mission: ${profile.mission||"—"}`},
   const save = () => {
     state.schemaVersion = CURRENT_VERSION;
     state.appVersion = CURRENT_VERSION;
-
-    // GM5.8 storage guard: migrate any accidental image Base64 out of persistent state.
-    (state.assets||[]).forEach(asset=>{
-      if(asset?.mediaBase64){
-        rememberTransientMedia(asset,asset.mediaBase64,asset.mimeType);
-        asset.mediaBase64=null;
-        asset.hasMedia=true;
-      }
-    });
-
     localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
   };
 
@@ -681,15 +662,12 @@ Mission: ${profile.mission||"—"}`},
   };
 
   const addAsset = ({channelId,type,title,stage,taskId=null,output="",mediaBase64=null,mimeType=null,publicUrl=null}) => {
-    const asset={
+    state.assets.unshift({
       id:id("asset"),channelId,channelName:channelMap[channelId]?.name || channelId,
       workspaceId:channelMap[channelId]?.workspaceId || state.activeWorkspaceId,
-      type,title,stage,taskId,output,mediaBase64:null,mimeType,publicUrl,hasMedia:Boolean(mediaBase64||publicUrl),version:1,createdAt:now()
-    };
-    state.assets.unshift(asset);
-    rememberTransientMedia(asset,mediaBase64,mimeType);
+      type,title,stage,taskId,output,mediaBase64,mimeType,publicUrl,version:1,createdAt:now()
+    });
     state.assets = state.assets.slice(0,500);
-    return asset;
   };
 
   const createBackup = (label="Manual Backup",silent=false) => {
@@ -741,15 +719,11 @@ Mission: ${profile.mission||"—"}`},
     gm5SetStage("POSTER");
     const accessCode=getAiAccessCode();
     if(!accessCode)throw new Error("AI_ACCESS_MISSING");
-    const profile=channelMap[channelId];
     const prompt=[
-      `Create the final social media poster for ${profile.name}.`,
-      `LANGUAGE LOCK: all visible poster text must be Indonesian (id-ID), unless the locked profile explicitly requires another language.`,
-      `Do not translate the channel/brand name. Keep ${profile.name} exactly as written.`,
+      `Create the final social media poster for ${channelMap[channelId].name}.`,
       `Use this production direction:`,
       String(posterTask?.output||"").slice(0,1700),
-      `Clean professional composition. No fake logos. No watermark. Avoid unreadable tiny text.`,
-      `Visible copy must be concise, natural Indonesian and suitable for the locked profile.`
+      `Clean professional composition. No fake logos. No watermark. Avoid unreadable tiny text.`
     ].join("\n\n");
     const response=await fetch("/api/acc-image",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({prompt,channelId})});
     const data=await response.json().catch(()=>({}));
@@ -769,29 +743,6 @@ Mission: ${profile.mission||"—"}`},
     return "UNKNOWN";
   };
   const runGM5Mission = async () => {
-    // GM5.4 fresh-run guard: do not let QC reuse production artifacts from a previous mission.
-    const freshChannel=activeChannel();
-    if(freshChannel){
-      const cid=freshChannel.id;
-      (state.assets||[]).filter(a=>a.channelId===cid).forEach(a=>transientMediaStore.delete(a.id));
-      state.ai.tasks=(state.ai.tasks||[]).filter(t=>t.channelId!==cid);
-      state.assets=(state.assets||[]).filter(a=>{
-        if(a.channelId!==cid)return true;
-        const kind=String(a.type||a.stage||"").toUpperCase();
-        return !["RESEARCH","SCRIPT","MATERIAL","POSTER","CAPTION","QC"].includes(kind);
-      });
-      if(state.ai.workerStates){
-        Object.keys(state.ai.workerStates).forEach(k=>{
-          if(state.ai.workerStates[k]?.channelId===cid)delete state.ai.workerStates[k];
-        });
-      }
-      ui.gm5CompletedStages=[];
-      ui.gm5Stage="READY";
-      ui.gm5Error="";
-      save();
-      addActivity("GM5.4 fresh mission initialized — stale production/QC cleared",cid,"READY");
-    }
-
     if(ui.gm5Running)return showToast("GM5 mission sedang berjalan.");
     const channel=activeChannel();
     if(!REAL_PUBLISH_TARGETS[channel.id])return showToast("GM5 real publish baru aktif untuk Golden Page.");
@@ -813,63 +764,27 @@ Mission: ${profile.mission||"—"}`},
       await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
       const qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
       const decision=gm5QcDecision(qcTask.output);
+      if(decision!=="PASS")throw new Error(decision==="REVISION"?"QC_REVISION_REQUIRED":decision==="FAIL"?"QC_FAILED":"QC_DECISION_UNKNOWN");
 
-      // GM5.2 Alpha policy:
-      // PASS -> continue.
-      // PASS WITH REVISION -> continue with an audit warning.
-      // FAIL / unknown -> stop before publish.
-      if(decision==="FAIL")throw new Error("QC_FAILED");
-      if(decision==="UNKNOWN")throw new Error("QC_DECISION_UNKNOWN");
-
-      // Critical safety: never publish unless a real generated poster exists.
+      // Critical safety: never silently reuse Alpha-2 test media for a GM5 real-content run.
       if(!hasRealPosterMedia(channel.id))throw new Error("REAL_POSTER_MEDIA_REQUIRED");
 
-      if(decision==="REVISION"){
-        addActivity("GM5 QC PASS WITH REVISION → warning accepted for Alpha publish",channel.id,"QC");
-        notify(
-          "GM5 QC Warning",
-          `${channel.name}: QC meminta revisi minor. Alpha pipeline tetap lanjut karena media nyata tersedia.`,
-          "WARNING"
-        );
-      }
-
-      gm5SetStage("PUBLISH");
-      await gm5RunWorkerStage("PUBLISH","PUBLISHING",channel.id);
-
-      // GM5.7: archive BOTH legacy workflow id and current run-key references.
-      // GM5.6 only changed sourceWorkflowId, so publishJobForWorkflow could still
-      // rediscover an old job through sourceWorkflowRunKey.
-      const currentRunKey=workflowRunKey(channel.id);
-      (state.publishJobs||[]).forEach(j=>{
-        if(j.sourceWorkflowId===channel.id || j.sourceWorkflowRunKey===currentRunKey){
-          j.sourceWorkflowId=`${channel.id}:history:${j.id}`;
-          j.sourceWorkflowRunKey=`${currentRunKey}:history:${j.id}`;
-          j.archivedMissionPublish=true;
-        }
-      });
+      setWorkflow(channel.id,{status:"COMPLETED",stage:"COMPLETED",progress:100,updatedAt:now()});
+      addActivity("GM5 QC PASS → automatic completion",channel.id,"COMPLETED");
       save();
 
+      gm5SetStage("PUBLISH");
       await runServerPublishWorkflow(channel.id);
-
-      const publishJob=(state.publishJobs||[]).find(
-        j=>j.sourceWorkflowId===channel.id && j.sourceWorkflowRunKey===currentRunKey
-      );
-      if(!publishJob)throw new Error("FRESH_PUBLISH_JOB_MISSING");
-      if(publishJob.status!=="PUBLISHED" || publishJob.connector!=="META_FACEBOOK" || !publishJob.externalPostId){
-        throw new Error(publishJob.error||"REAL_META_PUBLISH_NOT_CONFIRMED");
-      }
+      const job=publishJobForWorkflow(channel.id);
+      if(!job||job.status!=="PUBLISHED"||job.connector!=="META_FACEBOOK")throw new Error(job?.error||"REAL_META_PUBLISH_NOT_CONFIRMED");
       gm5CompleteStage("PUBLISH");
 
       gm5SetStage("VERIFY");
-      if(!publishJob.externalPostId)throw new Error("META_POST_ID_MISSING");
+      if(!job.externalPostId)throw new Error("META_POST_ID_MISSING");
       gm5CompleteStage("VERIFY");
-      addActivity(`GM5.7 verified fresh Meta post ${publishJob.externalPostId}`,channel.id,"VERIFY");
 
-      gm5SetStage("DONE");
-      gm5CompleteStage("DONE");
-      ui.gm5FinishedAt=now();
-      setWorkflow(channel.id,{status:"COMPLETED",stage:"COMPLETED",progress:100,updatedAt:now()});
-      addActivity(`GM5 mission complete → ${publishJob.externalPostId}`,channel.id,"COMPLETED");
+      gm5SetStage("DONE");gm5CompleteStage("DONE");ui.gm5FinishedAt=now();
+      addActivity(`GM5 mission complete → ${job.externalPostId}`,channel.id,"COMPLETED");
       notify("GM5 ONE BUTTON PASS",`${channel.name} berhasil diproduksi, dipublish, dan diverifikasi.` ,"SUCCESS");
       save();playUiSound("success");showToast("GM5 DONE ✅ REAL FACEBOOK PUBLISHED");
     }catch(error){
@@ -1160,9 +1075,9 @@ ${contextLine}`
     const stageRules={
       RESEARCH:"Create a grounded research brief with audience intent, content angles, factual/verification needs, risks, and a production recommendation. If current external facts are required, mark them VERIFICATION REQUIRED instead of inventing them.",
       SCRIPT:"Create a production-ready script using the locked profile format and the latest upstream research asset. Preserve exact series names, batch counts, canon, tone, and workflow rules.",
-      POSTER:"Create poster direction and a production-ready image prompt only. Preserve the profile visual identity and exact batch/file rules. Use the locked profile language for ALL visible poster copy; for Indonesian profiles, visible text must be Indonesian (id-ID). Do not claim an image file was generated.",
+      POSTER:"Create poster direction and a production-ready image prompt only. Preserve the profile visual identity and exact batch/file rules. Do not claim an image file was generated.",
       CAPTION:"Create publish-ready caption copy using the locked profile language, platform, credits/tag rules, CTA style, and exact batch requirements.",
-      QC:"Audit the upstream production package against locked profile context. A POSTER asset with hasMedia=true is definitive proof that real image media exists; never require image bytes to appear inside text output. Evaluate poster language from the poster direction/prompt and locked profile language, not from binary image bytes. Return exactly one decision on the first line: PASS, PASS WITH REVISION, or FAIL. Then give concise reasons. Use PASS when all required production assets exist and there is no substantive publishing blocker. Use PASS WITH REVISION only for minor non-blocking issues. Use FAIL only for a real blocker such as missing required asset, wrong locked language, unsupported factual claim, or broken canon.",
+      QC:"Audit the upstream production package against locked profile context. A POSTER asset with hasMedia=true counts as a real generated poster. Return exactly one decision on the first line: PASS, PASS WITH REVISION, or FAIL. Then give concise reasons. Never request revision merely because binary image bytes are not embedded in the text output when hasMedia=true.",
       PUBLISHING:"Create a publishing checklist only. Never claim anything was posted or scheduled unless an executed ACC action proves it."
     };
     return `You are ${task.workerName}, specialized worker ${task.workerType} inside ACC OS X.
@@ -1306,7 +1221,7 @@ Operational rules:
   const createPublishJobFromWorkflow = channelId => {
     const channel=channelMap[channelId];
     const wf=workflowFor(channelId);
-    if(!channel||(wf.status!=="COMPLETED"&&!ui.gm5Running)) return showToast("Workflow harus COMPLETED dulu.");
+    if(!channel||wf.status!=="COMPLETED") return showToast("Workflow harus COMPLETED dulu.");
     const runKey=workflowRunKey(channelId);
     const existing=state.publishJobs.find(job=>job.sourceWorkflowRunKey===runKey);
     if(existing){showToast(`Publish Job sudah ada — ${existing.status}.`);return existing;}
@@ -1395,7 +1310,7 @@ Operational rules:
   };
   const hasRealPosterMedia = channelId => {
     const asset=latestAssetByStage(channelId,"POSTER");
-    return Boolean(transientMediaForAsset(asset)?.mediaBase64 || asset?.hasMedia || directImageUrlFromAsset(asset));
+    return Boolean(asset?.mediaBase64 || directImageUrlFromAsset(asset));
   };
 
   const buildPublishPayload = job => {
@@ -1404,17 +1319,15 @@ Operational rules:
     const posterAsset=latestAssetByStage(job.channelId,"POSTER");
     const message=sanitizeSocialText(captionAsset?.output||`ACC OS X publish test — ${job.channelName}`);
     const assetMediaUrl=directImageUrlFromAsset(posterAsset);
-    const transientMedia=transientMediaForAsset(posterAsset);
-    const imageBase64=transientMedia?.mediaBase64||null;
-    const mimeType=transientMedia?.mimeType||posterAsset?.mimeType||"image/jpeg";
-    if(!imageBase64 && !assetMediaUrl)throw new Error("ACTIVE_MISSION_POSTER_REQUIRED");
-    const mediaUrl=imageBase64?null:assetMediaUrl;
+    const imageBase64=posterAsset?.mediaBase64||null;
+    const mimeType=posterAsset?.mimeType||"image/jpeg";
+    const mediaUrl=imageBase64?null:(assetMediaUrl||alpha2TestMediaUrl());
     return {
       ...job,
       target,
       content:{message,mediaUrl,imageBase64,mimeType},
       clientRevision:PACKAGE_REVISION,
-      mediaSource:imageBase64?"AI_IMAGE_BASE64":"POSTER_ASSET"
+      mediaSource:imageBase64?"AI_IMAGE_BASE64":assetMediaUrl?"POSTER_ASSET":"ALPHA2_TEST_MEDIA"
     };
   };
 
@@ -1447,17 +1360,7 @@ Operational rules:
       const payload=buildPublishPayload(job);
       const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify(payload)});
       const data=await response.json().catch(()=>({}));
-      if(!response.ok||!data.ok){
-        const e=data?.error||{};
-        const parts=[
-          e.code||`HTTP_${response.status}`,
-          e.message||null,
-          e.type?`type=${e.type}`:null,
-          e.metaCode!=null?`metaCode=${e.metaCode}`:null,
-          e.metaSubcode!=null?`metaSubcode=${e.metaSubcode}`:null
-        ].filter(Boolean);
-        throw new Error(parts.join(" • "));
-      }
+      if(!response.ok||!data.ok)throw new Error(data?.error?.code||data?.error?.message||`HTTP ${response.status}`);
       const current=state.publishJobs.find(item=>item.id===job.id);if(!current)return;
       current.status="PUBLISHED";current.connector=data.connector||job.connector||"SERVER";current.externalPostId=data.externalPostId;current.publishedAt=data.publishedAt||now();current.updatedAt=now();
       current.publishMode=data.publishMode||null;
@@ -1534,7 +1437,7 @@ Operational rules:
     return validateBackupState(parsed);
   };
 
-  const exportData = () => {
+  const exportData = async () => {
     const envelope={
       format:BACKUP_FORMAT,
       product:"ACC OS X",
@@ -1544,14 +1447,25 @@ Operational rules:
       state:snapshotPayload()
     };
     const payload=JSON.stringify(envelope,null,2);
-    const blob=new Blob([payload],{type:"application/json"});
-    const url=URL.createObjectURL(blob);
-    const anchor=document.createElement("a");
     const date=new Date().toISOString().slice(0,10);
-    anchor.href=url;anchor.download=`ACC_OS_X_Backup_Build${CURRENT_VERSION}_${PACKAGE_REVISION.replace(".","-")}_${date}.json`;
-    document.body.appendChild(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(url);
-    state.settings.lastBackupAt=now();
-    notify("Backup Exported",`Build ${CURRENT_VERSION} ${PACKAGE_REVISION} JSON berhasil dibuat.`,"SUCCESS");save();showToast("Backup JSON aman diekspor.");
+    const filename=`ACC_OS_X_Backup_Build${CURRENT_VERSION}_${PACKAGE_REVISION.replace(/\./g,"-")}_${date}.json`;
+    const file=new File([payload],filename,{type:"application/json"});
+    try{
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({title:"ACC OS X Backup",text:`Build ${CURRENT_VERSION} backup`,files:[file]});
+      }else{
+        const url=URL.createObjectURL(file);
+        const anchor=document.createElement("a");
+        anchor.href=url;anchor.download=filename;anchor.rel="noopener";
+        document.body.appendChild(anchor);anchor.click();anchor.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),15000);
+      }
+      state.settings.lastBackupAt=now();
+      notify("Backup Exported",`Build ${CURRENT_VERSION} ${PACKAGE_REVISION} JSON berhasil dibuat.`,"SUCCESS");save();showToast("Backup JSON siap disimpan / dibagikan.");
+    }catch(error){
+      if(String(error?.name||"")==="AbortError")return;
+      notify("Backup Export Failed",String(error?.message||error),"ERROR");showToast("Export backup gagal — coba dari browser jika PWA membatasi file.");
+    }
   };
 
   const importData = file => {
@@ -1678,7 +1592,7 @@ Operational rules:
   const statusClass=value=>`status ${String(value||"READY").toLowerCase()}`;
   const priorityClass=value=>`priority ${String(value||"NORMAL").toLowerCase()}`;
 
-  const shieldSvg=()=>`<img class="brand-logo-img" src="./icon-192-r63.png" alt="ACC OS X" width="58" height="58" decoding="async" />`;
+  const shieldSvg=()=>`<svg class="brand-logo-img" width="58" height="58" viewBox="0 0 58 58" role="img" aria-label="ACC OS X"><defs><linearGradient id="accg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><path d="M29 3 51 11v16c0 14-9.4 23.2-22 28C16.4 50.2 7 41 7 27V11L29 3Z" fill="url(#accg)"/><path d="M18 37 25.5 19h7L40 37h-6l-1.5-4h-7L24 37h-6Zm9.2-9h3.6L29 23.3 27.2 28Z" fill="#fff"/><text x="29" y="47" text-anchor="middle" font-size="6" font-family="Arial,sans-serif" font-weight="700" fill="#fff">ACC</text></svg>`;
 
   const headerHtml=()=>{
     const workspace=activeWorkspace(),channel=activeChannel();
@@ -1690,7 +1604,7 @@ Operational rules:
           <div class="logo-shield">${shieldSvg()}</div>
           <div class="brand-copy">
             <div class="brand-line"><div class="brand-title">ACC OS X</div><span class="badge">${matchMedia("(display-mode: standalone)").matches?"PWA INSTALLED":"BROWSER"}</span></div>
-            <div class="build">Build 214 • ACC AI / Cloudflare Workers AI</div>
+            <div class="build">Build ${CURRENT_VERSION} • ACC AI / Cloudflare Workers AI</div>
           </div>
         </div>
         <div class="select-grid">
@@ -1702,9 +1616,9 @@ Operational rules:
   };
 
   const tabButton=(value,label)=>`<button class="tab ${ui.tab===value?"active":""}" data-action="tab" data-value="${value}">${label}</button>`;
-  const navHtml=()=>`<div class="tabs mono">${tabButton("enterprise","⌁ ENT")}${tabButton("channel","▣ CH")}${tabButton("production","◉ PROD")}${tabButton("ecosystem","✦ ECO")}${tabButton("system","⚙ SYSTEM")}</div>`;
+  const navHtml=()=>`<div class="tabs mono">${tabButton("enterprise","⌁ HOME")}${tabButton("channel","▣ CHANNEL")}${tabButton("production","◉ PRODUCE")}${tabButton("system","⚙ SYSTEM")}</div>`;
   const subtabButton=(value,label)=>`<button class="subtab ${ui.productionTab===value?"active":""}" data-action="prod-tab" data-value="${value}">${label}</button>`;
-  const productionNav=()=>`<div class="subtabs mono">${subtabButton("pipeline","PIPELINE")}${subtabButton("queue","QUEUE")}${subtabButton("ai","AI WORKERS")}${subtabButton("context","CONTEXT VAULT")}${subtabButton("assets","ASSETS")}${subtabButton("archive","ARCHIVE")}</div>`;
+  const productionNav=()=>ui.developerMode?`<div class="subtabs mono">${subtabButton("pipeline","PIPELINE")}${subtabButton("queue","QUEUE")}${subtabButton("ai","AI WORKERS")}${subtabButton("context","CONTEXT VAULT")}${subtabButton("assets","ASSETS")}${subtabButton("archive","ARCHIVE")}</div>`:"";
   const moduleTab=(value,label)=>`<button class="module-tab ${ui.ecosystemTab===value?"active":""}" data-action="module-tab" data-value="${value}">${label}</button>`;
 
   const statCard=(label,value,color="")=>`<div class="card compact"><div class="stat-label">${label}</div><div class="stat-value ${color}">${value}</div></div>`;
@@ -1741,7 +1655,7 @@ Operational rules:
       <div class="row between wrap"><div class="grow"><div class="eyebrow">${profile.code} • ${typeLabel} • ${activeWorkspace().name}</div><h2 class="card-title truncate">${escapeHtml(profile.name)}</h2><div class="meta">${escapeHtml(profile.dept)} • ${escapeHtml(profile.category)}</div></div><span class="${statusClass(wf.status)}">${escapeHtml(wf.status)}</span></div>
       <div class="grid stats" style="margin-top:19px">${statCard("STAGE",wf.stage,"purple")}${statCard("PROGRESS",`${wf.progress}%`,"blue")}${statCard("PROFILE",profile.status||"ACTIVE","green")}${statCard("CONTEXT",contexts.filter(item=>item.active).length,"cyan")}</div>
       <div class="list" style="margin-top:17px"><div class="item"><div class="eyebrow">MISSION</div><div class="context-content">${escapeHtml(profile.mission||"—")}</div></div><div class="item"><div class="eyebrow">CADENCE • ${escapeHtml(profile.platform||"—")}</div><div class="context-content">${escapeHtml(profile.cadence||"—")}</div></div><div class="item"><div class="eyebrow">LOCKED WORKFLOW</div><div class="context-content">${escapeHtml(profile.workflow||"—")}</div></div></div>
-      <div class="actions"><button class="btn primary mono" data-action="open-pipeline">OPEN PRODUCTION ENGINE</button><button class="btn purple mono" data-action="open-ai">OPEN AI WORKERS</button><button class="btn dark mono" data-action="open-context">OPEN KNOWLEDGE VAULT</button></div>
+      <div class="actions"><button class="btn primary mono" data-action="open-pipeline">START / OPEN PRODUCTION</button></div>
     </div></section>`;
   };
 
@@ -1754,12 +1668,11 @@ Operational rules:
     const caption=latestAssetByStage(channel.id,"CAPTION");
     const poster=latestAssetByStage(channel.id,"POSTER");
     const assetMediaUrl=directImageUrlFromAsset(poster);
-    const transientPosterMedia=transientMediaForAsset(poster);
-    const mediaUrl=transientPosterMedia?.mediaBase64?`[AI IMAGE IN MEMORY • ${(transientPosterMedia.mediaBase64.length/1024).toFixed(0)} KB]`:(assetMediaUrl||"");
+    const mediaUrl=assetMediaUrl||alpha2TestMediaUrl();
     const status=job?.status||"READY";
     const published=job?.status==="PUBLISHED"&&job?.connector==="META_FACEBOOK";
     const canPublish=wf.status==="COMPLETED"&&!published;
-    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${transientPosterMedia?.mediaBase64?"AI POSTER MEMORY READY":assetMediaUrl?"PUBLIC POSTER URL READY":"POSTER MEDIA MISSING"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
+    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${assetMediaUrl?"PUBLIC POSTER URL READY":"ALPHA-2 TEST MEDIA READY"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
   };
 
   const gm5PipelinePanelHtml = channel => {
@@ -1770,10 +1683,10 @@ Operational rules:
       const cls=failed?"red":done?"green":active?"purple":"muted";
       return `<div class="item" style="padding:10px 12px"><div class="row between"><strong class="${cls}">${mark} ${stage}</strong><span class="muted tiny">${index+1}/${GM5_STAGES.length}</span></div></div>`;
     }).join("");
-    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.7 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
+    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
   };
 
-  const pipelineHtml=()=>{
+  const developerPipelineHtml=()=>{
     const channel=activeChannel(),wf=currentWorkflow();
     return `<section class="section mono">
       ${gm5PipelinePanelHtml(channel)}
@@ -1782,13 +1695,49 @@ Operational rules:
       <div class="stage-grid">${STAGES.map((stage,index)=>{const active=wf.stage===stage,done=wf.progress>=PROGRESS[stage]&&stage!=="READY";return `<div class="stage ${active?"active":done?"done":""}"><div><span class="stage-step">STEP ${index+1}</span><span class="stage-name">${stage}</span></div></div>`}).join("")}</div>
       <div class="actions"><button class="btn primary mono" data-action="start-production" ${wf.status!=="READY"?"disabled":""}>▷ START PRODUCTION</button><button class="btn purple mono" data-action="route-active-stage" ${!ROUTES[wf.stage]||wf.status!=="RUNNING"?"disabled":""}>✦ RUN ACTIVE STAGE WITH AI</button><button class="btn ghost mono" data-action="manual-next" ${wf.status!=="RUNNING"||wf.stage==="APPROVAL"?"disabled":""}>MANUAL NEXT</button>${wf.status==="RUNNING"?`<button class="btn amber mono" data-action="pause">Ⅱ PAUSE</button>`:""}${wf.status==="PAUSED"?`<button class="btn green mono" data-action="resume">▷ RESUME</button>`:""}<button class="btn dark mono" data-action="reset">× RESET WORKFLOW</button>${["COMPLETED","REJECTED"].includes(wf.status)?`<button class="btn cyan mono" data-action="archive" ${wf.archived?"disabled":""}>${wf.archived?"ARCHIVED":"ARCHIVE MISSION"}</button>`:""}</div></div>
       ${publishCenterHtml(channel,wf)}
-      <div class="card" style="margin-top:17px"><h3 class="card-title">OWNER HUMAN APPROVAL GATE</h3><p class="muted small">AI output cannot complete or publish a mission without explicit human approval.</p>
+      <div class="card" style="margin-top:17px"><h3 class="card-title">OWNER HUMAN APPROVAL GATE</h3><p class="muted small">Engineering controls preserved for diagnostics.</p>
         <div class="form-grid" style="margin-top:15px"><textarea id="approval-notes" class="textarea mono" placeholder="Approval notes / revision instructions...">${escapeHtml(wf.approvalNotes||"")}</textarea><select id="revision-target" class="select mono">${["SCRIPT","POSTER","CAPTION","QC"].map(stage=>`<option value="${stage}" ${wf.revisionTarget===stage?"selected":""}>${stage}</option>`).join("")}</select></div>
         <div class="actions"><button class="btn green mono" data-action="approve" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>APPROVE & COMPLETE</button><button class="btn purple mono" data-action="revision" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REQUEST REVISION</button><button class="btn red mono" data-action="reject" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REJECT</button></div>
       </div>
-      <div class="card" style="margin-top:17px"><div class="row between"><h3 class="card-title">ACTIVITY LOG</h3><span class="muted tiny">${state.activity.filter(item=>item.channelId===channel.id).length}</span></div><div class="list" style="margin-top:14px">${state.activity.filter(item=>item.channelId===channel.id).slice(0,12).map(item=>`<div class="item"><div class="row between"><strong class="purple small">${escapeHtml(item.action)}</strong><span class="muted tiny">${formatTime(item.time)}</span></div><div class="meta">${escapeHtml(item.stage)} • ${escapeHtml(item.role)}</div></div>`).join("")||`<div class="empty">Belum ada aktivitas.</div>`}</div></div>
     </section>`;
   };
+
+  const missionLiveHtml=()=>{
+    const channel=activeChannel();
+    const currentIndex=Math.max(0,GM5_STAGES.indexOf(ui.gm5Stage));
+    const completed=ui.gm5CompletedStages.length;
+    const progress=Math.max(0,Math.min(100,Math.round((completed/GM5_STAGES.length)*100)));
+    const activeRoute=ROUTES[ui.gm5Stage]||null;
+    const workerName=ui.gm5Running?(activeRoute?.label||(ui.gm5Stage==="VERIFY"?"Publish Verifier":ui.gm5Stage==="DONE"?"Mission Controller":"ACC Core")):(ui.gm5Error?"MISSION HALTED":ui.gm5Stage==="DONE"?"MISSION COMPLETE":"ACC CORE STANDBY");
+    const started=ui.gm5StartedAt?Date.parse(ui.gm5StartedAt):0;
+    const logs=state.activity.filter(item=>item.channelId===channel.id&&(!started||Date.parse(item.time)>=started)).slice(0,18).reverse();
+    const stageStrip=GM5_STAGES.map((stage,index)=>{
+      const done=ui.gm5CompletedStages.includes(stage),active=ui.gm5Running&&ui.gm5Stage===stage,failed=Boolean(ui.gm5Error)&&ui.gm5Stage===stage;
+      const mark=failed?"✕":done?"✓":active?"●":"○";
+      const color=failed?"#ff5f6d":done?"#55e6a5":active?"#b789ff":"#6f7892";
+      return `<div style="display:flex;align-items:center;gap:6px;min-width:88px;color:${color};font-size:11px;font-weight:800"><span>${mark}</span><span>${stage}</span></div>`;
+    }).join("");
+    const terminalLines=logs.length?logs.map(item=>`<div style="display:grid;grid-template-columns:64px 1fr;gap:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.035)"><span style="color:#66708a">${escapeHtml(new Date(item.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}))}</span><span style="color:${/failed|stopped|error/i.test(item.action)?'#ff6b78':/succeeded|complete|verified|generated/i.test(item.action)?'#69efb3':'#b9c4dc'}">&gt; ${escapeHtml(item.action)}</span></div>`).join(""):`<div style="color:#66708a;padding:10px 0">&gt; ACC CORE READY. Awaiting mission command...</div>`;
+    const job=publishJobForWorkflow(channel.id);
+    const resultLine=job?.externalPostId?`<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(85,230,165,.25);border-radius:10px;color:#69efb3;background:rgba(20,90,66,.12)">META POST ID // ${escapeHtml(job.externalPostId)}</div>`:"";
+    const buttonText=ui.gm5Running?"MISSION RUNNING…":ui.gm5Error?"↻ RETRY MISSION":ui.gm5Stage==="DONE"?"⚡ START NEW MISSION":"⚡ START MISSION";
+    return `<section class="section mono">
+      <div class="card" style="padding:14px;background:linear-gradient(180deg,rgba(5,10,20,.98),rgba(8,13,27,.98));border:1px solid rgba(132,95,255,.32);box-shadow:0 0 32px rgba(77,35,170,.12)">
+        <div class="row between wrap" style="gap:10px"><div><div class="eyebrow">ACC OS X // LIVE OPERATIONS</div><h2 class="card-title" style="margin:4px 0 0">${escapeHtml(channel.name)}</h2><div class="meta">${escapeHtml(channel.code)} • ${escapeHtml(channel.platform||"Production")}</div></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"LIVE":ui.gm5Error?"HALTED":ui.gm5Stage==="DONE"?"DONE":"STANDBY")}</span></div>
+        <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:9px"><div class="item" style="padding:10px"><div class="muted tiny">ACTIVE WORKER</div><strong style="display:block;margin-top:4px;color:#b789ff">${escapeHtml(workerName)}</strong></div><div class="item" style="padding:10px"><div class="muted tiny">MISSION PROGRESS</div><strong style="display:block;margin-top:4px;color:#69efb3">${progress}% • ${currentIndex+1}/${GM5_STAGES.length}</strong></div></div>
+        <div style="margin-top:12px;overflow-x:auto;padding:10px 8px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(0,0,0,.22)"><div style="display:flex;gap:12px;min-width:860px">${stageStrip}</div></div>
+        <div style="margin-top:12px"><div class="progress-line"><div class="progress-fill" style="width:${progress}%"></div></div></div>
+        <div id="mission-terminal-log" style="margin-top:12px;height:46vh;min-height:330px;max-height:580px;overflow:auto;padding:14px;border-radius:14px;background:#030712;border:1px solid rgba(75,238,179,.13);font-size:11px;line-height:1.55;box-shadow:inset 0 0 35px rgba(0,0,0,.38)">
+          <div style="color:#69efb3;margin-bottom:9px">ACC://MISSION_TERMINAL — REAL EVENT STREAM</div>${terminalLines}${resultLine}
+          ${ui.gm5Error?`<div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(145,25,43,.16);border:1px solid rgba(255,95,109,.26);color:#ff7d89">ERROR // ${escapeHtml(ui.gm5Error)}</div>`:""}
+        </div>
+        <div style="margin-top:12px"><button class="btn green mono" style="width:100%;min-height:58px;font-size:14px;letter-spacing:.08em" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${buttonText}</button></div>
+        <div class="meta" style="text-align:center;margin-top:8px">Real workflow events only • no fake terminal animation</div>
+      </div>
+    </section>`;
+  };
+
+  const pipelineHtml=()=>ui.developerMode?developerPipelineHtml():missionLiveHtml();
 
   const queueHtml=()=>{
     const list=sortedQueue();
@@ -2023,9 +1972,9 @@ Operational rules:
   const systemHtml=()=>{
     const m=metrics();
     return `<section class="section mono"><div class="card"><h2 class="card-title">SYSTEM CONTROL</h2><div class="list" style="margin-top:15px">${[
-      ["APPLICATION","ACC OS X"],["BUILD",`214 ${PACKAGE_REVISION} Theme Deck`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
+      ["APPLICATION","ACC OS X"],["BUILD",`${CURRENT_VERSION} ${PACKAGE_REVISION}`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
       ["AI MODE",state.ai.providerMode],["PUBLISH API",getPublishEndpoint()],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
-    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small" style="max-width:62%;overflow-wrap:anywhere;text-align:right">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="registry">REGISTRY CENTER</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button><button class="btn amber mono" data-action="configure-publish-endpoint">SET PUBLISH API URL</button><button class="btn green mono" data-action="test-publish-endpoint">TEST PUBLISH API HEALTH</button></div></div></section>${themeCenterHtml()}`;
+    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small" style="max-width:62%;overflow-wrap:anywhere;text-align:right">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button><button class="btn dark mono" data-action="toggle-developer">${ui.developerMode?"HIDE DEVELOPER MODE":"DEVELOPER / DIAGNOSTICS"}</button></div></div>${ui.developerMode?`<div class="card" style="margin-top:16px"><div class="eyebrow">BACKSTAGE ENGINE</div><h3 class="card-title">DEVELOPER MODE</h3><p class="muted small">Pipeline, Queue, AI Workers, Context Vault, Assets and Archive stay active behind Owner Mode. Open only for diagnostics.</p><div class="actions"><button class="btn dark mono" data-action="open-pipeline">PIPELINE</button><button class="btn dark mono" data-action="open-queue">QUEUE</button><button class="btn dark mono" data-action="open-ai">AI WORKERS</button><button class="btn dark mono" data-action="open-context">CONTEXT</button><button class="btn dark mono" data-action="dev-prod" data-value="assets">ASSETS</button><button class="btn dark mono" data-action="dev-prod" data-value="archive">ARCHIVE</button><button class="btn amber mono" data-action="configure-publish-endpoint">PUBLISH API URL</button><button class="btn green mono" data-action="test-publish-endpoint">PUBLISH HEALTH</button></div></div>`:""}</section>${themeCenterHtml()}`;
   };
 
   const getAiAccessCode=()=>localStorage.getItem(AI_ACCESS_STORAGE_KEY)||"";
@@ -2058,7 +2007,7 @@ Operational rules:
   const buildWorkerContext=task=>{
     const profile=channelMap[task.channelId],workspace=WORKSPACES.find(item=>item.id===profile?.workspaceId)||WORKSPACES[0],wf=workflowFor(task.channelId);
     const contexts=injectableContexts(task.channelId).slice(0,8);
-    const upstreamAssets=state.assets.filter(item=>item.channelId===task.channelId&&item.output).slice(0,5).map(item=>({type:item.type,stage:item.stage,title:item.title,createdAt:item.createdAt,hasMedia:Boolean(item.hasMedia||transientMediaForAsset(item)?.mediaBase64||item.publicUrl),mimeType:item.mimeType||null,output:String(item.output||"").slice(0,2200)}));
+    const upstreamAssets=state.assets.filter(item=>item.channelId===task.channelId&&item.output).slice(0,5).map(item=>({type:item.type,stage:item.stage,title:item.title,createdAt:item.createdAt,hasMedia:Boolean(item.mediaBase64||item.publicUrl),mimeType:item.mimeType||null,output:String(item.output||"").slice(0,2200)}));
     const queueMission=state.queue.find(item=>item.channelId===task.channelId&&item.status==="RUNNING")||state.queue.find(item=>item.channelId===task.channelId&&item.status==="WAITING");
     return {
       owner:"Arda",
@@ -2175,7 +2124,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const render=()=>{
     applyTheme();
     const scroll=window.scrollY;
-    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD 214</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka ACC AI"><span>✦</span><small>AI</small></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
+    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD ${CURRENT_VERSION}</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka KAI"><span>K</span><small>KAI</small></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
     bindEvents();
     requestAnimationFrame(()=>{scrollTo(0,scroll);const list=document.getElementById("ai-message-list");if(list)list.scrollTop=list.scrollHeight;});
   };
@@ -2229,6 +2178,8 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"open-queue":ui.tab="production";ui.productionTab="queue";render();break;
       case"open-ai":ui.tab="production";ui.productionTab="ai";render();break;
       case"open-context":ui.tab="production";ui.productionTab="context";render();break;
+      case"dev-prod":ui.tab="production";ui.productionTab=data.value;render();break;
+      case"toggle-developer":ui.developerMode=!ui.developerMode;if(!ui.developerMode&&ui.tab==="production"&&ui.productionTab!=="pipeline")ui.productionTab="pipeline";render();break;
       case"open-ai-console":openAiConsole();break;
       case"close-ai-console":closeAiConsole();break;
       case"save-ai-access":setAiAccessCode(ui.aiAccessDraft);ui.aiAccessOpen=false;ui.aiStatus=getAiAccessCode()?"ONLINE_READY":"LOCAL_SAFE";render();break;
