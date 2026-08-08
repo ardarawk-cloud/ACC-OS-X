@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.9";
+  const PACKAGE_REVISION = "R6.9.1";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -1077,6 +1077,44 @@ Operational rules:
     save();render();showToast("M001 INTERNAL PROOF-OF-LIFE: PUBLISHED ✅");
   };
 
+  // R6.9.1 — Production UI trigger fix.
+  // The production workflow ends at COMPLETED; PUBLISHING is a worker route, not a visible STAGES entry.
+  // Therefore the internal Publish Core proof-of-life must be launchable directly from a completed workflow.
+  const publishJobForWorkflow = channelId => state.publishJobs.find(job=>job.sourceWorkflowId===channelId);
+
+  const createPublishJobFromWorkflow = channelId => {
+    const channel=channelMap[channelId];
+    const wf=workflowFor(channelId);
+    if(!channel||wf.status!=="COMPLETED") return showToast("Workflow harus COMPLETED dulu.");
+    const existing=publishJobForWorkflow(channelId);
+    if(existing){showToast(`Publish Job sudah ada — ${existing.status}.`);return existing;}
+    const latestAsset=state.assets.find(item=>item.channelId===channelId);
+    const job={
+      id:id("publish"),sourceWorkflowId:channelId,sourceTaskId:null,channelId,channelName:channel.name,
+      workspaceId:channel.workspaceId||state.activeWorkspaceId,platform:String(channel.platform||"Facebook").toUpperCase(),
+      status:"QUEUED",attempts:0,idempotencyKey:`${channelId}:workflow-completed:${String(channel.platform||"facebook").toLowerCase()}`,
+      externalPostId:null,publishedAt:null,error:null,createdAt:now(),updatedAt:now(),connector:"MOCK",
+      sourceAssetId:latestAsset?.id||null
+    };
+    state.publishJobs.unshift(job);state.publishJobs=state.publishJobs.slice(0,250);
+    addActivity("Publish Core → completed workflow queued",channelId,"PUBLISHING");
+    save();render();showToast("Publish Job masuk M001 Queue.");return job;
+  };
+
+  const runMockPublishWorkflow = async channelId => {
+    let job=publishJobForWorkflow(channelId)||createPublishJobFromWorkflow(channelId);
+    if(!job||job.status==="PUBLISHING")return;
+    if(job.status==="PUBLISHED")return showToast(`Idempotency guard — sudah PUBLISHED (${job.externalPostId}).`);
+    job.status="PUBLISHING";job.attempts+=1;job.error=null;job.updatedAt=now();
+    addActivity("publish.started → MOCK",job.channelId,"PUBLISHING");save();render();
+    await new Promise(resolve=>setTimeout(resolve,350));
+    const current=state.publishJobs.find(item=>item.id===job.id);if(!current)return;
+    current.status="PUBLISHED";current.externalPostId=`mock_${Date.now()}`;current.publishedAt=now();current.updatedAt=now();
+    addActivity(`publish.succeeded → ${current.externalPostId}`,current.channelId,"PUBLISHING");
+    notify("M001 Publish Core PASS",`${current.channelName} berhasil melewati Mock Connector. External Post ID tercatat.`,"SUCCESS");
+    save();render();showToast("M001 INTERNAL PROOF-OF-LIFE: PUBLISHED ✅");
+  };
+
   const addContext = () => {
     const channel=activeChannel();
     if(!ui.contextDraftTitle.trim()||!ui.contextDraftContent.trim())return showToast("Judul dan isi context wajib diisi.");
@@ -1360,7 +1398,7 @@ Operational rules:
       <div class="card"><div class="row between wrap"><div class="grow"><div class="eyebrow">${channel.code} • PRODUCTION ENGINE</div><h2 class="card-title truncate">${escapeHtml(channel.name)}</h2></div><span class="${statusClass(wf.status)}">${escapeHtml(wf.status)}</span></div>
       <div class="divider"></div><div class="row between small"><span class="muted">Workflow Progress</span><strong class="purple">${wf.progress}%</strong></div><div class="progress-line" style="margin-top:9px"><div class="progress-fill" style="width:${wf.progress}%"></div></div>
       <div class="stage-grid">${STAGES.map((stage,index)=>{const active=wf.stage===stage,done=wf.progress>=PROGRESS[stage]&&stage!=="READY";return `<div class="stage ${active?"active":done?"done":""}"><div><span class="stage-step">STEP ${index+1}</span><span class="stage-name">${stage}</span></div></div>`}).join("")}</div>
-      <div class="actions"><button class="btn primary mono" data-action="start-production" ${wf.status!=="READY"?"disabled":""}>▷ START PRODUCTION</button><button class="btn purple mono" data-action="route-active-stage" ${!ROUTES[wf.stage]||wf.status!=="RUNNING"?"disabled":""}>✦ RUN ACTIVE STAGE WITH AI</button><button class="btn ghost mono" data-action="manual-next" ${wf.status!=="RUNNING"||wf.stage==="APPROVAL"?"disabled":""}>MANUAL NEXT</button>${wf.status==="RUNNING"?`<button class="btn amber mono" data-action="pause">Ⅱ PAUSE</button>`:""}${wf.status==="PAUSED"?`<button class="btn green mono" data-action="resume">▷ RESUME</button>`:""}<button class="btn dark mono" data-action="reset">× RESET WORKFLOW</button>${["COMPLETED","REJECTED"].includes(wf.status)?`<button class="btn cyan mono" data-action="archive" ${wf.archived?"disabled":""}>${wf.archived?"ARCHIVED":"ARCHIVE MISSION"}</button>`:""}</div></div>
+      <div class="actions"><button class="btn primary mono" data-action="start-production" ${wf.status!=="READY"?"disabled":""}>▷ START PRODUCTION</button><button class="btn purple mono" data-action="route-active-stage" ${!ROUTES[wf.stage]||wf.status!=="RUNNING"?"disabled":""}>✦ RUN ACTIVE STAGE WITH AI</button><button class="btn ghost mono" data-action="manual-next" ${wf.status!=="RUNNING"||wf.stage==="APPROVAL"?"disabled":""}>MANUAL NEXT</button>${wf.status==="RUNNING"?`<button class="btn amber mono" data-action="pause">Ⅱ PAUSE</button>`:""}${wf.status==="PAUSED"?`<button class="btn green mono" data-action="resume">▷ RESUME</button>`:""}<button class="btn dark mono" data-action="reset">× RESET WORKFLOW</button>${wf.status==="COMPLETED"?`<button class="btn green mono" data-action="mock-publish-workflow" data-id="${channel.id}">${publishJobForWorkflow(channel.id)?.status==="PUBLISHED"?"PUBLISHED ✅":"⚡ TEST PUBLISH CORE"}</button>`:""}${["COMPLETED","REJECTED"].includes(wf.status)?`<button class="btn cyan mono" data-action="archive" ${wf.archived?"disabled":""}>${wf.archived?"ARCHIVED":"ARCHIVE MISSION"}</button>`:""}</div></div>
       <div class="card" style="margin-top:17px"><h3 class="card-title">OWNER HUMAN APPROVAL GATE</h3><p class="muted small">AI output cannot complete or publish a mission without explicit human approval.</p>
         <div class="form-grid" style="margin-top:15px"><textarea id="approval-notes" class="textarea mono" placeholder="Approval notes / revision instructions...">${escapeHtml(wf.approvalNotes||"")}</textarea><select id="revision-target" class="select mono">${["SCRIPT","POSTER","CAPTION","QC"].map(stage=>`<option value="${stage}" ${wf.revisionTarget===stage?"selected":""}>${stage}</option>`).join("")}</select></div>
         <div class="actions"><button class="btn green mono" data-action="approve" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>APPROVE & COMPLETE</button><button class="btn purple mono" data-action="revision" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REQUEST REVISION</button><button class="btn red mono" data-action="reject" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REJECT</button></div>
@@ -1840,6 +1878,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"close-modal":ui.modalTaskId=null;render();break;
       case"apply-task":applyTask(data.id);ui.modalTaskId=null;render();break;
       case"mock-publish":runMockPublish(data.id);break;
+      case"mock-publish-workflow":runMockPublishWorkflow(data.id);break;
       case"add-context":addContext();break;
       case"toggle-context":toggleContext(data.id);break;
       case"remove-context":removeContext(data.id);break;

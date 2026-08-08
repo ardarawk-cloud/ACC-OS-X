@@ -22,3 +22,10 @@ Production Engine, Cloudflare Workers AI/KAI, Queue, Pipeline, Registry, Vault, 
 - Emits publish lifecycle activity (`publish.started`, `publish.succeeded`) and stores a mock external post ID.
 - Adds `TEST PUBLISH CORE` action only to successful PUBLISHING tasks.
 - No real social-media credentials or API calls are included in R6.9. This revision is the internal proof-of-life gate before the first real connector.
+
+
+## R6.9.1 — Publish Core UI Trigger Fix
+- Fixes missing `TEST PUBLISH CORE` action on the Production screen after Step 8 / COMPLETED.
+- Completed workflows can now enter the M001 Mock Publish Core directly.
+- Preserves existing workflow state; no reset is required.
+- Adds idempotent workflow-level mock publish job and external mock Post ID.

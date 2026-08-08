@@ -1,8 +1,8 @@
 {
   "version": 214,
-  "name": "Publish Core Foundation",
+  "name": "Publish Core UI Trigger Fix",
   "channel": "beta",
   "releasedAt": "2026-08-08T15:30:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.9"
+  "revision": "R6.9.1"
 }
