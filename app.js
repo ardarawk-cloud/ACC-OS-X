@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10D-GM5.8-TRANSIENT-MEDIA";
+  const PACKAGE_REVISION = "R6.10D-GM5.9-META-DIAGNOSTICS";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -1447,7 +1447,17 @@ Operational rules:
       const payload=buildPublishPayload(job);
       const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify(payload)});
       const data=await response.json().catch(()=>({}));
-      if(!response.ok||!data.ok)throw new Error(data?.error?.code||data?.error?.message||`HTTP ${response.status}`);
+      if(!response.ok||!data.ok){
+        const e=data?.error||{};
+        const parts=[
+          e.code||`HTTP_${response.status}`,
+          e.message||null,
+          e.type?`type=${e.type}`:null,
+          e.metaCode!=null?`metaCode=${e.metaCode}`:null,
+          e.metaSubcode!=null?`metaSubcode=${e.metaSubcode}`:null
+        ].filter(Boolean);
+        throw new Error(parts.join(" • "));
+      }
       const current=state.publishJobs.find(item=>item.id===job.id);if(!current)return;
       current.status="PUBLISHED";current.connector=data.connector||job.connector||"SERVER";current.externalPostId=data.externalPostId;current.publishedAt=data.publishedAt||now();current.updatedAt=now();
       current.publishMode=data.publishMode||null;
