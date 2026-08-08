@@ -283,9 +283,12 @@ const PROGRESS = {
     aiError:"",
     aiStatus:"LOCAL_SAFE",
     aiAccessDraft:"",
-    aiAccessOpen:false,
-    aiActionFeedback:""
-  };
+aiAccessOpen:false,
+aiActionFeedback:"",
+gm5Running:false,
+gm5Stage:"READY",
+gm5Error:"",
+gm5CompletedStages:[]
 
 
   const EXPERIENCE_DEFAULTS = {
