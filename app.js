@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM4-PUBLISH";
+  const PACKAGE_REVISION = "R6.10C-GM4.2-REAL-META-STATE-FIX";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -1188,13 +1188,24 @@ Operational rules:
     };
   };
 
+  const isLegacyMockPublishJob = job => {
+    if(!job)return false;
+    const connector=String(job.connector||"").toUpperCase();
+    const postId=String(job.externalPostId||"").toLowerCase();
+    return connector==="MOCK" || connector==="SERVER_MOCK" || postId.startsWith("mock_") || postId.startsWith("server_mock_");
+  };
+
   const runServerPublishWorkflow = async channelId => {
     let job=publishJobForWorkflow(channelId)||createPublishJobFromWorkflow(channelId);
     if(!job||job.status==="PUBLISHING")return;
-    if(job.status==="PUBLISHED"&&job.connector!=="MOCK")return showToast(`Idempotency guard — sudah PUBLISHED (${job.externalPostId}).`);
-    if(job.status==="PUBLISHED"&&job.connector==="MOCK"){
-      job={...job,id:id("publish"),status:"QUEUED",attempts:0,externalPostId:null,publishedAt:null,error:null,createdAt:now(),updatedAt:now(),connector:"SERVER"};
+
+    if(job.status==="PUBLISHED" && isLegacyMockPublishJob(job)){
+      job={...job,id:id("publish"),status:"QUEUED",attempts:0,externalPostId:null,publishedAt:null,error:null,createdAt:now(),updatedAt:now(),connector:"META_FACEBOOK"};
       state.publishJobs.unshift(job);state.publishJobs=state.publishJobs.slice(0,250);
+      addActivity("Legacy mock publish state migrated → REAL META job",channelId,"PUBLISHING");
+      save();
+    } else if(job.status==="PUBLISHED"){
+      return showToast(`Idempotency guard — sudah PUBLISHED (${job.externalPostId}).`);
     }
     const target=REAL_PUBLISH_TARGETS[channelId]||null;
     job.status="PUBLISHING";job.attempts+=1;job.error=null;job.connector=target?.connector||"SERVER";job.updatedAt=now();

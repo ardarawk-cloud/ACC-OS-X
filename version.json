@@ -4,8 +4,8 @@
   "channel": "beta",
   "releasedAt": "2026-08-09T01:05:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.10C-GM4.1-AI-ROUTE-FIX",
-  "packageRevision": "214-R6.10C-GM4.1-AI-ROUTE-FIX",
+  "revision": "R6.10C-GM4.2-REAL-META-STATE-FIX",
+  "packageRevision": "214-R6.10C-GM4.2-REAL-META-STATE-FIX",
   "milestone": "Golden Master Candidate — X Logo + Real Publish Gate",
   "publishConnector": "META_FACEBOOK",
   "publishCoreStatus": "REAL_FACEBOOK_AUTO_GATE_READY",
@@ -19,5 +19,6 @@
   "aiRouteFixReason": "Restore same-origin POST /api/acc-ai through Worker script; GM4 static-only deployment returned HTTP 405.",
   "workerEntrypoint": "worker.js",
   "workersAiBinding": "AI",
-  "publishCorePreserved": true
+  "publishCorePreserved": true,
+  "realMetaStateMigration": true
 }
