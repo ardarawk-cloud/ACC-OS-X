@@ -1,13 +1,13 @@
 {
   "version": 214,
-  "name": "Connector Backend Deploy Fix",
+  "name": "Real Meta Facebook Adapter",
   "channel": "beta",
-  "releasedAt": "2026-08-08T15:30:00+08:00",
+  "releasedAt": "2026-08-08T19:10:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.10A.1",
-  "packageRevision": "214-R6.10A.1",
-  "milestone": "Connector Backend Deploy Fix",
-  "publishConnector": "SERVER_MOCK",
-  "publishCoreStatus": "STANDALONE_WORKER_DEPLOY_READY",
-  "connectorApi": "configurable HTTPS Worker endpoint"
+  "revision": "R6.10B",
+  "packageRevision": "214-R6.10B",
+  "milestone": "Real Meta Facebook Adapter",
+  "publishConnector": "META_FACEBOOK",
+  "publishCoreStatus": "REAL_FACEBOOK_READY",
+  "connectorApi": "Cloudflare Worker + Meta Graph API"
 }

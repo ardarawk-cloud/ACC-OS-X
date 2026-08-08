@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "Connector Backend Deploy Fix",
+  "milestone": "Real Meta Facebook Adapter",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,8 +30,8 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.10A.1",
-  "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
+  "packageRevision": "214-R6.10B",
+  "registryCorrection": "Added PL-307 Shui Yue \u2014 Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
   "floatingAiLauncher": true,
@@ -52,7 +52,7 @@
   "openAiApiKeyRequired": false,
   "workersAiModel": "@cf/meta/llama-3.1-8b-instruct-fast",
   "workersAiFreeTierCompatible": true,
-  "brandIdentity": "Neon X Shield — polished adaptive icon",
+  "brandIdentity": "Neon X Shield \u2014 polished adaptive icon",
   "unifiedLogoAsset": true,
   "headerLogoUsesPwaIcon": true,
   "pwaIconCacheBust": true,
@@ -104,7 +104,7 @@
   "randomThemeButton": true,
   "themePersistence": "state.settings + backup/restore",
   "themeSafety": "visual only; production data and AI workflow untouched",
-  "revision": "R6.10A.1",
+  "revision": "R6.10B",
   "features": [
     "Adaptive transparent X logo",
     "Theme-aware logo color",
@@ -114,7 +114,8 @@
     "Wallpaper badge"
   ],
   "publishCoreFoundation": true,
-  "publishConnector": "SERVER_MOCK",
-  "publishCoreStatus": "STANDALONE_WORKER_DEPLOY_READY",
-  "connectorApi": "configurable HTTPS Worker endpoint"
+  "publishConnector": "META_FACEBOOK",
+  "publishCoreStatus": "REAL_FACEBOOK_READY",
+  "connectorApi": "Cloudflare Worker + Meta Graph API",
+  "firstRealPublishTarget": "Tukang Tambang / Facebook Page 101420769205689"
 }

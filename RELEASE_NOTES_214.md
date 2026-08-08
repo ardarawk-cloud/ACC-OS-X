@@ -36,3 +36,16 @@ Production Engine, Cloudflare Workers AI/KAI, Queue, Pipeline, Registry, Vault, 
 - Added server-side mock connector as deployment proof before Facebook credentials are introduced.
 - Existing R6.9 mock result can be promoted safely to server connector test.
 - Facebook adapter intentionally remains gated until server connector proof passes.
+
+
+## R6.10B — Real Meta Facebook Adapter
+- Promotes Mission Alpha from SERVER_MOCK to the first real Meta/Facebook connector.
+- Enables only `ch-tukang-tambang` for live publishing in this gate; all other channels remain blocked from real publish.
+- Maps Tukang Tambang to Facebook Page ID `101420769205689`.
+- Sends the latest CAPTION asset as the Facebook message.
+- Uses an optional direct HTTPS image URL from the latest POSTER asset when one exists; otherwise publishes text-only.
+- Uses the same device-side ACC AI access code as the `X-ACC-Access-Code` request credential.
+- Cloudflare Worker requires `ACC_CONNECTOR_ACCESS_CODE` and `FB_PAGE_TOKEN_TUKANG_TAMBANG` as server-side secrets.
+- Adds Meta Graph API `/feed` text publishing and `/photos` URL-based image publishing.
+- Returns real Facebook external Post ID to ACC state and Activity Log.
+- No Facebook access token is stored in the PWA or repository.

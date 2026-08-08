@@ -1,18 +1,5 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "acc-os-x-baxkup",
-  "compatibility_date": "2026-08-07",
-  "main": "./cloudflare-worker.mjs",
-  "assets": {
-    "directory": ".",
-    "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
-  },
-  "ai": {
-    "binding": "AI"
-  },
-  "vars": {
-    "ACC_AI_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast"
-  }
+  "name": "acc-publish-connector",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-08"
 }
