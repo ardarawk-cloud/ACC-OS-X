@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM5.3-QC-POSTER-LANGUAGE-FIX";
+  const PACKAGE_REVISION = "R6.10C-GM5.4-FRESH-RUN";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -746,6 +746,28 @@ Mission: ${profile.mission||"—"}`},
     return "UNKNOWN";
   };
   const runGM5Mission = async () => {
+    // GM5.4 fresh-run guard: do not let QC reuse production artifacts from a previous mission.
+    const freshChannel=activeChannel();
+    if(freshChannel){
+      const cid=freshChannel.id;
+      state.ai.tasks=(state.ai.tasks||[]).filter(t=>t.channelId!==cid);
+      state.assets=(state.assets||[]).filter(a=>{
+        if(a.channelId!==cid)return true;
+        const kind=String(a.type||a.stage||"").toUpperCase();
+        return !["RESEARCH","SCRIPT","MATERIAL","POSTER","CAPTION","QC"].includes(kind);
+      });
+      if(state.ai.workerStates){
+        Object.keys(state.ai.workerStates).forEach(k=>{
+          if(state.ai.workerStates[k]?.channelId===cid)delete state.ai.workerStates[k];
+        });
+      }
+      ui.gm5CompletedStages=[];
+      ui.gm5Stage="READY";
+      ui.gm5Error="";
+      save();
+      addActivity("GM5.4 fresh mission initialized — stale production/QC cleared",cid,"READY");
+    }
+
     if(ui.gm5Running)return showToast("GM5 mission sedang berjalan.");
     const channel=activeChannel();
     if(!REAL_PUBLISH_TARGETS[channel.id])return showToast("GM5 real publish baru aktif untuk Golden Page.");
@@ -1696,7 +1718,7 @@ Operational rules:
       const cls=failed?"red":done?"green":active?"purple":"muted";
       return `<div class="item" style="padding:10px 12px"><div class="row between"><strong class="${cls}">${mark} ${stage}</strong><span class="muted tiny">${index+1}/${GM5_STAGES.length}</span></div></div>`;
     }).join("");
-    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.3 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
+    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.4 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
   };
 
   const pipelineHtml=()=>{
