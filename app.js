@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM5.1-REAL-AI-POSTER";
+  const PACKAGE_REVISION = "R6.10C-GM5.2-QC-WARNING-GATE";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -763,13 +763,34 @@ Mission: ${profile.mission||"—"}`},
       await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
       const qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
       const decision=gm5QcDecision(qcTask.output);
-      if(decision!=="PASS")throw new Error(decision==="REVISION"?"QC_REVISION_REQUIRED":decision==="FAIL"?"QC_FAILED":"QC_DECISION_UNKNOWN");
 
-      // Critical safety: never silently reuse Alpha-2 test media for a GM5 real-content run.
+      // GM5.2 Alpha policy:
+      // PASS -> continue.
+      // PASS WITH REVISION -> continue with an audit warning.
+      // FAIL / unknown -> stop before publish.
+      if(decision==="FAIL")throw new Error("QC_FAILED");
+      if(decision==="UNKNOWN")throw new Error("QC_DECISION_UNKNOWN");
+
+      // Critical safety: never publish unless a real generated poster exists.
       if(!hasRealPosterMedia(channel.id))throw new Error("REAL_POSTER_MEDIA_REQUIRED");
 
+      if(decision==="REVISION"){
+        addActivity("GM5 QC PASS WITH REVISION → warning accepted for Alpha publish",channel.id,"QC");
+        notify(
+          "GM5 QC Warning",
+          `${channel.name}: QC meminta revisi minor. Alpha pipeline tetap lanjut karena media nyata tersedia.`,
+          "WARNING"
+        );
+      }
+
       setWorkflow(channel.id,{status:"COMPLETED",stage:"COMPLETED",progress:100,updatedAt:now()});
-      addActivity("GM5 QC PASS → automatic completion",channel.id,"COMPLETED");
+      addActivity(
+        decision==="REVISION"
+          ? "GM5 QC warning accepted → automatic completion"
+          : "GM5 QC PASS → automatic completion",
+        channel.id,
+        "COMPLETED"
+      );
       save();
 
       gm5SetStage("PUBLISH");
@@ -1671,7 +1692,7 @@ Operational rules:
       const cls=failed?"red":done?"green":active?"purple":"muted";
       return `<div class="item" style="padding:10px 12px"><div class="row between"><strong class="${cls}">${mark} ${stage}</strong><span class="muted tiny">${index+1}/${GM5_STAGES.length}</span></div></div>`;
     }).join("");
-    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
+    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.2 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
   };
 
   const pipelineHtml=()=>{
