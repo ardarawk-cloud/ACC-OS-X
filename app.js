@@ -1115,6 +1115,35 @@ Operational rules:
     save();render();showToast("M001 INTERNAL PROOF-OF-LIFE: PUBLISHED ✅");
   };
 
+
+  // R6.10A — server-side Connector API bridge. Credentials stay on the server.
+  const runServerPublishWorkflow = async channelId => {
+    let job=publishJobForWorkflow(channelId)||createPublishJobFromWorkflow(channelId);
+    if(!job||job.status==="PUBLISHING")return;
+    if(job.status==="PUBLISHED"&&job.connector!=="MOCK")return showToast(`Idempotency guard — sudah PUBLISHED (${job.externalPostId}).`);
+    // A previous R6.9 MOCK result may be promoted to a new server-side proof job.
+    if(job.status==="PUBLISHED"&&job.connector==="MOCK"){
+      job={...job,id:id("publish"),status:"QUEUED",attempts:0,externalPostId:null,publishedAt:null,error:null,createdAt:now(),updatedAt:now(),connector:"SERVER"};
+      state.publishJobs.unshift(job);state.publishJobs=state.publishJobs.slice(0,250);
+    }
+    job.status="PUBLISHING";job.attempts+=1;job.error=null;job.connector="SERVER";job.updatedAt=now();
+    addActivity("publish.started → SERVER",job.channelId,"PUBLISHING");save();render();
+    try{
+      const accessCode=String(state.settings?.ownerAccessCode||"");
+      const response=await fetch("/api/acc-publish",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify(job)});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok||!data.ok)throw new Error(data?.error?.code||data?.error?.message||`HTTP ${response.status}`);
+      const current=state.publishJobs.find(item=>item.id===job.id);if(!current)return;
+      current.status="PUBLISHED";current.connector=data.connector||"SERVER";current.externalPostId=data.externalPostId;current.publishedAt=data.publishedAt||now();current.updatedAt=now();
+      addActivity(`publish.succeeded → ${current.connector} → ${current.externalPostId}`,current.channelId,"PUBLISHING");
+      notify("R6.10A Connector API PASS",`${current.channelName} berhasil melewati server-side connector.`,"SUCCESS");
+      save();render();showToast("R6.10A SERVER CONNECTOR: PUBLISHED ✅");
+    }catch(error){
+      const current=state.publishJobs.find(item=>item.id===job.id);if(current){current.status="FAILED";current.error=String(error?.message||error);current.updatedAt=now();}
+      addActivity(`publish.failed → ${String(error?.message||error)}`,job.channelId,"PUBLISHING");save();render();showToast("Server publish gagal — cek deployment / API.");
+    }
+  };
+
   const addContext = () => {
     const channel=activeChannel();
     if(!ui.contextDraftTitle.trim()||!ui.contextDraftContent.trim())return showToast("Judul dan isi context wajib diisi.");
@@ -1398,7 +1427,7 @@ Operational rules:
       <div class="card"><div class="row between wrap"><div class="grow"><div class="eyebrow">${channel.code} • PRODUCTION ENGINE</div><h2 class="card-title truncate">${escapeHtml(channel.name)}</h2></div><span class="${statusClass(wf.status)}">${escapeHtml(wf.status)}</span></div>
       <div class="divider"></div><div class="row between small"><span class="muted">Workflow Progress</span><strong class="purple">${wf.progress}%</strong></div><div class="progress-line" style="margin-top:9px"><div class="progress-fill" style="width:${wf.progress}%"></div></div>
       <div class="stage-grid">${STAGES.map((stage,index)=>{const active=wf.stage===stage,done=wf.progress>=PROGRESS[stage]&&stage!=="READY";return `<div class="stage ${active?"active":done?"done":""}"><div><span class="stage-step">STEP ${index+1}</span><span class="stage-name">${stage}</span></div></div>`}).join("")}</div>
-      <div class="actions"><button class="btn primary mono" data-action="start-production" ${wf.status!=="READY"?"disabled":""}>▷ START PRODUCTION</button><button class="btn purple mono" data-action="route-active-stage" ${!ROUTES[wf.stage]||wf.status!=="RUNNING"?"disabled":""}>✦ RUN ACTIVE STAGE WITH AI</button><button class="btn ghost mono" data-action="manual-next" ${wf.status!=="RUNNING"||wf.stage==="APPROVAL"?"disabled":""}>MANUAL NEXT</button>${wf.status==="RUNNING"?`<button class="btn amber mono" data-action="pause">Ⅱ PAUSE</button>`:""}${wf.status==="PAUSED"?`<button class="btn green mono" data-action="resume">▷ RESUME</button>`:""}<button class="btn dark mono" data-action="reset">× RESET WORKFLOW</button>${wf.status==="COMPLETED"?`<button class="btn green mono" data-action="mock-publish-workflow" data-id="${channel.id}">${publishJobForWorkflow(channel.id)?.status==="PUBLISHED"?"PUBLISHED ✅":"⚡ TEST PUBLISH CORE"}</button>`:""}${["COMPLETED","REJECTED"].includes(wf.status)?`<button class="btn cyan mono" data-action="archive" ${wf.archived?"disabled":""}>${wf.archived?"ARCHIVED":"ARCHIVE MISSION"}</button>`:""}</div></div>
+      <div class="actions"><button class="btn primary mono" data-action="start-production" ${wf.status!=="READY"?"disabled":""}>▷ START PRODUCTION</button><button class="btn purple mono" data-action="route-active-stage" ${!ROUTES[wf.stage]||wf.status!=="RUNNING"?"disabled":""}>✦ RUN ACTIVE STAGE WITH AI</button><button class="btn ghost mono" data-action="manual-next" ${wf.status!=="RUNNING"||wf.stage==="APPROVAL"?"disabled":""}>MANUAL NEXT</button>${wf.status==="RUNNING"?`<button class="btn amber mono" data-action="pause">Ⅱ PAUSE</button>`:""}${wf.status==="PAUSED"?`<button class="btn green mono" data-action="resume">▷ RESUME</button>`:""}<button class="btn dark mono" data-action="reset">× RESET WORKFLOW</button>${wf.status==="COMPLETED"?`<button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}">${publishJobForWorkflow(channel.id)?.connector==="SERVER"&&publishJobForWorkflow(channel.id)?.status==="PUBLISHED"?"SERVER PUBLISHED ✅":"⚡ TEST SERVER CONNECTOR"}</button>`:""}${["COMPLETED","REJECTED"].includes(wf.status)?`<button class="btn cyan mono" data-action="archive" ${wf.archived?"disabled":""}>${wf.archived?"ARCHIVED":"ARCHIVE MISSION"}</button>`:""}</div></div>
       <div class="card" style="margin-top:17px"><h3 class="card-title">OWNER HUMAN APPROVAL GATE</h3><p class="muted small">AI output cannot complete or publish a mission without explicit human approval.</p>
         <div class="form-grid" style="margin-top:15px"><textarea id="approval-notes" class="textarea mono" placeholder="Approval notes / revision instructions...">${escapeHtml(wf.approvalNotes||"")}</textarea><select id="revision-target" class="select mono">${["SCRIPT","POSTER","CAPTION","QC"].map(stage=>`<option value="${stage}" ${wf.revisionTarget===stage?"selected":""}>${stage}</option>`).join("")}</select></div>
         <div class="actions"><button class="btn green mono" data-action="approve" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>APPROVE & COMPLETE</button><button class="btn purple mono" data-action="revision" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REQUEST REVISION</button><button class="btn red mono" data-action="reject" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REJECT</button></div>
@@ -1879,6 +1908,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"apply-task":applyTask(data.id);ui.modalTaskId=null;render();break;
       case"mock-publish":runMockPublish(data.id);break;
       case"mock-publish-workflow":runMockPublishWorkflow(data.id);break;
+      case"server-publish-workflow":runServerPublishWorkflow(data.id);break;
       case"add-context":addContext();break;
       case"toggle-context":toggleContext(data.id);break;
       case"remove-context":removeContext(data.id);break;

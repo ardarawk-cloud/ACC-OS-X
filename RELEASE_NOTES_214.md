@@ -29,3 +29,10 @@ Production Engine, Cloudflare Workers AI/KAI, Queue, Pipeline, Registry, Vault, 
 - Completed workflows can now enter the M001 Mock Publish Core directly.
 - Preserves existing workflow state; no reset is required.
 - Adds idempotent workflow-level mock publish job and external mock Post ID.
+
+## R6.10A — Connector Backend Foundation
+- Added same-origin `/api/acc-publish` Cloudflare Pages Function.
+- Publish credentials remain server-side; browser receives only publish results.
+- Added server-side mock connector as deployment proof before Facebook credentials are introduced.
+- Existing R6.9 mock result can be promoted safely to server connector test.
+- Facebook adapter intentionally remains gated until server connector proof passes.
