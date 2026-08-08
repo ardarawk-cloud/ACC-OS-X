@@ -228,12 +228,16 @@ const PROGRESS = {
   COMPLETED: 100
 };
   const ROUTES = {
-    RESEARCH:{worker:"RESEARCH_WORKER",label:"Research Specialist"},
-    SCRIPT:{worker:"SCRIPT_WORKER",label:"Scriptwriter AI"},
-    POSTER:{worker:"POSTER_WORKER",label:"Poster Creator"},
-    CAPTION:{worker:"CAPTION_WORKER",label:"Social Captioner"},
-    QC:{worker:"QC_WORKER",label:"Editorial QC Auditor"},
-    PUBLISHING:{worker:"PUBLISHING_WORKER",label:"Publishing Agent"}
+  RESEARCH:{worker:"RESEARCH_WORKER",label:"Research Specialist"},
+  SCRIPT:{worker:"SCRIPT_WORKER",label:"Scriptwriter AI"},
+  MATERIAL:{worker:"SCRIPT_WORKER",label:"Material Creator"},
+  POSTER:{worker:"POSTER_WORKER",label:"Poster Creator"},
+  CAPTION:{worker:"CAPTION_WORKER",label:"Social Captioner"},
+  QC:{worker:"QC_WORKER",label:"Editorial QC Auditor"},
+  PUBLISH:{worker:"PUBLISHING_WORKER",label:"Publishing Agent"},
+  VERIFY:{worker:"QC_WORKER",label:"Publishing Verifier"},
+  PUBLISHING:{worker:"PUBLISHING_WORKER",label:"Publishing Agent"}
+};
   };
   const WORKER_TYPES = Object.values(ROUTES);
   const PRIORITY_WEIGHT = {HIGH:3,NORMAL:2,LOW:1};
