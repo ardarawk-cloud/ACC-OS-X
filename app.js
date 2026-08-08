@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10C-GM5.2-QC-WARNING-GATE";
+  const PACKAGE_REVISION = "R6.10C-GM5.3-QC-POSTER-LANGUAGE-FIX";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -718,11 +718,15 @@ Mission: ${profile.mission||"—"}`},
     gm5SetStage("POSTER");
     const accessCode=getAiAccessCode();
     if(!accessCode)throw new Error("AI_ACCESS_MISSING");
+    const profile=channelMap[channelId];
     const prompt=[
-      `Create the final social media poster for ${channelMap[channelId].name}.`,
+      `Create the final social media poster for ${profile.name}.`,
+      `LANGUAGE LOCK: all visible poster text must be Indonesian (id-ID), unless the locked profile explicitly requires another language.`,
+      `Do not translate the channel/brand name. Keep ${profile.name} exactly as written.`,
       `Use this production direction:`,
       String(posterTask?.output||"").slice(0,1700),
-      `Clean professional composition. No fake logos. No watermark. Avoid unreadable tiny text.`
+      `Clean professional composition. No fake logos. No watermark. Avoid unreadable tiny text.`,
+      `Visible copy must be concise, natural Indonesian and suitable for the locked profile.`
     ].join("\n\n");
     const response=await fetch("/api/acc-image",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({prompt,channelId})});
     const data=await response.json().catch(()=>({}));
@@ -1095,9 +1099,9 @@ ${contextLine}`
     const stageRules={
       RESEARCH:"Create a grounded research brief with audience intent, content angles, factual/verification needs, risks, and a production recommendation. If current external facts are required, mark them VERIFICATION REQUIRED instead of inventing them.",
       SCRIPT:"Create a production-ready script using the locked profile format and the latest upstream research asset. Preserve exact series names, batch counts, canon, tone, and workflow rules.",
-      POSTER:"Create poster direction and a production-ready image prompt only. Preserve the profile visual identity and exact batch/file rules. Do not claim an image file was generated.",
+      POSTER:"Create poster direction and a production-ready image prompt only. Preserve the profile visual identity and exact batch/file rules. Use the locked profile language for ALL visible poster copy; for Indonesian profiles, visible text must be Indonesian (id-ID). Do not claim an image file was generated.",
       CAPTION:"Create publish-ready caption copy using the locked profile language, platform, credits/tag rules, CTA style, and exact batch requirements.",
-      QC:"Audit the upstream production package against locked profile context. A POSTER asset with hasMedia=true counts as a real generated poster. Return exactly one decision on the first line: PASS, PASS WITH REVISION, or FAIL. Then give concise reasons. Never request revision merely because binary image bytes are not embedded in the text output when hasMedia=true.",
+      QC:"Audit the upstream production package against locked profile context. A POSTER asset with hasMedia=true is definitive proof that real image media exists; never require image bytes to appear inside text output. Evaluate poster language from the poster direction/prompt and locked profile language, not from binary image bytes. Return exactly one decision on the first line: PASS, PASS WITH REVISION, or FAIL. Then give concise reasons. Use PASS when all required production assets exist and there is no substantive publishing blocker. Use PASS WITH REVISION only for minor non-blocking issues. Use FAIL only for a real blocker such as missing required asset, wrong locked language, unsupported factual claim, or broken canon.",
       PUBLISHING:"Create a publishing checklist only. Never claim anything was posted or scheduled unless an executed ACC action proves it."
     };
     return `You are ${task.workerName}, specialized worker ${task.workerType} inside ACC OS X.
@@ -1692,7 +1696,7 @@ Operational rules:
       const cls=failed?"red":done?"green":active?"purple":"muted";
       return `<div class="item" style="padding:10px 12px"><div class="row between"><strong class="${cls}">${mark} ${stage}</strong><span class="muted tiny">${index+1}/${GM5_STAGES.length}</span></div></div>`;
     }).join("");
-    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.2 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
+    return `<div class="card" style="margin-bottom:17px"><div class="row between wrap"><div><div class="eyebrow">GM5.3 • ONE BUTTON PIPELINE</div><h2 class="card-title">⚡ START MISSION</h2><p class="muted small">Satu tombol menjalankan worker berurutan. Tahap aktif menyala; error berhenti tepat di lantainya.</p></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"RUNNING":ui.gm5Error?"STOPPED":ui.gm5Stage==="DONE"?"DONE":"READY")}</span></div><div class="list" style="margin-top:14px">${stageHtml}</div>${ui.gm5Error?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.gm5Error==="REAL_POSTER_MEDIA_REQUIRED"?"Poster AI belum menghasilkan media gambar nyata. GM5 berhenti sebelum publish.":ui.gm5Error)}</div>`:""}<div class="actions"><button class="btn green mono" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${ui.gm5Running?"MISSION RUNNING…":"⚡ START ONE-BUTTON MISSION"}</button></div></div>`;
   };
 
   const pipelineHtml=()=>{
