@@ -26,19 +26,26 @@ const normalizeMessages = (messages, context) => {
         JSON.stringify(context).slice(0, 70000)
     });
   }
+
   return clean;
 };
 
 const extractReply = result => {
   if (!result) return "";
+
   if (typeof result.response === "string") return result.response;
   if (typeof result.result === "string") return result.result;
   if (typeof result.output_text === "string") return result.output_text;
   if (typeof result.text === "string") return result.text;
+
   if (Array.isArray(result.choices)) {
-    const value = result.choices[0]?.message?.content ?? result.choices[0]?.text;
+    const value =
+      result.choices[0]?.message?.content ??
+      result.choices[0]?.text;
+
     if (typeof value === "string") return value;
   }
+
   return "";
 };
 
@@ -47,46 +54,95 @@ async function handleAi(request, env) {
     return json({
       ok: true,
       service: "ACC OS X Server AI",
-      revision: "R6.10C-GM4.1-AI-ROUTE-FIX",
-      model: env.ACC_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast",
+      revision: "R6.10C-GM5-ONE-BUTTON-PIPELINE",
+      model:
+        env.ACC_AI_MODEL ||
+        "@cf/meta/llama-3.1-8b-instruct-fast",
       aiBinding: Boolean(env.AI)
     });
   }
 
   if (request.method !== "POST") {
-    return json({ ok: false, error: { code: "METHOD_NOT_ALLOWED" } }, 405);
+    return json(
+      {
+        ok: false,
+        error: { code: "METHOD_NOT_ALLOWED" }
+      },
+      405
+    );
   }
 
-  const supplied = (request.headers.get("X-ACC-Access-Code") || "").trim();
+  const supplied =
+    (request.headers.get("X-ACC-Access-Code") || "").trim();
+
   if (!supplied) {
-    return json({ ok: false, error: { code: "ACCESS_CODE_REQUIRED" } }, 401);
+    return json(
+      {
+        ok: false,
+        error: { code: "ACCESS_CODE_REQUIRED" }
+      },
+      401
+    );
   }
 
-  // If a Cloudflare secret already exists, enforce it.
-  // During current beta recovery, a non-empty device code remains accepted when
-  // the server secret has not yet been configured, preserving the existing PWA flow.
-  const expected = String(env.ACC_AI_ACCESS_CODE || env.ACC_ACCESS_CODE || "").trim();
+  const expected = String(
+    env.ACC_AI_ACCESS_CODE ||
+    env.ACC_ACCESS_CODE ||
+    ""
+  ).trim();
+
   if (expected && supplied !== expected) {
-    return json({ ok: false, error: { code: "ACCESS_DENIED" } }, 403);
+    return json(
+      {
+        ok: false,
+        error: { code: "ACCESS_DENIED" }
+      },
+      403
+    );
   }
 
   if (!env.AI) {
-    return json({ ok: false, error: { code: "AI_BINDING_MISSING" } }, 503);
+    return json(
+      {
+        ok: false,
+        error: { code: "AI_BINDING_MISSING" }
+      },
+      503
+    );
   }
 
   let body;
+
   try {
     body = await request.json();
   } catch {
-    return json({ ok: false, error: { code: "INVALID_JSON" } }, 400);
+    return json(
+      {
+        ok: false,
+        error: { code: "INVALID_JSON" }
+      },
+      400
+    );
   }
 
-  const messages = normalizeMessages(body?.messages, body?.context);
+  const messages = normalizeMessages(
+    body?.messages,
+    body?.context
+  );
+
   if (!messages.length) {
-    return json({ ok: false, error: { code: "MESSAGES_REQUIRED" } }, 400);
+    return json(
+      {
+        ok: false,
+        error: { code: "MESSAGES_REQUIRED" }
+      },
+      400
+    );
   }
 
-  const model = env.ACC_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast";
+  const model =
+    env.ACC_AI_MODEL ||
+    "@cf/meta/llama-3.1-8b-instruct-fast";
 
   try {
     const result = await env.AI.run(model, {
@@ -96,12 +152,16 @@ async function handleAi(request, env) {
     });
 
     const reply = extractReply(result);
+
     if (!reply) {
-      return json({
-        ok: false,
-        error: { code: "AI_EMPTY_RESPONSE" },
-        providerPayloadType: typeof result
-      }, 502);
+      return json(
+        {
+          ok: false,
+          error: { code: "AI_EMPTY_RESPONSE" },
+          providerPayloadType: typeof result
+        },
+        502
+      );
     }
 
     return json({
@@ -109,17 +169,77 @@ async function handleAi(request, env) {
       reply,
       provider: "Cloudflare Workers AI",
       model,
-      revision: "R6.10C-GM4.1-AI-ROUTE-FIX"
+      revision: "R6.10C-GM5-ONE-BUTTON-PIPELINE"
     });
   } catch (error) {
-    return json({
-      ok: false,
-      error: {
-        code: "AI_INFERENCE_FAILED",
-        message: String(error?.message || error)
-      }
-    }, 502);
+    return json(
+      {
+        ok: false,
+        error: {
+          code: "AI_INFERENCE_FAILED",
+          message: String(error?.message || error)
+        }
+      },
+      502
+    );
   }
+}
+
+async function handleMissionAlpha3(request) {
+  if (request.method === "GET") {
+    return json({
+      ok: true,
+      service: "ACC OS X Mission Alpha-3",
+      mission: "ALPHA_3",
+      mode: "ONE_BUTTON_PIPELINE",
+      revision: "R6.10C-GM5-ONE-BUTTON-PIPELINE",
+      stages: [
+        "READY",
+        "RESEARCH",
+        "MATERIAL",
+        "POSTER",
+        "CAPTION",
+        "QC",
+        "PUBLISH",
+        "VERIFY",
+        "DONE"
+      ]
+    });
+  }
+
+  if (request.method !== "POST") {
+    return json(
+      {
+        ok: false,
+        error: { code: "METHOD_NOT_ALLOWED" }
+      },
+      405
+    );
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return json(
+      {
+        ok: false,
+        error: { code: "INVALID_JSON" }
+      },
+      400
+    );
+  }
+
+  return json({
+    ok: true,
+    mission: "ALPHA_3",
+    mode: "ONE_BUTTON_PIPELINE",
+    status: "READY",
+    channelId: body?.channelId || null,
+    nextStage: "RESEARCH",
+    revision: "R6.10C-GM5-ONE-BUTTON-PIPELINE"
+  });
 }
 
 export default {
@@ -128,6 +248,10 @@ export default {
 
     if (url.pathname === "/api/acc-ai") {
       return handleAi(request, env);
+    }
+
+    if (url.pathname === "/api/mission-alpha3") {
+      return handleMissionAlpha3(request, env);
     }
 
     return env.ASSETS.fetch(request);
