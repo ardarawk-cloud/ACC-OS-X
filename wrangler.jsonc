@@ -2,7 +2,7 @@
   "name": "acc-os-x-baxkup",
   "compatibility_date": "2026-08-08",
   "assets": {
-    "directory": "./app",
+    "directory": ".",
     "not_found_handling": "single-page-application"
   }
 }

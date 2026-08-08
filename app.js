@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10B";
+  const PACKAGE_REVISION = "R6.10B-GM2";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
