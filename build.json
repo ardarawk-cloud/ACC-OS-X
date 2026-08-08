@@ -1,7 +1,7 @@
 {
   "product": "ACC OS X",
   "build": 214,
-  "milestone": "Golden Master Candidate — Theme + Publish",
+  "milestone": "Golden Master Candidate — X Logo + Real Publish Gate",
   "schemaVersion": 214,
   "pwaIdentity": "/",
   "storageKey": "acc_os_x_ecosystem_v214",
@@ -30,7 +30,7 @@
   "initializedProfiles": 7,
   "pendingProductionProfiles": 0,
   "readyProductionProfiles": 41,
-  "packageRevision": "214-R6.10B-GM1",
+  "packageRevision": "214-R6.10C-GM4-PUBLISH",
   "registryCorrection": "Added PL-307 Shui Yue — Mutiara Samudra",
   "externalAiProvider": "Cloudflare Workers AI via same-origin /api/acc-ai",
   "aiConsole": true,
@@ -56,7 +56,7 @@
   "unifiedLogoAsset": true,
   "headerLogoUsesPwaIcon": true,
   "pwaIconCacheBust": true,
-  "pwaIconAssetVersion": "r62",
+  "pwaIconAssetVersion": "r63",
   "pwaIconRefreshStrategy": "versioned manifest icon URLs + clean maskable safe-zone + service worker cache bump",
   "mobilePrimaryNavigation": "ENT | CH | PROD | ECO | SYSTEM",
   "mobilePrimaryNavigationPolish": true,
@@ -104,7 +104,7 @@
   "randomThemeButton": true,
   "themePersistence": "state.settings + backup/restore",
   "themeSafety": "visual only; production data and AI workflow untouched",
-  "revision": "R6.10B",
+  "revision": "R6.10C-GM4-PUBLISH",
   "features": [
     "Adaptive transparent X logo",
     "Theme-aware logo color",
@@ -115,11 +115,15 @@
   ],
   "publishCoreFoundation": true,
   "publishConnector": "META_FACEBOOK",
-  "publishCoreStatus": "REAL_FACEBOOK_READY",
+  "publishCoreStatus": "REAL_FACEBOOK_AUTO_GATE_READY",
   "connectorApi": "Cloudflare Worker + Meta Graph API",
   "firstRealPublishTarget": "Tukang Tambang / Facebook Page 101420769205689",
   "goldenMasterCandidate": true,
   "frontendHost": "acc-os-x-baxkup",
   "publishBackend": "https://acc-publish-connector.ardarawk.workers.dev",
-  "frontendBackendSeparation": true
+  "frontendBackendSeparation": true,
+  "autoPublishMappedTargets": true,
+  "publishResumeWithoutQc": true,
+  "publishAccessStorage": "device-local with AI access fallback",
+  "publishUi": "Dedicated ACC X Real Publish Gate"
 }

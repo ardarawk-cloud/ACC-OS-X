@@ -1,16 +1,18 @@
 {
   "version": 214,
-  "name": "Real Meta Facebook Adapter",
+  "name": "Publish Continuation + Auto Publish Gate",
   "channel": "beta",
-  "releasedAt": "2026-08-08T19:10:00+08:00",
+  "releasedAt": "2026-08-09T01:05:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.10B-GM1",
-  "packageRevision": "214-R6.10B-GM1",
-  "milestone": "Golden Master Candidate — Theme + Publish",
+  "revision": "R6.10C-GM4-PUBLISH",
+  "packageRevision": "214-R6.10C-GM4-PUBLISH",
+  "milestone": "Golden Master Candidate — X Logo + Real Publish Gate",
   "publishConnector": "META_FACEBOOK",
-  "publishCoreStatus": "REAL_FACEBOOK_READY",
+  "publishCoreStatus": "REAL_FACEBOOK_AUTO_GATE_READY",
   "connectorApi": "Cloudflare Worker + Meta Graph API",
   "goldenMasterCandidate": true,
   "frontendBackendSeparation": true,
-  "defaultPublishEndpoint": "https://acc-publish-connector.ardarawk.workers.dev/api/acc-publish"
+  "defaultPublishEndpoint": "https://acc-publish-connector.ardarawk.workers.dev/api/acc-publish",
+  "autoPublishMappedTargets": true,
+  "qcResumePolicy": "COMPLETED workflow resumes directly at Publish Gate; no QC rerun"
 }

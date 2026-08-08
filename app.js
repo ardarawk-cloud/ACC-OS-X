@@ -4,11 +4,13 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10B-GM2";
+  const PACKAGE_REVISION = "R6.10C-GM4-PUBLISH";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
   const PUBLISH_ENDPOINT_STORAGE_KEY = "acc_os_x_publish_endpoint_v1";
+  const PUBLISH_ACCESS_STORAGE_KEY = "acc_os_x_publish_access_v1";
+  const AUTO_PUBLISH_REAL_TARGETS = true;
   const REAL_PUBLISH_TARGETS = {
     "ch-tukang-tambang": {connector:"META_FACEBOOK",pageId:"101420769205689",pageName:"Tukang Tambang"}
   };
@@ -738,8 +740,14 @@ Mission: ${profile.mission||"—"}`},
       output:"Human-approved final production package."});
     addActivity("Mission approved and completed",channel.id,"COMPLETED");
     awardBadge("BUILD_214_STABLE");
-    notify("Mission Completed",`${channel.name} selesai 100% dan siap diarsip.`,"SUCCESS");
-    save();showToast("Mission completed.");
+    notify("Mission Completed",`${channel.name} selesai 100% dan siap publish/arsip.`,"SUCCESS");
+    save();
+    if(AUTO_PUBLISH_REAL_TARGETS&&REAL_PUBLISH_TARGETS[channel.id]&&getPublishAccessCode()){
+      showToast("Mission completed — auto publish dimulai…");
+      setTimeout(()=>runServerPublishWorkflow(channel.id),80);
+    }else{
+      showToast(REAL_PUBLISH_TARGETS[channel.id]?"Mission completed — Publish Gate siap, QC tidak perlu diulang.":"Mission completed.");
+    }
   };
 
   const requestRevision = () => {
@@ -1127,6 +1135,18 @@ Operational rules:
     const endpoint=String(value||"").trim();
     if(endpoint)localStorage.setItem(PUBLISH_ENDPOINT_STORAGE_KEY,endpoint);else localStorage.removeItem(PUBLISH_ENDPOINT_STORAGE_KEY);
   };
+  const getPublishAccessCode=()=>localStorage.getItem(PUBLISH_ACCESS_STORAGE_KEY)||getAiAccessCode()||"";
+  const setPublishAccessCode=value=>{
+    const code=String(value||"").trim();
+    if(code)localStorage.setItem(PUBLISH_ACCESS_STORAGE_KEY,code);else localStorage.removeItem(PUBLISH_ACCESS_STORAGE_KEY);
+  };
+  const configurePublishAccess=()=>{
+    const current=getPublishAccessCode();
+    const next=prompt("ACC Publish Connector Access Code\nDisimpan hanya di perangkat ini.",current);
+    if(next===null)return;
+    setPublishAccessCode(next);
+    render();showToast(next?"Publish access tersimpan di perangkat.":"Publish access dihapus.");
+  };
   const configurePublishEndpoint=()=>{
     const current=getPublishEndpoint();
     const next=prompt("ACC Publish API URL\nContoh: https://acc-publish-api.<subdomain>.workers.dev",current);
@@ -1180,7 +1200,7 @@ Operational rules:
     job.status="PUBLISHING";job.attempts+=1;job.error=null;job.connector=target?.connector||"SERVER";job.updatedAt=now();
     addActivity(`publish.started → ${job.connector}`,job.channelId,"PUBLISHING");save();render();
     try{
-      const accessCode=getAiAccessCode();
+      const accessCode=getPublishAccessCode();
       if(!accessCode)throw new Error("ACC_CONNECTOR_ACCESS_MISSING");
       const endpoint=getPublishEndpoint();
       const payload=buildPublishPayload(job);
@@ -1476,13 +1496,27 @@ Operational rules:
 
   const productionHtml=()=>`${productionNav()}${ui.productionTab==="pipeline"?pipelineHtml():""}${ui.productionTab==="queue"?queueHtml():""}${ui.productionTab==="ai"?aiHtml():""}${ui.productionTab==="context"?contextHtml():""}${ui.productionTab==="assets"?assetsHtml():""}${ui.productionTab==="archive"?archiveHtml():""}`;
 
+  const publishCenterHtml=(channel,wf)=>{
+    const target=REAL_PUBLISH_TARGETS[channel.id]||null;
+    if(!target)return "";
+    const job=publishJobForWorkflow(channel.id);
+    const caption=latestAssetByStage(channel.id,"CAPTION");
+    const poster=latestAssetByStage(channel.id,"POSTER");
+    const mediaUrl=directImageUrlFromAsset(poster);
+    const status=job?.status||"READY";
+    const published=job?.status==="PUBLISHED"&&job?.connector==="META_FACEBOOK";
+    const canPublish=wf.status==="COMPLETED"&&!published;
+    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><img src="./icon-192-r63.png" alt="ACC X" width="42" height="42" style="border-radius:12px;margin-right:12px"><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="${mediaUrl?"green":"amber"}">${mediaUrl?"PUBLIC URL READY":"TEXT-ONLY FALLBACK"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
+  };
+
   const pipelineHtml=()=>{
     const channel=activeChannel(),wf=currentWorkflow();
     return `<section class="section mono">
       <div class="card"><div class="row between wrap"><div class="grow"><div class="eyebrow">${channel.code} • PRODUCTION ENGINE</div><h2 class="card-title truncate">${escapeHtml(channel.name)}</h2></div><span class="${statusClass(wf.status)}">${escapeHtml(wf.status)}</span></div>
       <div class="divider"></div><div class="row between small"><span class="muted">Workflow Progress</span><strong class="purple">${wf.progress}%</strong></div><div class="progress-line" style="margin-top:9px"><div class="progress-fill" style="width:${wf.progress}%"></div></div>
       <div class="stage-grid">${STAGES.map((stage,index)=>{const active=wf.stage===stage,done=wf.progress>=PROGRESS[stage]&&stage!=="READY";return `<div class="stage ${active?"active":done?"done":""}"><div><span class="stage-step">STEP ${index+1}</span><span class="stage-name">${stage}</span></div></div>`}).join("")}</div>
-      <div class="actions"><button class="btn primary mono" data-action="start-production" ${wf.status!=="READY"?"disabled":""}>▷ START PRODUCTION</button><button class="btn purple mono" data-action="route-active-stage" ${!ROUTES[wf.stage]||wf.status!=="RUNNING"?"disabled":""}>✦ RUN ACTIVE STAGE WITH AI</button><button class="btn ghost mono" data-action="manual-next" ${wf.status!=="RUNNING"||wf.stage==="APPROVAL"?"disabled":""}>MANUAL NEXT</button>${wf.status==="RUNNING"?`<button class="btn amber mono" data-action="pause">Ⅱ PAUSE</button>`:""}${wf.status==="PAUSED"?`<button class="btn green mono" data-action="resume">▷ RESUME</button>`:""}<button class="btn dark mono" data-action="reset">× RESET WORKFLOW</button>${wf.status==="COMPLETED"?`<button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}">${publishJobForWorkflow(channel.id)?.status==="PUBLISHED"&&publishJobForWorkflow(channel.id)?.connector==="META_FACEBOOK"?"FACEBOOK PUBLISHED ✅":REAL_PUBLISH_TARGETS[channel.id]?"⚡ PUBLISH TO FACEBOOK":"⚡ TEST SERVER CONNECTOR"}</button>`:""}${["COMPLETED","REJECTED"].includes(wf.status)?`<button class="btn cyan mono" data-action="archive" ${wf.archived?"disabled":""}>${wf.archived?"ARCHIVED":"ARCHIVE MISSION"}</button>`:""}</div></div>
+      <div class="actions"><button class="btn primary mono" data-action="start-production" ${wf.status!=="READY"?"disabled":""}>▷ START PRODUCTION</button><button class="btn purple mono" data-action="route-active-stage" ${!ROUTES[wf.stage]||wf.status!=="RUNNING"?"disabled":""}>✦ RUN ACTIVE STAGE WITH AI</button><button class="btn ghost mono" data-action="manual-next" ${wf.status!=="RUNNING"||wf.stage==="APPROVAL"?"disabled":""}>MANUAL NEXT</button>${wf.status==="RUNNING"?`<button class="btn amber mono" data-action="pause">Ⅱ PAUSE</button>`:""}${wf.status==="PAUSED"?`<button class="btn green mono" data-action="resume">▷ RESUME</button>`:""}<button class="btn dark mono" data-action="reset">× RESET WORKFLOW</button>${["COMPLETED","REJECTED"].includes(wf.status)?`<button class="btn cyan mono" data-action="archive" ${wf.archived?"disabled":""}>${wf.archived?"ARCHIVED":"ARCHIVE MISSION"}</button>`:""}</div></div>
+      ${publishCenterHtml(channel,wf)}
       <div class="card" style="margin-top:17px"><h3 class="card-title">OWNER HUMAN APPROVAL GATE</h3><p class="muted small">AI output cannot complete or publish a mission without explicit human approval.</p>
         <div class="form-grid" style="margin-top:15px"><textarea id="approval-notes" class="textarea mono" placeholder="Approval notes / revision instructions...">${escapeHtml(wf.approvalNotes||"")}</textarea><select id="revision-target" class="select mono">${["SCRIPT","POSTER","CAPTION","QC"].map(stage=>`<option value="${stage}" ${wf.revisionTarget===stage?"selected":""}>${stage}</option>`).join("")}</select></div>
         <div class="actions"><button class="btn green mono" data-action="approve" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>APPROVE & COMPLETE</button><button class="btn purple mono" data-action="revision" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REQUEST REVISION</button><button class="btn red mono" data-action="reject" ${wf.status!=="AWAITING_APPROVAL"?"disabled":""}>REJECT</button></div>
@@ -1965,6 +1999,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"mock-publish-workflow":runMockPublishWorkflow(data.id);break;
       case"server-publish-workflow":runServerPublishWorkflow(data.id);break;
       case"configure-publish-endpoint":configurePublishEndpoint();break;
+      case"configure-publish-access":configurePublishAccess();break;
       case"test-publish-endpoint":testPublishEndpointHealth();break;
       case"add-context":addContext();break;
       case"toggle-context":toggleContext(data.id);break;
