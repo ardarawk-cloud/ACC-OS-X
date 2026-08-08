@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 214;
-  const PACKAGE_REVISION = "R6.10B";
+  const PACKAGE_REVISION = "R6.10B.2";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -1995,7 +1995,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const registerPwa=async()=>{
     if(!("serviceWorker" in navigator))return;
     try{
-      const registration=await navigator.serviceWorker.register("./service-worker.js");
+      const registration=await navigator.serviceWorker.register("/service-worker.js", {scope:"/"});
       const inspect=()=>{
         if(registration.waiting){ui.swWaiting=true;ui.updateAvailable=true;render();}
       };
