@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "acc-os-x-build-214-r610c-gm4-publish";
+const CACHE_NAME = "acc-os-x-build-214-r610c-gm4-1-ai-route-fix";
 const SHELL = [
   "./","./index.html","./app.js","./styles.css","./manifest.json","./version.json",
   "./icon-192-r63.png","./icon-512-r63.png","./icon-maskable-512-r63.png"

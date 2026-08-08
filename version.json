@@ -4,8 +4,8 @@
   "channel": "beta",
   "releasedAt": "2026-08-09T01:05:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.10C-GM4-PUBLISH",
-  "packageRevision": "214-R6.10C-GM4-PUBLISH",
+  "revision": "R6.10C-GM4.1-AI-ROUTE-FIX",
+  "packageRevision": "214-R6.10C-GM4.1-AI-ROUTE-FIX",
   "milestone": "Golden Master Candidate — X Logo + Real Publish Gate",
   "publishConnector": "META_FACEBOOK",
   "publishCoreStatus": "REAL_FACEBOOK_AUTO_GATE_READY",
@@ -14,5 +14,10 @@
   "frontendBackendSeparation": true,
   "defaultPublishEndpoint": "https://acc-publish-connector.ardarawk.workers.dev/api/acc-publish",
   "autoPublishMappedTargets": true,
-  "qcResumePolicy": "COMPLETED workflow resumes directly at Publish Gate; no QC rerun"
+  "qcResumePolicy": "COMPLETED workflow resumes directly at Publish Gate; no QC rerun",
+  "aiRouteFix": true,
+  "aiRouteFixReason": "Restore same-origin POST /api/acc-ai through Worker script; GM4 static-only deployment returned HTTP 405.",
+  "workerEntrypoint": "worker.js",
+  "workersAiBinding": "AI",
+  "publishCorePreserved": true
 }

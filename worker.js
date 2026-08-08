@@ -1,154 +1,135 @@
-// ACC OS X R6.10B — Real Meta Facebook Publisher
-// Secrets/vars expected in Cloudflare Worker:
-//   ACC_CONNECTOR_ACCESS_CODE (secret)
-//   FB_PAGE_TOKEN_TUKANG_TAMBANG (secret)
-//   FB_PAGE_ID_TUKANG_TAMBANG = 101420769205689 (var or secret)
-//   META_GRAPH_VERSION = v26.0 (optional var)
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-ACC-Access-Code",
+const JSON_HEADERS = {
+  "content-type": "application/json; charset=UTF-8",
+  "cache-control": "no-store"
 };
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-    },
-  });
-}
+const json = (data, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 
-function fail(code, message, status = 400, extra = {}) {
-  return json({ ok: false, error: { code, message, ...extra } }, status);
-}
+const normalizeMessages = (messages, context) => {
+  const clean = Array.isArray(messages)
+    ? messages
+        .filter(m => m && typeof m.content === "string")
+        .slice(-18)
+        .map(m => ({
+          role: ["system", "assistant", "user"].includes(m.role) ? m.role : "user",
+          content: m.content.slice(0, 50000)
+        }))
+    : [];
 
-const TARGETS = {
-  "ch-tukang-tambang": {
-    connector: "META_FACEBOOK",
-    pageName: "Tukang Tambang",
-    pageIdEnv: "FB_PAGE_ID_TUKANG_TAMBANG",
-    tokenEnv: "FB_PAGE_TOKEN_TUKANG_TAMBANG",
-    fallbackPageId: "101420769205689",
-  },
-};
-
-async function metaPost({ version, pageId, edge, token, fields }) {
-  const body = new URLSearchParams({ ...fields, access_token: token });
-  const response = await fetch(`https://graph.facebook.com/${version}/${pageId}/${edge}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.error) {
-    const metaError = data?.error || {};
-    throw Object.assign(new Error(metaError.message || `Meta HTTP ${response.status}`), {
-      code: "META_API_ERROR",
-      metaCode: metaError.code,
-      metaSubcode: metaError.error_subcode,
-      httpStatus: response.status,
+  if (context) {
+    clean.unshift({
+      role: "system",
+      content:
+        "ACC OS X injected operational context follows. Treat it as the source of truth. " +
+        "Do not invent completed work, approvals, publication, canon, or verified facts.\n\n" +
+        JSON.stringify(context).slice(0, 70000)
     });
   }
-  return data;
+  return clean;
+};
+
+const extractReply = result => {
+  if (!result) return "";
+  if (typeof result.response === "string") return result.response;
+  if (typeof result.result === "string") return result.result;
+  if (typeof result.output_text === "string") return result.output_text;
+  if (typeof result.text === "string") return result.text;
+  if (Array.isArray(result.choices)) {
+    const value = result.choices[0]?.message?.content ?? result.choices[0]?.text;
+    if (typeof value === "string") return value;
+  }
+  return "";
+};
+
+async function handleAi(request, env) {
+  if (request.method === "GET") {
+    return json({
+      ok: true,
+      service: "ACC OS X Server AI",
+      revision: "R6.10C-GM4.1-AI-ROUTE-FIX",
+      model: env.ACC_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast",
+      aiBinding: Boolean(env.AI)
+    });
+  }
+
+  if (request.method !== "POST") {
+    return json({ ok: false, error: { code: "METHOD_NOT_ALLOWED" } }, 405);
+  }
+
+  const supplied = (request.headers.get("X-ACC-Access-Code") || "").trim();
+  if (!supplied) {
+    return json({ ok: false, error: { code: "ACCESS_CODE_REQUIRED" } }, 401);
+  }
+
+  // If a Cloudflare secret already exists, enforce it.
+  // During current beta recovery, a non-empty device code remains accepted when
+  // the server secret has not yet been configured, preserving the existing PWA flow.
+  const expected = String(env.ACC_AI_ACCESS_CODE || env.ACC_ACCESS_CODE || "").trim();
+  if (expected && supplied !== expected) {
+    return json({ ok: false, error: { code: "ACCESS_DENIED" } }, 403);
+  }
+
+  if (!env.AI) {
+    return json({ ok: false, error: { code: "AI_BINDING_MISSING" } }, 503);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: { code: "INVALID_JSON" } }, 400);
+  }
+
+  const messages = normalizeMessages(body?.messages, body?.context);
+  if (!messages.length) {
+    return json({ ok: false, error: { code: "MESSAGES_REQUIRED" } }, 400);
+  }
+
+  const model = env.ACC_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast";
+
+  try {
+    const result = await env.AI.run(model, {
+      messages,
+      max_tokens: 1200,
+      temperature: 0.45
+    });
+
+    const reply = extractReply(result);
+    if (!reply) {
+      return json({
+        ok: false,
+        error: { code: "AI_EMPTY_RESPONSE" },
+        providerPayloadType: typeof result
+      }, 502);
+    }
+
+    return json({
+      ok: true,
+      reply,
+      provider: "Cloudflare Workers AI",
+      model,
+      revision: "R6.10C-GM4.1-AI-ROUTE-FIX"
+    });
+  } catch (error) {
+    return json({
+      ok: false,
+      error: {
+        code: "AI_INFERENCE_FAILED",
+        message: String(error?.message || error)
+      }
+    }, 502);
+  }
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: { ...corsHeaders, "Access-Control-Max-Age": "86400" },
-      });
+    if (url.pathname === "/api/acc-ai") {
+      return handleAi(request, env);
     }
 
-    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({
-        ok: true,
-        service: "ACC Publish Connector",
-        system: "ACC OS X",
-        status: "ONLINE",
-        revision: "R6.10B",
-        connectors: ["META_FACEBOOK"],
-        liveTargets: Object.keys(TARGETS),
-      });
-    }
-
-    if (request.method !== "POST" || !["/", "/publish", "/api/acc-publish"].includes(url.pathname)) {
-      return fail("NOT_FOUND", "Endpoint not found", 404);
-    }
-
-    const expectedAccessCode = String(env.ACC_CONNECTOR_ACCESS_CODE || "");
-    const suppliedAccessCode = String(request.headers.get("X-ACC-Access-Code") || "");
-    if (!expectedAccessCode) return fail("CONNECTOR_ACCESS_NOT_CONFIGURED", "ACC connector access secret is not configured.", 503);
-    if (!suppliedAccessCode || suppliedAccessCode !== expectedAccessCode) return fail("UNAUTHORIZED", "Invalid ACC connector access code.", 401);
-
-    let job;
-    try {
-      job = await request.json();
-    } catch {
-      return fail("INVALID_JSON", "Invalid JSON body", 400);
-    }
-
-    if (!job || typeof job !== "object") return fail("INVALID_JOB", "Publish job is required", 400);
-    const target = TARGETS[job.channelId];
-    if (!target) return fail("TARGET_NOT_ENABLED", `Real publishing is not enabled for channel ${job.channelId || "unknown"}.`, 409);
-
-    const pageId = String(env[target.pageIdEnv] || target.fallbackPageId || "");
-    const pageToken = String(env[target.tokenEnv] || "");
-    if (!pageId) return fail("PAGE_ID_MISSING", `${target.pageName} Page ID is not configured.`, 503);
-    if (!pageToken) return fail("PAGE_TOKEN_MISSING", `${target.pageName} Page token is not configured.`, 503);
-
-    const message = String(job?.content?.message || "").trim();
-    const mediaUrl = String(job?.content?.mediaUrl || "").trim();
-    if (!message && !mediaUrl) return fail("EMPTY_CONTENT", "Caption/message or media URL is required.", 400);
-
-    const version = String(env.META_GRAPH_VERSION || "v26.0").replace(/^\/+|\/+$/g, "");
-
-    try {
-      let result;
-      let publishMode;
-      if (mediaUrl) {
-        result = await metaPost({
-          version,
-          pageId,
-          edge: "photos",
-          token: pageToken,
-          fields: { url: mediaUrl, caption: message },
-        });
-        publishMode = "PHOTO";
-      } else {
-        result = await metaPost({
-          version,
-          pageId,
-          edge: "feed",
-          token: pageToken,
-          fields: { message },
-        });
-        publishMode = "TEXT";
-      }
-
-      return json({
-        ok: true,
-        connector: "META_FACEBOOK",
-        pageId,
-        pageName: target.pageName,
-        status: "PUBLISHED",
-        publishMode,
-        externalPostId: result.post_id || result.id,
-        publishedAt: new Date().toISOString(),
-        idempotencyKey: job.idempotencyKey || null,
-      });
-    } catch (error) {
-      return fail(error.code || "META_PUBLISH_FAILED", error.message || "Meta publish failed", error.httpStatus || 502, {
-        metaCode: error.metaCode || null,
-        metaSubcode: error.metaSubcode || null,
-      });
-    }
-  },
+    return env.ASSETS.fetch(request);
+  }
 };
