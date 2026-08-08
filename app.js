@@ -194,8 +194,39 @@
     {id:"experience",icon:"✧",name:"Experience OS",desc:"ACC DNA, personality, ambience, sound, badges and plugin identity."}
   ];
 
-  const STAGES = ["READY","RESEARCH","SCRIPT","POSTER","CAPTION","QC","APPROVAL","COMPLETED"];
-  const PROGRESS = {READY:0,RESEARCH:15,SCRIPT:30,POSTER:45,CAPTION:60,QC:75,APPROVAL:90,COMPLETED:100};
+  const STAGES = [
+  "READY",
+  "RESEARCH",
+  "SCRIPT",
+  "POSTER",
+  "CAPTION",
+  "QC",
+  "APPROVAL",
+  "COMPLETED"
+];
+
+const GM5_STAGES = [
+  "READY",
+  "RESEARCH",
+  "MATERIAL",
+  "POSTER",
+  "CAPTION",
+  "QC",
+  "PUBLISH",
+  "VERIFY",
+  "DONE"
+];
+
+const PROGRESS = {
+  READY: 0,
+  RESEARCH: 15,
+  SCRIPT: 30,
+  POSTER: 45,
+  CAPTION: 60,
+  QC: 75,
+  APPROVAL: 90,
+  COMPLETED: 100
+};
   const ROUTES = {
     RESEARCH:{worker:"RESEARCH_WORKER",label:"Research Specialist"},
     SCRIPT:{worker:"SCRIPT_WORKER",label:"Scriptwriter AI"},
