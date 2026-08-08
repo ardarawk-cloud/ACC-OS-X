@@ -1,13 +1,13 @@
 {
   "version": 214,
-  "name": "Frontend Host / Origin Fix",
+  "name": "Connector Backend Deploy Fix",
   "channel": "beta",
-  "releasedAt": "2026-08-08T19:10:00+08:00",
+  "releasedAt": "2026-08-08T15:30:00+08:00",
   "minimumSchema": 210,
-  "revision": "R6.10B.2",
-  "packageRevision": "214-R6.10B.2",
-  "milestone": "Deploy ACC OS X frontend separately from Publish Connector",
-  "publishConnector": "META_FACEBOOK",
-  "publishCoreStatus": "REAL_FACEBOOK_READY",
-  "connectorApi": "Cloudflare Worker + Meta Graph API"
+  "revision": "R6.10A.1",
+  "packageRevision": "214-R6.10A.1",
+  "milestone": "Connector Backend Deploy Fix",
+  "publishConnector": "SERVER_MOCK",
+  "publishCoreStatus": "STANDALONE_WORKER_DEPLOY_READY",
+  "connectorApi": "configurable HTTPS Worker endpoint"
 }

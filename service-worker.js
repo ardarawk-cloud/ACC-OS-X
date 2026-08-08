@@ -1,8 +1,8 @@
 
-const CACHE_NAME = "acc-os-x-build-214-r610b2-frontend-host-fix";
+const CACHE_NAME = "acc-os-x-build-214-r691-publish-trigger";
 const SHELL = [
-  "/","/index.html","/app.js","/styles.css","/manifest.json","/version.json",
-  "/icon-192-r62.png","/icon-512-r62.png","/icon-maskable-512-r62.png"
+  "./","./index.html","./app.js","./styles.css","./manifest.json","./version.json",
+  "./icon-192-r62.png","./icon-512-r62.png","./icon-maskable-512-r62.png"
 ];
 
 self.addEventListener("install", event => {
@@ -31,10 +31,10 @@ self.addEventListener("fetch", event => {
       fetch(event.request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put("/index.html", copy));
+          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
           return response;
         })
-        .catch(() => caches.match("/index.html"))
+        .catch(() => caches.match("./index.html"))
     );
     return;
   }
