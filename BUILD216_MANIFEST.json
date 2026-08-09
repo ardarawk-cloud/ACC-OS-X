@@ -1,0 +1,15 @@
+{
+  "build": 216,
+  "revision": "R6.12-AI-QUALITY-HARDENING-V1",
+  "baseline": "BUILD215 R6.11I META PAGE TOKEN RESOLUTION",
+  "connector_sha256": "ba85780e13f53d8149278d090fe6f5054f31dc1fb0af0204464d5c7561ea018a",
+  "connector_byte_identical_to_baseline": true,
+  "changed_files": [
+    "ACC-OS-X/app.js",
+    "AI_QUALITY_HARDENING_v1.0.md"
+  ],
+  "untouched_critical_files": [
+    "ACC-PUBLISH-CONNECTOR/worker.js",
+    "DEPLOY.txt"
+  ]
+}

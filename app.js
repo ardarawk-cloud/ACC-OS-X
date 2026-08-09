@@ -3,8 +3,8 @@
   "use strict";
 
   const ROOT = document.getElementById("root");
-  const CURRENT_VERSION = 215;
-  const PACKAGE_REVISION = "R6.11H-STORAGE-QUOTA-FIX";
+  const CURRENT_VERSION = 216;
+  const PACKAGE_REVISION = "R6.12-AI-QUALITY-HARDENING-V1";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -813,6 +813,68 @@ Mission: ${profile.mission||"—"}`},
   const gm5SetStage = stage => { ui.gm5Stage=stage; render(); };
   const gm5CompleteStage = stage => { if(!ui.gm5CompletedStages.includes(stage))ui.gm5CompletedStages.push(stage); render(); };
   const gm5Sleep = ms => new Promise(resolve=>setTimeout(resolve,ms));
+
+  // Build 216 — AI QUALITY HARDENING v1.0.
+  // Scope is deliberately upstream of Publish Core. R6.11I Meta connector is frozen.
+  const cleanPublicationCaption = value => String(value||"")
+    .replace(/^```[a-z0-9_-]*\s*/i,"")
+    .replace(/```\s*$/i,"")
+    .replace(/^\s*(?:CAPTION OUTPUT|GENERATED CAPTION|RESULT)\s*:?\s*/i,"")
+    .trim();
+  const hasInternalPublicText = value => /(?:caption output|generated caption|internal instructions?|debug data|placeholder copy|system prompt|assistant analysis|json output)/i.test(String(value||""));
+  const topicTokens = value => String(value||"").toLowerCase().replace(/https?:\/\/\S+/g," ").replace(/[^a-z0-9\u00c0-\u024f\u1e00-\u1eff\s]/gi," ").split(/\s+/).filter(word=>word.length>4);
+  const topicOverlap = (a,b) => {
+    const A=new Set(topicTokens(a)),B=new Set(topicTokens(b));
+    if(!A.size||!B.size)return 0;
+    let hit=0;A.forEach(word=>{if(B.has(word))hit+=1;});
+    return hit/Math.min(A.size,B.size);
+  };
+  const extractField = (value,label) => {
+    const match=String(value||"").match(new RegExp(`^\\s*${label}\\s*:\s*(.+)$`,"im"));
+    return match?.[1]?.trim()||"";
+  };
+  const latestLogoAsset = channelId => state.assets.find(item=>item.channelId===channelId && (item.mediaBase64||item.publicUrl) && /(?:logo|brand mark|channel mark)/i.test(`${item.type||""} ${item.title||""} ${item.stage||""}`));
+  const assetImageSrc = asset => asset?.mediaBase64?`data:${asset.mimeType||"image/png"};base64,${asset.mediaBase64}`:(directImageUrlFromAsset(asset)||asset?.publicUrl||null);
+  const loadCanvasImage = src => new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error("POSTER_IMAGE_DECODE_FAILED"));image.src=src;});
+  const fitPosterText = (ctx,text,maxWidth,start,min=42) => {let size=start;while(size>min){ctx.font=`800 ${size}px Arial,sans-serif`;if(ctx.measureText(text).width<=maxWidth)break;size-=2;}return size;};
+  const wrapPosterText = (ctx,text,maxWidth) => {const words=String(text||"").trim().split(/\s+/),lines=[];let line="";for(const word of words){const test=line?`${line} ${word}`:word;if(line&&ctx.measureText(test).width>maxWidth){lines.push(line);line=word;}else line=test;}if(line)lines.push(line);return lines;};
+  const composeDeterministicPoster = async (channelId,imageBase64,mimeType,materialOutput) => {
+    const visual=await loadCanvasImage(`data:${mimeType||"image/jpeg"};base64,${imageBase64}`);
+    const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1920;const ctx=canvas.getContext("2d",{alpha:false});
+    const scale=Math.max(canvas.width/visual.width,canvas.height/visual.height),dw=visual.width*scale,dh=visual.height*scale;
+    ctx.drawImage(visual,(canvas.width-dw)/2,(canvas.height-dh)/2,dw,dh);
+    const headline=extractField(materialOutput,"PUBLIC_HEADLINE")||extractField(materialOutput,"HEADLINE");
+    const subtitle=extractField(materialOutput,"PUBLIC_SUBTITLE")||extractField(materialOutput,"SUBTITLE");
+    if(!headline)throw new Error("QC_FAILED: HEADLINE_MISSING");
+    const grad=ctx.createLinearGradient(0,1180,0,1920);grad.addColorStop(0,"rgba(0,0,0,0)");grad.addColorStop(1,"rgba(0,0,0,.84)");ctx.fillStyle=grad;ctx.fillRect(0,1120,1080,800);
+    ctx.textBaseline="top";ctx.fillStyle="#fff";let fs=fitPosterText(ctx,headline,936,90,52);ctx.font=`800 ${fs}px Arial,sans-serif`;let y=1320;
+    for(const line of wrapPosterText(ctx,headline,936).slice(0,3)){ctx.fillText(line,72,y);y+=fs*1.08;}
+    if(subtitle){y+=24;ctx.fillStyle="rgba(255,255,255,.92)";ctx.font="500 38px Arial,sans-serif";for(const line of wrapPosterText(ctx,subtitle,936).slice(0,2)){ctx.fillText(line,72,y);y+=48;}}
+    const logo=latestLogoAsset(channelId);
+    if(logo){
+      const logoImage=await loadCanvasImage(assetImageSrc(logo));const maxW=190,maxH=130,ls=Math.min(maxW/logoImage.width,maxH/logoImage.height),lw=logoImage.width*ls,lh=logoImage.height*ls;
+      ctx.drawImage(logoImage,72,78,lw,lh);
+    }else{
+      ctx.fillStyle="rgba(0,0,0,.52)";ctx.fillRect(72,78,Math.min(600,Math.max(250,channelMap[channelId].name.length*26)),62);ctx.fillStyle="#fff";ctx.font="700 30px Arial,sans-serif";ctx.fillText(channelMap[channelId].name,92,94);
+    }
+    const dataUrl=canvas.toDataURL("image/jpeg",.94);
+    return {imageBase64:dataUrl.split(",")[1],mimeType:"image/jpeg",headline,subtitle,brandingMode:logo?"ORIGINAL_LOGO_ASSET":"DETERMINISTIC_CHANNEL_MARK",logoAssetId:logo?.id||null};
+  };
+  const gm5LocalQualityGate = channelId => {
+    const research=latestAssetByStage(channelId,"RESEARCH"),material=latestAssetByStage(channelId,"SCRIPT"),poster=latestAssetByStage(channelId,"POSTER"),caption=latestAssetByStage(channelId,"CAPTION");
+    const reasons=[];
+    if(!research?.output)reasons.push("RESEARCH_MISSING");
+    if(/RESEARCH_FAILED/i.test(String(research?.output||"")))reasons.push("RESEARCH_FAILED");
+    if(!material?.output||String(material.output).trim().length<140)reasons.push("MATERIAL_QUALITY_FAILED");
+    if(research?.output&&material?.output&&topicOverlap(research.output,material.output)<.05)reasons.push("TOPIC_CONSISTENCY_FAILED");
+    if(!poster?.mediaBase64&&!directImageUrlFromAsset(poster))reasons.push("POSTER_MISSING");
+    if(!/AI_TEXT_POLICY=NO_GENERATIVE_TEXT/i.test(String(poster?.output||"")))reasons.push("POSTER_TEXT_POLICY_FAILED");
+    if(!/BRANDING_MODE=(?:ORIGINAL_LOGO_ASSET|DETERMINISTIC_CHANNEL_MARK)/i.test(String(poster?.output||"")))reasons.push("BRANDING_LOGO_FAILED");
+    if(!/PUBLIC_HEADLINE=/i.test(String(poster?.output||"")))reasons.push("HEADLINE_FAILED");
+    if(!caption?.output||cleanPublicationCaption(caption.output).length<30)reasons.push("CAPTION_FAILED");
+    if(hasInternalPublicText(caption?.output))reasons.push("INTERNAL_DEBUG_TEXT");
+    return {ok:reasons.length===0,reasons};
+  };
   const gm5WaitForTask = async taskId => {
     const deadline=Date.now()+180000;
     while(Date.now()<deadline){
@@ -841,29 +903,39 @@ Mission: ${profile.mission||"—"}`},
     gm5SetStage("POSTER");
     const accessCode=getAiAccessCode();
     if(!accessCode)throw new Error("AI_ACCESS_MISSING");
+    const material=latestAssetByStage(channelId,"SCRIPT");
     const prompt=[
-      `Create the final social media poster for ${channelMap[channelId].name}.`,
-      `Use this production direction:`,
+      `Create ONLY a clean visual/background artwork for ${channelMap[channelId].name}.`,
+      `Use this visual direction:`,
       String(posterTask?.output||"").slice(0,1700),
-      `Clean professional composition. No fake logos. No watermark. Avoid unreadable tiny text.`
+      `CRITICAL TYPOGRAPHY SEPARATION: render absolutely NO headline, subtitle, logo, watermark, UI text, signs, labels, letters, numbers, pseudo-text, fake symbols or random lettering anywhere in the image.`,
+      `Reserve clean negative space in the upper-left for branding and lower third for deterministic ACC headline overlay.`,
+      `Vertical 9:16 composition for a final 1080x1920 social poster. Clean, professional, publication-ready visual.`
     ].join("\n\n");
     const response=await fetch("/api/acc-image",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({prompt,channelId})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.ok||!data.imageBase64)throw new Error(data?.error?.code||data?.error?.message||`IMAGE_HTTP_${response.status}`);
-    addAsset({channelId,type:"IMAGE",title:`REAL AI POSTER — ${channelMap[channelId].name}`,stage:"POSTER",taskId:posterTask?.id||null,output:`Generated by ${data.model||"Cloudflare Workers AI"}`,mediaBase64:data.imageBase64,mimeType:data.mimeType||"image/jpeg"});
-    addActivity(`Real AI poster generated → ${data.model||"Workers AI"}`,channelId,"POSTER");
+    const composed=await composeDeterministicPoster(channelId,data.imageBase64,data.mimeType||"image/jpeg",material?.output||"");
+    const output=[
+      `Generated visual by ${data.model||"Cloudflare Workers AI"}`,
+      `AI_TEXT_POLICY=NO_GENERATIVE_TEXT`,
+      `TYPOGRAPHY=DETERMINISTIC_ACC_OVERLAY`,
+      `PUBLIC_HEADLINE=${composed.headline}`,
+      composed.subtitle?`PUBLIC_SUBTITLE=${composed.subtitle}`:"",
+      `BRANDING_MODE=${composed.brandingMode}`,
+      composed.logoAssetId?`LOGO_ASSET_ID=${composed.logoAssetId}`:"LOGO_ASSET_ID=NOT_AVAILABLE"
+    ].filter(Boolean).join("\n");
+    addAsset({channelId,type:"IMAGE",title:`REAL AI POSTER — ${channelMap[channelId].name}`,stage:"POSTER",taskId:posterTask?.id||null,output,mediaBase64:composed.imageBase64,mimeType:composed.mimeType});
+    addActivity(`Clean AI visual + deterministic ACC overlay → ${composed.brandingMode}`,channelId,"POSTER");
     save();
-    return data;
+    return {...data,...composed};
   };
 
   const gm5QcDecision = output => {
-    const lines=String(output||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    for(const raw of lines.slice(0,8)){
-      const line=raw.toUpperCase().replace(/^[-*#>\s]+/,"").trim();
-      if(/^PASS\s+WITH\s+REVISION\b/.test(line))return "PASS_WITH_REVISION";
-      if(/^PASS\b/.test(line))return "PASS";
-      if(/^FAIL\b/.test(line))return "FAIL";
-    }
+    const first=String(output||"").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"";
+    const line=first.toUpperCase().replace(/^[-*#>\s]+/,"").trim();
+    if(/^QC_PASS\b/.test(line))return "PASS";
+    if(/^QC_FAILED\b/.test(line))return "FAIL";
     return "UNKNOWN";
   };
   const runGM5Mission = async () => {
@@ -886,23 +958,26 @@ Mission: ${profile.mission||"—"}`},
       const posterTask=await gm5RunWorkerStage("POSTER","POSTER",channel.id);
       await gm5GeneratePosterImage(channel.id,posterTask);
       await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
-      let qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
-      let decision=gm5QcDecision(qcTask.output);
 
-      // R6.11G QC CONTRACT FIX
-      // PASS -> publish; PASS WITH REVISION -> publish with warning;
-      // FAIL or malformed verdict -> halt.
-      if(decision==="PASS_WITH_REVISION"){
+      // Build 216 deterministic QC preflight — defects never reach Publish Core.
+      const localGate=gm5LocalQualityGate(channel.id);
+      if(!localGate.ok){
+        const reason=localGate.reasons.join(", ");
+        addActivity(`QC_FAILED → ${reason}`,channel.id,"QC");
+        throw new Error(`QC_FAILED: ${reason}`);
+      }
+
+      const qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
+      const decision=gm5QcDecision(qcTask.output);
+      if(decision==="FAIL"){
         const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
-        addActivity(`GM5 QC PASS WITH REVISION → publish allowed | ${qcNote}`,channel.id,"QC");
-      }else if(decision==="FAIL"){
+        addActivity(`QC_FAILED → ${qcNote}`,channel.id,"QC");
+        throw new Error(`QC_FAILED: ${qcNote}`);
+      }
+      if(decision!=="PASS"){
         const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
-        addActivity(`GM5 QC FAIL → ${qcNote}`,channel.id,"QC");
-        throw new Error("QC_FAILED");
-      }else if(decision!=="PASS"){
-        const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
-        addActivity(`GM5 QC CONTRACT UNKNOWN → ${qcNote}`,channel.id,"QC");
-        throw new Error("QC_DECISION_UNKNOWN");
+        addActivity(`QC_FAILED → QC_CONTRACT_INVALID | ${qcNote}`,channel.id,"QC");
+        throw new Error("QC_FAILED: QC_CONTRACT_INVALID");
       }
 
       // Critical safety: never silently reuse Alpha-2 test media for a GM5 real-content run.
@@ -1212,11 +1287,11 @@ ${contextLine}`
 
   const workerPrompt = task => {
     const stageRules={
-      RESEARCH:"Create a grounded research brief with audience intent, content angles, factual/verification needs, risks, and a production recommendation. If current external facts are required, mark them VERIFICATION REQUIRED instead of inventing them.",
-      SCRIPT:"Create a production-ready script using the locked profile format and the latest upstream research asset. Preserve exact series names, batch counts, canon, tone, and workflow rules.",
-      POSTER:"Create poster direction and a production-ready image prompt only. Preserve the profile visual identity and exact batch/file rules. Do not claim an image file was generated.",
-      CAPTION:"Create publish-ready caption copy using the locked profile language, platform, credits/tag rules, CTA style, and exact batch requirements.",
-      QC:"Audit the upstream production package against locked profile context. A POSTER asset with hasMedia=true counts as a real generated poster. Return exactly one decision on the first line: PASS, PASS WITH REVISION, or FAIL. Then give concise reasons. Never request revision merely because binary image bytes are not embedded in the text output when hasMedia=true.",
+      RESEARCH:"Research ONLY the selected Channel Passport mission/topic using supplied context and verifiable evidence. Keep one topic consistent. Never invent facts. Return structured sections: TOPIC, VERIFIED_FACTS, SOURCE_NOTES, ANGLE, KEY_POINTS, VISUAL_FACTS, RISK_NOTES. If a required claim cannot be verified from available evidence, return RESEARCH_FAILED with the specific missing evidence instead of guessing.",
+      SCRIPT:"Turn the latest verified RESEARCH asset into specific, useful, engaging production material. No generic filler. Preserve Channel Passport tone, language, audience, mission, exact series/batch rules and canon. Keep exactly the same topic. Include one line PUBLIC_HEADLINE: <final headline> and, only if useful, PUBLIC_SUBTITLE: <final subtitle>. Do not put AI commentary or debug text in public-facing copy.",
+      POSTER:"Create visual direction and an image-generation prompt for CLEAN ARTWORK/BACKGROUND ONLY. Do not ask image AI to render headline, subtitle, logos, watermarks, signs, labels, UI text, letters, numbers or pseudo-text. Reserve safe negative space for deterministic ACC typography/branding overlay. Default final format is 1080x1920 vertical 9:16 unless the Channel Passport explicitly overrides it.",
+      CAPTION:"Return ONLY the final publish-ready caption in the locked Channel Passport language, tone, platform and credit/tag rules. No labels such as Caption Output, Generated Caption, Result; no JSON, markdown wrapper, debug data, internal instructions or placeholder copy.",
+      QC:"HARD BLOCK audit of the exact upstream package. Validate research exists, topic consistency, material quality, real poster media, no known generative typography/pseudo-text, deterministic branding/logo status, headline, final caption, absence of internal/debug text, and Channel Passport identity. First line must be exactly QC_PASS or QC_FAILED: <specific reason>. Any defect is QC_FAILED. PASS WITH REVISION is forbidden. Never allow defective content to Publish Core.",
       PUBLISHING:"Create a publishing checklist only. Never claim anything was posted or scheduled unless an executed ACC action proves it."
     };
     return `You are ${task.workerName}, specialized worker ${task.workerType} inside ACC OS X.
@@ -1231,6 +1306,8 @@ Operational rules:
 - Use upstreamAssets when present; do not restart the workflow from scratch.
 - Do not invent canon, current state, source verification, approvals, publication, or generated files.
 - Preserve exact locked names, counts, order, language, and format.
+- Keep one selected topic consistent across Research → Material → Poster → Caption → QC.
+- Public-facing outputs must never contain internal labels, instructions, JSON/debug data or placeholder copy.
 - Return only the useful stage deliverable, not a discussion of these instructions.`;
   };
 
@@ -1272,7 +1349,10 @@ Operational rules:
       const data=await response.json();
       if(!data.reply)throw new Error("AI worker response kosong.");
       const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
-      current.status="SUCCESS";current.output=data.reply;current.completedAt=now();
+      const hardenedOutput=current.stage==="CAPTION"?cleanPublicationCaption(data.reply):String(data.reply||"").trim();
+      if(current.stage==="CAPTION" && (hardenedOutput.length<30 || hasInternalPublicText(hardenedOutput)))throw new Error("CAPTION_QUALITY_FAILED");
+      if(current.stage==="RESEARCH" && /RESEARCH_FAILED/i.test(hardenedOutput))throw new Error(hardenedOutput.slice(0,240));
+      current.status="SUCCESS";current.output=hardenedOutput;current.completedAt=now();
       current.provider=data.provider||"Cloudflare Workers AI";current.model=data.model||"server-ai";current.providerMode="SERVER_AI";
       state.ai.providerMode="SERVER_AI";updateWorkerStats(current.workerType,"SUCCESS");
       addActivity(`${current.workerName} completed via server AI`,current.channelId,current.stage);
