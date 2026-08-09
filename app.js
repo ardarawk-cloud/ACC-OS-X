@@ -632,7 +632,22 @@ Mission: ${profile.mission||"—"}`},
       .ai-fab small{display:none!important}.ai-fab>span{display:grid!important}.theme-card[role="button"]{cursor:pointer!important;user-select:none!important;-webkit-tap-highlight-color:transparent}.theme-card[role="button"]:active{transform:scale(.985)}
       .ai-fab:hover{filter:brightness(1.08)!important}
       .ai-fab:active{transform:scale(.96)!important}
-      .footer-note{opacity:.58;letter-spacing:.12em!important}
+      .footer-note{opacity:.58;letter-spacing:.12em!important;padding:18px 72px 6px 4px!important}
+      .section{scroll-margin-top:82px}
+      .card-title{line-height:1.15!important}
+      .meta,.muted.small{line-height:1.5!important}
+      .actions{gap:9px!important}
+      @media(max-width:430px){
+        .main{padding-left:10px!important;padding-right:10px!important}
+        .header{padding-left:12px!important;padding-right:12px!important}
+        .card{padding:14px!important}
+        .item{padding:12px!important}
+        .actions .btn{flex:1 1 145px!important}
+        .theme-grid{gap:8px!important}
+        .theme-card{min-height:92px!important;padding:9px!important}
+        .theme-swatches{height:24px!important}
+        .ai-fab{right:12px!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))!important}
+      }
       @media(max-width:720px){.main{padding-left:12px!important;padding-right:12px!important}.header{border-radius:0 0 22px 22px!important}.tabs{top:5px}.stats{gap:9px!important}.stats .card{min-height:78px}.brand-title{font-size:1.22rem!important}.select-grid{gap:8px!important}.ai-fab{right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;width:58px!important;height:58px!important;min-width:58px!important;min-height:58px!important;max-width:58px!important;max-height:58px!important}}
     `;
     document.head.appendChild(style);
@@ -2200,7 +2215,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const render=()=>{
     applyTheme();
     const scroll=window.scrollY;
-    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD ${CURRENT_VERSION} • UI FIX04</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka KAI" title="KAI" style="position:fixed!important;right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;left:auto!important;top:auto!important;width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important;margin:0!important;padding:0!important;border-radius:999px!important;z-index:9999!important;overflow:hidden!important;display:grid!important;place-items:center!important;background:linear-gradient(145deg,var(--accentStrong),var(--accent))!important;color:#fff!important;border:1px solid var(--accentBright)!important;box-shadow:0 14px 36px rgba(0,0,0,.38)!important;line-height:1!important;transform:none!important;animation:none!important;-webkit-appearance:none!important;appearance:none!important;font-size:0!important;text-indent:0!important;"><span aria-hidden="true" style="display:grid!important;place-items:center!important;width:34px!important;height:34px!important;margin:0!important;padding:0!important;border:1px solid rgba(255,255,255,.38)!important;border-radius:999px!important;font-size:1rem!important;font-weight:900!important;line-height:1!important;color:#fff!important;">K</span></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
+    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD ${CURRENT_VERSION} • UI FIX05</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka KAI" title="KAI" style="position:fixed!important;right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;left:auto!important;top:auto!important;width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important;margin:0!important;padding:0!important;border-radius:999px!important;z-index:9999!important;overflow:hidden!important;display:grid!important;place-items:center!important;background:linear-gradient(145deg,var(--accentStrong),var(--accent))!important;color:#fff!important;border:1px solid var(--accentBright)!important;box-shadow:0 14px 36px rgba(0,0,0,.38)!important;line-height:1!important;transform:none!important;animation:none!important;-webkit-appearance:none!important;appearance:none!important;font-size:0!important;text-indent:0!important;"><span aria-hidden="true" style="display:grid!important;place-items:center!important;width:34px!important;height:34px!important;margin:0!important;padding:0!important;border:1px solid rgba(255,255,255,.38)!important;border-radius:999px!important;font-size:1rem!important;font-weight:900!important;line-height:1!important;color:#fff!important;">K</span></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
     bindEvents();
     requestAnimationFrame(()=>{scrollTo(0,scroll);const list=document.getElementById("ai-message-list");if(list)list.scrollTop=list.scrollHeight;});
   };

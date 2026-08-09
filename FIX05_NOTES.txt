@@ -1,0 +1,12 @@
+ACC OS X BUILD 215 — UI FIX05 FINISHING
+
+Scope: visual/mobile finishing only.
+- tighter mobile spacing
+- safer action button wrapping
+- cleaner Theme Deck card sizing
+- footer clearance for KAI launcher
+- scroll/header spacing polish
+- cache revision bumped to FIX05
+
+Production, AI routing, queue, connector and publish logic unchanged.
+Marker: footer shows UI FIX05.
