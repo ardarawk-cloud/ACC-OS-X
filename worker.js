@@ -1,215 +1,195 @@
-// ACC OS X — REAL META FACEBOOK Publish Connector R3
-// Mission Alpha-3: real AI image bytes + caption publish to a Facebook Page.
-// Preserves R2 public media URL and R1 text-only fallbacks.
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-ACC-Access-Code",
+const JSON_HEADERS = {
+  "content-type": "application/json; charset=UTF-8",
+  "cache-control": "no-store"
 };
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
-  });
-}
+const json = (data, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 
-function firstText(...values) {
-  for (const v of values) if (typeof v === "string" && v.trim()) return v.trim();
+const normalizeMessages = (messages, context) => {
+  const clean = Array.isArray(messages)
+    ? messages
+        .filter(m => m && typeof m.content === "string")
+        .slice(-18)
+        .map(m => ({
+          role: ["system", "assistant", "user"].includes(m.role) ? m.role : "user",
+          content: m.content.slice(0, 50000)
+        }))
+    : [];
+
+  if (context) {
+    clean.unshift({
+      role: "system",
+      content:
+        "ACC OS X injected operational context follows. Treat it as the source of truth. " +
+        "Do not invent completed work, approvals, publication, canon, or verified facts.\n\n" +
+        JSON.stringify(context).slice(0, 70000)
+    });
+  }
+  return clean;
+};
+
+const extractReply = result => {
+  if (!result) return "";
+  if (typeof result.response === "string") return result.response;
+  if (typeof result.result === "string") return result.result;
+  if (typeof result.output_text === "string") return result.output_text;
+  if (typeof result.text === "string") return result.text;
+  if (Array.isArray(result.choices)) {
+    const value = result.choices[0]?.message?.content ?? result.choices[0]?.text;
+    if (typeof value === "string") return value;
+  }
   return "";
+};
+
+async function handleAi(request, env) {
+  if (request.method === "GET") {
+    return json({
+      ok: true,
+      service: "ACC OS X Server AI",
+      revision: "R6.10C-GM5.1-AI-IMAGE",
+      model: env.ACC_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast",
+      aiBinding: Boolean(env.AI)
+    });
+  }
+
+  if (request.method !== "POST") {
+    return json({ ok: false, error: { code: "METHOD_NOT_ALLOWED" } }, 405);
+  }
+
+  const supplied = (request.headers.get("X-ACC-Access-Code") || "").trim();
+  if (!supplied) {
+    return json({ ok: false, error: { code: "ACCESS_CODE_REQUIRED" } }, 401);
+  }
+
+  // If a Cloudflare secret already exists, enforce it.
+  // During current beta recovery, a non-empty device code remains accepted when
+  // the server secret has not yet been configured, preserving the existing PWA flow.
+  const expected = String(env.ACC_AI_ACCESS_CODE || env.ACC_ACCESS_CODE || "").trim();
+  if (expected && supplied !== expected) {
+    return json({ ok: false, error: { code: "ACCESS_DENIED" } }, 403);
+  }
+
+  if (!env.AI) {
+    return json({ ok: false, error: { code: "AI_BINDING_MISSING" } }, 503);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: { code: "INVALID_JSON" } }, 400);
+  }
+
+  const messages = normalizeMessages(body?.messages, body?.context);
+  if (!messages.length) {
+    return json({ ok: false, error: { code: "MESSAGES_REQUIRED" } }, 400);
+  }
+
+  const model = env.ACC_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast";
+
+  try {
+    const result = await env.AI.run(model, {
+      messages,
+      max_tokens: 1200,
+      temperature: 0.45
+    });
+
+    const reply = extractReply(result);
+    if (!reply) {
+      return json({
+        ok: false,
+        error: { code: "AI_EMPTY_RESPONSE" },
+        providerPayloadType: typeof result
+      }, 502);
+    }
+
+    return json({
+      ok: true,
+      reply,
+      provider: "Cloudflare Workers AI",
+      model,
+      revision: "R6.10C-GM5.1-AI-IMAGE"
+    });
+  } catch (error) {
+    return json({
+      ok: false,
+      error: {
+        code: "AI_INFERENCE_FAILED",
+        message: String(error?.message || error)
+      }
+    }, 502);
+  }
 }
 
-function getMessage(job) {
-  return firstText(
-    job?.message, job?.caption, job?.text,
-    job?.content?.message, job?.content?.caption, job?.content?.text,
-    job?.payload?.message, job?.payload?.caption, job?.payload?.text
-  );
-}
 
-function getMediaUrl(job) {
-  return firstText(
-    job?.mediaUrl, job?.imageUrl,
-    job?.content?.mediaUrl, job?.content?.imageUrl,
-    job?.payload?.mediaUrl, job?.payload?.imageUrl
-  );
-}
+async function handleImage(request, env) {
+  if (request.method === "GET") {
+    return json({
+      ok: true,
+      service: "ACC OS X Image AI",
+      revision: "R6.10C-GM5.1-REAL-AI-POSTER",
+      model: env.ACC_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell",
+      aiBinding: Boolean(env.AI)
+    });
+  }
 
-function getImageBase64(job) {
-  return firstText(
-    job?.imageBase64,
-    job?.content?.imageBase64,
-    job?.payload?.imageBase64
-  ).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
-}
+  if (request.method !== "POST") {
+    return json({ ok: false, error: { code: "METHOD_NOT_ALLOWED" } }, 405);
+  }
 
-function base64ToBytes(base64) {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
+  const supplied = (request.headers.get("X-ACC-Access-Code") || "").trim();
+  if (!supplied) return json({ ok: false, error: { code: "ACCESS_CODE_REQUIRED" } }, 401);
+  const expected = String(env.ACC_AI_ACCESS_CODE || env.ACC_ACCESS_CODE || "").trim();
+  if (expected && supplied !== expected) return json({ ok: false, error: { code: "ACCESS_DENIED" } }, 403);
+  if (!env.AI) return json({ ok: false, error: { code: "AI_BINDING_MISSING" } }, 503);
+
+  let body;
+  try { body = await request.json(); }
+  catch { return json({ ok: false, error: { code: "INVALID_JSON" } }, 400); }
+
+  const prompt = String(body?.prompt || "").trim().slice(0, 2048);
+  if (!prompt) return json({ ok: false, error: { code: "PROMPT_REQUIRED" } }, 400);
+
+  const model = env.ACC_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
+  try {
+    const result = await env.AI.run(model, {
+      prompt,
+      steps: 6,
+      seed: Math.floor(Math.random() * 2147483647)
+    });
+    const imageBase64 = result?.image;
+    if (typeof imageBase64 !== "string" || !imageBase64) {
+      return json({ ok: false, error: { code: "IMAGE_EMPTY_RESPONSE" } }, 502);
+    }
+    return json({
+      ok: true,
+      imageBase64,
+      mimeType: "image/jpeg",
+      provider: "Cloudflare Workers AI",
+      model,
+      revision: "R6.10C-GM5.1-REAL-AI-POSTER"
+    });
+  } catch (error) {
+    return json({
+      ok: false,
+      error: { code: "IMAGE_INFERENCE_FAILED", message: String(error?.message || error) }
+    }, 502);
+  }
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: { ...corsHeaders, "Access-Control-Max-Age": "86400" }
-      });
+    if (url.pathname === "/api/acc-ai") {
+      return handleAi(request, env);
     }
 
-    if (
-      request.method === "GET" &&
-      (url.pathname === "/" || url.pathname === "/health" || url.pathname === "/api/acc-publish")
-    ) {
-      return json({
-        ok: true,
-        service: "ACC Publish Connector",
-        system: "ACC OS X",
-        status: "ONLINE",
-        revision: "REAL_META_R3_BASE64",
-        connector: "META_FACEBOOK",
-        mode: "REAL",
-        capabilities: ["TEXT_FEED", "PHOTO_URL_CAPTION", "PHOTO_BASE64_CAPTION"],
-        configured: Boolean(env.META_PAGE_ID && env.META_PAGE_ACCESS_TOKEN),
-      });
+    if (url.pathname === "/api/acc-image") {
+      return handleImage(request, env);
     }
 
-    if (request.method === "POST" && ["/", "/publish", "/api/acc-publish"].includes(url.pathname)) {
-      if (env.ACC_ACCESS_CODE) {
-        const supplied = request.headers.get("X-ACC-Access-Code") || "";
-        if (supplied !== env.ACC_ACCESS_CODE) {
-          return json({ ok: false, error: { code: "UNAUTHORIZED", message: "Invalid ACC access code" } }, 401);
-        }
-      }
-
-      if (!env.META_PAGE_ID || !env.META_PAGE_ACCESS_TOKEN) {
-        return json({
-          ok: false,
-          connector: "META_FACEBOOK",
-          status: "NOT_PUBLISHED",
-          error: {
-            code: "META_NOT_CONFIGURED",
-            message: "META_PAGE_ID / META_PAGE_ACCESS_TOKEN belum dipasang di Cloudflare Worker secrets."
-          },
-        }, 503);
-      }
-
-      let job;
-      try { job = await request.json(); }
-      catch {
-        return json({ ok: false, status: "NOT_PUBLISHED", error: { code: "INVALID_JSON", message: "Invalid JSON body" } }, 400);
-      }
-
-      const message = getMessage(job);
-      const mediaUrl = getMediaUrl(job);
-      const imageBase64 = getImageBase64(job);
-      const mimeType = firstText(job?.mimeType, job?.content?.mimeType, job?.payload?.mimeType) || "image/jpeg";
-
-      if (!message && !mediaUrl && !imageBase64) {
-        return json({
-          ok: false,
-          status: "NOT_PUBLISHED",
-          error: { code: "EMPTY_CONTENT", message: "Caption/message dan media kosong; publish dibatalkan." }
-        }, 400);
-      }
-
-      if (mediaUrl && !/^https:\/\/\S+$/i.test(mediaUrl)) {
-        return json({
-          ok: false,
-          connector: "META_FACEBOOK",
-          status: "NOT_PUBLISHED",
-          error: { code: "INVALID_MEDIA_URL", message: "mediaUrl harus public HTTPS URL." }
-        }, 400);
-      }
-
-      if (imageBase64 && imageBase64.length > 20_000_000) {
-        return json({
-          ok: false,
-          connector: "META_FACEBOOK",
-          status: "NOT_PUBLISHED",
-          error: { code: "IMAGE_TOO_LARGE", message: "Base64 image terlalu besar untuk connector beta." }
-        }, 413);
-      }
-
-      const graphVersion = firstText(env.META_GRAPH_VERSION) || "v23.0";
-      const base = `https://graph.facebook.com/${graphVersion}/${encodeURIComponent(env.META_PAGE_ID)}`;
-
-      let endpoint;
-      let requestBody;
-      let publishMode;
-
-      if (imageBase64) {
-        endpoint = `${base}/photos`;
-        const form = new FormData();
-        const bytes = base64ToBytes(imageBase64);
-        form.set("source", new Blob([bytes], { type: mimeType }), "acc-os-x-poster.jpg");
-        if (message) form.set("caption", message);
-        form.set("access_token", env.META_PAGE_ACCESS_TOKEN);
-        requestBody = form;
-        publishMode = "PHOTO_BASE64_CAPTION";
-      } else {
-        const form = new URLSearchParams();
-        if (mediaUrl) {
-          endpoint = `${base}/photos`;
-          form.set("url", mediaUrl);
-          if (message) form.set("caption", message);
-          publishMode = "PHOTO_URL_CAPTION";
-        } else {
-          endpoint = `${base}/feed`;
-          form.set("message", message);
-          publishMode = "TEXT_FEED";
-        }
-        form.set("access_token", env.META_PAGE_ACCESS_TOKEN);
-        requestBody = form;
-      }
-
-      let metaResponse;
-      let metaData;
-      try {
-        metaResponse = await fetch(endpoint, { method: "POST", body: requestBody });
-        metaData = await metaResponse.json();
-      } catch (err) {
-        return json({
-          ok: false,
-          connector: "META_FACEBOOK",
-          status: "NOT_PUBLISHED",
-          error: { code: "META_NETWORK_ERROR", message: String(err?.message || err) }
-        }, 502);
-      }
-
-      if (!metaResponse.ok || !(metaData?.id || metaData?.post_id)) {
-        return json({
-          ok: false,
-          connector: "META_FACEBOOK",
-          status: "NOT_PUBLISHED",
-          error: {
-            code: "META_PUBLISH_FAILED",
-            message: metaData?.error?.message || `Meta HTTP ${metaResponse.status}`,
-            type: metaData?.error?.type || null,
-            metaCode: metaData?.error?.code || null,
-            metaSubcode: metaData?.error?.error_subcode || null,
-          },
-        }, metaResponse.status >= 400 && metaResponse.status < 600 ? metaResponse.status : 502);
-      }
-
-      return json({
-        ok: true,
-        connector: "META_FACEBOOK",
-        mode: "REAL",
-        publishMode,
-        status: "PUBLISHED",
-        externalPostId: metaData.post_id || metaData.id,
-        publishedAt: new Date().toISOString(),
-        idempotencyKey: job?.idempotencyKey || null,
-        revision: "REAL_META_R3_BASE64"
-      });
-    }
-
-    return json({ ok: false, error: { code: "NOT_FOUND", message: "Endpoint not found" } }, 404);
-  },
+    return env.ASSETS.fetch(request);
+  }
 };

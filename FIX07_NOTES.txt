@@ -1,0 +1,8 @@
+ACC OS X BUILD 215 — UI FIX07 / FREEZE CANDIDATE
+
+- Final mobile spacing and touch-target polish
+- Active Theme Deck card now has a clear check indicator
+- Extra narrow screens use one-column theme cards
+- Footer reserves safe space for KAI launcher
+- Reduced-motion support hardened
+- No production, connector, AI routing, queue, or publish logic changed
