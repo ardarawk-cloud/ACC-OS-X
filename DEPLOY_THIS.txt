@@ -1,0 +1,26 @@
+ACC OS X BUILD 215 — BACKEND ROUTE HOTFIX R6.11C
+
+TARGET WORKER:
+acc-os-x-baxkup
+
+REPLACE ONLY:
+Worker source -> worker.js
+
+REQUIRED ROUTES INCLUDED:
+GET/POST /api/acc-ai
+GET/POST /api/acc-image
+
+DO NOT CHANGE:
+- env.AI binding
+- env.ASSETS binding
+- ACC_AI_MODEL
+- ACC_IMAGE_MODEL
+- access-code secrets
+- frontend/UI
+
+TEST AFTER DEPLOY:
+1. Open https://acc-os-x-baxkup.ardarawk.workers.dev/api/acc-ai
+   Expected: {"ok":true,...,"aiBinding":true}
+2. Open https://acc-os-x-baxkup.ardarawk.workers.dev/api/acc-image
+   Expected: {"ok":true,...,"aiBinding":true}
+3. Only after both pass, return to ACC OS X and press RETRY MISSION once.
