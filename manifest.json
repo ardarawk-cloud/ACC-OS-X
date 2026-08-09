@@ -1,28 +1,39 @@
 {
-  "name": "ACC OS X",
+  "id": "/",
   "short_name": "ACC OS X",
-  "description": "Arda Core Corporation Operating System",
+  "name": "ACC OS X",
+  "description": "ACC OS X — KAI Live Operations",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#020617",
   "theme_color": "#020617",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "lang": "id-ID",
+  "categories": [
+    "business",
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
-      "src": "./icon-192-r63.png",
+      "src": "kai-icon-192-v216.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-512-r63.png",
+      "src": "kai-icon-512-v216.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-maskable-512-r63.png",
+      "src": "kai-icon-maskable-512-v216.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

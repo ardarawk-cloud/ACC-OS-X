@@ -1,14 +1,28 @@
-# ACC OS X Build 214 R3 QC
+# Build 213 QC Checklist
 
-- [ ] PWA updates from Build 214 R2 without reinstall
-- [ ] Active profile remains unchanged
-- [ ] Ask `Apa profil aktif saya dan apa tugas utama TechVerse?`
-- [ ] Reply shows `Workspace ACC Enterprise`, never `Workspace undefined`
-- [ ] Injected context list excludes `ACC AI Note` entries
-- [ ] Knowledge Vault labels prior ACC AI Notes as `HISTORY ONLY`
-- [ ] Save to Vault creates one history-only AI Note
-- [ ] Sending the same profile/context question still reports only production context
-- [ ] Send to Queue creates one WAITING queue item
-- [ ] Apply to Pipeline creates an asset without auto-advancing workflow
-- [ ] Registry counts remain 28 channels / 13 studio series / 7 planned
-- [ ] Mobile navigation remains within viewport
+- [ ] Create Build 212 safety backup before deploy
+- [ ] Update banner appears in the installed Build 212 PWA
+- [ ] Header shows Build 213 • Batch Profile Initialization
+- [ ] Existing Build 210–212 backup, mission and archive remain available
+- [ ] Ecosystem → Registry shows 41 production profiles
+- [ ] READY counter shows 41
+- [ ] PENDING counter shows 0
+- [ ] Build 213 Report shows 7/7 READY
+- [ ] ARDMRN Insight status is READY
+- [ ] Hikayat Pohon Ganja status is READY
+- [ ] Distorsi Sejarah Punk status is READY
+- [ ] Planet Fauna status is READY
+- [ ] ARK Garage status is READY
+- [ ] Ruang DJ status is READY
+- [ ] Mr Laziz status is READY
+- [ ] Each initialized profile opens with 4 active context entries
+- [ ] Each initialized profile passport shows v4.0
+- [ ] Existing custom context entries remain preserved
+- [ ] Channel Registry still contains exactly 28 channels
+- [ ] Studio Series Registry still contains exactly 13 series
+- [ ] Planned Ling Tian list contains exactly 7 LOCKED items
+- [ ] PL-307 Shui Yue — Mutiara Samudra is visible under Legenda Ling Tian Universe
+- [ ] Creative, Business, Operations, Corporate and System registries are unchanged
+- [ ] Personal exclusion rule remains visible
+- [ ] System Health: schema VALID, PWA INSTALLED, service worker SUPPORTED
+- [ ] Create Post-Migration Safety Backup

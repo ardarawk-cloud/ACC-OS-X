@@ -1,28 +1,33 @@
-# Deploy ACC OS X Build 214 R2 — No-Agent
+# ACC OS X Build 213 — Batch Profile Initialization
 
-## Recommended path
-Cloudflare is the primary host for this package. Netlify Agent Runner is not required.
+Deploy this folder or ZIP to the same permanent Netlify project/domain used by the installed ACC OS X PWA.
 
-### Static deploy from phone
-1. Keep/export a Build 213 safety backup.
-2. In Cloudflare Workers & Pages, create or update the ACC OS X static deployment.
-3. Upload the Build 214 R2 files.
-4. Open the new deployment and confirm `Build 214 • ACC AI Console / No-Agent`.
-5. Test Profile, Registry, Backup Center and the floating AI icon.
-6. ACC AI will work immediately in `LOCAL SAFE` mode.
-7. Install/update the PWA only after QC.
+## Update path
+1. Create a safety backup in Build 212.
+2. Upload this entire folder/ZIP to Netlify **Production deploys**.
+3. Open the installed ACC OS X PWA.
+4. Press **UPDATE** when the update banner appears.
+5. Confirm the header shows **Build 213 • Batch Profile Initialization**.
+6. Open **Ecosystem → Registry** and check the Build 213 report.
 
-### Optional real AI
-For generative AI, deploy the included `cloudflare-worker.mjs` with `wrangler.jsonc` through GitHub/Wrangler, then add server secrets:
-- `ACC_AI_ACCESS_CODE`
-- `OPENAI_API_KEY`
-Optional: `ACC_AI_MODEL` (default `gpt-5.6-luna`).
+## Expected profile state
+- Production profiles: 41
+- Channels: 28
+- Studio Series: 13
+- READY / initialized: 41
+- PROFILE_PENDING: 0
+- Newly initialized in this batch: 7
+- Planned Ling Tian Series: 7 LOCKED
 
-The browser never needs the OpenAI API key.
+## Build 213 batch
+- ARDMRN Insight
+- Hikayat Pohon Ganja
+- Distorsi Sejarah Punk
+- Planet Fauna
+- ARK Garage
+- Ruang DJ
+- Mr Laziz
 
-## PWA/data rules
-- Manifest ID stays `/`.
-- Build 213 storage is included in migration keys.
-- Same origin: existing localStorage can migrate automatically.
-- New Cloudflare origin: import the exported JSON backup.
-- Do not uninstall the known-good PWA until the new build passes QC.
+Registry correction included: **PL-307 Shui Yue — Mutiara Samudra** is the seventh planned Ling Tian series and remains `LOCKED — Awaiting Canon Debut`.
+
+All Build 212 classifications remain unchanged. Do not uninstall the PWA and do not create a new Netlify project.

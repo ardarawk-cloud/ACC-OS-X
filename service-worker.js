@@ -1,8 +1,8 @@
 
-const CACHE_NAME = "acc-os-x-build-214-r610c-gm4-3-real-media-publish";
+const CACHE_NAME = "acc-os-x-build-216-identity-kai";
 const SHELL = [
   "./","./index.html","./app.js","./styles.css","./manifest.json","./version.json",
-  "./icon-192-r63.png","./icon-512-r63.png","./icon-maskable-512-r63.png"
+  "./kai-icon-192-v216.png","./kai-icon-512-v216.png","./kai-icon-maskable-512-v216.png"
 ];
 
 self.addEventListener("install", event => {
