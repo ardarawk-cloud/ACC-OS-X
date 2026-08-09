@@ -1,0 +1,30 @@
+ACC OS X BUILD 215 — MISSION ALPHA LAUNCH CANDIDATE R6.11B
+
+Purpose:
+First reliable REAL end-to-end Facebook auto-publish.
+
+Hardening added:
+1. Mission preflight checks /api/acc-ai before resetting workflow.
+2. Mission preflight checks /api/acc-image and AI binding.
+3. Mission preflight checks ACC Publish Connector health/configuration.
+4. Mission aborts before production if Meta connector is not configured.
+5. Real publish no longer falls back to the missing Alpha-2 test poster.
+6. Real publish requires actual AI poster bytes or a real HTTPS poster asset.
+7. Existing UI FIX07 is preserved.
+8. No Meta credentials are stored in this ZIP.
+
+Expected connector health:
+connector: META_FACEBOOK
+configured: true
+revision: REAL_META_R3_BASE64
+
+Mission Alpha PASS condition:
+READY -> RESEARCH -> MATERIAL -> POSTER -> CAPTION -> QC -> PUBLISH -> VERIFY -> DONE
+with connector=META_FACEBOOK and a non-empty externalPostId.
+
+Deploy order:
+A. Deploy ACC-OS-X/worker.js + app.js + service-worker.js to ACC OS X.
+B. Deploy ACC-PUBLISH-CONNECTOR/worker.js to the connector Worker.
+C. Keep existing Cloudflare secrets; do not put secrets in frontend source.
+D. Open ACC OS X, confirm AI Access and Connector Access on the device.
+E. Run START MISSION on Tukang Tambang.
