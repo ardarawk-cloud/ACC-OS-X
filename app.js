@@ -800,11 +800,11 @@ Mission: ${profile.mission||"—"}`},
     }
     throw new Error("TASK_TIMEOUT");
   };
-  const gm5RunWorkerStage = async (displayStage,workerStage,channelId) => {
+  const gm5RunWorkerStage = async (displayStage,workerStage,channelId,extraGoal="") => {
     gm5SetStage(displayStage);
     const task=routeTask({
       stage:workerStage,
-      goal:`GM5 one-button production for ${channelMap[channelId].name}. Execute ${displayStage} using locked profile context and latest upstream assets.`,
+      goal:`GM5 one-button production for ${channelMap[channelId].name}. Execute ${displayStage} using locked profile context and latest upstream assets.${extraGoal?`\n\n${extraGoal}`:""}`,
       channelId,autoRun:true,autoApply:true,source:"GM5_ONE_BUTTON",keepPipeline:true
     });
     if(!task?.id)throw new Error(`${displayStage}_ROUTE_FAILED`);
@@ -863,16 +863,24 @@ Mission: ${profile.mission||"—"}`},
       let qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
       let decision=gm5QcDecision(qcTask.output);
 
-      // R6.11E: bounded self-correction. QC is never bypassed.
-      // A rejected output is revised by the existing production workers,
-      // then audited again. Maximum 3 revision cycles.
+      // R6.11F: feed the exact QC response into the next revision.
+      // QC is never bypassed; only a fresh PASS can continue to publish.
       for(let qcAttempt=1; decision!=="PASS" && qcAttempt<=3; qcAttempt++){
-        addActivity(`GM5 QC ${decision} → auto revision ${qcAttempt}/3`,channel.id,"QC");
-        await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
-        qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
+        const qcFeedback=String(qcTask?.output||"").slice(0,3500);
+        addActivity(`GM5 QC ${decision} → feedback revision ${qcAttempt}/3`,channel.id,"QC");
+        await gm5RunWorkerStage(
+          "CAPTION","CAPTION",channel.id,
+          `QC REVISION REQUIRED — attempt ${qcAttempt}/3. Revise the latest caption/material specifically to resolve the following auditor feedback. Do not repeat the rejected output.\n\nQC FEEDBACK:\n${qcFeedback}`
+        );
+        qcTask=await gm5RunWorkerStage(
+          "QC","QC",channel.id,
+          `This is QC recheck ${qcAttempt}/3 after a revision. Audit the newly revised latest assets, not the previously rejected version. First non-empty line MUST be exactly PASS, PASS WITH REVISION, or FAIL, followed by concise reasons.`
+        );
         decision=gm5QcDecision(qcTask.output);
       }
       if(decision!=="PASS"){
+        const finalFeedback=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
+        addActivity(`QC FINAL FEEDBACK → ${finalFeedback}`,channel.id,"QC");
         throw new Error(decision==="REVISION"?"QC_REVISION_LIMIT_REACHED":decision==="FAIL"?"QC_FAILED":"QC_DECISION_UNKNOWN");
       }
 
