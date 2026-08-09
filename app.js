@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 215;
-  const PACKAGE_REVISION = "R6.11B-MISSION-ALPHA-LAUNCH";
+  const PACKAGE_REVISION = "R6.11A-LIVE-OPERATIONS-BETA";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -850,11 +850,7 @@ Mission: ${profile.mission||"—"}`},
     ui.gm5Running=true;ui.gm5Stage="READY";ui.gm5Error="";ui.gm5CompletedStages=[];ui.gm5StartedAt=now();ui.gm5FinishedAt=null;
     ui.tab="production";ui.productionTab="pipeline";
     try{
-      addActivity("Mission Alpha preflight started",channel.id,"READY");save();render();
-      await missionAlphaPreflight();
-      showToast("MISSION ALPHA PREFLIGHT PASS ✅");
-      // Only reset the workflow after AI + image AI + Meta connector are confirmed online.
-      // This prevents a service outage from destroying the current production state.
+      // Fresh production run. Previous completed run remains in assets/activity/publish history.
       state.workflows[channel.id]=emptyWorkflow();
       save();render();
       gm5CompleteStage("READY");
@@ -1394,32 +1390,6 @@ Operational rules:
       showToast(`PUBLISH API OFFLINE — ${String(error?.message||error)}`);
     }
   };
-  const missionAlphaPreflight=async()=>{
-    const checks=[];
-    const checkJson=async(label,url,options={})=>{
-      try{
-        const response=await fetch(url,{cache:"no-store",...options,headers:{"Accept":"application/json",...(options.headers||{})}});
-        const data=await response.json().catch(()=>({}));
-        if(!response.ok||!data.ok)throw new Error(data?.error?.code||data?.error?.message||`HTTP ${response.status}`);
-        checks.push({label,ok:true,data});
-        return data;
-      }catch(error){
-        const message=String(error?.message||error);
-        checks.push({label,ok:false,error:message});
-        throw new Error(`${label}_PREFLIGHT_FAILED:${message}`);
-      }
-    };
-
-    const ai=await checkJson("AI","/api/acc-ai");
-    if(ai.aiBinding===false)throw new Error("AI_BINDING_MISSING");
-    const image=await checkJson("IMAGE_AI","/api/acc-image");
-    if(image.aiBinding===false)throw new Error("IMAGE_AI_BINDING_MISSING");
-    const publish=await checkJson("PUBLISH_CONNECTOR",getPublishEndpoint());
-    if(publish.configured===false)throw new Error("META_NOT_CONFIGURED");
-    if(String(publish.connector||"").toUpperCase()!=="META_FACEBOOK")throw new Error("META_CONNECTOR_NOT_READY");
-    addActivity(`Mission Alpha preflight PASS → ${publish.revision||"connector ready"}`,activeChannel().id,"READY");
-    return {ai,image,publish,checks};
-  };
   const sanitizeSocialText = value => String(value||"")
     .replace(/\\*\\*(.*?)\\*\\*/g,"$1")
     .replace(/__(.*?)__/g,"$1")
@@ -1449,8 +1419,7 @@ Operational rules:
     const assetMediaUrl=directImageUrlFromAsset(posterAsset);
     const imageBase64=posterAsset?.mediaBase64||null;
     const mimeType=posterAsset?.mimeType||"image/jpeg";
-    const mediaUrl=imageBase64?null:assetMediaUrl;
-    if(!imageBase64 && !mediaUrl)throw new Error("REAL_POSTER_MEDIA_REQUIRED");
+    const mediaUrl=imageBase64?null:(assetMediaUrl||alpha2TestMediaUrl());
     return {
       ...job,
       target,
@@ -1489,7 +1458,18 @@ Operational rules:
       const payload=buildPublishPayload(job);
       const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify(payload)});
       const data=await response.json().catch(()=>({}));
-      if(!response.ok||!data.ok)throw new Error(data?.error?.code||data?.error?.message||`HTTP ${response.status}`);
+      if(!response.ok||!data.ok){
+        const e=data?.error||{};
+        const detail=[
+          e.code||`HTTP_${response.status}`,
+          e.metaCode!=null?`META_CODE_${e.metaCode}`:"",
+          e.metaSubcode!=null?`SUBCODE_${e.metaSubcode}`:"",
+          e.type?`TYPE_${e.type}`:"",
+          e.message?String(e.message):"",
+          e.fbtraceId?`TRACE_${e.fbtraceId}`:""
+        ].filter(Boolean).join(" | ");
+        throw new Error(detail||`HTTP ${response.status}`);
+      }
       const current=state.publishJobs.find(item=>item.id===job.id);if(!current)return;
       current.status="PUBLISHED";current.connector=data.connector||job.connector||"SERVER";current.externalPostId=data.externalPostId;current.publishedAt=data.publishedAt||now();current.updatedAt=now();
       current.publishMode=data.publishMode||null;
@@ -1801,7 +1781,7 @@ Operational rules:
     const status=job?.status||"READY";
     const published=job?.status==="PUBLISHED"&&job?.connector==="META_FACEBOOK";
     const canPublish=wf.status==="COMPLETED"&&!published;
-    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><div class="publish-gate-logo" style="width:42px;height:42px;min-width:42px;margin-right:12px;display:grid;place-items:center;border-radius:12px;overflow:hidden">${shieldSvg()}</div><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • MISSION ALPHA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${assetMediaUrl?"PUBLIC POSTER URL READY":"ALPHA-2 TEST MEDIA READY"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
+    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><div class="publish-gate-logo" style="width:42px;height:42px;min-width:42px;margin-right:12px;display:grid;place-items:center;border-radius:12px;overflow:hidden">${shieldSvg()}</div><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${assetMediaUrl?"PUBLIC POSTER URL READY":"ALPHA-2 TEST MEDIA READY"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
   };
 
   const gm5PipelinePanelHtml = channel => {
