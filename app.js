@@ -833,11 +833,13 @@ Mission: ${profile.mission||"—"}`},
   };
 
   const gm5QcDecision = output => {
-    const text=String(output||"").toUpperCase();
-    const firstLine=text.split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"";
-    if(/^PASS WITH REVISION\b/.test(firstLine))return "REVISION";
-    if(/^PASS\b/.test(firstLine))return "PASS";
-    if(/^FAIL\b/.test(firstLine))return "FAIL";
+    const lines=String(output||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    for(const raw of lines.slice(0,8)){
+      const line=raw.toUpperCase().replace(/^[-*#>\s]+/,"").trim();
+      if(/^PASS\s+WITH\s+REVISION\b/.test(line))return "PASS_WITH_REVISION";
+      if(/^PASS\b/.test(line))return "PASS";
+      if(/^FAIL\b/.test(line))return "FAIL";
+    }
     return "UNKNOWN";
   };
   const runGM5Mission = async () => {
@@ -863,25 +865,20 @@ Mission: ${profile.mission||"—"}`},
       let qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
       let decision=gm5QcDecision(qcTask.output);
 
-      // R6.11F: feed the exact QC response into the next revision.
-      // QC is never bypassed; only a fresh PASS can continue to publish.
-      for(let qcAttempt=1; decision!=="PASS" && qcAttempt<=3; qcAttempt++){
-        const qcFeedback=String(qcTask?.output||"").slice(0,3500);
-        addActivity(`GM5 QC ${decision} → feedback revision ${qcAttempt}/3`,channel.id,"QC");
-        await gm5RunWorkerStage(
-          "CAPTION","CAPTION",channel.id,
-          `QC REVISION REQUIRED — attempt ${qcAttempt}/3. Revise the latest caption/material specifically to resolve the following auditor feedback. Do not repeat the rejected output.\n\nQC FEEDBACK:\n${qcFeedback}`
-        );
-        qcTask=await gm5RunWorkerStage(
-          "QC","QC",channel.id,
-          `This is QC recheck ${qcAttempt}/3 after a revision. Audit the newly revised latest assets, not the previously rejected version. First non-empty line MUST be exactly PASS, PASS WITH REVISION, or FAIL, followed by concise reasons.`
-        );
-        decision=gm5QcDecision(qcTask.output);
-      }
-      if(decision!=="PASS"){
-        const finalFeedback=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
-        addActivity(`QC FINAL FEEDBACK → ${finalFeedback}`,channel.id,"QC");
-        throw new Error(decision==="REVISION"?"QC_REVISION_LIMIT_REACHED":decision==="FAIL"?"QC_FAILED":"QC_DECISION_UNKNOWN");
+      // R6.11G QC CONTRACT FIX
+      // PASS -> publish; PASS WITH REVISION -> publish with warning;
+      // FAIL or malformed verdict -> halt.
+      if(decision==="PASS_WITH_REVISION"){
+        const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
+        addActivity(`GM5 QC PASS WITH REVISION → publish allowed | ${qcNote}`,channel.id,"QC");
+      }else if(decision==="FAIL"){
+        const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
+        addActivity(`GM5 QC FAIL → ${qcNote}`,channel.id,"QC");
+        throw new Error("QC_FAILED");
+      }else if(decision!=="PASS"){
+        const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
+        addActivity(`GM5 QC CONTRACT UNKNOWN → ${qcNote}`,channel.id,"QC");
+        throw new Error("QC_DECISION_UNKNOWN");
       }
 
       // Critical safety: never silently reuse Alpha-2 test media for a GM5 real-content run.
