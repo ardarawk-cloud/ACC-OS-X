@@ -1,0 +1,11 @@
+R6.11E QC AUTO-REVISION
+DEPLOY ONLY:
+ACC-OS-X/app.js -> ACC OS X frontend
+
+Do NOT touch either Worker.
+
+Behavior:
+QC REVISION -> rerun Caption worker -> rerun QC
+Maximum: 3 revision cycles
+QC must return PASS before Meta publish.
+If still rejected: QC_REVISION_LIMIT_REACHED

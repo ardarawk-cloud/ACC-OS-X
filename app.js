@@ -860,9 +860,21 @@ Mission: ${profile.mission||"—"}`},
       const posterTask=await gm5RunWorkerStage("POSTER","POSTER",channel.id);
       await gm5GeneratePosterImage(channel.id,posterTask);
       await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
-      const qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
-      const decision=gm5QcDecision(qcTask.output);
-      if(decision!=="PASS")throw new Error(decision==="REVISION"?"QC_REVISION_REQUIRED":decision==="FAIL"?"QC_FAILED":"QC_DECISION_UNKNOWN");
+      let qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
+      let decision=gm5QcDecision(qcTask.output);
+
+      // R6.11E: bounded self-correction. QC is never bypassed.
+      // A rejected output is revised by the existing production workers,
+      // then audited again. Maximum 3 revision cycles.
+      for(let qcAttempt=1; decision!=="PASS" && qcAttempt<=3; qcAttempt++){
+        addActivity(`GM5 QC ${decision} → auto revision ${qcAttempt}/3`,channel.id,"QC");
+        await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
+        qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
+        decision=gm5QcDecision(qcTask.output);
+      }
+      if(decision!=="PASS"){
+        throw new Error(decision==="REVISION"?"QC_REVISION_LIMIT_REACHED":decision==="FAIL"?"QC_FAILED":"QC_DECISION_UNKNOWN");
+      }
 
       // Critical safety: never silently reuse Alpha-2 test media for a GM5 real-content run.
       if(!hasRealPosterMedia(channel.id))throw new Error("REAL_POSTER_MEDIA_REQUIRED");
