@@ -1,0 +1,24 @@
+ACC OS X BUILD 215 — UI FIX 03 SOURCE PATCH
+
+Root cause addressed:
+1) KAI launcher markup itself now carries bounded fixed-position inline sizing/placement.
+   This bypasses stale/global CSS collisions that produced the giant bottom-left "KKAI" block.
+2) Theme cards/swatches now carry critical inline layout/visual styles.
+   They remain proper visual preview cards even if external/global button CSS wins.
+3) Added ACC-OS-X/service-worker.js with a new revision that clears stale caches and uses
+   network-first/no-store during Build 215 beta. This prevents old app.js/CSS from surviving a deploy.
+4) Footer marker: "UI FIX03" confirms the new app.js is actually running.
+
+DEPLOY:
+Replace these files in ACC-OS-X:
+- app.js
+- service-worker.js
+(worker.js unchanged but included in package)
+
+Verification after deploy:
+- Reload once; if installed as PWA, close and reopen once after the service worker activates.
+- Footer must show: BUILD 215 • UI FIX03
+- KAI must be a compact circular button at bottom-right.
+- Theme Deck must show 2-column visual cards with 4-color swatches.
+
+Production/AI/publish connector logic: untouched.

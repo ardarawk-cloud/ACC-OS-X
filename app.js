@@ -1961,13 +1961,13 @@ Operational rules:
   const themeCenterHtml=()=>{
     const active=currentTheme();
     const custom={...DEFAULT_CUSTOM_THEME,...(state.settings.customTheme||{})};
-    const themeCards=THEME_PRESETS.map(theme=>`<button class="theme-card ${active.id===theme.id?"active":""}" data-action="set-theme" data-value="${theme.id}">
-      <div class="theme-swatches"><span style="background:${theme.vars.bg}"></span><span style="background:${theme.vars.panel}"></span><span style="background:${theme.vars.accent}"></span><span style="background:${theme.vars.accent2}"></span></div>
-      <strong>${escapeHtml(theme.name)}</strong><small>${escapeHtml(theme.tag)}</small>
+    const themeCards=THEME_PRESETS.map(theme=>`<button class="theme-card ${active.id===theme.id?"active":""}" data-action="set-theme" data-value="${theme.id}" style="appearance:none;-webkit-appearance:none;display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;padding:12px;border:1px solid ${active.id===theme.id?theme.vars.accent:theme.vars.line};border-radius:16px;background:linear-gradient(145deg,${theme.vars.panel},${theme.vars.panel2});color:${theme.vars.text};text-align:left;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.16);">
+      <div class="theme-swatches" style="display:grid;grid-template-columns:repeat(4,1fr);width:100%;height:28px;border-radius:9px;overflow:hidden;border:1px solid ${theme.vars.line2};"><span style="display:block;background:${theme.vars.bg}"></span><span style="display:block;background:${theme.vars.panel}"></span><span style="display:block;background:${theme.vars.accent}"></span><span style="display:block;background:${theme.vars.accent2}"></span></div>
+      <strong style="display:block;width:100%;font-size:.78rem;line-height:1.15;white-space:normal;overflow-wrap:anywhere;">${escapeHtml(theme.name)}</strong><small style="display:block;color:${theme.vars.muted};font-size:.60rem;line-height:1.15;letter-spacing:.08em;">${escapeHtml(theme.tag)}</small>
     </button>`).join("");
     return `<div class="card theme-center" style="margin-top:16px"><div class="row between wrap"><div><div class="eyebrow">FOUNDER PERSONALIZATION</div><h2 class="card-title">THEME DECK</h2></div><span class="badge">${escapeHtml(active.name)}</span></div>
       <p class="muted small">Ganti skin ACC OS X kapan saja tanpa edit GitHub/CSS. Data produksi, KAI, Queue dan Pipeline tidak berubah.</p>
-      <div class="theme-grid">${themeCards}</div>
+      <div class="theme-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;">${themeCards}</div>
       <div class="divider"></div>
       <div class="row between wrap"><div><div class="eyebrow">CUSTOM MIX</div><strong class="small">Racik warna sendiri</strong></div><span class="status ready">LOCAL ONLY</span></div>
       <div class="theme-custom-grid">
@@ -2200,7 +2200,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const render=()=>{
     applyTheme();
     const scroll=window.scrollY;
-    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD ${CURRENT_VERSION}</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka KAI"><span>K</span><small>KAI</small></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
+    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD ${CURRENT_VERSION} • UI FIX03</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka KAI" style="position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:auto;top:auto;width:58px;height:58px;min-width:58px;min-height:58px;max-width:58px;max-height:58px;margin:0;padding:0;border-radius:999px;z-index:9999;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:linear-gradient(145deg,var(--accentStrong),var(--accent));color:#fff;border:1px solid var(--accentBright);box-shadow:0 14px 36px rgba(0,0,0,.38);line-height:1;transform:none;animation:none;-webkit-appearance:none;appearance:none;"><span style="display:block;margin:0;padding:0;font-size:1.05rem;font-weight:900;line-height:1;color:#fff;">K</span><small style="display:block;margin:2px 0 0;padding:0;font-size:.50rem;font-weight:900;line-height:1;letter-spacing:.08em;color:#fff;">KAI</small></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
     bindEvents();
     requestAnimationFrame(()=>{scrollTo(0,scroll);const list=document.getElementById("ai-message-list");if(list)list.scrollTop=list.scrollHeight;});
   };
