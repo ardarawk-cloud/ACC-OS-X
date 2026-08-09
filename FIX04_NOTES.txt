@@ -1,0 +1,8 @@
+ACC OS X BUILD 215 — UI FIX04 HARDENED
+
+Scope:
+- Replaced Theme Deck <button> preset cards with role=button div cards so global button styling cannot collapse them into plain text.
+- Replaced KAI launcher label (K + KAI) with one icon-only K launcher to eliminate KKAI text leakage even if CSS partially fails.
+- Added direct !important geometry on launcher.
+- Bumped service-worker revision and footer marker to UI FIX04.
+- No production, AI routing, queue, connector, or publish logic changes.
