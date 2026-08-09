@@ -1,29 +1,22 @@
-ACC OS X BUILD 215 — R6.11I META PAGE TOKEN RESOLUTION
+ACC OS X BUILD 215 — R6.11H STORAGE QUOTA FIX
 
-ROOT CAUSE CONFIRMED:
-- R6.11D connector source itself contains NO publish_actions permission.
-- Meta's current Pages API requires a Page Access Token for Page publishing.
-- A Business System User token is not blindly sent to /feed or /photos anymore.
+DEPLOY ONLY:
+ACC-OS-X/app.js -> ACC OS X frontend
 
-PATCH:
-1. Connector resolves a real Page Access Token for META_PAGE_ID first.
-2. Resolution paths:
-   - GET /{PAGE_ID}?fields=id,name,access_token
-   - fallback GET /me/accounts?fields=id,name,access_token,tasks
-3. Publishing uses Authorization: Bearer <resolved PAGE token>.
-4. New protected diagnostic endpoint: /diagnostic/page-token
-5. No token value is returned by diagnostics.
+DO NOT TOUCH:
+- ACC OS X Worker
+- ACC-PUBLISH-CONNECTOR Worker
+- Meta token / Page ID
+- Cloudflare AI bindings
 
-DEPLOY ORDER:
-A. ACC-PUBLISH-CONNECTOR/worker.js -> Cloudflare Worker acc-publish-connector
-B. Verify Visit/health revision = REAL_META_R4_PAGE_TOKEN_RESOLUTION
-C. DO NOT change Meta token, Page ID, or permissions.
-D. Optional diagnostic: GET /diagnostic/page-token with X-ACC-Access-Code header.
-E. Retry ACC OS X mission once.
-F. ACC-OS-X/app.js is revision-bumped only; deploy after connector validation if desired.
+FIX:
+- mediaBase64 remains in live memory for the active mission and Meta publish.
+- mediaBase64 is excluded from localStorage persistence.
+- if old local state is already near quota, histories are compacted once.
+- current poster is NOT removed from live memory before publish.
 
-EXPECTED:
-- If token can resolve Tukang Tambang Page token -> publish continues using Page token.
-- If not -> clean META_PAGE_TOKEN_RESOLUTION_FAILED diagnostic, instead of misleading publish_actions loop.
-
-META_PAGE_ID expected for current target: 101420769205689
+After deploy:
+1. Reload ACC OS X once.
+2. Start/Retry Mission once.
+3. Expected: Poster generation completes without localStorage quota error,
+   then workflow continues to QC -> Meta Publish -> Verify.
