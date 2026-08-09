@@ -1,6 +1,6 @@
 /* ACC OS X Build 215 UI FIX03 cache-reset service worker.
    Beta policy: network-first/no stale app shell. */
-const SW_REVISION = 'BUILD215-UI-FIX05-20260809';
+const SW_REVISION = 'BUILD215-UI-FIX06-20260809';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

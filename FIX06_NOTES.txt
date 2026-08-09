@@ -1,0 +1,7 @@
+ACC OS X BUILD 215 — UI FIX06 / LOGO HARDENING
+
+- Removed the missing icon-192-r63.png dependency from the Real Publish Gate.
+- Reuses the built-in ACC shield SVG, so the logo cannot break because an external icon file is absent.
+- Footer marker: UI FIX06.
+- Service worker revision bumped to FIX06.
+- Publish/AI/connector logic unchanged.
