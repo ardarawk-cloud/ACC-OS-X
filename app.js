@@ -3,8 +3,8 @@
   "use strict";
 
   const ROOT = document.getElementById("root");
-  const CURRENT_VERSION = 216;
-  const PACKAGE_REVISION = "R6.12-AI-QUALITY-HARDENING-V1";
+  const CURRENT_VERSION = 217;
+  const PACKAGE_REVISION = "R6.12.1-RESEARCH-ERROR-HOTFIX";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -814,7 +814,7 @@ Mission: ${profile.mission||"—"}`},
   const gm5CompleteStage = stage => { if(!ui.gm5CompletedStages.includes(stage))ui.gm5CompletedStages.push(stage); render(); };
   const gm5Sleep = ms => new Promise(resolve=>setTimeout(resolve,ms));
 
-  // Build 216 — AI QUALITY HARDENING v1.0.
+  // Build 217 — Research/Error hotfix on top of AI QUALITY HARDENING v1.0.
   // Scope is deliberately upstream of Publish Core. R6.11I Meta connector is frozen.
   const cleanPublicationCaption = value => String(value||"")
     .replace(/^```[a-z0-9_-]*\s*/i,"")
@@ -959,7 +959,7 @@ Mission: ${profile.mission||"—"}`},
       await gm5GeneratePosterImage(channel.id,posterTask);
       await gm5RunWorkerStage("CAPTION","CAPTION",channel.id);
 
-      // Build 216 deterministic QC preflight — defects never reach Publish Core.
+      // Build 217 deterministic QC preflight — defects never reach Publish Core.
       const localGate=gm5LocalQualityGate(channel.id);
       if(!localGate.ok){
         const reason=localGate.reasons.join(", ");
@@ -1002,7 +1002,7 @@ Mission: ${profile.mission||"—"}`},
       notify("GM5 ONE BUTTON PASS",`${channel.name} berhasil diproduksi, dipublish, dan diverifikasi.` ,"SUCCESS");
       save();playUiSound("success");showToast("GM5 DONE ✅ REAL FACEBOOK PUBLISHED");
     }catch(error){
-      ui.gm5Error=String(error?.message||error);ui.gm5FinishedAt=now();
+      ui.gm5Error=serializeAccError(error?.message||error)||"UNKNOWN_GM5_ERROR";ui.gm5FinishedAt=now();
       addActivity(`GM5 stopped → ${ui.gm5Stage} → ${ui.gm5Error}`,channel.id,ui.gm5Stage);
       notify("GM5 Mission Stopped",`${ui.gm5Stage}: ${ui.gm5Error}`,"ERROR");
       save();showToast(`GM5 berhenti di ${ui.gm5Stage}`);
@@ -1360,7 +1360,7 @@ Operational rules:
       save();render();showToast(current.autoApply?"Worker SUCCESS — output applied, pipeline lanjut.":"Worker execution SUCCESS.");
     }catch(error){
       const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
-      current.status="FAILED";current.error=String(error?.message||error);current.completedAt=now();current.provider="SERVER_AI_ERROR";
+      current.status="FAILED";current.error=serializeAccError(error?.message||error)||"UNKNOWN_AI_WORKER_ERROR";current.completedAt=now();current.provider="SERVER_AI_ERROR";
       updateWorkerStats(current.workerType,"FAILED");addActivity(`${current.workerName} failed`,current.channelId,current.stage);
       notify("AI Worker Failed",`${current.workerName} gagal. Retry tersedia.`,"ERROR");
       save();render();showToast("Worker gagal — cek task lalu RETRY.");
@@ -2283,8 +2283,32 @@ Operational rules:
     addActivity("ACC AI output sent to Production Queue",channel.id,"READY");
     save();ui.aiActionFeedback="✓ Dikirim ke Production Queue untuk "+channel.name+".";showToast("Output AI dikirim ke Production Queue.");
   };
+  const serializeAccError = value => {
+    if(value==null)return "";
+    if(typeof value==="string")return value;
+    if(value instanceof Error)return value.message||value.name||"Unknown error";
+    if(typeof value==="object"){
+      const preferred=value.message||value.code||value.error_description||value.detail||value.reason;
+      if(preferred){
+        const code=value.code&&String(value.code)!==String(preferred)?` [${value.code}]`:"";
+        return `${String(preferred)}${code}`;
+      }
+      try{return JSON.stringify(value);}catch{return "Unknown structured error";}
+    }
+    return String(value);
+  };
   const extractAiError=async response=>{
-    try{const data=await response.json();return data.error||data.message||`HTTP ${response.status}`;}catch{return `HTTP ${response.status}`;}
+    const prefix=`AI_HTTP_${response.status}`;
+    try{
+      const data=await response.json();
+      const detail=serializeAccError(data?.error ?? data?.message ?? data);
+      return detail?`${prefix}: ${detail}`:prefix;
+    }catch{
+      try{
+        const raw=await response.text();
+        return raw?`${prefix}: ${raw.slice(0,500)}`:prefix;
+      }catch{return prefix;}
+    }
   };
   const localSafeReply=(text)=>{
     const channel=activeChannel(),wf=currentWorkflow(),m=metrics();

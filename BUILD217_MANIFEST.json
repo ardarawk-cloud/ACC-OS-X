@@ -1,0 +1,20 @@
+{
+  "build": 217,
+  "revision": "R6.12.1-RESEARCH-ERROR-HOTFIX",
+  "base": "BUILD216 AI QUALITY HARDENING v1.0",
+  "rollback_baseline": "BUILD215 R6.11I META PAGE TOKEN RESOLUTION = PASS",
+  "changes": [
+    "Structured AI API errors are serialized instead of rendering as [object Object].",
+    "GM5 terminal now exposes the real Research/API failure reason.",
+    "AI worker failure records preserve actionable HTTP/code/message details.",
+    "No Publish Core / Meta connector behavior changed."
+  ],
+  "changed_files": [
+    "ACC-OS-X/app.js",
+    "BUILD217_MANIFEST.json",
+    "BUILD217_TEST.md"
+  ],
+  "connector_sha256_baseline": "ba85780e13f53d8149278d090fe6f5054f31dc1fb0af0204464d5c7561ea018a",
+  "connector_sha256_build217": "ba85780e13f53d8149278d090fe6f5054f31dc1fb0af0204464d5c7561ea018a",
+  "connector_byte_identical": true
+}
