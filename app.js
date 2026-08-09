@@ -583,7 +583,16 @@ Mission: ${profile.mission||"—"}`},
       .header:after{content:"";position:absolute;width:300px;height:300px;right:-130px;top:-180px;border-radius:50%;
         background:color-mix(in srgb,var(--accent) 16%,transparent);filter:blur(18px);pointer-events:none}
       .brand-title{letter-spacing:.08em!important;font-weight:900!important;text-shadow:0 0 24px color-mix(in srgb,var(--accent) 42%,transparent)}
-      .logo-shield{filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 38%,transparent))}
+      .logo-shield{filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 38%,transparent));animation:none!important;transform:none!important}
+      .logo-shield *,.brand-logo-img{animation:none!important;transform:none!important}
+      .theme-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:16px!important}
+      .theme-card{appearance:none!important;-webkit-appearance:none!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:7px!important;min-width:0!important;padding:13px!important;border:1px solid color-mix(in srgb,var(--line) 85%,transparent)!important;border-radius:16px!important;background:linear-gradient(145deg,color-mix(in srgb,var(--panel2) 96%,transparent),color-mix(in srgb,var(--panel3) 92%,transparent))!important;color:var(--text)!important;text-align:left!important;overflow:hidden!important;box-shadow:0 8px 20px rgba(0,0,0,.16)!important}
+      .theme-card.active{border-color:var(--accent)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),0 10px 28px color-mix(in srgb,var(--accent) 20%,transparent)!important}
+      .theme-card strong{display:block!important;width:100%!important;font-size:.82rem!important;line-height:1.15!important;letter-spacing:.02em!important;white-space:normal!important;overflow-wrap:anywhere!important}
+      .theme-card small{display:block!important;color:var(--muted)!important;font-size:.64rem!important;line-height:1.15!important;letter-spacing:.08em!important}
+      .theme-swatches{display:grid!important;grid-template-columns:repeat(4,1fr)!important;width:100%!important;height:28px!important;border-radius:9px!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--line2) 60%,transparent)!important}
+      .theme-swatches span{display:block!important;min-width:0!important;height:100%!important}
+      @media(max-width:430px){.theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.theme-card{padding:10px!important}.theme-card strong{font-size:.74rem!important}.theme-card small{font-size:.58rem!important}}
       .tabs{position:sticky;top:8px;z-index:20;padding:7px!important;margin-top:10px!important;border:1px solid color-mix(in srgb,var(--line) 80%,transparent)!important;
         border-radius:18px!important;background:color-mix(in srgb,var(--bg) 74%,transparent)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
         box-shadow:0 12px 35px rgba(0,0,0,.20)}
@@ -607,9 +616,24 @@ Mission: ${profile.mission||"—"}`},
       .badge,.status,.priority{border-radius:999px!important}
       .progress-line{height:7px!important;border-radius:99px!important;overflow:hidden}
       .progress-fill{border-radius:99px;background:linear-gradient(90deg,var(--accentStrong),var(--accentBright))!important;box-shadow:0 0 14px color-mix(in srgb,var(--accent) 35%,transparent)}
-      .ai-fab{box-shadow:0 14px 36px color-mix(in srgb,var(--accent) 34%,rgba(0,0,0,.35))!important;border:1px solid color-mix(in srgb,var(--accentBright) 45%,transparent)!important}
+      html,body,.shell{max-width:100%;overflow-x:hidden!important}
+      .ai-fab{
+        position:fixed!important;right:18px!important;bottom:18px!important;left:auto!important;top:auto!important;
+        width:62px!important;height:62px!important;min-width:62px!important;min-height:62px!important;max-width:62px!important;max-height:62px!important;
+        margin:0!important;padding:0!important;border-radius:999px!important;z-index:70!important;overflow:hidden!important;
+        display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important;
+        background:linear-gradient(145deg,var(--accentStrong),var(--accent))!important;color:#fff!important;
+        box-shadow:0 14px 36px color-mix(in srgb,var(--accent) 34%,rgba(0,0,0,.35))!important;
+        border:1px solid color-mix(in srgb,var(--accentBright) 55%,transparent)!important;
+        font:inherit!important;line-height:1!important;transform:none!important;animation:none!important;
+        -webkit-appearance:none!important;appearance:none!important;touch-action:manipulation!important
+      }
+      .ai-fab span{display:block!important;margin:0!important;padding:0!important;font-size:1.1rem!important;font-weight:900!important;line-height:1!important;color:#fff!important}
+      .ai-fab small{display:block!important;margin:2px 0 0!important;padding:0!important;font-size:.52rem!important;font-weight:900!important;line-height:1!important;letter-spacing:.10em!important;color:#fff!important;opacity:.88!important}
+      .ai-fab:hover{filter:brightness(1.08)!important}
+      .ai-fab:active{transform:scale(.96)!important}
       .footer-note{opacity:.58;letter-spacing:.12em!important}
-      @media(max-width:720px){.main{padding-left:12px!important;padding-right:12px!important}.header{border-radius:0 0 22px 22px!important}.tabs{top:5px}.stats{gap:9px!important}.stats .card{min-height:78px}.brand-title{font-size:1.22rem!important}.select-grid{gap:8px!important}}
+      @media(max-width:720px){.main{padding-left:12px!important;padding-right:12px!important}.header{border-radius:0 0 22px 22px!important}.tabs{top:5px}.stats{gap:9px!important}.stats .card{min-height:78px}.brand-title{font-size:1.22rem!important}.select-grid{gap:8px!important}.ai-fab{right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;width:58px!important;height:58px!important;min-width:58px!important;min-height:58px!important;max-width:58px!important;max-height:58px!important}}
     `;
     document.head.appendChild(style);
   };

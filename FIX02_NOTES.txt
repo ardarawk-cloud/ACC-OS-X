@@ -1,0 +1,10 @@
+ACC OS X BUILD 215 — UI FIX 02
+
+Scope: cosmetic containment fix only.
+- Repairs the KAI floating launcher positioning and size.
+- Prevents the launcher from escaping the viewport / creating horizontal overflow.
+- Keeps KAI launcher functional as a compact fixed circular button.
+- Preserves Build 215 UI polish and Theme Deck card styling from UI FIX 01.
+- No production, AI routing, publish connector, queue, pipeline, or Mission Alpha logic changed.
+
+Base: ACC_OS_X_BUILD215_UI_FIX01
