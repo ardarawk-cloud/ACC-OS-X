@@ -4,7 +4,7 @@
 
   const ROOT = document.getElementById("root");
   const CURRENT_VERSION = 215;
-  const PACKAGE_REVISION = "R6.11A-LIVE-OPERATIONS-BETA";
+  const PACKAGE_REVISION = "R6.11H-STORAGE-QUOTA-FIX";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -691,10 +691,34 @@ Mission: ${profile.mission||"—"}`},
     return clone;
   };
 
+  // R6.11H — Storage quota fix.
+  // Heavy poster/image bytes stay available in live memory for the current
+  // mission/publish request, but are never serialized into localStorage.
+  // Persistent state keeps only metadata, text, IDs and URLs.
+  const persistentStateJson = () => JSON.stringify(state,(key,value)=>{
+    if(key==="mediaBase64") return undefined;
+    return value;
+  });
+
   const save = () => {
     state.schemaVersion = CURRENT_VERSION;
     state.appVersion = CURRENT_VERSION;
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    try{
+      localStorage.setItem(STORAGE_KEY,persistentStateJson());
+    }catch(error){
+      // Last-resort compaction for older accumulated state. Do not delete
+      // the current in-memory poster required by the active mission.
+      if(error?.name==="QuotaExceededError" || /quota/i.test(String(error?.message||""))){
+        state.notifications=Array.isArray(state.notifications)?state.notifications.slice(0,40):[];
+        state.activity=Array.isArray(state.activity)?state.activity.slice(0,120):[];
+        state.publishJobs=Array.isArray(state.publishJobs)?state.publishJobs.slice(0,80):[];
+        state.ai.tasks=Array.isArray(state.ai?.tasks)?state.ai.tasks.slice(0,80):[];
+        state.assets=Array.isArray(state.assets)?state.assets.slice(0,120):[];
+        localStorage.setItem(STORAGE_KEY,persistentStateJson());
+        return;
+      }
+      throw error;
+    }
   };
 
   const activeWorkspace = () => WORKSPACES.find(item => item.id === state.activeWorkspaceId) || WORKSPACES[0];

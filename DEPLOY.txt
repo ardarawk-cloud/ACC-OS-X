@@ -1,11 +1,22 @@
-R6.11E QC AUTO-REVISION
+ACC OS X BUILD 215 — R6.11H STORAGE QUOTA FIX
+
 DEPLOY ONLY:
 ACC-OS-X/app.js -> ACC OS X frontend
 
-Do NOT touch either Worker.
+DO NOT TOUCH:
+- ACC OS X Worker
+- ACC-PUBLISH-CONNECTOR Worker
+- Meta token / Page ID
+- Cloudflare AI bindings
 
-Behavior:
-QC REVISION -> rerun Caption worker -> rerun QC
-Maximum: 3 revision cycles
-QC must return PASS before Meta publish.
-If still rejected: QC_REVISION_LIMIT_REACHED
+FIX:
+- mediaBase64 remains in live memory for the active mission and Meta publish.
+- mediaBase64 is excluded from localStorage persistence.
+- if old local state is already near quota, histories are compacted once.
+- current poster is NOT removed from live memory before publish.
+
+After deploy:
+1. Reload ACC OS X once.
+2. Start/Retry Mission once.
+3. Expected: Poster generation completes without localStorage quota error,
+   then workflow continues to QC -> Meta Publish -> Verify.
