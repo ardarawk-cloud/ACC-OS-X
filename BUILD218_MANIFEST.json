@@ -1,0 +1,24 @@
+{
+  "build": 218,
+  "revision": "R6.12.2-AI-ROUTE-RECOVERY",
+  "base": "BUILD217",
+  "rollback_baseline": "BUILD215 R6.11I META PAGE TOKEN RESOLUTION = PASS",
+  "root_cause": "ACC OS X called same-origin /api/acc-ai and /api/acc-image, but the deploy bundle contained no handler for those routes.",
+  "changes": [
+    "Added standalone ACC AI Worker with /api/acc-ai and /api/acc-image.",
+    "Added Cloudflare Workers AI binding configuration.",
+    "ACC OS X now calls dedicated ACC AI Worker origin.",
+    "Meta publish connector unchanged."
+  ],
+  "changed_files": [
+    "ACC-OS-X/app.js",
+    "ACC-AI-WORKER/worker.js",
+    "ACC-AI-WORKER/wrangler.jsonc",
+    "ACC-AI-WORKER/DEPLOY_AI_WORKER.txt",
+    "BUILD218_MANIFEST.json",
+    "BUILD218_TEST.md"
+  ],
+  "connector_sha256_build217": "ba85780e13f53d8149278d090fe6f5054f31dc1fb0af0204464d5c7561ea018a",
+  "connector_sha256_build218": "ba85780e13f53d8149278d090fe6f5054f31dc1fb0af0204464d5c7561ea018a",
+  "connector_byte_identical": true
+}

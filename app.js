@@ -3,8 +3,8 @@
   "use strict";
 
   const ROOT = document.getElementById("root");
-  const CURRENT_VERSION = 217;
-  const PACKAGE_REVISION = "R6.12.1-RESEARCH-ERROR-HOTFIX";
+  const CURRENT_VERSION = 218;
+  const PACKAGE_REVISION = "R6.12.2-AI-ROUTE-RECOVERY";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
@@ -814,7 +814,7 @@ Mission: ${profile.mission||"—"}`},
   const gm5CompleteStage = stage => { if(!ui.gm5CompletedStages.includes(stage))ui.gm5CompletedStages.push(stage); render(); };
   const gm5Sleep = ms => new Promise(resolve=>setTimeout(resolve,ms));
 
-  // Build 217 — Research/Error hotfix on top of AI QUALITY HARDENING v1.0.
+  // Build 218 — AI route recovery on top of AI QUALITY HARDENING v1.0.
   // Scope is deliberately upstream of Publish Core. R6.11I Meta connector is frozen.
   const cleanPublicationCaption = value => String(value||"")
     .replace(/^```[a-z0-9_-]*\s*/i,"")
@@ -912,7 +912,7 @@ Mission: ${profile.mission||"—"}`},
       `Reserve clean negative space in the upper-left for branding and lower third for deterministic ACC headline overlay.`,
       `Vertical 9:16 composition for a final 1080x1920 social poster. Clean, professional, publication-ready visual.`
     ].join("\n\n");
-    const response=await fetch("/api/acc-image",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({prompt,channelId})});
+    const response=await fetch(aiApiUrl("/api/acc-image"),{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({prompt,channelId})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.ok||!data.imageBase64)throw new Error(data?.error?.code||data?.error?.message||`IMAGE_HTTP_${response.status}`);
     const composed=await composeDeterministicPoster(channelId,data.imageBase64,data.mimeType||"image/jpeg",material?.output||"");
@@ -1344,7 +1344,7 @@ Operational rules:
     }
 
     try{
-      const response=await fetch("/api/acc-ai",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:[{role:"user",content:workerPrompt(task)}],context:buildWorkerContext(task)})});
+      const response=await fetch(aiApiUrl("/api/acc-ai"),{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:[{role:"user",content:workerPrompt(task)}],context:buildWorkerContext(task)})});
       if(!response.ok)throw new Error(await extractAiError(response));
       const data=await response.json();
       if(!data.reply)throw new Error("AI worker response kosong.");
@@ -2066,7 +2066,7 @@ Operational rules:
     </section>`;
   };
 
-  const geminiHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">EMBEDDED INTELLIGENCE LAYER</div><h2 class="card-title">ACC AI CONSOLE</h2></div><span class="badge">${escapeHtml(ui.aiStatus)}</span></div><p class="muted small">Chat directly inside ACC OS X. Local Safe Mode works without an API. When /api/acc-ai is connected, the same active workspace, profile, workflow and Knowledge Vault context is sent to Cloudflare Workers AI through the server Worker.</p><div class="code-box">Floating AI Launcher → Active Profile Context → Local Safe Mode / Server AI → Owner Actions</div><div class="actions"><button class="btn primary mono" data-action="open-ai-console">OPEN ACC AI CHAT</button><button class="btn purple mono" data-action="open-ai">OPEN AI WORKERS</button><button class="btn dark mono" data-action="open-context">OPEN KNOWLEDGE VAULT</button></div></div></section>`;
+  const geminiHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">EMBEDDED INTELLIGENCE LAYER</div><h2 class="card-title">ACC AI CONSOLE</h2></div><span class="badge">${escapeHtml(ui.aiStatus)}</span></div><p class="muted small">Chat directly inside ACC OS X. Local Safe Mode works without an API. When ACC AI Worker is connected, the same active workspace, profile, workflow and Knowledge Vault context is sent to Cloudflare Workers AI through the server Worker.</p><div class="code-box">Floating AI Launcher → Active Profile Context → Local Safe Mode / Server AI → Owner Actions</div><div class="actions"><button class="btn primary mono" data-action="open-ai-console">OPEN ACC AI CHAT</button><button class="btn purple mono" data-action="open-ai">OPEN AI WORKERS</button><button class="btn dark mono" data-action="open-context">OPEN KNOWLEDGE VAULT</button></div></div></section>`;
 
   const vaultModuleHtml=()=>{
     const all=Object.values(state.ai.contexts).flat(),count=all.length,active=all.filter(item=>item.active&&item.type!=="AI_NOTE").length,notes=all.filter(item=>item.type==="AI_NOTE").length;
@@ -2283,6 +2283,9 @@ Operational rules:
     addActivity("ACC AI output sent to Production Queue",channel.id,"READY");
     save();ui.aiActionFeedback="✓ Dikirim ke Production Queue untuk "+channel.name+".";showToast("Output AI dikirim ke Production Queue.");
   };
+  const DEFAULT_AI_WORKER_ORIGIN="https://acc-ai-core.ardarawk.workers.dev";
+  const aiWorkerOrigin=()=>String(localStorage.getItem("acc_ai_worker_origin")||DEFAULT_AI_WORKER_ORIGIN).replace(/\/$/,"");
+  const aiApiUrl=path=>`${aiWorkerOrigin()}${path}`;
   const serializeAccError = value => {
     if(value==null)return "";
     if(typeof value==="string")return value;
@@ -2345,7 +2348,7 @@ Operational rules:
       state.ai.providerMode="LOCAL_SAFE";ui.aiLoading=false;ui.aiStatus="LOCAL_SAFE";save();render();return;
     }
     try{
-      const response=await fetch("/api/acc-ai",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:history.slice(-16).map(item=>({role:item.role,content:item.content})),context:buildAiContext()})});
+      const response=await fetch(aiApiUrl("/api/acc-ai"),{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:history.slice(-16).map(item=>({role:item.role,content:item.content})),context:buildAiContext()})});
       if(!response.ok)throw new Error(await extractAiError(response));
       const data=await response.json();
       if(!data.reply)throw new Error("AI response kosong.");
@@ -2366,7 +2369,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const aiConsoleHtml=()=>{
     if(!ui.aiConsoleOpen)return"";
     const channel=activeChannel(),history=aiHistory(),hasAccess=Boolean(getAiAccessCode());
-    return `<div class="ai-console-wrap"><section class="ai-console mono" role="dialog" aria-modal="true" aria-label="ACC AI Console"><header class="ai-console-header"><div class="grow"><div class="eyebrow">ACC CORE • EMBEDDED ASSISTANT</div><div class="ai-console-title">KAI — ACC AI</div><div class="meta truncate">${escapeHtml(channel.code)} • ${escapeHtml(channel.name)} • ${escapeHtml(ui.aiStatus)}</div></div><button class="ai-icon-btn" data-action="close-ai-console" aria-label="Tutup">×</button></header><div class="ai-toolbar"><span class="badge">${escapeHtml(hasAccess?"SERVER AI READY":"LOCAL SAFE")}</span><button class="btn dark small-btn mono" data-action="change-ai-access">${hasAccess?"AI ACCESS":"CONNECT AI"}</button><button class="btn dark small-btn mono" data-action="clear-ai-chat">CLEAR</button></div>${ui.aiAccessOpen?`<div class="ai-setup"><div class="item-title">OPTIONAL SERVER AI CONNECTION</div><p class="muted small">Local Safe Mode tidak butuh key. Untuk AI generatif, endpoint /api/acc-ai menggunakan Cloudflare Workers AI. Pasang ACC_AI_ACCESS_CODE sebagai Cloudflare secret; tidak perlu OpenAI API key. Kode akses owner disimpan lokal di perangkat ini dan tidak ditulis ke repository.</p><input id="ai-access-code" class="input mono" type="password" autocomplete="off" placeholder="ACC AI Access Code" value="${escapeHtml(ui.aiAccessDraft)}"><div class="ai-output-actions"><button class="btn purple small-btn mono" data-action="save-ai-access">SAVE ACCESS</button><button class="btn dark small-btn mono" data-action="close-ai-access">CANCEL</button></div></div>`:""}<div id="ai-message-list" class="ai-message-list">${history.length?history.map(item=>`<article class="ai-message ${item.role}"><div class="ai-message-role">${item.role==="assistant"?"KAI • ACC AI":"ARDA"}</div><div class="ai-message-content">${escapeHtml(item.content)}</div><div class="ai-message-time">${formatTime(item.createdAt)}${item.model?` • ${escapeHtml(item.model)}`:""}</div></article>`).join(""):`<div class="ai-empty"><div class="ai-orb">✦</div><strong>ACC AI siap.</strong><span>Local Safe Mode aktif. Hubungkan Cloudflare Workers AI kapan saja untuk percakapan generatif.</span></div>`}${ui.aiLoading?`<article class="ai-message assistant thinking"><div class="ai-message-role">KAI • ACC AI</div><div class="ai-message-content">Memproses konteks ${escapeHtml(channel.name)}…</div></article>`:""}</div>${ui.aiError?`<div class="ai-error">${escapeHtml(ui.aiError)}</div>`:""}<footer class="ai-composer"><textarea id="ai-console-input" class="textarea mono" rows="2" maxlength="5000" placeholder="Tulis pesan untuk KAI…">${escapeHtml(ui.aiInput)}</textarea><button class="btn primary mono" data-action="send-ai-message" ${ui.aiLoading?"disabled":""}>${ui.aiLoading?"THINKING…":"SEND"}</button><div class="ai-output-actions"><button type="button" class="btn dark small-btn mono" data-action="save-ai-vault" ${lastAssistantMessage()?"":"disabled"}>SAVE TO VAULT</button><button type="button" class="btn cyan small-btn mono" data-action="send-ai-queue" ${lastAssistantMessage()?"":"disabled"}>SEND TO QUEUE</button><button type="button" class="btn purple small-btn mono" data-action="apply-ai-pipeline" ${lastAssistantMessage()?"":"disabled"}>APPLY TO PIPELINE</button></div>${ui.aiActionFeedback?`<div class="ai-action-feedback">${escapeHtml(ui.aiActionFeedback)}</div>`:""}</footer><div class="ai-disclaimer">ACC AI uses active ACC context and local chat history. Private ChatGPT history is not imported automatically.</div></section></div>`;
+    return `<div class="ai-console-wrap"><section class="ai-console mono" role="dialog" aria-modal="true" aria-label="ACC AI Console"><header class="ai-console-header"><div class="grow"><div class="eyebrow">ACC CORE • EMBEDDED ASSISTANT</div><div class="ai-console-title">KAI — ACC AI</div><div class="meta truncate">${escapeHtml(channel.code)} • ${escapeHtml(channel.name)} • ${escapeHtml(ui.aiStatus)}</div></div><button class="ai-icon-btn" data-action="close-ai-console" aria-label="Tutup">×</button></header><div class="ai-toolbar"><span class="badge">${escapeHtml(hasAccess?"SERVER AI READY":"LOCAL SAFE")}</span><button class="btn dark small-btn mono" data-action="change-ai-access">${hasAccess?"AI ACCESS":"CONNECT AI"}</button><button class="btn dark small-btn mono" data-action="clear-ai-chat">CLEAR</button></div>${ui.aiAccessOpen?`<div class="ai-setup"><div class="item-title">OPTIONAL SERVER AI CONNECTION</div><p class="muted small">Local Safe Mode tidak butuh key. Untuk AI generatif, ACC AI Worker menggunakan Cloudflare Workers AI. Pasang ACC_AI_ACCESS_CODE sebagai Cloudflare secret; tidak perlu OpenAI API key. Kode akses owner disimpan lokal di perangkat ini dan tidak ditulis ke repository.</p><input id="ai-access-code" class="input mono" type="password" autocomplete="off" placeholder="ACC AI Access Code" value="${escapeHtml(ui.aiAccessDraft)}"><div class="ai-output-actions"><button class="btn purple small-btn mono" data-action="save-ai-access">SAVE ACCESS</button><button class="btn dark small-btn mono" data-action="close-ai-access">CANCEL</button></div></div>`:""}<div id="ai-message-list" class="ai-message-list">${history.length?history.map(item=>`<article class="ai-message ${item.role}"><div class="ai-message-role">${item.role==="assistant"?"KAI • ACC AI":"ARDA"}</div><div class="ai-message-content">${escapeHtml(item.content)}</div><div class="ai-message-time">${formatTime(item.createdAt)}${item.model?` • ${escapeHtml(item.model)}`:""}</div></article>`).join(""):`<div class="ai-empty"><div class="ai-orb">✦</div><strong>ACC AI siap.</strong><span>Local Safe Mode aktif. Hubungkan Cloudflare Workers AI kapan saja untuk percakapan generatif.</span></div>`}${ui.aiLoading?`<article class="ai-message assistant thinking"><div class="ai-message-role">KAI • ACC AI</div><div class="ai-message-content">Memproses konteks ${escapeHtml(channel.name)}…</div></article>`:""}</div>${ui.aiError?`<div class="ai-error">${escapeHtml(ui.aiError)}</div>`:""}<footer class="ai-composer"><textarea id="ai-console-input" class="textarea mono" rows="2" maxlength="5000" placeholder="Tulis pesan untuk KAI…">${escapeHtml(ui.aiInput)}</textarea><button class="btn primary mono" data-action="send-ai-message" ${ui.aiLoading?"disabled":""}>${ui.aiLoading?"THINKING…":"SEND"}</button><div class="ai-output-actions"><button type="button" class="btn dark small-btn mono" data-action="save-ai-vault" ${lastAssistantMessage()?"":"disabled"}>SAVE TO VAULT</button><button type="button" class="btn cyan small-btn mono" data-action="send-ai-queue" ${lastAssistantMessage()?"":"disabled"}>SEND TO QUEUE</button><button type="button" class="btn purple small-btn mono" data-action="apply-ai-pipeline" ${lastAssistantMessage()?"":"disabled"}>APPLY TO PIPELINE</button></div>${ui.aiActionFeedback?`<div class="ai-action-feedback">${escapeHtml(ui.aiActionFeedback)}</div>`:""}</footer><div class="ai-disclaimer">ACC AI uses active ACC context and local chat history. Private ChatGPT history is not imported automatically.</div></section></div>`;
   };
 
   const modalHtml=()=>{

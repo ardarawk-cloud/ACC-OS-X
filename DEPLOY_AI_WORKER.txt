@@ -1,0 +1,13 @@
+ACC AI WORKER — BUILD218
+
+DEPLOY FIRST:
+1. Create/deploy Cloudflare Worker named: acc-ai-core
+2. Source: ACC-AI-WORKER/worker.js
+3. Add Workers AI binding named exactly: AI
+4. Add secret: ACC_AI_ACCESS_CODE
+   Use the SAME owner access code currently saved in ACC OS X AI ACCESS.
+5. Expected URL: https://acc-ai-core.ardarawk.workers.dev
+6. Open /health. Expected: ok=true, aiBinding=true, accessSecretConfigured=true
+7. Then deploy ACC-OS-X/app.js from BUILD218.
+
+DO NOT TOUCH ACC-PUBLISH-CONNECTOR.
