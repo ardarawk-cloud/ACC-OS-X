@@ -1,30 +1,59 @@
 {
-  "id": "./",
-  "name": "ACC OS X \u2014 PWA Stabilization",
+  "id": "/acc-os-x-build250",
+  "name": "ACC OS X",
   "short_name": "ACC OS X",
-  "description": "ACC OS X v1.2.1 PWA Stabilization",
-  "start_url": "./index.html?source=pwa&v=121",
-  "scope": "./",
+  "start_url": "/?pwa=build250",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#050713",
-  "theme_color": "#0d1530",
   "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "lang": "id-ID",
+  "description": "ACC OS X — AI-native operating platform for Arda Core Corporation.",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/acc-os-x-192-build250.png?v=250-iconfix",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/acc-os-x-512-build250.png?v=250-iconfix",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "./maskable-512.png",
+      "src": "/acc-os-x-maskable-512-build250.png?v=250-iconfix",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Produce",
+      "short_name": "Produce",
+      "url": "/?open=produce&pwa=build250",
+      "icons": [
+        {
+          "src": "/acc-os-x-192-build250.png?v=250-iconfix",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "ACC Core",
+      "short_name": "Core",
+      "url": "/?open=core&pwa=build250",
+      "icons": [
+        {
+          "src": "/acc-os-x-192-build250.png?v=250-iconfix",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
