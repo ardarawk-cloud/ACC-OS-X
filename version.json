@@ -2,5 +2,7 @@
   "version": 250,
   "revision": "BUILD250-ACC-CORE-V1-STABLE-RC",
   "channel": "ACC CORE v1.0",
-  "releasedAt": "2026-08-10T23:34:00+08:00"
+  "releasedAt": "2026-08-10T23:34:00+08:00",
+  "build": 250,
+  "patch": "KAI_CHAT_UI_FIX"
 }

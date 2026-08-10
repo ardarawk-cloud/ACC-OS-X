@@ -1,4 +1,4 @@
-const CACHE="acc-os-x-build-250-iconfix";
+const CACHE="acc-os-x-build-250-kai-chat-ui-fix";
 const CORE=["./","./index.html","./app.js","./manifest.webmanifest","./acc-os-x-192-build250.png","./acc-os-x-512-build250.png","./acc-os-x-maskable-512-build250.png","./version.json"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
