@@ -1,4 +1,4 @@
-// ACC OS X PRODUCTION AI — QUALITY HARDENING v1.6.5 PHONE COMPACT
+// ACC OS X PRODUCTION AI — QUALITY HARDENING v1.6.7 PHONE COMPACT
 // AI quality/orchestration only. Real publishing stays in the external frozen Publish Connector.
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"; const RESEARCH_MODEL = "@cf/zai-org/glm-4.7-flash";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell"; const cors = { "Access-Control-Allow-Origin": "*",
@@ -24,17 +24,20 @@ const test=typeof predicate==="function"?predicate:()=>true;
 return rows.find(item=>String(item?.stage||"").toUpperCase()===stage && test(item))||null; } function qcPreflight(context){
 const research=latestUpstreamByStage(context,"RESEARCH"); const script=latestUpstreamByStage(context,"SCRIPT");
 const posterMedia=latestUpstreamByStage(context,"POSTER",item=>Boolean(item?.hasMedia));
+const posterDirection=latestUpstreamByStage(context,"POSTER",item=>!Boolean(item?.hasMedia)&&Boolean(text(item?.output)));
 const caption=latestUpstreamByStage(context,"CAPTION"); const researchText=text(research?.output); const scriptText=text(script?.output);
-const captionText=text(caption?.output); const researchUrls=[...new Set(urlsInText(researchText))];
-const researchTopic=extractResearchTopic(researchText); const checks={ researchExists:Boolean(researchText),
+const posterDirectionText=text(posterDirection?.output); const captionText=text(caption?.output); const researchUrls=[...new Set(urlsInText(researchText))];
+const researchTopic=extractResearchTopic(researchText); const posterTopic=extractPosterTopic(posterDirectionText); const checks={ researchExists:Boolean(researchText),
 researchGrounded:/^\s*RESEARCH_PASS\b/i.test(researchText) && researchUrls.length>=2,
 publicTopicFirewall:Boolean(researchTopic) && !containsInternalTopicLeak(researchTopic), materialExists:Boolean(scriptText),
 headlineExists:/\bPUBLIC_HEADLINE\s*:/i.test(scriptText), materialNoInternalLeak:!containsInternalTopicLeak(scriptText),
-posterExists:Boolean(posterMedia), captionExists:Boolean(captionText), captionClean:Boolean(captionText) &&
+posterExists:Boolean(posterMedia), posterDirectionExists:Boolean(posterDirectionText),
+posterTopicAligned:Boolean(posterTopic)&&normTopic(posterTopic)===normTopic(researchTopic),
+posterBasisExists:/\bPRIMARY VISUAL BASIS\s*:/i.test(posterDirectionText), captionExists:Boolean(captionText), captionClean:Boolean(captionText) &&
 !/^\s*(?:Caption Output|Generated Caption|Result)\s*:/i.test(captionText) && !/```/.test(captionText),
 captionNoInternalLeak:!containsInternalTopicLeak(captionText), };
 const failed=Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name); return { ok:failed.length===0, failed, checks,
-researchSourceCount:researchUrls.length, }; } async function runQcAligned(env,body){ const context=body?.context||{};
+researchSourceCount:researchUrls.length, researchTopic, posterTopic }; } async function runQcAligned(env,body){ const context=body?.context||{};
 const preflight=qcPreflight(context); if(!preflight.ok){ return { reply:[ "FAIL",
 `QC deterministic preflight failed: ${preflight.failed.join(", ")}.`, `Research URLs: ${preflight.researchSourceCount}.` ].join("\n"),
 model:"ACC_DETERMINISTIC_QC_PREFLIGHT", provider:"ACC OS X QC Gate",
@@ -48,12 +51,15 @@ messages:[ {role:"system",content:[ "You are ACC OS X Editorial QC Auditor.",
 "Do not re-litigate source existence unless upstream Research contradicts itself or clearly does not support the selected topic.",
 "Audit: one-topic consistency, material usefulness, PUBLIC_HEADLINE relevance, poster media/direction, caption naturalness, channel identity, no downstream fabricated claims, and no internal/debug text.",
 "Evidence-strength rule: an attributed concern/opinion may appear as an attributed concern/opinion, but material must not convert it into a verified consequence, prediction, causal claim, or industry-wide outcome unless VERIFIED_FACTS supports that claim.",
-"For visual consistency, require the poster to represent the same public topic and supported VISUAL_FACTS; do not require every written fact to appear visually.",
+"The deterministic server preflight has already verified that POSTER PUBLIC TOPIC exactly matches Research TOPIC and that PRIMARY VISUAL BASIS exists.",
+"Treat the deterministic POSTER direction as the authority for visual-topic alignment. Never invent, reconstruct, or assume a different VISUAL_FACTS requirement than the poster direction supplied in context.",
+"Do not fail a poster merely because you would prefer a map, diagram, partnership graphic, relationship map, chart, or illustrative scene instead. The server has already normalized non-renderable research visuals into a valid topic-aligned poster brief.",
+"A faithful illustrative scene is acceptable when it clearly represents the same PUBLIC TOPIC. Fail visual consistency only when the supplied POSTER direction itself explicitly changes topic, introduces an unsupported factual visual claim, or poster media is missing.",
 "A graph/chart is acceptable only when upstream VERIFIED_FACTS supplies the data needed for that graph; otherwise fail with a precise poster-consistency reason.",
 "Return exactly PASS on the first non-empty line only if publication-ready.",
 "Otherwise return exactly FAIL on the first non-empty line, followed by specific actionable reasons.", "Never return PASS WITH REVISION."
 ].join("\n")}, {role:"user",content:[ `QC TASK:\n${taskText}`, `DETERMINISTIC PREFLIGHT:\n${JSON.stringify({ checks:preflight.checks,
-researchSourceCount:preflight.researchSourceCount })}`, `ACC CONTEXT JSON:\n${trimContext(context,18000)}` ].join("\n\n")} ],
+researchSourceCount:preflight.researchSourceCount,researchTopic:preflight.researchTopic,posterTopic:preflight.posterTopic })}`, `ACC CONTEXT JSON:\n${trimContext(context,18000)}` ].join("\n\n")} ],
 max_tokens:1200, temperature:0.15, }); const reply=extractModelTextRobust(result); if(!reply){ return {
 reply:"FAIL\nQC semantic audit returned no usable response.", model:TEXT_MODEL, provider:"Cloudflare Workers AI",
 qc:{preflight:preflight.checks,researchSourceCount:preflight.researchSourceCount} }; } return { reply, model:TEXT_MODEL,
@@ -83,7 +89,7 @@ return /execute\s+research|locked channel context|upstream production assets|gm5
 } function containsInternalTopicLeak(value){ const v=text(value).toLowerCase(); if(!v)return false;
 return /\b(?:gm5|acc os x|acc core|mission terminal|context vault|publish core|ai router)\b|one[- ]button production|(?:scriptwriter|poster creator|social captioner|qc)\s+ai|(?:research|caption|poster|script)\s+worker|staging publish disabled|internal workflow/.test(v);
 } function extractResearchTopic(value){ const m=String(value||"").match(/^\s*TOPIC\s*:\s*(.+)$/im); return m?cleanTopicText(m[1],220):""; }
-function latestResearchTopicFromContext(context){ const research=latestUpstreamByStage(context,"RESEARCH");
+function normTopic(value){ return cleanTopicText(value,260).toLowerCase().replace(/[^a-z0-9]+/g," ").trim(); } function extractPosterTopic(value){ const m=String(value||"").match(/^\s*PUBLIC TOPIC\s*:\s*(.+)$/im); return m?cleanTopicText(m[1],220):""; } function latestResearchTopicFromContext(context){ const research=latestUpstreamByStage(context,"RESEARCH");
 return extractResearchTopic(text(research?.output)); } function researchSection(raw,name,nextNames){ const stop=(nextNames||[]).join("|");
 const re=new RegExp(`^\\s*${name}\\s*:\\s*([\\s\\S]*?)${stop?`(?=^\\s*(?:${stop})\\s*:|$)`:"$"}`,"im"); const m=String(raw||"").match(re);
 return m?text(m[1]).slice(0,5000):""; } function researchPacketFromContext(context){
@@ -120,11 +126,16 @@ if(stage==="POSTER") return [ `PUBLIC TOPIC: ${topic}`,
 "Preserve evidence strength: attribute concerns/opinions and do not turn them into factual consequences, predictions, or industry-wide claims.",
 "Preserve Channel Passport language/tone/credits/tag rules.",
 "No labels, JSON, markdown fences, placeholders, debug text, or ACC internal terminology." ].join("\n"); return `PUBLIC TOPIC: ${topic}`; }
-function deterministicPosterBrief(packet){ const topic=cleanTopicText(packet?.topic,220); const visual=text(packet?.visualFacts).slice(0,2600);
-const angle=text(packet?.angle).slice(0,1000); const basis=visual||angle||topic; return [ `PUBLIC TOPIC: ${topic}`,
-`PRIMARY VISUAL BASIS: ${basis}`, "Create one clean editorial technology-news artwork/background for this exact topic and nothing adjacent.",
-"Represent only subjects, objects, institutions, locations, or actions explicitly supported by PRIMARY VISUAL BASIS or PUBLIC TOPIC.",
-"Do not invent reaction shots, executives, media chiefs, factories, devices, charts, graphs, dashboards, numbers, or unrelated industries unless explicitly supported above.",
+function posterVisualBasis(packet){ const topic=cleanTopicText(packet?.topic,220); const visual=text(packet?.visualFacts).slice(0,2600);
+const angle=text(packet?.angle).slice(0,1000); const raw=visual||angle||topic; const nonRenderable=/\b(?:diagram|chart|graph|dashboard|infographic|network map|flowchart|table|timeline)\b/i.test(raw);
+if(nonRenderable)return `Illustrative editorial scene representing exactly: ${topic}. Show only people, objects, places, or actions directly implied by this public topic. Do not reproduce a diagram, chart, organization map, logo, text, or data visualization.`;
+return raw; }
+function deterministicPosterBrief(packet){ const topic=cleanTopicText(packet?.topic,220); const basis=posterVisualBasis(packet); return [ `PUBLIC TOPIC: ${topic}`,
+`PRIMARY VISUAL BASIS: ${basis}`, "Create one clean editorial artwork/background for this exact public topic and nothing adjacent.",
+"The image may be an illustrative scene rather than a literal documentary photo, but it must clearly represent the PUBLIC TOPIC.",
+"Represent only people, objects, institutions, locations, or actions supported by PRIMARY VISUAL BASIS or directly implied by PUBLIC TOPIC.",
+"If research suggests a diagram/chart/graph/organization map, convert it into a clear illustrative scene instead of drawing the diagram itself.",
+"Do not invent reaction shots, executives, media chiefs, factories, unrelated devices, numbers, dashboards, charts, graphs, or unrelated industries.",
 "No headline, logo, watermark, signage, UI text, letters, pseudo-text, or ACC/internal terminology inside the AI artwork.",
 "Keep strong subject clarity and safe negative space for deterministic headline/logo overlays." ].join("\n"); }
 function normalizePublicStageOutput(stage,value,packet){ const out=text(value); if(stage!=="SCRIPT"||!out||/\bPUBLIC_HEADLINE\s*:\s*\S+/i.test(out))return out;
@@ -289,7 +300,7 @@ sourceCount:allowedUrls.length, sources:allowedUrls, browserVerifiedCount:verifi
 async fetch(request,env){ const url=new URL(request.url); if(request.method==="OPTIONS"){
 return new Response(null,{status:204,headers:{...cors,"Access-Control-Max-Age":"86400"}}); }
 if(request.method==="GET" && (url.pathname==="/health" || url.pathname==="/api/acc-ai")){ return json({ ok:true, service:"ACC OS X PRODUCTION AI",
-system:"ACC OS X", status:"ONLINE", revision:"QUALITY_HARDENING_V1_6_5_PRODUCTION", mode:"PRODUCTION_AI", aiBinding:Boolean(env.AI),
+system:"ACC OS X", status:"ONLINE", revision:"QUALITY_HARDENING_V1_6_7_PRODUCTION", mode:"PRODUCTION_AI", aiBinding:Boolean(env.AI),
 browserBinding:Boolean(env.BROWSER), accessSecretConfigured:Boolean(env.ACC_AI_ACCESS_CODE||env.ACC_ACCESS_CODE), textModel:TEXT_MODEL,
 researchModel:RESEARCH_MODEL, imageModel:IMAGE_MODEL, researchGrounding:"HYBRID_SOURCE_ENGINE_V1_4_3",
 qcPolicy:"SERVER_RESEARCH_AUTHORITY_PLUS_SEMANTIC_QC_V1_6_5", queryPlanner:"DETERMINISTIC_CHANNEL_TOPIC_DISCOVERY_V1_4",
@@ -297,7 +308,7 @@ researchTransport:"NATIVE_WEB_SEARCH_THEN_RSS_NEWS_THEN_BROWSER_VERIFY", researc
 regexContractFix:true, editorTypeCheckClean:true, groundingContractNormalizer:true, deterministicQcPreflight:true,
 sourceAuthorityAligned:true, topicFirewall:true, publicTopicSanitizer:true, internalTopicLeakHardBlock:true, internalMissionStripping:true,
 downstreamPublicContextIsolation:true, downstreamAutoRepair:true, genericPhraseFalsePositiveFix:true, publicPacketConsistencyLock:true,
-researchSectionCohesion:true, posterVisualFactsLock:true, unsupportedChartHardBlock:true, deterministicHeadlineNormalizer:true, deterministicPosterBrief:true, posterAdjacentTopicBlock:true, claimDisciplineLock:true, opinionAttributionLock:true, unsupportedInferenceRepair:true, publishConnectorExternal:true, realPublish:false, }); }
+researchSectionCohesion:true, posterVisualFactsLock:true, unsupportedChartHardBlock:true, deterministicHeadlineNormalizer:true, deterministicPosterBrief:true, posterAdjacentTopicBlock:true, posterRenderabilityNormalizer:true, diagramToSceneFallback:true, illustrativeTopicVisualAccepted:true, posterQcDeterministicAuthority:true, qcVisualHallucinationGuard:true, claimDisciplineLock:true, opinionAttributionLock:true, unsupportedInferenceRepair:true, publishConnectorExternal:true, realPublish:false, }); }
 if(request.method==="POST" && url.pathname==="/api/acc-ai"){ const denied=requireAccess(request,env);if(denied)return denied;
 if(!env.AI)return json({ok:false,...publicError({code:"AI_BINDING_MISSING",message:"Workers AI binding bernama AI belum dipasang."})},503);
 let body; try{body=await request.json();}
