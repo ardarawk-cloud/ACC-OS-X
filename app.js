@@ -287,6 +287,7 @@
     gm5Running:false,
     gm5Stage:"READY",
     gm5Error:"",
+    gm5ErrorDetails:false,
     gm5CompletedStages:[],
     gm5StartedAt:null,
     gm5FinishedAt:null,
@@ -1102,13 +1103,20 @@ Mission: ${profile.mission||"—"}`},
   };
   const gm5RunWorkerStage = async (displayStage,workerStage,channelId,extraGoal="") => {
     gm5SetStage(displayStage);
+    const channel=channelMap[channelId];
+    const researchGoal=`Discover ONE current, publishable topic for ${channel.name} using ONLY the locked Channel Passport mission/category/canon plus verified external sources. Ignore ACC AI chat, LOCAL SAFE text, AI console notes, stale queue notes, debug/internal mission text, and unrelated prior assets.`;
+    const stageGoal=displayStage==="RESEARCH"
+      ? researchGoal
+      : `GM5 one-button production for ${channel.name}. Execute ${displayStage} using the locked Channel Passport and current mission upstream assets only.`;
+    addActivity(`${displayStage} started`,channelId,displayStage);
     const task=routeTask({
       stage:workerStage,
-      goal:`GM5 one-button production for ${channelMap[channelId].name}. Execute ${displayStage} using locked profile context and latest upstream assets.${extraGoal?`\n\n${extraGoal}`:""}`,
+      goal:`${stageGoal}${extraGoal?`\n\n${extraGoal}`:""}`,
       channelId,autoRun:true,autoApply:true,source:"GM5_ONE_BUTTON",keepPipeline:true
     });
     if(!task?.id)throw new Error(`${displayStage}_ROUTE_FAILED`);
     const done=await gm5WaitForTask(task.id);
+    addActivity(`${displayStage} completed`,channelId,displayStage);
     gm5CompleteStage(displayStage);
     return done;
   };
@@ -1161,7 +1169,7 @@ Mission: ${profile.mission||"—"}`},
       if(!publishTargetForChannel(channel.id))return showToast("Facebook Page belum terhubung. Buka CORE → PUBLISHING.");
     }
 
-    ui.gm5Running=true;ui.gm5Stage="READY";ui.gm5Error="";ui.gm5CompletedStages=[];ui.gm5StartedAt=now();ui.gm5FinishedAt=null;
+    ui.gm5Running=true;ui.gm5Stage="READY";ui.gm5Error="";ui.gm5ErrorDetails=false;ui.gm5CompletedStages=[];ui.gm5StartedAt=now();ui.gm5FinishedAt=null;
     ui.tab="production";ui.productionTab="pipeline";
     try{
       // Fresh production run. Previous completed run remains in assets/activity/publish history.
@@ -1216,9 +1224,9 @@ Mission: ${profile.mission||"—"}`},
       save();playUiSound("success");showToast("GM5 DONE ✅ REAL FACEBOOK PUBLISHED");
     }catch(error){
       ui.gm5Error=serializeAccError(error?.message||error)||"UNKNOWN_GM5_ERROR";ui.gm5FinishedAt=now();
-      addActivity(`GM5 stopped → ${ui.gm5Stage} → ${ui.gm5Error}`,channel.id,ui.gm5Stage);
-      notify("GM5 Mission Stopped",`${ui.gm5Stage}: ${ui.gm5Error}`,"ERROR");
-      save();showToast(`GM5 berhenti di ${ui.gm5Stage}`);
+      addActivity(`${ui.gm5Stage} FAILED`,channel.id,ui.gm5Stage);
+      notify("Mission Failed",`${channel.name} berhenti di ${ui.gm5Stage}.`,"ERROR");
+      save();showToast(`${ui.gm5Stage} FAILED`);
     }finally{ui.gm5Running=false;render();}
   };
 
@@ -1235,11 +1243,13 @@ Mission: ${profile.mission||"—"}`},
     }
     state.activeWorkspaceId = channelMap[channelId].workspaceId;
     state.activeChannelId = channelId;
-    addActivity("Production started",channelId,"RESEARCH");
-    notify("Production Started",`${channelMap[channelId].name} masuk tahap RESEARCH.`,"INFO");
+    if(!ui.gm5Running){
+      addActivity("Production started",channelId,"RESEARCH");
+      notify("Production Started",`${channelMap[channelId].name} masuk tahap RESEARCH.`,"INFO");
+    }
     save();
     ui.tab="production";ui.productionTab="pipeline";
-    showToast("Production started — Research aktif.");
+    if(!ui.gm5Running)showToast("Production started — Research aktif.");
   };
 
   const manualNext = () => {
@@ -1377,7 +1387,7 @@ Mission: ${profile.mission||"—"}`},
       providerMode:state.ai.providerMode,provider:null,model:null,source,autoApply:Boolean(autoApply)
     };
     state.ai.tasks.unshift(task);state.ai.tasks=state.ai.tasks.slice(0,150);
-    addActivity(`AI Router → ${route.label}`,channelId,stage);
+    if(source!=="GM5_ONE_BUTTON")addActivity(`AI Router → ${route.label}`,channelId,stage);
     save();if(!keepPipeline){ui.tab="production";ui.productionTab="ai";}showToast(autoRun?`Routing + executing ${route.label}…`:`Routed to ${route.label}.`);
     if(autoRun)setTimeout(()=>runTask(task.id,false,{autoApply:task.autoApply}),80);
     return task;
@@ -1582,15 +1592,18 @@ Operational rules:
       current.status="SUCCESS";current.output=current.stage==="CAPTION"?cleanPublicationCaption(data.reply):data.reply;current.completedAt=now();
       current.provider=data.provider||"Cloudflare Workers AI";current.model=data.model||"server-ai";current.providerMode="SERVER_AI";
       state.ai.providerMode="SERVER_AI";updateWorkerStats(current.workerType,"SUCCESS");
-      addActivity(`${current.workerName} completed via server AI`,current.channelId,current.stage);
+      if(current.source!=="GM5_ONE_BUTTON")addActivity(`${current.workerName} completed via server AI`,current.channelId,current.stage);
       if(current.autoApply)applyTask(current.id,{silent:true});
       save();render();showToast(current.autoApply?"Worker SUCCESS — output applied, pipeline lanjut.":"Worker execution SUCCESS.");
     }catch(error){
       const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
       current.status="FAILED";current.error=serializeAccError(error?.message||error)||"UNKNOWN_AI_WORKER_ERROR";current.completedAt=now();current.provider="SERVER_AI_ERROR";
-      updateWorkerStats(current.workerType,"FAILED");addActivity(`${current.workerName} failed`,current.channelId,current.stage);
-      notify("AI Worker Failed",`${current.workerName} gagal. Retry tersedia.`,"ERROR");
-      save();render();showToast("Worker gagal — cek task lalu RETRY.");
+      updateWorkerStats(current.workerType,"FAILED");
+      if(current.source!=="GM5_ONE_BUTTON"){
+        addActivity(`${current.workerName} failed`,current.channelId,current.stage);
+        notify("AI Worker Failed",`${current.workerName} gagal. Retry tersedia.`,"ERROR");
+      }
+      save();render();if(current.source!=="GM5_ONE_BUTTON")showToast("Worker gagal — cek task lalu RETRY.");
     }
   };
 
@@ -2228,6 +2241,17 @@ Operational rules:
     </section>`;
   };
 
+  const gm5ErrorSummary=value=>{
+    const raw=String(value||"");
+    if(/RESEARCH_FAILED_NO_USABLE_SOURCES/i.test(raw))return "No usable research sources found.";
+    if(/RESEARCH_FAILED_GROUNDING_CONTRACT/i.test(raw))return "Research sources did not pass grounding.";
+    if(/IMAGE_HTTP_422|FINAL_IMAGE_QC_FAILED/i.test(raw))return "Poster image failed visual QC.";
+    if(/IMAGE_HTTP_502|EMPTY_IMAGE/i.test(raw))return "Poster image service failed.";
+    if(/QC_FAILED/i.test(raw))return "QC rejected the production package.";
+    if(/FACEBOOK|META_|PUBLISH/i.test(raw))return "Publish stage failed.";
+    return raw.length>120?`${raw.slice(0,117)}...`:raw;
+  };
+
   const missionLiveHtml=()=>{
     const channel=activeChannel();
     const currentIndex=Math.max(0,GM5_STAGES.indexOf(ui.gm5Stage));
@@ -2255,7 +2279,7 @@ Operational rules:
         <div style="margin-top:12px"><div class="progress-line"><div class="progress-fill" style="width:${progress}%"></div></div></div>
         <div id="mission-terminal-log" class="mission-terminal" style="margin-top:12px;padding:14px;border-radius:14px;background:#030712;border:1px solid rgba(75,238,179,.13);font-size:11px;line-height:1.55;box-shadow:inset 0 0 35px rgba(0,0,0,.38)">
           <div style="color:#69efb3;margin-bottom:9px">ACC://MISSION_TERMINAL — REAL EVENT STREAM</div>${terminalLines}${resultLine}
-          ${ui.gm5Error?`<div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(145,25,43,.16);border:1px solid rgba(255,95,109,.26);color:#ff7d89">ERROR // ${escapeHtml(ui.gm5Error)}</div>`:""}
+          ${ui.gm5Error?`<div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(145,25,43,.16);border:1px solid rgba(255,95,109,.26);color:#ff7d89"><div class="row between wrap" style="gap:8px"><strong>ERROR // ${escapeHtml(gm5ErrorSummary(ui.gm5Error))}</strong><button class="btn dark small-btn mono" data-action="toggle-gm5-error-details">${ui.gm5ErrorDetails?"HIDE":"DETAILS"}</button></div>${ui.gm5ErrorDetails?`<div style="margin-top:9px;color:#c9aab0;overflow-wrap:anywhere">${escapeHtml(ui.gm5Error)}</div>`:""}</div>`:""}
         </div>
         <div class="mission-action-dock"><button class="btn green mono" style="width:100%;min-height:58px;font-size:14px;letter-spacing:.08em" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${buttonText}</button></div>
         <div class="meta" style="text-align:center;margin-top:8px">Real workflow events only • no fake terminal animation</div>
@@ -2557,9 +2581,18 @@ Operational rules:
   };
   const buildWorkerContext=task=>{
     const profile=channelMap[task.channelId],workspace=WORKSPACES.find(item=>item.id===profile?.workspaceId)||WORKSPACES[0],wf=workflowFor(task.channelId);
-    const contexts=injectableContexts(task.channelId).slice(0,8);
-    const upstreamAssets=state.assets.filter(item=>item.channelId===task.channelId&&item.output).slice(0,5).map(item=>({type:item.type,stage:item.stage,title:item.title,createdAt:item.createdAt,hasMedia:Boolean(item.mediaBase64||item.publicUrl),mimeType:item.mimeType||null,output:String(item.output||"").slice(0,2200)}));
-    const queueMission=state.queue.find(item=>item.channelId===task.channelId&&item.status==="RUNNING")||state.queue.find(item=>item.channelId===task.channelId&&item.status==="WAITING");
+    const isGm5Research=task.source==="GM5_ONE_BUTTON"&&task.stage==="RESEARCH";
+    const contexts=injectableContexts(task.channelId)
+      .filter(item=>item.source!=="ACC_AI_CONSOLE"&&!/Mode LOCAL SAFE|ACC AI Mission/i.test(String(item.content||"")))
+      .slice(0,8);
+    const upstreamAssets=isGm5Research?[]:state.assets.filter(item=>item.channelId===task.channelId&&item.output).slice(0,5).map(item=>({type:item.type,stage:item.stage,title:item.title,createdAt:item.createdAt,hasMedia:Boolean(item.mediaBase64||item.publicUrl),mimeType:item.mimeType||null,output:String(item.output||"").slice(0,2200)}));
+    const eligibleQueue=state.queue.filter(item=>
+      item.channelId===task.channelId&&
+      ["RUNNING","WAITING"].includes(item.status)&&
+      item.source!=="ACC_AI_CONSOLE"&&
+      !/Mode LOCAL SAFE|ACC AI Mission/i.test(`${item.title||""} ${item.brief||""}`)
+    );
+    const queueMission=isGm5Research?null:(eligibleQueue.find(item=>item.status==="RUNNING")||eligibleQueue.find(item=>item.status==="WAITING"));
     return {
       owner:"Arda",
       workspace:{id:workspace.id,name:workspace.name},
@@ -2754,6 +2787,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"send-ai-queue":sendAiToQueue();break;
       case"apply-ai-pipeline":applyAiToPipeline();break;
       case"gm5-start":runGM5Mission();break;
+      case"toggle-gm5-error-details":ui.gm5ErrorDetails=!ui.gm5ErrorDetails;render();break;
       case"start-production":startProduction();break;
       case"manual-next":manualNext();break;
       case"route-active-stage":routeActiveStage();break;
