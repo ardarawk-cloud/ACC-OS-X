@@ -1,20 +1,14 @@
-/* ACC OS X Build 215 UI FIX03 cache-reset service worker.
-   Beta policy: network-first/no stale app shell. */
-const SW_REVISION = 'BUILD215-MISSION-ALPHA-R6.11B-20260809';
-
-self.addEventListener('install', event => {
-  self.skipWaiting();
+const CACHE="acc-os-x-build-250";
+const CORE=["./","./index.html","./app.js","./manifest.webmanifest","./acc-os-x-192-build250.png","./acc-os-x-512-build250.png","./acc-os-x-maskable-512-build250.png","./version.json"];
+self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
+self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+self.addEventListener("fetch",event=>{
+  if(event.request.method!=="GET")return;
+  const url=new URL(event.request.url);
+  if(url.pathname.startsWith("/api/"))return;
+  event.respondWith(fetch(event.request).then(response=>{
+    if(response.ok&&url.origin===self.location.origin){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy)).catch(()=>{});}
+    return response;
+  }).catch(()=>caches.match(event.request).then(hit=>hit||caches.match("./index.html"))));
 });
-
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.map(key => caches.delete(key)));
-    await self.clients.claim();
-  })());
-});
-
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(fetch(event.request, { cache: 'no-store' }).catch(() => caches.match(event.request)));
-});
+self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting();});

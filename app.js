@@ -3,16 +3,17 @@
   "use strict";
 
   const ROOT = document.getElementById("root");
-  const CURRENT_VERSION = 215;
-  const PACKAGE_REVISION = "R6.11H-STORAGE-QUOTA-FIX";
+  const CURRENT_VERSION = 250;
+  const PACKAGE_REVISION = "BUILD250-ACC-CORE-V1-STABLE-RC";
   const BACKUP_FORMAT = "ACC_OS_X_BACKUP";
   const STORAGE_KEY = "acc_os_x_ecosystem_v214";
   const AI_ACCESS_STORAGE_KEY = "acc_os_x_ai_access_v1";
+  const ACC_AI_BASE = "";
   const PUBLISH_ENDPOINT_STORAGE_KEY = "acc_os_x_publish_endpoint_v1";
   const PUBLISH_ACCESS_STORAGE_KEY = "acc_os_x_publish_access_v1";
   const AUTO_PUBLISH_REAL_TARGETS = true;
-  const REAL_PUBLISH_TARGETS = {
-    "ch-tukang-tambang": {connector:"META_FACEBOOK",pageId:"101420769205689",pageName:"Tukang Tambang"}
+  const BOOTSTRAP_PUBLISH_TARGETS = {
+    "ch-tukang-tambang": {connector:"META_FACEBOOK",pageId:"101420769205689",pageName:"Tukang Tambang",source:"VERIFIED_BASELINE"}
   };
   const LEGACY_KEYS = [
     "acc_os_x_ecosystem_v213",
@@ -179,6 +180,32 @@
     {id:"sys-studio-os-lab",code:"SYS-02",name:"Studio OS Legacy QA",type:"Migration-Only Environment",status:"LEGACY",description:"Retains migrated internal records; hidden from production profile selection."}
   ];
 
+  const ACC_CORE_SERVICES = [
+    {id:"ai-router",icon:"⌁",name:"AI Router",status:"ACTIVE",desc:"Routes production context and tasks to the correct AI worker."},
+    {id:"ai-workers",icon:"✦",name:"AI Workers",status:"ACTIVE",desc:"Research, Material, Poster, Caption, QC and Publishing worker layer."},
+    {id:"workflow",icon:"⇢",name:"Workflow Engine",status:"ACTIVE",desc:"Runs READY → RESEARCH → MATERIAL → POSTER → CAPTION → QC → PUBLISH."},
+    {id:"assets",icon:"▣",name:"Asset Library",status:"ACTIVE",desc:"Versioned content assets, channel logos, poster media and archives."},
+    {id:"users",icon:"◎",name:"User Management",status:"FOUNDATION",desc:"Role and workspace access foundation for Owner, Editor and Reviewer."},
+    {id:"notifications",icon:"◉",name:"Notifications",status:"ACTIVE",desc:"Mission, approval, failure and system alerts."},
+    {id:"scheduler",icon:"◷",name:"Scheduler",status:"ACTIVE",desc:"Future missions and dispatch into Production Queue."},
+    {id:"database",icon:"▤",name:"Database",status:"ACTIVE",desc:"Persistent browser state with backup, import/export and recovery controls."},
+    {id:"analytics",icon:"▥",name:"Analytics",status:"ACTIVE",desc:"Production, worker, asset and queue operational metrics."},
+    {id:"security",icon:"◇",name:"Security",status:"ACTIVE",desc:"Server-side access codes, secret isolation and publish gate protection."},
+    {id:"gateway",icon:"⇄",name:"API Gateway",status:"ACTIVE",desc:"ACC AI and external Publish Connector service boundary."},
+    {id:"cloud-sync",icon:"☁",name:"Cloud Sync",status:"FOUNDATION",desc:"Foundation slot for future cross-device and workspace synchronization."}
+  ];
+
+  const ACC_ECOSYSTEM_MODULES = [
+    {id:"acc-enterprise",icon:"▦",name:"ACC Enterprise",status:"ACTIVE",desc:"Enterprise command center for media channels and production brands."},
+    {id:"acc-studio",icon:"◈",name:"ACC Studio",status:"ACTIVE",desc:"AM Studio / Studio OS production layer for original IP and creative series."},
+    {id:"acc-civic",icon:"⌂",name:"ACC Civic",status:"FOUNDATION",desc:"Civic information and public-service module foundation."},
+    {id:"acc-finance",icon:"₿",name:"ACC Finance",status:"FOUNDATION",desc:"Financial operations, reporting and business intelligence module foundation."},
+    {id:"acc-nightlife",icon:"✹",name:"ACC Nightlife",status:"FOUNDATION",desc:"Nightlife media, events and venue intelligence module foundation."},
+    {id:"acc-academy",icon:"△",name:"ACC Academy",status:"FOUNDATION",desc:"Learning, curriculum and skill-development module foundation."},
+    {id:"acc-health",icon:"♡",name:"ACC Health",status:"FOUNDATION",desc:"Health operations and information module foundation."},
+    {id:"acc-hospitality",icon:"⌘",name:"ACC Hospitality",status:"FOUNDATION",desc:"Hospitality, guest operations and service workflow module foundation."}
+  ];
+
   const MODULES = [
     {id:"registry",icon:"▦",name:"Registry Center",desc:"Separate channels, studio series, projects, corporate units, operations and system environments."},
     {id:"studio",icon:"◈",name:"Studio OS",desc:"Production Layer backend, workflow continuity and creative operations."},
@@ -188,6 +215,7 @@
     {id:"analytics",icon:"▥",name:"Analytics",desc:"Operational production, asset, queue and worker metrics."},
     {id:"scheduler",icon:"◷",name:"Scheduler",desc:"Create future missions and dispatch them into Production Queue."},
     {id:"notifications",icon:"◉",name:"Notification Center",desc:"Operational alerts, approvals, failures and update messages."},
+    {id:"publishing",icon:"↗",name:"Publishing Hub",desc:"Meta publish coverage: Facebook Page discovery and mapping, plus Instagram bridge readiness for native IG channels."},
     {id:"backup",icon:"⇩",name:"Backup Center",desc:"Local snapshots, JSON export, import and recovery mode."},
     {id:"updates",icon:"↻",name:"Update Center",desc:"Permanent PWA identity and future in-app update controls."},
     {id:"health",icon:"♡",name:"System Health",desc:"PWA, network, storage, cache and data integrity status."},
@@ -261,9 +289,17 @@
     gm5Error:"",
     gm5CompletedStages:[],
     gm5StartedAt:null,
-    gm5FinishedAt:null
+    gm5FinishedAt:null,
+    publishSyncBusy:false,
+    publishSyncError:""
   };
 
+
+  try {
+    const openTarget=new URLSearchParams(window.location.search).get("open");
+    if(openTarget==="produce")ui.tab="production";
+    if(openTarget==="core"){ui.tab="ecosystem";ui.ecosystemTab="launcher";}
+  } catch {}
 
   const EXPERIENCE_DEFAULTS = {
     dnaName: "Founder Edition",
@@ -420,6 +456,7 @@ Mission: ${profile.mission||"—"}`},
     workflows:{},
     queue:[],
     assets:[],
+    brandAssets:{},
     archives:[],
     activity:[],
     publishJobs:[],
@@ -436,7 +473,10 @@ Mission: ${profile.mission||"—"}`},
       lastUpdateCheck:null,
       permanentPwaIdentity:true,
       themeId:"neon-x",
-      customTheme:{...DEFAULT_CUSTOM_THEME}
+      customTheme:{...DEFAULT_CUSTOM_THEME},
+      publishMappings:{...BOOTSTRAP_PUBLISH_TARGETS},
+      metaPages:[],
+      lastMetaPageSync:null
     }
   });
 
@@ -481,6 +521,7 @@ Mission: ${profile.mission||"—"}`},
       workflows:source.workflows || {},
       queue:Array.isArray(source.queue) ? source.queue : [],
       assets:Array.isArray(source.assets) ? source.assets : [],
+      brandAssets:source.brandAssets && typeof source.brandAssets==="object" ? source.brandAssets : {},
       archives:Array.isArray(source.archives) ? source.archives : [],
       activity:Array.isArray(source.activity) ? source.activity : [],
       publishJobs:Array.isArray(source.publishJobs) ? source.publishJobs : [],
@@ -564,7 +605,7 @@ Mission: ${profile.mission||"—"}`},
   };
 
 
-  // Build 215 UI polish layer — visual only; production/publish logic untouched.
+  // Build 250 ACC Core UI layer — production publish connector remains an external service boundary.
   const installBuild215Polish = () => {
     if(document.getElementById("acc-build215-polish")) return;
     const style=document.createElement("style");
@@ -655,6 +696,63 @@ Mission: ${profile.mission||"—"}`},
       .actions>.btn{min-height:42px}
       .footer-note{padding-right:72px!important;min-height:64px!important;display:flex;align-items:center}
       @media(max-width:390px){.theme-grid{grid-template-columns:1fr!important}.theme-card{min-height:82px!important}.theme-swatches{height:22px!important}.brand-title{letter-spacing:.045em!important}}
+
+      /* DEV LAB V2 — mobile live-operations stability */
+      .toast{
+        position:fixed!important;
+        top:calc(12px + env(safe-area-inset-top,0px))!important;
+        left:50%!important;
+        right:auto!important;
+        bottom:auto!important;
+        transform:translateX(-50%)!important;
+        z-index:12000!important;
+        width:max-content!important;
+        max-width:min(92vw,520px)!important;
+        margin:0!important;
+        padding:10px 14px!important;
+        border-radius:13px!important;
+        background:color-mix(in srgb,var(--panel) 94%,#000 6%)!important;
+        border:1px solid color-mix(in srgb,var(--accent) 50%,var(--line))!important;
+        box-shadow:0 16px 40px rgba(0,0,0,.42)!important;
+        color:var(--text)!important;
+        line-height:1.35!important;
+        text-align:center!important;
+        overflow-wrap:anywhere!important;
+        pointer-events:none!important;
+      }
+      .mission-live-card{overflow:visible!important}
+      .mission-terminal{
+        height:clamp(240px,38dvh,440px)!important;
+        min-height:220px!important;
+        max-height:440px!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+        overscroll-behavior:contain!important;
+        scrollbar-gutter:stable!important;
+        overflow-wrap:anywhere!important;
+        word-break:break-word!important;
+      }
+      .mission-terminal *{min-width:0!important}
+      .mission-action-dock{
+        position:sticky!important;
+        bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;
+        z-index:35!important;
+        margin-top:10px!important;
+        padding:8px 0 2px!important;
+        background:linear-gradient(180deg,rgba(5,10,20,0),rgba(5,10,20,.98) 28%,rgba(5,10,20,.98))!important;
+      }
+      @media(max-width:430px){
+        .toast{top:calc(8px + env(safe-area-inset-top,0px))!important;font-size:.72rem!important}
+        .mission-terminal{height:clamp(210px,32dvh,330px)!important;min-height:210px!important;max-height:330px!important;padding:11px!important}
+        .mission-action-dock{bottom:calc(6px + env(safe-area-inset-bottom,0px))!important}
+      }
+
+      /* BUILD 250 — final mobile command deck */
+      .acc250-hero{background:linear-gradient(135deg,color-mix(in srgb,var(--panel) 92%,#0b1024 8%),color-mix(in srgb,var(--accentSoft2) 78%,var(--panel2)))!important;border-color:color-mix(in srgb,var(--accent) 38%,var(--line))!important}
+      .core-flow{margin-top:13px;padding:11px 12px;border-radius:12px;background:rgba(2,6,23,.62);border:1px solid var(--line);color:var(--accentBright);font-size:.74rem;overflow-wrap:anywhere}
+      .module-card{min-height:132px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;text-align:left!important;color:inherit!important}
+      .module-card .module-name{margin-top:10px;font-size:.86rem}.module-card .module-desc{line-height:1.35}
+      @media(max-width:430px){.tabs{display:grid!important;grid-template-columns:repeat(5,minmax(78px,1fr))!important;overflow-x:auto!important}.tab{min-width:78px!important;padding:9px 8px!important;font-size:.72rem!important}.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.module-card{min-height:126px!important;padding:12px!important}.module-card .module-name{font-size:.78rem!important}.module-card .module-desc{font-size:.67rem!important}.main{padding-bottom:104px!important}}
       @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.theme-card,.ai-fab,.logo-shield,.brand-logo-img{transition:none!important;animation:none!important}}
     `;
     document.head.appendChild(style);
@@ -792,6 +890,184 @@ Mission: ${profile.mission||"—"}`},
     state.assets = state.assets.slice(0,500);
   };
 
+
+  // DEV LAB — CHANNEL BRAND ASSET STORE
+  // Logo bytes are stored in IndexedDB, NOT localStorage, to avoid repeating
+  // the storage quota failure fixed in R6.11H. state.brandAssets contains metadata only.
+  const BRAND_DB_NAME="acc-os-x-brand-assets-v1";
+  const BRAND_DB_STORE="logos";
+  const brandLogoCache={};
+
+  const openBrandDb = () => new Promise((resolve,reject)=>{
+    const req=indexedDB.open(BRAND_DB_NAME,1);
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains(BRAND_DB_STORE))db.createObjectStore(BRAND_DB_STORE,{keyPath:"channelId"});
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error("BRAND_DB_OPEN_FAILED"));
+  });
+
+  const brandDbGet = async channelId => {
+    const db=await openBrandDb();
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(BRAND_DB_STORE,"readonly");
+      const req=tx.objectStore(BRAND_DB_STORE).get(channelId);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error||new Error("BRAND_DB_READ_FAILED"));
+    }).finally(()=>db.close());
+  };
+
+  const brandDbPut = async record => {
+    const db=await openBrandDb();
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(BRAND_DB_STORE,"readwrite");
+      tx.objectStore(BRAND_DB_STORE).put(record);
+      tx.oncomplete=()=>resolve(true);
+      tx.onerror=()=>reject(tx.error||new Error("BRAND_DB_WRITE_FAILED"));
+    }).finally(()=>db.close());
+  };
+
+  const brandDbDelete = async channelId => {
+    const db=await openBrandDb();
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(BRAND_DB_STORE,"readwrite");
+      tx.objectStore(BRAND_DB_STORE).delete(channelId);
+      tx.oncomplete=()=>resolve(true);
+      tx.onerror=()=>reject(tx.error||new Error("BRAND_DB_DELETE_FAILED"));
+    }).finally(()=>db.close());
+  };
+
+  const brandLogoMeta = channelId => state.brandAssets?.[channelId]||null;
+  const brandLogoData = channelId => brandLogoCache[channelId]?.dataUrl||"";
+
+  const hydrateBrandLogo = async channelId => {
+    if(!channelId || brandLogoCache[channelId]?.loaded)return;
+    brandLogoCache[channelId]={loaded:true,dataUrl:""};
+    try{
+      const record=await brandDbGet(channelId);
+      if(record?.dataUrl)brandLogoCache[channelId]={loaded:true,dataUrl:record.dataUrl};
+    }catch{}
+    if(activeChannel()?.id===channelId)render();
+  };
+
+  const readFileDataUrl = file => new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result||""));
+    reader.onerror=()=>reject(reader.error||new Error("FILE_READ_FAILED"));
+    reader.readAsDataURL(file);
+  });
+
+  const setBrandLogoFile = async file => {
+    const channel=activeChannel();
+    if(!file||!channel)return;
+    if(!/^image\/(png|jpeg|webp|svg\+xml)$/i.test(file.type||"")){
+      showToast("Logo harus PNG, JPG, WEBP, atau SVG.");return;
+    }
+    if(file.size>2_500_000){
+      showToast("Logo terlalu besar. Maksimum 2.5 MB.");return;
+    }
+    try{
+      const dataUrl=await readFileDataUrl(file);
+      const record={channelId:channel.id,dataUrl,name:file.name,mimeType:file.type||"image/png",size:file.size,updatedAt:now()};
+      await brandDbPut(record);
+      brandLogoCache[channel.id]={loaded:true,dataUrl};
+      state.brandAssets={...(state.brandAssets||{}),[channel.id]:{
+        name:file.name,mimeType:record.mimeType,size:file.size,updatedAt:record.updatedAt,source:"ORIGINAL_ASSET_LIBRARY"
+      }};
+      save();
+      addActivity(`Channel logo updated → ${file.name}`,channel.id,"BRANDING");
+      showToast(`Logo ${channel.name} tersimpan.`);
+      render();
+    }catch(error){
+      showToast(`Logo gagal disimpan: ${String(error?.message||error)}`);
+    }
+  };
+
+  const removeBrandLogo = async channelId => {
+    if(!channelId)return;
+    try{await brandDbDelete(channelId);}catch{}
+    delete brandLogoCache[channelId];
+    const next={...(state.brandAssets||{})};delete next[channelId];state.brandAssets=next;
+    save();showToast("Logo channel dihapus dari Asset Library.");render();
+  };
+
+  const loadImageElement = src => new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error("IMAGE_DECODE_FAILED"));
+    img.src=src;
+  });
+
+  const wrapCanvasText=(ctx,text,maxWidth)=>{
+    const words=String(text||"").trim().split(/\s+/).filter(Boolean),lines=[];let line="";
+    for(const word of words){
+      const next=line?`${line} ${word}`:word;
+      if(line&&ctx.measureText(next).width>maxWidth){lines.push(line);line=word;}
+      else line=next;
+    }
+    if(line)lines.push(line);
+    return lines;
+  };
+
+  const extractPublicHeadline = (channelId) => {
+    const material=latestAssetByStage(channelId,"SCRIPT")?.output||"";
+    const match=String(material).match(/(?:^|\n)\s*(?:PUBLIC_HEADLINE|HEADLINE)\s*:\s*(.+)/i);
+    const raw=(match?.[1]||"").trim().replace(/^["'“”]+|["'“”]+$/g,"");
+    return raw || channelMap[channelId]?.name || "ACC";
+  };
+
+  const composeDeterministicPoster = async ({channelId,imageBase64,mimeType="image/jpeg"}) => {
+    const visualSrc=`data:${mimeType};base64,${String(imageBase64||"").replace(/^data:image\/[^;]+;base64,/,"")}`;
+    const visual=await loadImageElement(visualSrc);
+    const canvas=document.createElement("canvas");
+    canvas.width=1080;canvas.height=1920;
+    const ctx=canvas.getContext("2d",{alpha:false});
+    const scale=Math.max(canvas.width/visual.width,canvas.height/visual.height);
+    const dw=visual.width*scale,dh=visual.height*scale;
+    ctx.drawImage(visual,(canvas.width-dw)/2,(canvas.height-dh)/2,dw,dh);
+
+    // deterministic readability gradient; typography never comes from image AI
+    const grad=ctx.createLinearGradient(0,1120,0,1920);
+    grad.addColorStop(0,"rgba(0,0,0,0)");
+    grad.addColorStop(1,"rgba(0,0,0,.82)");
+    ctx.fillStyle=grad;ctx.fillRect(0,1020,1080,900);
+
+    const headline=extractPublicHeadline(channelId);
+    let size=82;
+    ctx.font=`800 ${size}px Arial, sans-serif`;
+    while(size>50 && ctx.measureText(headline).width>910){size-=2;ctx.font=`800 ${size}px Arial, sans-serif`;}
+    ctx.fillStyle="#fff";ctx.textBaseline="top";
+    const lines=wrapCanvasText(ctx,headline,910).slice(0,3);
+    let y=1370;
+    lines.forEach(line=>{ctx.fillText(line,72,y);y+=size*1.05;});
+
+    // subtle deterministic channel signature
+    ctx.font="700 30px Arial, sans-serif";
+    ctx.fillStyle="rgba(255,255,255,.82)";
+    ctx.fillText(channelMap[channelId]?.name||"ACC",72,1802);
+
+    // original logo asset — never recreated by image AI
+    let logoApplied=false;
+    const logoSrc=brandLogoData(channelId);
+    if(logoSrc){
+      try{
+        const logo=await loadImageElement(logoSrc);
+        const maxW=190,maxH=150;
+        const s=Math.min(maxW/logo.width,maxH/logo.height);
+        const lw=logo.width*s,lh=logo.height*s;
+        ctx.drawImage(logo,1080-72-lw,72,lw,lh);
+        logoApplied=true;
+      }catch{}
+    }
+    return {
+      imageBase64:canvas.toDataURL("image/jpeg",0.94).split(",")[1],
+      mimeType:"image/jpeg",
+      headline,
+      logoApplied
+    };
+  };
+
   const createBackup = (label="Manual Backup",silent=false) => {
     const payload = JSON.stringify(snapshotPayload());
     const entry = {
@@ -841,19 +1117,27 @@ Mission: ${profile.mission||"—"}`},
     gm5SetStage("POSTER");
     const accessCode=getAiAccessCode();
     if(!accessCode)throw new Error("AI_ACCESS_MISSING");
+    await hydrateBrandLogo(channelId);
     const prompt=[
-      `Create the final social media poster for ${channelMap[channelId].name}.`,
-      `Use this production direction:`,
+      `Create ONLY a clean visual/background artwork for ${channelMap[channelId].name}.`,
+      `Use this visual direction:`,
       String(posterTask?.output||"").slice(0,1700),
-      `Clean professional composition. No fake logos. No watermark. Avoid unreadable tiny text.`
+      `ABSOLUTE RULE: NO headline, NO subtitle, NO logo, NO watermark, NO signage, NO UI text, NO letters, NO pseudo-text, NO random typography.`,
+      `Leave clean negative space in the lower third for deterministic ACC headline typography and top-right safe space for the original channel logo.`,
+      `Vertical 9:16 social composition, polished, publication-ready visual background.`
     ].join("\n\n");
-    const response=await fetch("/api/acc-image",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({prompt,channelId})});
+    const response=await fetch(`${ACC_AI_BASE}/api/acc-image`,{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({prompt,channelId})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.ok||!data.imageBase64)throw new Error(data?.error?.code||data?.error?.message||`IMAGE_HTTP_${response.status}`);
-    addAsset({channelId,type:"IMAGE",title:`REAL AI POSTER — ${channelMap[channelId].name}`,stage:"POSTER",taskId:posterTask?.id||null,output:`Generated by ${data.model||"Cloudflare Workers AI"}`,mediaBase64:data.imageBase64,mimeType:data.mimeType||"image/jpeg"});
-    addActivity(`Real AI poster generated → ${data.model||"Workers AI"}`,channelId,"POSTER");
+    const composed=await composeDeterministicPoster({channelId,imageBase64:data.imageBase64,mimeType:data.mimeType||"image/jpeg"});
+    addAsset({
+      channelId,type:"IMAGE",title:`REAL AI POSTER — ${channelMap[channelId].name}`,stage:"POSTER",taskId:posterTask?.id||null,
+      output:`Visual: ${data.model||"Cloudflare Workers AI"} | Typography: ACC deterministic overlay | Logo: ${composed.logoApplied?"ORIGINAL_ASSET":"CHANNEL_TEXT_ONLY"} | Headline: ${composed.headline}`,
+      mediaBase64:composed.imageBase64,mimeType:composed.mimeType
+    });
+    addActivity(`Clean AI visual + deterministic branding composed → ${data.model||"Workers AI"}`,channelId,"POSTER");
     save();
-    return data;
+    return {...data,...composed};
   };
 
   const gm5QcDecision = output => {
@@ -869,9 +1153,13 @@ Mission: ${profile.mission||"—"}`},
   const runGM5Mission = async () => {
     if(ui.gm5Running)return showToast("GM5 mission sedang berjalan.");
     const channel=activeChannel();
-    if(!REAL_PUBLISH_TARGETS[channel.id])return showToast("GM5 real publish baru aktif untuk Golden Page.");
+    const stagingMode=false;
     if(!getAiAccessCode())return showToast("AI ACCESS belum terhubung.");
     if(!getPublishAccessCode())return showToast("Connector access belum terhubung.");
+    if(!publishTargetForChannel(channel.id)){
+      await syncMetaPages(true);
+      if(!publishTargetForChannel(channel.id))return showToast("Facebook Page belum terhubung. Buka CORE → PUBLISHING.");
+    }
 
     ui.gm5Running=true;ui.gm5Stage="READY";ui.gm5Error="";ui.gm5CompletedStages=[];ui.gm5StartedAt=now();ui.gm5FinishedAt=null;
     ui.tab="production";ui.productionTab="pipeline";
@@ -889,12 +1177,12 @@ Mission: ${profile.mission||"—"}`},
       let qcTask=await gm5RunWorkerStage("QC","QC",channel.id);
       let decision=gm5QcDecision(qcTask.output);
 
-      // R6.11G QC CONTRACT FIX
-      // PASS -> publish; PASS WITH REVISION -> publish with warning;
-      // FAIL or malformed verdict -> halt.
+      // DEV LAB AI QUALITY HARDENING — HARD BLOCK
+      // ONLY clean PASS may continue. PASS WITH REVISION is a failure for real publish.
       if(decision==="PASS_WITH_REVISION"){
         const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
-        addActivity(`GM5 QC PASS WITH REVISION → publish allowed | ${qcNote}`,channel.id,"QC");
+        addActivity(`GM5 QC HARD BLOCK → revision required | ${qcNote}`,channel.id,"QC");
+        throw new Error("QC_FAILED: REVISION_REQUIRED");
       }else if(decision==="FAIL"){
         const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
         addActivity(`GM5 QC FAIL → ${qcNote}`,channel.id,"QC");
@@ -902,7 +1190,7 @@ Mission: ${profile.mission||"—"}`},
       }else if(decision!=="PASS"){
         const qcNote=String(qcTask?.output||"").replace(/\s+/g," ").slice(0,300);
         addActivity(`GM5 QC CONTRACT UNKNOWN → ${qcNote}`,channel.id,"QC");
-        throw new Error("QC_DECISION_UNKNOWN");
+        throw new Error("QC_FAILED: DECISION_UNKNOWN");
       }
 
       // Critical safety: never silently reuse Alpha-2 test media for a GM5 real-content run.
@@ -927,7 +1215,7 @@ Mission: ${profile.mission||"—"}`},
       notify("GM5 ONE BUTTON PASS",`${channel.name} berhasil diproduksi, dipublish, dan diverifikasi.` ,"SUCCESS");
       save();playUiSound("success");showToast("GM5 DONE ✅ REAL FACEBOOK PUBLISHED");
     }catch(error){
-      ui.gm5Error=String(error?.message||error);ui.gm5FinishedAt=now();
+      ui.gm5Error=serializeAccError(error?.message||error)||"UNKNOWN_GM5_ERROR";ui.gm5FinishedAt=now();
       addActivity(`GM5 stopped → ${ui.gm5Stage} → ${ui.gm5Error}`,channel.id,ui.gm5Stage);
       notify("GM5 Mission Stopped",`${ui.gm5Stage}: ${ui.gm5Error}`,"ERROR");
       save();showToast(`GM5 berhenti di ${ui.gm5Stage}`);
@@ -1000,11 +1288,11 @@ Mission: ${profile.mission||"—"}`},
     awardBadge("BUILD_214_STABLE");
     notify("Mission Completed",`${channel.name} selesai 100% dan siap publish/arsip.`,"SUCCESS");
     save();
-    if(AUTO_PUBLISH_REAL_TARGETS&&REAL_PUBLISH_TARGETS[channel.id]&&getPublishAccessCode()){
+    if(AUTO_PUBLISH_REAL_TARGETS&&publishTargetForChannel(channel.id)&&getPublishAccessCode()){
       showToast("Mission completed — auto publish dimulai…");
       setTimeout(()=>runServerPublishWorkflow(channel.id),80);
     }else{
-      showToast(REAL_PUBLISH_TARGETS[channel.id]?"Mission completed — Publish Gate siap, QC tidak perlu diulang.":"Mission completed.");
+      showToast(publishTargetForChannel(channel.id)?"Mission completed — Publish Gate siap, QC tidak perlu diulang.":"Mission completed.");
     }
   };
 
@@ -1212,11 +1500,11 @@ ${contextLine}`
 
   const workerPrompt = task => {
     const stageRules={
-      RESEARCH:"Create a grounded research brief with audience intent, content angles, factual/verification needs, risks, and a production recommendation. If current external facts are required, mark them VERIFICATION REQUIRED instead of inventing them.",
-      SCRIPT:"Create a production-ready script using the locked profile format and the latest upstream research asset. Preserve exact series names, batch counts, canon, tone, and workflow rules.",
-      POSTER:"Create poster direction and a production-ready image prompt only. Preserve the profile visual identity and exact batch/file rules. Do not claim an image file was generated.",
-      CAPTION:"Create publish-ready caption copy using the locked profile language, platform, credits/tag rules, CTA style, and exact batch requirements.",
-      QC:"Audit the upstream production package against locked profile context. A POSTER asset with hasMedia=true counts as a real generated poster. Return exactly one decision on the first line: PASS, PASS WITH REVISION, or FAIL. Then give concise reasons. Never request revision merely because binary image bytes are not embedded in the text output when hasMedia=true.",
+      RESEARCH:"Create a grounded research brief for the selected Channel Passport and exact mission topic. Keep ONE topic only. Separate VERIFIED FACTS from assumptions. Never invent facts. If evidence is insufficient, return RESEARCH_FAILED with the specific missing evidence. Structure: TOPIC, VERIFIED_FACTS, SOURCE_NOTES, ANGLE, KEY_POINTS, VISUAL_FACTS, RISK_NOTES.",
+      SCRIPT:"Turn the latest verified research into useful publication-ready material. No generic filler. Preserve Channel Passport tone, language, audience, exact series/batch rules and canon. Keep the same topic. Include one exact line PUBLIC_HEADLINE: <publication headline>. Do not include AI commentary or internal/debug labels in audience-facing copy.",
+      POSTER:"Create VISUAL DIRECTION ONLY for a clean AI background/artwork. Do not ask image AI to render headline, subtitle, logo, watermark, signage, UI text, letters or pseudo-text. Preserve visual identity and leave safe negative space for deterministic ACC typography and original Asset Library logo overlay. Do not claim an image file was generated.",
+      CAPTION:"Return ONLY the final publish-ready caption. Use the locked profile language, platform, credits/tag rules, CTA style and exact batch requirements. Never output labels such as Caption Output, Generated Caption, Result, JSON, debug text, markdown wrappers, internal instructions or placeholder copy.",
+      QC:"HARD QC GATE. Audit research existence, one-topic consistency, material quality, real poster media, no known gibberish/pseudo-text, deterministic headline, original logo use when configured, caption quality, no internal/debug text, and channel identity. Return exactly PASS on the first line only when publication-ready. Otherwise return FAIL on the first line with the specific reason. PASS WITH REVISION is NOT allowed for publishing.",
       PUBLISHING:"Create a publishing checklist only. Never claim anything was posted or scheduled unless an executed ACC action proves it."
     };
     return `You are ${task.workerName}, specialized worker ${task.workerType} inside ACC OS X.
@@ -1233,6 +1521,25 @@ Operational rules:
 - Preserve exact locked names, counts, order, language, and format.
 - Return only the useful stage deliverable, not a discussion of these instructions.`;
   };
+
+
+  const serializeAccError = value => {
+    if(value==null)return "";
+    if(typeof value==="string")return value;
+    if(value instanceof Error)return value.message||value.name||"Unknown error";
+    if(typeof value==="object"){
+      const preferred=value.message||value.code||value.error_description||value.detail||value.reason;
+      if(preferred)return String(preferred)+(value.code&&String(value.code)!==String(preferred)?` [${value.code}]`:"");
+      try{return JSON.stringify(value);}catch{return "Unknown structured error";}
+    }
+    return String(value);
+  };
+
+  const cleanPublicationCaption = value => String(value||"")
+    .replace(/^```[\w-]*\s*/i,"")
+    .replace(/```$/,"")
+    .replace(/^\s*(Caption Output|Generated Caption|Result)\s*:?\s*/i,"")
+    .trim();
 
   const updateWorkerStats = (workerType,result) => {
     const current=state.ai.workerStats[workerType]||{runs:0,success:0,failed:0};
@@ -1267,12 +1574,12 @@ Operational rules:
     }
 
     try{
-      const response=await fetch("/api/acc-ai",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:[{role:"user",content:workerPrompt(task)}],context:buildWorkerContext(task)})});
+      const response=await fetch(`${ACC_AI_BASE}/api/acc-ai`,{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:[{role:"user",content:workerPrompt(task)}],context:buildWorkerContext(task)})});
       if(!response.ok)throw new Error(await extractAiError(response));
       const data=await response.json();
       if(!data.reply)throw new Error("AI worker response kosong.");
       const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
-      current.status="SUCCESS";current.output=data.reply;current.completedAt=now();
+      current.status="SUCCESS";current.output=current.stage==="CAPTION"?cleanPublicationCaption(data.reply):data.reply;current.completedAt=now();
       current.provider=data.provider||"Cloudflare Workers AI";current.model=data.model||"server-ai";current.providerMode="SERVER_AI";
       state.ai.providerMode="SERVER_AI";updateWorkerStats(current.workerType,"SUCCESS");
       addActivity(`${current.workerName} completed via server AI`,current.channelId,current.stage);
@@ -1280,7 +1587,7 @@ Operational rules:
       save();render();showToast(current.autoApply?"Worker SUCCESS — output applied, pipeline lanjut.":"Worker execution SUCCESS.");
     }catch(error){
       const current=state.ai.tasks.find(item=>item.id===taskId);if(!current)return;
-      current.status="FAILED";current.error=String(error?.message||error);current.completedAt=now();current.provider="SERVER_AI_ERROR";
+      current.status="FAILED";current.error=serializeAccError(error?.message||error)||"UNKNOWN_AI_WORKER_ERROR";current.completedAt=now();current.provider="SERVER_AI_ERROR";
       updateWorkerStats(current.workerType,"FAILED");addActivity(`${current.workerName} failed`,current.channelId,current.stage);
       notify("AI Worker Failed",`${current.workerName} gagal. Retry tersedia.`,"ERROR");
       save();render();showToast("Worker gagal — cek task lalu RETRY.");
@@ -1394,6 +1701,57 @@ Operational rules:
 
   // R6.10A.1 — deployable standalone Connector API bridge. Credentials stay on the server.
   const DEFAULT_PUBLISH_ENDPOINT="https://acc-publish-connector.ardarawk.workers.dev/api/acc-publish";
+  const normalizePageName=value=>String(value||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const publishMappings=()=>state.settings.publishMappings&&typeof state.settings.publishMappings==="object"?state.settings.publishMappings:{};
+  const publishTargetForChannel=channelId=>publishMappings()[channelId]||BOOTSTRAP_PUBLISH_TARGETS[channelId]||null;
+  const metaPages=()=>Array.isArray(state.settings.metaPages)?state.settings.metaPages:[];
+  const connectorPagesEndpoint=()=>{
+    const endpoint=getPublishEndpoint();
+    if(/\/api\/acc-publish\/?$/i.test(endpoint))return endpoint.replace(/\/?$/,"/pages");
+    return endpoint.replace(/\/?$/,"/pages");
+  };
+  const autoMapDiscoveredPages=pages=>{
+    const next={...publishMappings()};
+    const byName=new Map((pages||[]).map(page=>[normalizePageName(page.name),page]));
+    let linked=0;
+    WORKSPACES.find(item=>item.id==="acc-enterprise")?.channels.forEach(channel=>{
+      if(String(channel.platform||"Facebook").toLowerCase()==="instagram")return;
+      if(next[channel.id]?.pageId)return;
+      const match=byName.get(normalizePageName(channel.name));
+      if(match?.id){next[channel.id]={connector:"META_FACEBOOK",pageId:String(match.id),pageName:match.name,source:"AUTO_DISCOVERY"};linked+=1;}
+    });
+    state.settings.publishMappings=next;
+    return linked;
+  };
+  const syncMetaPages=async(silent=false)=>{
+    if(ui.publishSyncBusy)return false;
+    const access=getPublishAccessCode();
+    if(!access){if(!silent)showToast("Connector access belum terhubung.");return false;}
+    ui.publishSyncBusy=true;ui.publishSyncError="";render();
+    try{
+      const response=await fetch(connectorPagesEndpoint(),{method:"GET",headers:{"X-ACC-Access-Code":access},cache:"no-store"});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok||!data.ok)throw new Error(data?.error?.message||data?.error?.code||`HTTP_${response.status}`);
+      const pages=Array.isArray(data.pages)?data.pages:[];
+      state.settings.metaPages=pages.map(page=>({id:String(page.id||""),name:String(page.name||""),tasks:Array.isArray(page.tasks)?page.tasks:[]})).filter(page=>page.id&&page.name);
+      state.settings.lastMetaPageSync=now();
+      const linked=autoMapDiscoveredPages(state.settings.metaPages);
+      save();
+      if(!silent)showToast(`Meta Pages synced: ${state.settings.metaPages.length} • auto-linked ${linked}`);
+      return true;
+    }catch(error){ui.publishSyncError=String(error?.message||error);if(!silent)showToast(`Page sync gagal — ${ui.publishSyncError}`);return false;}
+    finally{ui.publishSyncBusy=false;render();}
+  };
+  const linkActivePublishPage=()=>{
+    const channel=activeChannel(); const pageId=document.getElementById("publish-page-select")?.value||"";
+    const page=metaPages().find(item=>String(item.id)===String(pageId));
+    if(!page)return showToast("Pilih Facebook Page dulu.");
+    state.settings.publishMappings={...publishMappings(),[channel.id]:{connector:"META_FACEBOOK",pageId:String(page.id),pageName:page.name,source:"OWNER_LINK"}};
+    save();showToast(`${channel.name} → ${page.name}`);render();
+  };
+  const unlinkActivePublishPage=()=>{
+    const channel=activeChannel(); const next={...publishMappings()}; delete next[channel.id]; state.settings.publishMappings=next; save();showToast("Publish Page dilepas.");render();
+  };
   const getPublishEndpoint=()=>localStorage.getItem(PUBLISH_ENDPOINT_STORAGE_KEY)||DEFAULT_PUBLISH_ENDPOINT;
   const setPublishEndpoint=value=>{
     const endpoint=String(value||"").trim();
@@ -1437,7 +1795,7 @@ Operational rules:
     .replace(/^#{1,6}\\s+/gm,"")
     .trim();
 
-  const alpha2TestMediaUrl = () => new URL("./alpha2-test-poster.png", window.location.href).href;
+  const alpha2TestMediaUrl = () => null;
 
   const latestAssetByStage = (channelId,stage) => state.assets.find(item=>item.channelId===channelId&&item.stage===stage&&item.output);
   const directImageUrlFromAsset = asset => {
@@ -1453,17 +1811,19 @@ Operational rules:
   };
 
   const buildPublishPayload = job => {
-    const target=REAL_PUBLISH_TARGETS[job.channelId]||null;
+    const target=publishTargetForChannel(job.channelId)||null;
     const captionAsset=latestAssetByStage(job.channelId,"CAPTION");
     const posterAsset=latestAssetByStage(job.channelId,"POSTER");
     const message=sanitizeSocialText(captionAsset?.output||`ACC OS X publish test — ${job.channelName}`);
     const assetMediaUrl=directImageUrlFromAsset(posterAsset);
     const imageBase64=posterAsset?.mediaBase64||null;
     const mimeType=posterAsset?.mimeType||"image/jpeg";
-    const mediaUrl=imageBase64?null:(assetMediaUrl||alpha2TestMediaUrl());
+    const mediaUrl=imageBase64?null:assetMediaUrl;
     return {
       ...job,
       target,
+      pageId:target?.pageId||null,
+      pageName:target?.pageName||null,
       content:{message,mediaUrl,imageBase64,mimeType},
       clientRevision:PACKAGE_REVISION,
       mediaSource:imageBase64?"AI_IMAGE_BASE64":assetMediaUrl?"POSTER_ASSET":"ALPHA2_TEST_MEDIA"
@@ -1489,7 +1849,7 @@ Operational rules:
     } else if(job.status==="PUBLISHED"){
       return showToast(`Idempotency guard — sudah PUBLISHED (${job.externalPostId}).`);
     }
-    const target=REAL_PUBLISH_TARGETS[channelId]||null;
+    const target=publishTargetForChannel(channelId)||null;
     job.status="PUBLISHING";job.attempts+=1;job.error=null;job.connector=target?.connector||"SERVER";job.updatedAt=now();
     addActivity(`publish.started → ${job.connector}`,job.channelId,"PUBLISHING");save();render();
     try{
@@ -1692,7 +2052,7 @@ Operational rules:
   const clearOldCaches = async () => {
     if(!("caches" in window))return showToast("Cache API tidak tersedia.");
     const keys=await caches.keys();
-    await Promise.all(keys.filter(key=>key!=="acc-os-x-build-214").map(key=>caches.delete(key)));
+    await Promise.all(keys.filter(key=>key!=="acc-os-x-build-250").map(key=>caches.delete(key)));
     showToast("Cache versi lama dibersihkan.");
   };
 
@@ -1742,7 +2102,7 @@ Operational rules:
   const statusClass=value=>`status ${String(value||"READY").toLowerCase()}`;
   const priorityClass=value=>`priority ${String(value||"NORMAL").toLowerCase()}`;
 
-  const shieldSvg=()=>`<svg class="brand-logo-img" width="58" height="58" viewBox="0 0 58 58" role="img" aria-label="ACC OS X"><defs><linearGradient id="accg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><path d="M29 3 51 11v16c0 14-9.4 23.2-22 28C16.4 50.2 7 41 7 27V11L29 3Z" fill="url(#accg)"/><path d="M18 37 25.5 19h7L40 37h-6l-1.5-4h-7L24 37h-6Zm9.2-9h3.6L29 23.3 27.2 28Z" fill="#fff"/><text x="29" y="47" text-anchor="middle" font-size="6" font-family="Arial,sans-serif" font-weight="700" fill="#fff">ACC</text></svg>`;
+  const shieldSvg=()=>`<svg class="brand-logo-img" width="58" height="58" viewBox="0 0 58 58" role="img" aria-label="ACC OS X"><rect x="4" y="4" width="50" height="50" rx="14" fill="#111a30" stroke="#a855f7" stroke-width="2.4"/><path d="M17 17 L41 41" stroke="#f8fafc" stroke-width="6" stroke-linecap="square"/><path d="M41 17 L17 41" stroke="#60a5fa" stroke-width="6" stroke-linecap="square"/></svg>`;
 
   const headerHtml=()=>{
     const workspace=activeWorkspace(),channel=activeChannel();
@@ -1766,7 +2126,7 @@ Operational rules:
   };
 
   const tabButton=(value,label)=>`<button class="tab ${ui.tab===value?"active":""}" data-action="tab" data-value="${value}">${label}</button>`;
-  const navHtml=()=>`<div class="tabs mono">${tabButton("enterprise","⌁ HOME")}${tabButton("channel","▣ CHANNEL")}${tabButton("production","◉ PRODUCE")}${tabButton("system","⚙ SYSTEM")}</div>`;
+  const navHtml=()=>`<div class="tabs mono">${tabButton("enterprise","⌁ HOME")}${tabButton("channel","▣ CHANNEL")}${tabButton("production","◉ PRODUCE")}${tabButton("ecosystem","✦ CORE")}${tabButton("system","⚙ SYSTEM")}</div>`;
   const subtabButton=(value,label)=>`<button class="subtab ${ui.productionTab===value?"active":""}" data-action="prod-tab" data-value="${value}">${label}</button>`;
   const productionNav=()=>ui.developerMode?`<div class="subtabs mono">${subtabButton("pipeline","PIPELINE")}${subtabButton("queue","QUEUE")}${subtabButton("ai","AI WORKERS")}${subtabButton("context","CONTEXT VAULT")}${subtabButton("assets","ASSETS")}${subtabButton("archive","ARCHIVE")}</div>`:"";
   const moduleTab=(value,label)=>`<button class="module-tab ${ui.ecosystemTab===value?"active":""}" data-action="module-tab" data-value="${value}">${label}</button>`;
@@ -1777,7 +2137,8 @@ Operational rules:
     const m=metrics(),workspace=activeWorkspace();
     const profileActive=workspace.channels.filter(profile=>profile.status!=="PROFILE_PENDING").length;
     return `<section class="section mono">
-      <div class="grid stats">
+      <div class="card acc250-hero"><div class="row between wrap"><div><div class="eyebrow">ARDA CORE CORPORATION • ACC CORE v1.0</div><h2 class="card-title">ONE CORE. MANY WORKSPACES.</h2><p class="muted small">Build Once. Deploy Everywhere. One Core. Unlimited Solutions.</p></div><span class="badge">BUILD 250</span></div><div class="core-flow">ACC Studio → ACC Enterprise → ACC Civic → Module Marketplace</div><div class="actions"><button class="btn primary mono" data-action="tab" data-value="production">⚡ START PRODUCTION</button><button class="btn purple mono" data-action="tab" data-value="ecosystem">OPEN ACC CORE</button></div></div>
+      <div class="grid stats" style="margin-top:14px">
         ${statCard("CHANNELS",m.channels)}${statCard("STUDIO SERIES",m.series,"blue")}${statCard("PLANNED",m.planned,"purple")}
         ${statCard("CREATIVE PROJECTS",m.creative,"cyan")}${statCard("BUSINESS PROJECTS",m.business,"amber")}${statCard("CORPORATE UNITS",m.corporate,"green")}
         ${statCard("RUNNING",m.active,"green")}${statCard("QUEUE",m.queue,"amber")}
@@ -1801,10 +2162,24 @@ Operational rules:
   const channelHtml=()=>{
     const profile=activeChannel(),wf=currentWorkflow(),contexts=ensureContexts(profile.id);
     const typeLabel=profile.kind==="STUDIO_SERIES"?"STUDIO SERIES":"CHANNEL";
+    const logoMeta=brandLogoMeta(profile.id),logoData=brandLogoData(profile.id);
+    if(!brandLogoCache[profile.id]?.loaded)queueMicrotask(()=>hydrateBrandLogo(profile.id));
     return `<section class="section mono"><div class="card">
       <div class="row between wrap"><div class="grow"><div class="eyebrow">${profile.code} • ${typeLabel} • ${activeWorkspace().name}</div><h2 class="card-title truncate">${escapeHtml(profile.name)}</h2><div class="meta">${escapeHtml(profile.dept)} • ${escapeHtml(profile.category)}</div></div><span class="${statusClass(wf.status)}">${escapeHtml(wf.status)}</span></div>
       <div class="grid stats" style="margin-top:19px">${statCard("STAGE",wf.stage,"purple")}${statCard("PROGRESS",`${wf.progress}%`,"blue")}${statCard("PROFILE",profile.status||"ACTIVE","green")}${statCard("CONTEXT",contexts.filter(item=>item.active).length,"cyan")}</div>
       <div class="list" style="margin-top:17px"><div class="item"><div class="eyebrow">MISSION</div><div class="context-content">${escapeHtml(profile.mission||"—")}</div></div><div class="item"><div class="eyebrow">CADENCE • ${escapeHtml(profile.platform||"—")}</div><div class="context-content">${escapeHtml(profile.cadence||"—")}</div></div><div class="item"><div class="eyebrow">LOCKED WORKFLOW</div><div class="context-content">${escapeHtml(profile.workflow||"—")}</div></div></div>
+      <div class="card" style="margin-top:17px;background:color-mix(in srgb,var(--panel2) 75%,transparent)">
+        <div class="row between wrap"><div class="row grow" style="gap:14px">
+          <div style="width:72px;height:72px;min-width:72px;border:1px solid var(--line);border-radius:16px;display:grid;place-items:center;overflow:hidden;background:rgba(0,0,0,.18)">${logoData?`<img src="${logoData}" alt="${escapeHtml(profile.name)} logo" style="max-width:90%;max-height:90%;object-fit:contain">`:`<span class="muted tiny">NO LOGO</span>`}</div>
+          <div class="grow"><div class="eyebrow">CHANNEL BRAND ASSET</div><div class="item-title">Original Logo</div><div class="meta">${logoMeta?`${escapeHtml(logoMeta.name)} • Asset Library • deterministic poster overlay`:"Belum ada logo. Image AI tidak akan diminta membuat logo."}</div></div>
+          <span class="${logoMeta?"status completed":"status ready"}">${logoMeta?"READY":"OPTIONAL"}</span>
+        </div></div>
+        <input id="brand-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+        <div class="actions"><button class="btn cyan mono" data-action="choose-brand-logo">${logoMeta?"REPLACE LOGO":"UPLOAD LOGO"}</button>${logoMeta?`<button class="btn red mono" data-action="remove-brand-logo" data-channel="${profile.id}">REMOVE</button>`:""}</div>
+      </div>
+      <div class="card" style="margin-top:17px;background:color-mix(in srgb,var(--panel2) 75%,transparent)">
+        ${(()=>{const target=publishTargetForChannel(profile.id),pages=metaPages(),isIg=String(profile.platform||"Facebook").toLowerCase()==="instagram";return `<div class="row between wrap"><div><div class="eyebrow">PUBLISH TARGET • ${isIg?"INSTAGRAM":"FACEBOOK"}</div><div class="item-title">${target?escapeHtml(target.pageName):(isIg?"Instagram Business target belum linked":"Facebook Page belum linked")}</div><div class="meta">${target?`${target.instagramAccountId?`IG ID ${escapeHtml(target.instagramAccountId)}`:`Page ID ${escapeHtml(target.pageId)}`} • ${escapeHtml(target.source||"MAPPED")}`:(isIg?"Native Instagram publishing menunggu Meta IG Business/media bridge; tidak ditandai READY palsu.":"Sync Page dari Publishing Hub atau pilih manual.")}</div></div><span class="${target?"status completed":"status ready"}">${target?"READY":(isIg?"BRIDGE REQUIRED":"LINK REQUIRED")}</span></div>${!isIg&&pages.length?`<div class="form-grid two" style="margin-top:13px"><select id="publish-page-select" class="select mono"><option value="">Select Facebook Page…</option>${pages.map(page=>`<option value="${escapeHtml(page.id)}" ${String(target?.pageId||"")===String(page.id)?"selected":""}>${escapeHtml(page.name)}</option>`).join("")}</select><button class="btn cyan mono" data-action="link-publish-page">LINK PAGE</button></div>`:""}<div class="actions"><button class="btn dark mono" data-action="module-tab-system" data-value="publishing">OPEN PUBLISHING HUB</button>${target?`<button class="btn red mono" data-action="unlink-publish-page">UNLINK</button>`:""}</div>`;})()}
+      </div>
       <div class="actions"><button class="btn primary mono" data-action="open-pipeline">START / OPEN PRODUCTION</button></div>
     </div></section>`;
   };
@@ -1812,17 +2187,18 @@ Operational rules:
   const productionHtml=()=>`${productionNav()}${ui.productionTab==="pipeline"?pipelineHtml():""}${ui.productionTab==="queue"?queueHtml():""}${ui.productionTab==="ai"?aiHtml():""}${ui.productionTab==="context"?contextHtml():""}${ui.productionTab==="assets"?assetsHtml():""}${ui.productionTab==="archive"?archiveHtml():""}`;
 
   const publishCenterHtml=(channel,wf)=>{
-    const target=REAL_PUBLISH_TARGETS[channel.id]||null;
+    const target=publishTargetForChannel(channel.id)||null;
     if(!target)return "";
     const job=publishJobForWorkflow(channel.id);
     const caption=latestAssetByStage(channel.id,"CAPTION");
     const poster=latestAssetByStage(channel.id,"POSTER");
     const assetMediaUrl=directImageUrlFromAsset(poster);
-    const mediaUrl=assetMediaUrl||alpha2TestMediaUrl();
+    const hasPoster=Boolean(poster?.mediaBase64||assetMediaUrl);
+    const mediaUrl=assetMediaUrl||null;
     const status=job?.status||"READY";
     const published=job?.status==="PUBLISHED"&&job?.connector==="META_FACEBOOK";
-    const canPublish=wf.status==="COMPLETED"&&!published;
-    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><div class="publish-gate-logo" style="width:42px;height:42px;min-width:42px;margin-right:12px;display:grid;place-items:center;border-radius:12px;overflow:hidden">${shieldSvg()}</div><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE • ALPHA-2 MEDIA</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="green">${assetMediaUrl?"PUBLIC POSTER URL READY":"ALPHA-2 TEST MEDIA READY"}</strong></div><div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div></div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
+    const canPublish=wf.status==="COMPLETED"&&!published&&hasPoster;
+    return `<div class="card" style="margin-top:17px"><div class="row between wrap"><div class="row grow"><div class="publish-gate-logo" style="width:42px;height:42px;min-width:42px;margin-right:12px;display:grid;place-items:center;border-radius:12px;overflow:hidden">${shieldSvg()}</div><div class="grow"><div class="eyebrow">ACC X • REAL PUBLISH GATE</div><h3 class="card-title">${escapeHtml(target.pageName)} → Facebook</h3><div class="meta">QC yang sudah COMPLETED tidak perlu diulang. Publish melanjutkan paket yang sama.</div></div></div><span class="${statusClass(published?"COMPLETED":status)}">${escapeHtml(published?"PUBLISHED":status)}</span></div><div class="list" style="margin-top:15px"><div class="item"><div class="row between"><span class="muted tiny">CAPTION</span><strong class="${caption?"green":"amber"}">${caption?"READY":"MISSING"}</strong></div></div><div class="item"><div class="row between"><span class="muted tiny">POSTER MEDIA</span><strong class="${hasPoster?"green":"amber"}">${hasPoster?(poster?.mediaBase64?"AI POSTER BASE64 READY":"PUBLIC POSTER URL READY"):"MISSING"}</strong></div>${mediaUrl?`<div class="meta" style="overflow-wrap:anywhere">${escapeHtml(mediaUrl)}</div>`:""}</div><div class="item"><div class="row between"><span class="muted tiny">CONNECTOR</span><strong>${escapeHtml(target.connector)}</strong></div></div>${job?.externalPostId?`<div class="item"><div class="row between"><span class="muted tiny">POST ID</span><strong class="green">${escapeHtml(job.externalPostId)}</strong></div></div>`:""}${job?.error?`<div class="context-content red">${escapeHtml(job.error)}</div>`:""}</div><div class="actions"><button class="btn green mono" data-action="server-publish-workflow" data-id="${channel.id}" ${canPublish?"":"disabled"}>${published?"FACEBOOK PUBLISHED ✅":job?.status==="PUBLISHING"?"PUBLISHING…":"⚡ PUBLISH NOW"}</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button><button class="btn cyan mono" data-action="test-publish-endpoint">TEST CONNECTOR</button></div></div>`;
   };
 
   const gm5PipelinePanelHtml = channel => {
@@ -1867,21 +2243,21 @@ Operational rules:
       const color=failed?"#ff5f6d":done?"#55e6a5":active?"#b789ff":"#6f7892";
       return `<div style="display:flex;align-items:center;gap:6px;min-width:88px;color:${color};font-size:11px;font-weight:800"><span>${mark}</span><span>${stage}</span></div>`;
     }).join("");
-    const terminalLines=logs.length?logs.map(item=>`<div style="display:grid;grid-template-columns:64px 1fr;gap:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.035)"><span style="color:#66708a">${escapeHtml(new Date(item.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}))}</span><span style="color:${/failed|stopped|error/i.test(item.action)?'#ff6b78':/succeeded|complete|verified|generated/i.test(item.action)?'#69efb3':'#b9c4dc'}">&gt; ${escapeHtml(item.action)}</span></div>`).join(""):`<div style="color:#66708a;padding:10px 0">&gt; ACC CORE READY. Awaiting mission command...</div>`;
+    const terminalLines=logs.length?logs.map(item=>`<div style="display:grid;grid-template-columns:64px 1fr;gap:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.035)"><span style="color:#66708a">${escapeHtml(new Date(item.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}))}</span><span style="min-width:0;overflow-wrap:anywhere;word-break:break-word;color:${/failed|stopped|error/i.test(item.action)?'#ff6b78':/succeeded|complete|verified|generated/i.test(item.action)?'#69efb3':'#b9c4dc'}">&gt; ${escapeHtml(item.action)}</span></div>`).join(""):`<div style="color:#66708a;padding:10px 0">&gt; ACC CORE READY. Awaiting mission command...</div>`;
     const job=publishJobForWorkflow(channel.id);
     const resultLine=job?.externalPostId?`<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(85,230,165,.25);border-radius:10px;color:#69efb3;background:rgba(20,90,66,.12)">META POST ID // ${escapeHtml(job.externalPostId)}</div>`:"";
     const buttonText=ui.gm5Running?"MISSION RUNNING…":ui.gm5Error?"↻ RETRY MISSION":ui.gm5Stage==="DONE"?"⚡ START NEW MISSION":"⚡ START MISSION";
     return `<section class="section mono">
-      <div class="card" style="padding:14px;background:linear-gradient(180deg,rgba(5,10,20,.98),rgba(8,13,27,.98));border:1px solid rgba(132,95,255,.32);box-shadow:0 0 32px rgba(77,35,170,.12)">
+      <div class="card mission-live-card" style="padding:14px;background:linear-gradient(180deg,rgba(5,10,20,.98),rgba(8,13,27,.98));border:1px solid rgba(132,95,255,.32);box-shadow:0 0 32px rgba(77,35,170,.12)">
         <div class="row between wrap" style="gap:10px"><div><div class="eyebrow">ACC OS X // LIVE OPERATIONS</div><h2 class="card-title" style="margin:4px 0 0">${escapeHtml(channel.name)}</h2><div class="meta">${escapeHtml(channel.code)} • ${escapeHtml(channel.platform||"Production")}</div></div><span class="${statusClass(ui.gm5Running?"RUNNING":ui.gm5Error?"FAILED":ui.gm5Stage==="DONE"?"COMPLETED":"READY")}">${escapeHtml(ui.gm5Running?"LIVE":ui.gm5Error?"HALTED":ui.gm5Stage==="DONE"?"DONE":"STANDBY")}</span></div>
         <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:9px"><div class="item" style="padding:10px"><div class="muted tiny">ACTIVE WORKER</div><strong style="display:block;margin-top:4px;color:#b789ff">${escapeHtml(workerName)}</strong></div><div class="item" style="padding:10px"><div class="muted tiny">MISSION PROGRESS</div><strong style="display:block;margin-top:4px;color:#69efb3">${progress}% • ${currentIndex+1}/${GM5_STAGES.length}</strong></div></div>
         <div style="margin-top:12px;overflow-x:auto;padding:10px 8px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(0,0,0,.22)"><div style="display:flex;gap:12px;min-width:860px">${stageStrip}</div></div>
         <div style="margin-top:12px"><div class="progress-line"><div class="progress-fill" style="width:${progress}%"></div></div></div>
-        <div id="mission-terminal-log" style="margin-top:12px;height:46vh;min-height:330px;max-height:580px;overflow:auto;padding:14px;border-radius:14px;background:#030712;border:1px solid rgba(75,238,179,.13);font-size:11px;line-height:1.55;box-shadow:inset 0 0 35px rgba(0,0,0,.38)">
+        <div id="mission-terminal-log" class="mission-terminal" style="margin-top:12px;padding:14px;border-radius:14px;background:#030712;border:1px solid rgba(75,238,179,.13);font-size:11px;line-height:1.55;box-shadow:inset 0 0 35px rgba(0,0,0,.38)">
           <div style="color:#69efb3;margin-bottom:9px">ACC://MISSION_TERMINAL — REAL EVENT STREAM</div>${terminalLines}${resultLine}
           ${ui.gm5Error?`<div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(145,25,43,.16);border:1px solid rgba(255,95,109,.26);color:#ff7d89">ERROR // ${escapeHtml(ui.gm5Error)}</div>`:""}
         </div>
-        <div style="margin-top:12px"><button class="btn green mono" style="width:100%;min-height:58px;font-size:14px;letter-spacing:.08em" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${buttonText}</button></div>
+        <div class="mission-action-dock"><button class="btn green mono" style="width:100%;min-height:58px;font-size:14px;letter-spacing:.08em" data-action="gm5-start" ${ui.gm5Running?"disabled":""}>${buttonText}</button></div>
         <div class="meta" style="text-align:center;margin-top:8px">Real workflow events only • no fake terminal animation</div>
       </div>
     </section>`;
@@ -1926,7 +2302,7 @@ Operational rules:
     return `<section class="section mono"><input id="archive-search" class="input search mono" placeholder="Search archive..." value="${escapeHtml(ui.archiveSearch)}"><div class="list">${archives.map(item=>`<div class="item"><div class="row between"><div class="grow"><div class="item-title">${escapeHtml(item.channelName)}</div><div class="meta">Archived ${formatTime(item.archivedAt)}</div></div><span class="${statusClass(item.status)}">${escapeHtml(item.status)}</span></div><div class="worker-metrics"><div class="metric"><span class="muted tiny">PROGRESS</span><strong>${item.progress}%</strong></div><div class="metric"><span class="muted tiny">ASSETS</span><strong>${item.assetCount}</strong></div><div class="metric"><span class="muted tiny">STAGE</span><strong style="font-size:10px">${escapeHtml(item.stage)}</strong></div></div></div>`).join("")||`<div class="empty">Archive Center masih kosong.</div>`}</div></section>`;
   };
 
-  const ecosystemHtml=()=>`<div class="module-tabs mono">${moduleTab("launcher","MODULES")}${moduleTab("registry","REGISTRY")}${moduleTab("studio","STUDIO OS")}${moduleTab("gemini","AI CONSOLE")}${moduleTab("vault","KNOWLEDGE")}${moduleTab("graph","GRAPH")}${moduleTab("analytics","ANALYTICS")}${moduleTab("scheduler","SCHEDULER")}${moduleTab("notifications","NOTIFICATIONS")}${moduleTab("backup","BACKUP")}${moduleTab("updates","UPDATES")}${moduleTab("health","HEALTH")}${moduleTab("experience","EXPERIENCE")}</div>${ecosystemContent()}`;
+  const ecosystemHtml=()=>`<div class="module-tabs mono">${moduleTab("launcher","MODULES")}${moduleTab("registry","REGISTRY")}${moduleTab("studio","STUDIO OS")}${moduleTab("gemini","AI CONSOLE")}${moduleTab("vault","KNOWLEDGE")}${moduleTab("graph","GRAPH")}${moduleTab("analytics","ANALYTICS")}${moduleTab("scheduler","SCHEDULER")}${moduleTab("notifications","NOTIFICATIONS")}${moduleTab("publishing","PUBLISHING")}${moduleTab("backup","BACKUP")}${moduleTab("updates","UPDATES")}${moduleTab("health","HEALTH")}${moduleTab("experience","EXPERIENCE")}</div>${ecosystemContent()}`;
 
   const ecosystemContent=()=>{
     switch(ui.ecosystemTab){
@@ -1938,6 +2314,7 @@ Operational rules:
       case"analytics":return analyticsHtml();
       case"scheduler":return schedulerHtml();
       case"notifications":return notificationsHtml();
+      case"publishing":return publishingHubHtml();
       case"backup":return backupHtml();
       case"updates":return updatesHtml();
       case"health":return healthHtml();
@@ -1977,7 +2354,12 @@ Operational rules:
     </section>`;
   };
 
-  const launcherHtml=()=>`<section class="section mono"><div class="card"><div class="eyebrow">ACC ECOSYSTEM CORE</div><h2 class="card-title">MODULE LAUNCHER</h2><p class="muted small">ACC Enterprise and AM Studio share one ACC Core while keeping daily production simple.</p></div><div class="grid module-grid" style="margin-top:16px">${MODULES.map(module=>`<button class="module-card mono" data-action="module-tab" data-value="${module.id}"><div class="module-icon">${module.icon}</div><div class="module-name">${escapeHtml(module.name)}</div><div class="module-desc">${escapeHtml(module.desc)}</div></button>`).join("")}</div></section>`;
+  const launcherHtml=()=>`<section class="section mono">
+    <div class="card acc250-hero"><div class="row between wrap"><div><div class="eyebrow">ACC CORE VISION v1.0</div><h2 class="card-title">ONE APPLICATION • MANY WORKSPACES</h2><p class="muted small">Reusable AI platform with role-based access and one shared core.</p></div><span class="badge">CORE v1.0</span></div></div>
+    <div style="margin-top:18px"><div class="row between"><div><div class="eyebrow">ECOSYSTEM MODULES</div><h3 class="card-title">WORKSPACE LAUNCHER</h3></div><span class="badge">8 MODULES</span></div><div class="grid module-grid" style="margin-top:12px">${ACC_ECOSYSTEM_MODULES.map(module=>`<button class="module-card mono" data-action="core-workspace" data-value="${module.id}"><div class="row between"><div class="module-icon">${module.icon}</div><span class="${module.status==="ACTIVE"?"status completed":"status ready"}">${module.status}</span></div><div class="module-name">${escapeHtml(module.name)}</div><div class="module-desc">${escapeHtml(module.desc)}</div></button>`).join("")}</div></div>
+    <div style="margin-top:22px"><div class="row between"><div><div class="eyebrow">SHARED ACC CORE</div><h3 class="card-title">CORE SERVICES</h3></div><span class="badge">12 SERVICES</span></div><div class="grid module-grid" style="margin-top:12px">${ACC_CORE_SERVICES.map(module=>`<div class="module-card mono"><div class="row between"><div class="module-icon">${module.icon}</div><span class="${module.status==="ACTIVE"?"status completed":"status ready"}">${module.status}</span></div><div class="module-name">${escapeHtml(module.name)}</div><div class="module-desc">${escapeHtml(module.desc)}</div></div>`).join("")}</div></div>
+    <div style="margin-top:22px"><div class="row between"><div><div class="eyebrow">OPERATIONS</div><h3 class="card-title">ACC OS X CONTROL MODULES</h3></div><span class="badge">${MODULES.length}</span></div><div class="grid module-grid" style="margin-top:12px">${MODULES.map(module=>`<button class="module-card mono" data-action="module-tab" data-value="${module.id}"><div class="module-icon">${module.icon}</div><div class="module-name">${escapeHtml(module.name)}</div><div class="module-desc">${escapeHtml(module.desc)}</div></button>`).join("")}</div></div>
+  </section>`;
 
   const studioHtml=()=>{
     const m=metrics();
@@ -1986,7 +2368,7 @@ Operational rules:
     </section>`;
   };
 
-  const geminiHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">EMBEDDED INTELLIGENCE LAYER</div><h2 class="card-title">ACC AI CONSOLE</h2></div><span class="badge">${escapeHtml(ui.aiStatus)}</span></div><p class="muted small">Chat directly inside ACC OS X. Local Safe Mode works without an API. When /api/acc-ai is connected, the same active workspace, profile, workflow and Knowledge Vault context is sent to Cloudflare Workers AI through the server Worker.</p><div class="code-box">Floating AI Launcher → Active Profile Context → Local Safe Mode / Server AI → Owner Actions</div><div class="actions"><button class="btn primary mono" data-action="open-ai-console">OPEN ACC AI CHAT</button><button class="btn purple mono" data-action="open-ai">OPEN AI WORKERS</button><button class="btn dark mono" data-action="open-context">OPEN KNOWLEDGE VAULT</button></div></div></section>`;
+  const geminiHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">EMBEDDED INTELLIGENCE LAYER</div><h2 class="card-title">ACC AI CONSOLE</h2></div><span class="badge">${escapeHtml(ui.aiStatus)}</span></div><p class="muted small">Chat directly inside ACC OS X. Local Safe Mode works without an API. When the ACC AI endpoint is connected, the same active workspace, profile, workflow and Knowledge Vault context is sent to Cloudflare Workers AI through the server Worker.</p><div class="code-box">Floating AI Launcher → Active Profile Context → Local Safe Mode / Server AI → Owner Actions</div><div class="actions"><button class="btn primary mono" data-action="open-ai-console">OPEN ACC AI CHAT</button><button class="btn purple mono" data-action="open-ai">OPEN AI WORKERS</button><button class="btn dark mono" data-action="open-context">OPEN KNOWLEDGE VAULT</button></div></div></section>`;
 
   const vaultModuleHtml=()=>{
     const all=Object.values(state.ai.contexts).flat(),count=all.length,active=all.filter(item=>item.active&&item.type!=="AI_NOTE").length,notes=all.filter(item=>item.type==="AI_NOTE").length;
@@ -2011,6 +2393,25 @@ Operational rules:
   };
 
   const notificationsHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">OPERATIONAL ALERTS</div><h2 class="card-title">NOTIFICATION CENTER</h2></div><span class="badge">${state.notifications.filter(item=>!item.read).length} UNREAD</span></div><div class="actions"><button class="btn purple mono" data-action="mark-read">MARK ALL READ</button><button class="btn dark mono" data-action="clear-notifications">CLEAR ALL</button></div></div><div class="list" style="margin-top:16px">${state.notifications.map(item=>`<div class="item notification ${item.read?"":"unread"}"><div class="row between"><div class="row grow"><span class="notification-dot"></span><div class="grow"><div class="item-title">${escapeHtml(item.title)}</div><div class="meta">${escapeHtml(item.message)}</div></div></div><span class="muted tiny">${formatTime(item.createdAt)}</span></div></div>`).join("")||`<div class="empty">Tidak ada notifikasi.</div>`}</div></section>`;
+
+  const publishingHubHtml=()=>{
+    const enterprise=WORKSPACES.find(item=>item.id==="acc-enterprise");
+    const channels=enterprise?.channels||[]; const pages=metaPages();
+    const facebookChannels=channels.filter(channel=>String(channel.platform||"Facebook").toLowerCase()!=="instagram");
+    const instagramChannels=channels.filter(channel=>String(channel.platform||"Facebook").toLowerCase()==="instagram");
+    const fbMapped=facebookChannels.filter(channel=>Boolean(publishTargetForChannel(channel.id)?.pageId)).length;
+    const igMapped=instagramChannels.filter(channel=>Boolean(publishTargetForChannel(channel.id)?.instagramAccountId)).length;
+    const mapped=fbMapped+igMapped;
+    return `<section class="section mono">
+      <div class="card"><div class="row between wrap"><div><div class="eyebrow">META PUBLISH • MULTI-CHANNEL</div><h2 class="card-title">PUBLISHING HUB</h2><p class="muted small">Facebook channels use isolated Page mappings through the external Meta connector. Instagram-native channels remain a separate bridge target and are only marked READY after a real IG Business/media path exists.</p></div><span class="badge">${mapped}/${channels.length} TARGETS READY</span></div>
+      <div class="grid stats" style="margin-top:16px">${statCard("FB CHANNELS",facebookChannels.length)}${statCard("FB MAPPED",fbMapped,"green")}${statCard("IG CHANNELS",instagramChannels.length,"purple")}${statCard("IG READY",igMapped,"cyan")}</div>
+      <div class="grid stats" style="margin-top:10px">${statCard("PAGES FOUND",pages.length,"blue")}${statCard("TOTAL CHANNELS",channels.length)}${statCard("TARGETS READY",mapped,"green")}${statCard("ACTION NEEDED",Math.max(0,channels.length-mapped),"amber")}</div>
+      <div class="actions"><button class="btn primary mono" data-action="sync-meta-pages" ${ui.publishSyncBusy?"disabled":""}>${ui.publishSyncBusy?"SYNCING…":"SYNC FACEBOOK PAGES"}</button><button class="btn green mono" data-action="test-publish-endpoint">TEST CONNECTOR</button><button class="btn dark mono" data-action="configure-publish-access">CONNECTOR ACCESS</button></div>
+      ${ui.publishSyncError?`<div class="context-content red" style="margin-top:12px">${escapeHtml(ui.publishSyncError)}</div>`:""}
+      <div class="meta" style="margin-top:10px">Last sync: ${state.settings.lastMetaPageSync?formatTime(state.settings.lastMetaPageSync):"—"}</div></div>
+      <div class="list" style="margin-top:16px">${channels.map(channel=>{const target=publishTargetForChannel(channel.id),isIg=String(channel.platform||"Facebook").toLowerCase()==="instagram";const ready=Boolean(target&&(isIg?target.instagramAccountId:target.pageId));return `<button class="item mono" style="width:100%;text-align:left;color:inherit" data-action="open-channel" data-channel="${channel.id}"><div class="row between"><div class="grow"><div class="eyebrow">${escapeHtml(channel.code)} • ${escapeHtml(channel.platform||"Facebook")}</div><div class="item-title">${escapeHtml(channel.name)}</div><div class="meta">${ready?(isIg?`→ @${escapeHtml(target.instagramUsername||target.pageName||"Instagram")} • ${escapeHtml(target.instagramAccountId)}`:`→ ${escapeHtml(target.pageName)} • ${escapeHtml(target.pageId)}`):(isIg?"Instagram Business/media bridge required":"Facebook Page link required")}</div></div><span class="${ready?"status completed":"status ready"}">${ready?"READY":(isIg?"IG BRIDGE":"UNLINKED")}</span></div></button>`}).join("")}</div>
+    </section>`;
+  };
 
   const backupHtml=()=>`<section class="section mono"><div class="card"><div class="row between wrap"><div><div class="eyebrow">DATA CONTINUITY • ${PACKAGE_REVISION}</div><h2 class="card-title">BACKUP CENTER</h2></div><span class="badge">${state.backups.length}/5 LOCAL</span></div><p class="muted small">Local snapshots now create rollback protection before restore/import. Export JSON uses a versioned ACC OS X backup envelope while remaining compatible with older raw-state backups.</p><div class="actions"><button class="btn purple mono" data-action="create-backup">CREATE LOCAL BACKUP</button><button class="btn cyan mono" data-action="export-data">EXPORT JSON</button><button class="btn dark mono" data-action="trigger-import">IMPORT JSON</button></div><input id="backup-file" class="backup-file" type="file" accept="application/json"></div><div class="list" style="margin-top:16px">${state.backups.map(item=>`<div class="item"><div class="row between"><div class="grow"><div class="item-title">${escapeHtml(item.label)}</div><div class="meta">${formatTime(item.createdAt)} • ${(item.size/1024).toFixed(1)} KB • Schema ${item.schemaVersion}</div></div><span class="status completed">READY</span></div><div class="task-actions"><button class="btn green small-btn mono" data-action="restore-backup" data-id="${item.id}">RESTORE</button><button class="btn red small-btn mono" data-action="remove-backup" data-id="${item.id}">DELETE</button></div></div>`).join("")||`<div class="empty">Belum ada backup lokal.</div>`}</div></section>`;
 
@@ -2057,7 +2458,7 @@ Operational rules:
 
   const experienceHtml=()=>{
     const exp=ensureExperience();
-    const badgeNames={FOUNDER:"Founder",EARLY_ADOPTER:"Early Adopter",FIRST_PRODUCTION:"First Production",BUILD_214_STABLE:"Build 214 Stable",THEME_CREATOR:"Theme Creator",WALLPAPER_CREATOR:"Wallpaper Creator"};
+    const badgeNames={FOUNDER:"Founder",EARLY_ADOPTER:"Early Adopter",FIRST_PRODUCTION:"First Production",BUILD_214_STABLE:"Legacy Stable",THEME_CREATOR:"Theme Creator",WALLPAPER_CREATOR:"Wallpaper Creator"};
     return `<section class="section mono">
       <div class="card experience-hero">
         <div class="row between wrap">
@@ -2123,8 +2524,8 @@ Operational rules:
     const m=metrics();
     return `<section class="section mono"><div class="card"><h2 class="card-title">SYSTEM CONTROL</h2><div class="list" style="margin-top:15px">${[
       ["APPLICATION","ACC OS X"],["BUILD",`${CURRENT_VERSION} ${PACKAGE_REVISION}`],["PWA IDENTITY","PERMANENT"],["STORAGE","LOCAL PERSISTENCE"],
-      ["AI MODE",state.ai.providerMode],["PUBLISH API",getPublishEndpoint()],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["SYSTEM MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
-    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small" style="max-width:62%;overflow-wrap:anywhere;text-align:right">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button><button class="btn dark mono" data-action="toggle-developer">${ui.developerMode?"HIDE DEVELOPER MODE":"DEVELOPER / DIAGNOSTICS"}</button></div></div>${ui.developerMode?`<div class="card" style="margin-top:16px"><div class="eyebrow">BACKSTAGE ENGINE</div><h3 class="card-title">DEVELOPER MODE</h3><p class="muted small">Pipeline, Queue, AI Workers, Context Vault, Assets and Archive stay active behind Owner Mode. Open only for diagnostics.</p><div class="actions"><button class="btn dark mono" data-action="open-pipeline">PIPELINE</button><button class="btn dark mono" data-action="open-queue">QUEUE</button><button class="btn dark mono" data-action="open-ai">AI WORKERS</button><button class="btn dark mono" data-action="open-context">CONTEXT</button><button class="btn dark mono" data-action="dev-prod" data-value="assets">ASSETS</button><button class="btn dark mono" data-action="dev-prod" data-value="archive">ARCHIVE</button><button class="btn amber mono" data-action="configure-publish-endpoint">PUBLISH API URL</button><button class="btn green mono" data-action="test-publish-endpoint">PUBLISH HEALTH</button></div></div>`:""}</section>${themeCenterHtml()}`;
+      ["AI MODE",state.ai.providerMode],["PUBLISH API",getPublishEndpoint()],["FB PAGE LINKS",`${WORKSPACES.find(item=>item.id==="acc-enterprise")?.channels.filter(ch=>String(ch.platform||"Facebook").toLowerCase()!=="instagram"&&publishTargetForChannel(ch.id)?.pageId).length||0}/${WORKSPACES.find(item=>item.id==="acc-enterprise")?.channels.filter(ch=>String(ch.platform||"Facebook").toLowerCase()!=="instagram").length||0}`],["IG TARGETS",`${WORKSPACES.find(item=>item.id==="acc-enterprise")?.channels.filter(ch=>String(ch.platform||"").toLowerCase()==="instagram"&&publishTargetForChannel(ch.id)?.instagramAccountId).length||0}/${WORKSPACES.find(item=>item.id==="acc-enterprise")?.channels.filter(ch=>String(ch.platform||"").toLowerCase()==="instagram").length||0}`],["PROFILES",m.profiles],["STUDIO SERIES",m.series],["PLANNED SERIES",m.planned],["CORE SERVICES",ACC_CORE_SERVICES.length],["CONTROL MODULES",m.system],["ASSETS",m.assets],["ARCHIVES",state.archives.length]
+    ].map(([label,value])=>`<div class="item"><div class="row between"><span class="muted tiny">${label}</span><strong class="small" style="max-width:62%;overflow-wrap:anywhere;text-align:right">${escapeHtml(value)}</strong></div></div>`).join("")}</div><div class="actions"><button class="btn purple mono" data-action="module-tab-system" data-value="publishing">PUBLISHING HUB</button><button class="btn cyan mono" data-action="module-tab-system" data-value="backup">BACKUP CENTER</button><button class="btn green mono" data-action="module-tab-system" data-value="updates">UPDATE CENTER</button><button class="btn dark mono" data-action="toggle-developer">${ui.developerMode?"HIDE DEVELOPER MODE":"DEVELOPER / DIAGNOSTICS"}</button></div></div>${ui.developerMode?`<div class="card" style="margin-top:16px"><div class="eyebrow">BACKSTAGE ENGINE</div><h3 class="card-title">DEVELOPER MODE</h3><p class="muted small">Pipeline, Queue, AI Workers, Context Vault, Assets and Archive stay active behind Owner Mode. Open only for diagnostics.</p><div class="actions"><button class="btn dark mono" data-action="open-pipeline">PIPELINE</button><button class="btn dark mono" data-action="open-queue">QUEUE</button><button class="btn dark mono" data-action="open-ai">AI WORKERS</button><button class="btn dark mono" data-action="open-context">CONTEXT</button><button class="btn dark mono" data-action="dev-prod" data-value="assets">ASSETS</button><button class="btn dark mono" data-action="dev-prod" data-value="archive">ARCHIVE</button><button class="btn amber mono" data-action="configure-publish-endpoint">PUBLISH API URL</button><button class="btn green mono" data-action="test-publish-endpoint">PUBLISH HEALTH</button></div></div>`:""}</section>${themeCenterHtml()}`;
   };
 
   const getAiAccessCode=()=>localStorage.getItem(AI_ACCESS_STORAGE_KEY)||"";
@@ -2209,7 +2610,7 @@ Operational rules:
   const localSafeReply=(text)=>{
     const channel=activeChannel(),wf=currentWorkflow(),m=metrics();
     const q=String(text||"").toLowerCase();
-    const base=`Mode LOCAL SAFE aktif untuk ${channel.name}. Saya bisa membaca konteks ACC yang tersimpan di PWA, membantu status/struktur, menyimpan catatan ke Vault, dan mengirim output ke Queue. Generasi AI bebas memerlukan endpoint /api/acc-ai.`;
+    const base=`Mode LOCAL SAFE aktif untuk ${channel.name}. Saya bisa membaca konteks ACC yang tersimpan di PWA, membantu status/struktur, menyimpan catatan ke Vault, dan mengirim output ke Queue. Generasi AI bebas memerlukan AI staging worker terisolasi.`;
     if(/status|progress|tahap|stage/.test(q))return `${channel.name}: stage ${wf.stage}, progress ${wf.progress}%, status ${wf.status}. Queue global ${m.queue}, assets ${m.assets}, approval ${m.approval}.`;
     if(/profile|profil|passport|konteks|context/.test(q)){const ctx=injectableContexts(channel.id),workspace=activeWorkspace();return `Profil aktif: ${channel.code} — ${channel.name}. Workspace ${workspace.name}. ${ctx.length} context aktif: ${ctx.map(x=>x.title).join(", ")}.`; }
     if(/workflow|alur|next|konten|poster|caption|qc/.test(q))return `Workflow terkunci ${channel.name}: ${channel.workflow||"READY → RESEARCH → SCRIPT → POSTER → CAPTION → QC → APPROVAL → COMPLETED"}. Tahap saat ini ${wf.stage}.`;
@@ -2241,7 +2642,7 @@ Operational rules:
       state.ai.providerMode="LOCAL_SAFE";ui.aiLoading=false;ui.aiStatus="LOCAL_SAFE";save();render();return;
     }
     try{
-      const response=await fetch("/api/acc-ai",{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:history.slice(-16).map(item=>({role:item.role,content:item.content})),context:buildAiContext()})});
+      const response=await fetch(`${ACC_AI_BASE}/api/acc-ai`,{method:"POST",headers:{"Content-Type":"application/json","X-ACC-Access-Code":accessCode},body:JSON.stringify({messages:history.slice(-16).map(item=>({role:item.role,content:item.content})),context:buildAiContext()})});
       if(!response.ok)throw new Error(await extractAiError(response));
       const data=await response.json();
       if(!data.reply)throw new Error("AI response kosong.");
@@ -2262,7 +2663,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const aiConsoleHtml=()=>{
     if(!ui.aiConsoleOpen)return"";
     const channel=activeChannel(),history=aiHistory(),hasAccess=Boolean(getAiAccessCode());
-    return `<div class="ai-console-wrap"><section class="ai-console mono" role="dialog" aria-modal="true" aria-label="ACC AI Console"><header class="ai-console-header"><div class="grow"><div class="eyebrow">ACC CORE • EMBEDDED ASSISTANT</div><div class="ai-console-title">KAI — ACC AI</div><div class="meta truncate">${escapeHtml(channel.code)} • ${escapeHtml(channel.name)} • ${escapeHtml(ui.aiStatus)}</div></div><button class="ai-icon-btn" data-action="close-ai-console" aria-label="Tutup">×</button></header><div class="ai-toolbar"><span class="badge">${escapeHtml(hasAccess?"SERVER AI READY":"LOCAL SAFE")}</span><button class="btn dark small-btn mono" data-action="change-ai-access">${hasAccess?"AI ACCESS":"CONNECT AI"}</button><button class="btn dark small-btn mono" data-action="clear-ai-chat">CLEAR</button></div>${ui.aiAccessOpen?`<div class="ai-setup"><div class="item-title">OPTIONAL SERVER AI CONNECTION</div><p class="muted small">Local Safe Mode tidak butuh key. Untuk AI generatif, endpoint /api/acc-ai menggunakan Cloudflare Workers AI. Pasang ACC_AI_ACCESS_CODE sebagai Cloudflare secret; tidak perlu OpenAI API key. Kode akses owner disimpan lokal di perangkat ini dan tidak ditulis ke repository.</p><input id="ai-access-code" class="input mono" type="password" autocomplete="off" placeholder="ACC AI Access Code" value="${escapeHtml(ui.aiAccessDraft)}"><div class="ai-output-actions"><button class="btn purple small-btn mono" data-action="save-ai-access">SAVE ACCESS</button><button class="btn dark small-btn mono" data-action="close-ai-access">CANCEL</button></div></div>`:""}<div id="ai-message-list" class="ai-message-list">${history.length?history.map(item=>`<article class="ai-message ${item.role}"><div class="ai-message-role">${item.role==="assistant"?"KAI • ACC AI":"ARDA"}</div><div class="ai-message-content">${escapeHtml(item.content)}</div><div class="ai-message-time">${formatTime(item.createdAt)}${item.model?` • ${escapeHtml(item.model)}`:""}</div></article>`).join(""):`<div class="ai-empty"><div class="ai-orb">✦</div><strong>ACC AI siap.</strong><span>Local Safe Mode aktif. Hubungkan Cloudflare Workers AI kapan saja untuk percakapan generatif.</span></div>`}${ui.aiLoading?`<article class="ai-message assistant thinking"><div class="ai-message-role">KAI • ACC AI</div><div class="ai-message-content">Memproses konteks ${escapeHtml(channel.name)}…</div></article>`:""}</div>${ui.aiError?`<div class="ai-error">${escapeHtml(ui.aiError)}</div>`:""}<footer class="ai-composer"><textarea id="ai-console-input" class="textarea mono" rows="2" maxlength="5000" placeholder="Tulis pesan untuk KAI…">${escapeHtml(ui.aiInput)}</textarea><button class="btn primary mono" data-action="send-ai-message" ${ui.aiLoading?"disabled":""}>${ui.aiLoading?"THINKING…":"SEND"}</button><div class="ai-output-actions"><button type="button" class="btn dark small-btn mono" data-action="save-ai-vault" ${lastAssistantMessage()?"":"disabled"}>SAVE TO VAULT</button><button type="button" class="btn cyan small-btn mono" data-action="send-ai-queue" ${lastAssistantMessage()?"":"disabled"}>SEND TO QUEUE</button><button type="button" class="btn purple small-btn mono" data-action="apply-ai-pipeline" ${lastAssistantMessage()?"":"disabled"}>APPLY TO PIPELINE</button></div>${ui.aiActionFeedback?`<div class="ai-action-feedback">${escapeHtml(ui.aiActionFeedback)}</div>`:""}</footer><div class="ai-disclaimer">ACC AI uses active ACC context and local chat history. Private ChatGPT history is not imported automatically.</div></section></div>`;
+    return `<div class="ai-console-wrap"><section class="ai-console mono" role="dialog" aria-modal="true" aria-label="ACC AI Console"><header class="ai-console-header"><div class="grow"><div class="eyebrow">ACC CORE • EMBEDDED ASSISTANT</div><div class="ai-console-title">KAI — ACC AI</div><div class="meta truncate">${escapeHtml(channel.code)} • ${escapeHtml(channel.name)} • ${escapeHtml(ui.aiStatus)}</div></div><button class="ai-icon-btn" data-action="close-ai-console" aria-label="Tutup">×</button></header><div class="ai-toolbar"><span class="badge">${escapeHtml(hasAccess?"SERVER AI READY":"LOCAL SAFE")}</span><button class="btn dark small-btn mono" data-action="change-ai-access">${hasAccess?"AI ACCESS":"CONNECT AI"}</button><button class="btn dark small-btn mono" data-action="clear-ai-chat">CLEAR</button></div>${ui.aiAccessOpen?`<div class="ai-setup"><div class="item-title">OPTIONAL SERVER AI CONNECTION</div><p class="muted small">Local Safe Mode tidak butuh key. Untuk AI generatif, endpoint AI staging terisolasi menggunakan Cloudflare Workers AI. Pasang ACC_AI_ACCESS_CODE sebagai Cloudflare secret; tidak perlu OpenAI API key. Kode akses owner disimpan lokal di perangkat ini dan tidak ditulis ke repository.</p><input id="ai-access-code" class="input mono" type="password" autocomplete="off" placeholder="ACC AI Access Code" value="${escapeHtml(ui.aiAccessDraft)}"><div class="ai-output-actions"><button class="btn purple small-btn mono" data-action="save-ai-access">SAVE ACCESS</button><button class="btn dark small-btn mono" data-action="close-ai-access">CANCEL</button></div></div>`:""}<div id="ai-message-list" class="ai-message-list">${history.length?history.map(item=>`<article class="ai-message ${item.role}"><div class="ai-message-role">${item.role==="assistant"?"KAI • ACC AI":"ARDA"}</div><div class="ai-message-content">${escapeHtml(item.content)}</div><div class="ai-message-time">${formatTime(item.createdAt)}${item.model?` • ${escapeHtml(item.model)}`:""}</div></article>`).join(""):`<div class="ai-empty"><div class="ai-orb">✦</div><strong>ACC AI siap.</strong><span>Local Safe Mode aktif. Hubungkan Cloudflare Workers AI kapan saja untuk percakapan generatif.</span></div>`}${ui.aiLoading?`<article class="ai-message assistant thinking"><div class="ai-message-role">KAI • ACC AI</div><div class="ai-message-content">Memproses konteks ${escapeHtml(channel.name)}…</div></article>`:""}</div>${ui.aiError?`<div class="ai-error">${escapeHtml(ui.aiError)}</div>`:""}<footer class="ai-composer"><textarea id="ai-console-input" class="textarea mono" rows="2" maxlength="5000" placeholder="Tulis pesan untuk KAI…">${escapeHtml(ui.aiInput)}</textarea><button class="btn primary mono" data-action="send-ai-message" ${ui.aiLoading?"disabled":""}>${ui.aiLoading?"THINKING…":"SEND"}</button><div class="ai-output-actions"><button type="button" class="btn dark small-btn mono" data-action="save-ai-vault" ${lastAssistantMessage()?"":"disabled"}>SAVE TO VAULT</button><button type="button" class="btn cyan small-btn mono" data-action="send-ai-queue" ${lastAssistantMessage()?"":"disabled"}>SEND TO QUEUE</button><button type="button" class="btn purple small-btn mono" data-action="apply-ai-pipeline" ${lastAssistantMessage()?"":"disabled"}>APPLY TO PIPELINE</button></div>${ui.aiActionFeedback?`<div class="ai-action-feedback">${escapeHtml(ui.aiActionFeedback)}</div>`:""}</footer><div class="ai-disclaimer">ACC AI uses active ACC context and local chat history. Private ChatGPT history is not imported automatically.</div></section></div>`;
   };
 
   const modalHtml=()=>{
@@ -2274,9 +2675,9 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
   const render=()=>{
     applyTheme();
     const scroll=window.scrollY;
-    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE • BUILD ${CURRENT_VERSION} • UI FIX07 • FREEZE CANDIDATE</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka KAI" title="KAI" style="position:fixed!important;right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;left:auto!important;top:auto!important;width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important;margin:0!important;padding:0!important;border-radius:999px!important;z-index:9999!important;overflow:hidden!important;display:grid!important;place-items:center!important;background:linear-gradient(145deg,var(--accentStrong),var(--accent))!important;color:#fff!important;border:1px solid var(--accentBright)!important;box-shadow:0 14px 36px rgba(0,0,0,.38)!important;line-height:1!important;transform:none!important;animation:none!important;-webkit-appearance:none!important;appearance:none!important;font-size:0!important;text-indent:0!important;"><span aria-hidden="true" style="display:grid!important;place-items:center!important;width:34px!important;height:34px!important;margin:0!important;padding:0!important;border:1px solid rgba(255,255,255,.38)!important;border-radius:999px!important;font-size:1rem!important;font-weight:900!important;line-height:1!important;color:#fff!important;">K</span></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
+    ROOT.innerHTML=`<div class="shell">${headerHtml()}<main class="main">${navHtml()}${ui.tab==="enterprise"?enterpriseHtml():""}${ui.tab==="channel"?channelHtml():""}${ui.tab==="production"?productionHtml():""}${ui.tab==="ecosystem"?ecosystemHtml():""}${ui.tab==="system"?systemHtml():""}<div class="footer-note mono">ACC OS X • ACC CORE v1.0 • BUILD 250 • ONE CORE</div></main><button class="ai-fab" data-action="open-ai-console" aria-label="Buka KAI" title="KAI" style="position:fixed!important;right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;left:auto!important;top:auto!important;width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important;margin:0!important;padding:0!important;border-radius:999px!important;z-index:9999!important;overflow:hidden!important;display:grid!important;place-items:center!important;background:linear-gradient(145deg,var(--accentStrong),var(--accent))!important;color:#fff!important;border:1px solid var(--accentBright)!important;box-shadow:0 14px 36px rgba(0,0,0,.38)!important;line-height:1!important;transform:none!important;animation:none!important;-webkit-appearance:none!important;appearance:none!important;font-size:0!important;text-indent:0!important;"><span aria-hidden="true" style="display:grid!important;place-items:center!important;width:34px!important;height:34px!important;margin:0!important;padding:0!important;border:1px solid rgba(255,255,255,.38)!important;border-radius:999px!important;font-size:1rem!important;font-weight:900!important;line-height:1!important;color:#fff!important;">K</span></button>${ui.toast?`<div class="toast mono">${escapeHtml(ui.toast)}</div>`:""}${modalHtml()}${aiConsoleHtml()}</div>`;
     bindEvents();
-    requestAnimationFrame(()=>{scrollTo(0,scroll);const list=document.getElementById("ai-message-list");if(list)list.scrollTop=list.scrollHeight;});
+    requestAnimationFrame(()=>{scrollTo(0,scroll);const list=document.getElementById("ai-message-list");if(list)list.scrollTop=list.scrollHeight;const terminal=document.getElementById("mission-terminal-log");if(terminal&&(ui.gm5Running||ui.gm5Error||ui.gm5Stage==="DONE"))terminal.scrollTop=terminal.scrollHeight;});
   };
 
   const bindValue=(elementId,callback,eventName="input")=>{
@@ -2313,6 +2714,7 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
     bindValue("ai-console-input",value=>ui.aiInput=value);
     bindValue("ai-access-code",value=>ui.aiAccessDraft=value);
 
+    document.getElementById("brand-logo-file")?.addEventListener("change",event=>setBrandLogoFile(event.target.files?.[0]));
     document.getElementById("backup-file")?.addEventListener("change",event=>importData(event.target.files?.[0]));
   };
 
@@ -2322,8 +2724,19 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
       case"prod-tab":ui.productionTab=data.value;render();break;
       case"module-tab":ui.ecosystemTab=data.value;render();break;
       case"module-tab-system":ui.tab="ecosystem";ui.ecosystemTab=data.value;render();break;
+      case"core-workspace":{
+        if(data.value==="acc-enterprise"){state.activeWorkspaceId="acc-enterprise";state.activeChannelId=WORKSPACES[0].channels[0].id;save();ui.tab="enterprise";render();}
+        else if(data.value==="acc-studio"){const ws=WORKSPACES.find(item=>item.id==="am-studio");if(ws){state.activeWorkspaceId=ws.id;state.activeChannelId=ws.channels[0].id;save();ui.tab="enterprise";render();}}
+        else showToast(`${ACC_ECOSYSTEM_MODULES.find(item=>item.id===data.value)?.name||"Module"} foundation sudah disiapkan di ACC Core.`);
+        break;
+      }
+      case"sync-meta-pages":syncMetaPages(false);break;
+      case"link-publish-page":linkActivePublishPage();break;
+      case"unlink-publish-page":unlinkActivePublishPage();break;
       case"open-channel":
         state.activeWorkspaceId=channelMap[data.channel].workspaceId;state.activeChannelId=data.channel;ensureContexts(data.channel);save();ui.tab="channel";render();break;
+      case"choose-brand-logo":document.getElementById("brand-logo-file")?.click();break;
+      case"remove-brand-logo":removeBrandLogo(data.channel||activeChannel().id);break;
       case"open-pipeline":ui.tab="production";ui.productionTab="pipeline";render();break;
       case"open-queue":ui.tab="production";ui.productionTab="queue";render();break;
       case"open-ai":ui.tab="production";ui.productionTab="ai";render();break;

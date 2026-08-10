@@ -1,8 +1,6 @@
 {
-  "version": 216,
-  "name": "KAI PWA Identity + Live Operations",
-  "channel": "beta",
-  "releasedAt": "2026-08-09T08:00:00+08:00",
-  "minimumSchema": 210,
-  "revision": "R1"
+  "version": 250,
+  "revision": "BUILD250-ACC-CORE-V1-STABLE-RC",
+  "channel": "ACC CORE v1.0",
+  "releasedAt": "2026-08-10T23:34:00+08:00"
 }
