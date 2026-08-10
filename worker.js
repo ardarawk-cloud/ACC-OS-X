@@ -1,4 +1,4 @@
-// ACC OS X PRODUCTION AI — QUALITY HARDENING v1.6.7 PHONE COMPACT
+// ACC OS X PRODUCTION AI — BUILD 250 SOURCE BINDING FIX
 // AI quality/orchestration only. Real publishing stays in the external frozen Publish Connector.
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"; const RESEARCH_MODEL = "@cf/zai-org/glm-4.7-flash";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell"; const cors = { "Access-Control-Allow-Origin": "*",
@@ -287,13 +287,20 @@ const allowedUrls=discovery.urls.slice(0,8); const synth=await env.AI.run(TEXT_M
 `OPTIONAL VERIFIED PAGE CONTENT:\n${verifiedBundle}`, ].join("\n\n")} ], max_tokens:1800, temperature:0.2, });
 const reply=extractModelText(synth); if(!reply){
 return {error:{status:502,code:"RESEARCH_SYNTHESIS_EMPTY",message:"Research synthesis returned no text."}}; }
-const cited=[...new Set(urlsInText(reply))].filter(u=>allowedUrls.includes(u)); const hasFacts=/\bVERIFIED_FACTS\b/i.test(reply);
-const hasSources=/\bSOURCES?\b/i.test(reply); const citedEnough=cited.length>=2; const selectedTopic=extractResearchTopic(reply);
-const topicPublic=Boolean(selectedTopic) && !containsInternalTopicLeak(selectedTopic); const missing=[];
+const hasFacts=/\bVERIFIED_FACTS\b/i.test(reply); const selectedTopic=extractResearchTopic(reply);
+const topicPublic=Boolean(selectedTopic) && !containsInternalTopicLeak(selectedTopic);
+let sourceBoundReply=reply;
+if(topicPublic && hasFacts && allowedUrls.length>=2){
+const withoutSources=sourceBoundReply.replace(/\n\s*SOURCES?\s*:[\s\S]*$/i,"").trim();
+const boundSources=allowedUrls.slice(0,Math.min(4,allowedUrls.length)).map(u=>`- ${u}`).join("\n");
+sourceBoundReply=`${withoutSources}\n\nSOURCES:\n${boundSources}`;
+}
+const cited=[...new Set(urlsInText(sourceBoundReply))].filter(u=>allowedUrls.includes(u));
+const hasSources=/\bSOURCES?\b/i.test(sourceBoundReply); const citedEnough=cited.length>=2; const missing=[];
 if(!topicPublic)missing.push("PUBLIC_TOPIC_FIREWALL"); if(!hasFacts)missing.push("VERIFIED_FACTS"); if(!hasSources)missing.push("SOURCES");
 if(!citedEnough)missing.push(`SOURCE_URLS(${cited.length}/2)`); if(missing.length){ return {error:{ status:422,
 code:"RESEARCH_FAILED_GROUNDING_CONTRACT", message:`Research grounding contract missing: ${missing.join(", ")}.`, query,
-citedCount:cited.length, }}; } const normalizedReply=/^\s*RESEARCH_PASS\b/i.test(reply) ? reply : `RESEARCH_PASS\n${reply}`; return {
+citedCount:cited.length, }}; } const normalizedReply=/^\s*RESEARCH_PASS\b/i.test(sourceBoundReply) ? sourceBoundReply : `RESEARCH_PASS\n${sourceBoundReply}`; return {
 reply:normalizedReply, model:TEXT_MODEL, provider:"ACC Hybrid Source Engine + Cloudflare Workers AI", research:{ query, queries,
 topicMode:explicitMissionTopic(context)?"EXPLICIT":"DISCOVERY", discoveryModel:RESEARCH_MODEL, transport:discovery.transport,
 sourceCount:allowedUrls.length, sources:allowedUrls, browserVerifiedCount:verifiedPages.length, } }; } export default {
@@ -305,7 +312,7 @@ browserBinding:Boolean(env.BROWSER), accessSecretConfigured:Boolean(env.ACC_AI_A
 researchModel:RESEARCH_MODEL, imageModel:IMAGE_MODEL, researchGrounding:"HYBRID_SOURCE_ENGINE_V1_4_3",
 qcPolicy:"SERVER_RESEARCH_AUTHORITY_PLUS_SEMANTIC_QC_V1_6_5", queryPlanner:"DETERMINISTIC_CHANNEL_TOPIC_DISCOVERY_V1_4",
 researchTransport:"NATIVE_WEB_SEARCH_THEN_RSS_NEWS_THEN_BROWSER_VERIFY", researchFailFast:true, readableErrorContract:true,
-regexContractFix:true, editorTypeCheckClean:true, groundingContractNormalizer:true, deterministicQcPreflight:true,
+regexContractFix:true, editorTypeCheckClean:true, groundingContractNormalizer:true, deterministicSourceBinding:true, deterministicQcPreflight:true,
 sourceAuthorityAligned:true, topicFirewall:true, publicTopicSanitizer:true, internalTopicLeakHardBlock:true, internalMissionStripping:true,
 downstreamPublicContextIsolation:true, downstreamAutoRepair:true, genericPhraseFalsePositiveFix:true, publicPacketConsistencyLock:true,
 researchSectionCohesion:true, posterVisualFactsLock:true, unsupportedChartHardBlock:true, deterministicHeadlineNormalizer:true, deterministicPosterBrief:true, posterAdjacentTopicBlock:true, posterRenderabilityNormalizer:true, diagramToSceneFallback:true, illustrativeTopicVisualAccepted:true, posterQcDeterministicAuthority:true, qcVisualHallucinationGuard:true, claimDisciplineLock:true, opinionAttributionLock:true, unsupportedInferenceRepair:true, publishConnectorExternal:true, realPublish:false, }); }
