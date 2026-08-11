@@ -1,1 +1,0 @@
-RC4 scope: worker-research-grounding-gate.js, wrangler.jsonc entrypoint, BUILD250_RC4_NOTES.md. worker.js and Meta publishing are untouched.
