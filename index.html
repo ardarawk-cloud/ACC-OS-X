@@ -261,6 +261,139 @@
     </div>
   </div>
   <div id="root"></div>
+
+  <script id="acc-build250-context-bridge">
+  (() => {
+    const STATE_KEY = "acc_os_x_ecosystem_v214";
+    const nativeFetch = window.fetch.bind(window);
+
+    const txt = v => typeof v === "string" ? v.trim() : "";
+    const stageFromMessages = body => {
+      const joined = (Array.isArray(body?.messages) ? body.messages : [])
+        .map(m => txt(m?.content)).join("\n");
+      const m = joined.match(/(?:^|\n)STAGE:\s*(RESEARCH|SCRIPT|POSTER|CAPTION|QC|PUBLISHING)\b/i);
+      return m ? String(m[1] || "").toUpperCase() : "";
+    };
+    const readState = () => {
+      try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); }
+      catch { return {}; }
+    };
+    const latest = (assets, channelId, stage, mediaMode="any") =>
+      assets.find(a => {
+        if (a?.channelId !== channelId || String(a?.stage || "").toUpperCase() !== stage || !txt(a?.output)) return false;
+        const media = Boolean(a?.mediaBase64 || a?.publicUrl || String(a?.type || "").toUpperCase() === "IMAGE");
+        return mediaMode === "media" ? media : mediaMode === "text" ? !media : true;
+      }) || null;
+
+    const section = (raw, name, nextNames=[]) => {
+      const stop = nextNames.join("|");
+      const re = new RegExp(
+        `^\\s*${name}\\s*:\\s*([\\s\\S]*?)${stop ? `(?=^\\s*(?:${stop})\\s*:|$)` : "$"}`,
+        "im"
+      );
+      const m = String(raw || "").match(re);
+      return m ? txt(m[1]) : "";
+    };
+
+    const compactResearch = raw => {
+      const names = ["TOPIC","VERIFIED_FACTS","SOURCE_NOTES","ANGLE","KEY_POINTS","VISUAL_FACTS","RISK_NOTES","SOURCES"];
+      const pieces = [];
+      for (const name of names) {
+        const value = section(raw, name, names.filter(x => x !== name));
+        if (!value) continue;
+        const cap =
+          name === "VERIFIED_FACTS" ? 3600 :
+          name === "KEY_POINTS" ? 1800 :
+          name === "SOURCES" ? 1800 :
+          name === "ANGLE" ? 900 :
+          name === "TOPIC" ? 300 : 900;
+        pieces.push(`${name}:\n${value.slice(0, cap)}`);
+      }
+      const pass = /^\s*RESEARCH_PASS\b/i.test(String(raw || "")) ? "RESEARCH_PASS\n" : "";
+      return (pass + pieces.join("\n\n")).slice(0, 9200);
+    };
+
+    const compactText = (raw, max) => String(raw || "").trim().slice(0, max);
+
+    const hydrateContext = body => {
+      const stage = stageFromMessages(body);
+      if (!stage || stage === "RESEARCH" || !body?.context?.profile?.id) return body;
+
+      const persisted = readState();
+      const assets = Array.isArray(persisted?.assets) ? persisted.assets : [];
+      const channelId = body.context.profile.id;
+      const incoming = Array.isArray(body.context.upstreamAssets) ? body.context.upstreamAssets : [];
+
+      const r = latest(assets, channelId, "RESEARCH", "text");
+      const s = latest(assets, channelId, "SCRIPT", "text");
+      const c = latest(assets, channelId, "CAPTION", "text");
+      const p = latest(assets, channelId, "POSTER", "text");
+
+      const fullByStage = {
+        RESEARCH: r ? compactResearch(r.output) : "",
+        SCRIPT: s ? compactText(s.output, 5200) : "",
+        CAPTION: c ? compactText(c.output, 1900) : "",
+        POSTER: p ? compactText(p.output, 2600) : ""
+      };
+
+      const next = JSON.parse(JSON.stringify(body));
+      const rows = Array.isArray(next.context.upstreamAssets) ? next.context.upstreamAssets : [];
+
+      // Preserve the in-memory POSTER media row exactly as the app sent it,
+      // but replace textual stage outputs with the fuller persisted evidence.
+      for (const row of rows) {
+        const st = String(row?.stage || "").toUpperCase();
+        if (!fullByStage[st]) continue;
+        if (st === "POSTER" && row?.hasMedia) continue;
+        row.output = fullByStage[st];
+      }
+
+      // If a required text stage fell outside the app's latest-five slice,
+      // append it deterministically.
+      const ensureStage = (st, output) => {
+        if (!output) return;
+        if (rows.some(x => String(x?.stage || "").toUpperCase() === st && !(st === "POSTER" && x?.hasMedia))) return;
+        rows.push({
+          type: st, stage: st, title: `${st} Context Bridge`,
+          createdAt: new Date().toISOString(), hasMedia: false,
+          mimeType: null, output
+        });
+      };
+
+      ensureStage("RESEARCH", fullByStage.RESEARCH);
+      if (stage === "CAPTION" || stage === "QC" || stage === "PUBLISHING") ensureStage("SCRIPT", fullByStage.SCRIPT);
+      if (stage === "QC" || stage === "PUBLISHING") {
+        ensureStage("POSTER", fullByStage.POSTER);
+        ensureStage("CAPTION", fullByStage.CAPTION);
+      }
+
+      next.context.upstreamAssets = rows.slice(0, 8);
+      next.context.clientContextBridge = {
+        revision: "BUILD250_CONTEXT_BRIDGE_V1",
+        stage,
+        restored: true
+      };
+      return next;
+    };
+
+    window.fetch = async (input, init={}) => {
+      try {
+        const url = typeof input === "string" ? input : input?.url || "";
+        const method = String(init?.method || (typeof input !== "string" ? input?.method : "GET") || "GET").toUpperCase();
+
+        if (method === "POST" && /\/api\/acc-ai(?:\?|$)/.test(url) && typeof init?.body === "string") {
+          const body = JSON.parse(init.body);
+          const hydrated = hydrateContext(body);
+          if (hydrated !== body) init = {...init, body: JSON.stringify(hydrated)};
+        }
+      } catch {
+        // Never break the production app because of the bridge.
+      }
+      return nativeFetch(input, init);
+    };
+  })();
+  </script>
+
   <script src="./app.js"></script>
   <script>
     requestAnimationFrame(()=>requestAnimationFrame(()=>{

@@ -5,7 +5,7 @@
 import originalWorker from "./worker.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const PATCH_REVISION = "BUILD250_V4_CAPTION_GUARD_FALSE_POSITIVE_FIX";
+const PATCH_REVISION = "BUILD250_RC1_END_TO_END_CONTEXT_FIX";
 
 const text = (v) => typeof v === "string" ? v.trim() : "";
 
@@ -378,10 +378,29 @@ async function repairCaptionIntegrity(env, body, upstream) {
 
   let previous = draft;
   let lastProblems = captionIntegrityProblems(previous, body, evidence);
+  let lastHardProblems = hardCaptionProblems(lastProblems);
 
-  // Even when the draft passes simple regex checks, run one integrity rewrite.
-  // This specifically removes unsupported faux slogans / pseudo-text that the
-  // semantic QC can catch later.
+  // Do NOT rewrite a caption that already has no concrete integrity defect.
+  // The original stage worker remains authoritative; HARD QC keeps the final say.
+  if (draft && lastHardProblems.length === 0) {
+    const next = {
+      ...payload,
+      reply: draft,
+      provider: `${text(payload.provider) || "ACC OS X"} + ACC Caption Integrity Guard (PASS-THROUGH)`,
+      captionIntegrityGuard: {
+        applied: false,
+        revision: PATCH_REVISION,
+        attempts: 0,
+        length: draft.length,
+        softWarnings: lastProblems
+      }
+    };
+    const headers = new Headers(upstream.headers);
+    return json(next, upstream.status, headers);
+  }
+
+  // Repair only concrete defects (internal leaks, wrappers, placeholders,
+  // unsupported quoted text, etc.). Quality preferences stay with HARD QC.
   for (let attempt = 1; attempt <= 2; attempt++) {
     const result = await env.AI.run(TEXT_MODEL, {
       messages: [
@@ -394,8 +413,8 @@ async function repairCaptionIntegrity(env, body, upstream) {
             "Do not add a new fact, statistic, name, organization, location, consequence, prediction, opinion, quote, slogan, campaign line, headline, or pseudo-text.",
             "Do not use quotation marks in the public caption. Paraphrase instead. Only an exact verified quote from the supplied evidence may be quoted, but prefer no quotes.",
             "Remove invented quotation-style slogans, faux campaign names, fake headlines, placeholders, labels, and internal/system terminology.",
-            "Write natural public-facing prose; do not output section labels such as Caption, Key Takeaways, Discussion, Sources, or Result.",
-            "Preserve the Channel Passport language, tone, credits/tag requirements, and platform style.",
+            "Write natural public-facing prose. Never output system labels such as Caption, Result, Sources, VERIFIED_FACTS or internal/debug labels. Public editorial structure such as concise takeaways is allowed when the Channel Passport requires it.",
+            "Preserve the Channel Passport language, tone, credits/tag requirements, platform style, productionFormat, and communication rules exactly.",
             "Preserve evidence strength: concerns/opinions remain attributed concerns/opinions.",
             "End with one natural audience discussion question when appropriate.",
             "Keep hashtags concise and relevant; do not invent branded campaign hashtags.",

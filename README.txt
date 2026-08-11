@@ -1,35 +1,42 @@
-ACC OS X — BUILD 250 CAPTION GUARD V4 FALSE-POSITIVE FIX
+ACC OS X — BUILD 250 RC1 END-TO-END CONTEXT FIX
 
-WHAT FAILED IN V3
-- The Caption Integrity Guard itself halted TechVerse at CAPTION.
-- Root causes fixed in V4:
-  1) Apostrophes were treated like quotation marks, so normal words/contractions
-     could trigger unsupportedQuotedText.
-  2) GM5 stores Scriptwriter output under stage MATERIAL, while V3 only looked
-     for SCRIPT, so the repair model was missing material evidence.
-  3) Soft quality preferences (length / CTA / hashtags) were treated as hard
-     integrity failures before the existing QC gate.
+WHY THIS RC EXISTS
+We stop patching one failure at a time.
 
-V4 BEHAVIOR
-- Only concrete integrity defects hard-block at CAPTION:
-  internal/debug leakage, wrappers, placeholders/pseudo-text, unsupported
-  double-quoted claims, empty output.
-- TechVerse length / discussion prompt / hashtags become repair hints only.
-  The existing HARD QC gate still makes the final publication-quality decision.
-- Research Reliability + QC Research Context Guard stay active.
-- Build remains 250.
-- Meta Publish Connector R4 is NOT touched.
+ROOT CAUSE FIXED
+The PWA app only sends the first 2200 characters of each upstream asset to later workers.
+That can make QC see incomplete Research/Material evidence even when earlier stages passed.
+
+RC1 CHANGES
+1) index.html — Client Context Bridge
+   - Before /api/acc-ai requests, restores compact/full Research, Script, Poster direction
+     and Caption text from the existing local ACC OS X state.
+   - Never injects image bytes.
+   - Preserves the live poster media row.
+   - Applies only to downstream AI stages; RESEARCH itself is untouched.
+
+2) worker-research-reliability.js
+   - Keeps Research browser fallback.
+   - Keeps QC Research URL guard.
+   - Caption Integrity Guard NO LONGER rewrites a caption that has no concrete integrity defect.
+   - If repair is required, it now respects the exact Channel Passport productionFormat.
+   - HARD QC remains the final publication gate.
+
+NOT TOUCHED
+- worker.js
+- wrangler.jsonc
+- Meta Publish Connector
+- R4 Page Token Resolution
+- Meta secrets/tokens/Page IDs
+- Build number (still 250)
 
 GITHUB — PRODUCTION
 Replace ONLY:
-  worker-research-reliability.js
-
-DO NOT TOUCH:
-- worker.js
-- wrangler.jsonc
 - index.html
-- acc-publish-connector
-- Meta secrets, Page IDs or tokens
+- worker-research-reliability.js
 
-AFTER DEPLOY
-PWA → TechVerse → PRODUCE → RETRY MISSION once.
+Then wait for Cloudflare auto-deploy.
+
+TEST POLICY
+Do ONE end-to-end TechVerse mission after deployment.
+Do not patch/retry individual stages before reviewing that single run.
