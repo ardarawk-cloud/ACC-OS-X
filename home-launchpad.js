@@ -149,11 +149,9 @@
       if (eyebrow && eyebrow.textContent.trim().toUpperCase() === "CLASSIFICATION POLICY") card.remove();
     });
 
+    section.querySelector(".grid.stats")?.remove();
     if (section.querySelector(`#${LAUNCHPAD_ID}`)) return;
-    const stats = section.querySelector(".grid.stats");
-    const launchpad = buildLaunchpad();
-    if (stats) stats.insertAdjacentElement("afterend", launchpad);
-    else hero.insertAdjacentElement("afterend", launchpad);
+    hero.insertAdjacentElement("afterend", buildLaunchpad());
   }
 
   let queued = false;
