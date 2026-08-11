@@ -1,11 +1,11 @@
-// ACC OS X — BUILD 250 RC4 RESEARCH GROUNDING GATE
-// Scope: enforce Research grounding BEFORE downstream stages.
+// ACC OS X — BUILD 250 RC6 RESEARCH GROUNDING GATE INLINE COMPAT
+// Scope: enforce Research grounding BEFORE downstream stages and keep recovered URLs bridge-safe.
 // Meta Publish Connector, tokens, Page IDs, worker.js and publishing path are NOT modified.
 
 import baseWorker from "./worker-research-source-anchor.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const PATCH_REVISION = "BUILD250_RC4_RESEARCH_GROUNDING_GATE";
+const PATCH_REVISION = "BUILD250_RC6_GROUNDING_GATE_INLINE_COMPAT";
 
 const text = (v) => typeof v === "string" ? v.trim() : "";
 
@@ -14,7 +14,7 @@ function json(data, status=200, headers={}) {
   h.set("Content-Type", "application/json;charset=UTF-8");
   h.set("Cache-Control", "no-store");
   h.set("Access-Control-Allow-Origin", "*");
-  return new Response(JSON.stringify(data, null, 2), { status, headers: h });
+  return new Response(JSON.stringify(data, null, 2), { status, headers:h });
 }
 
 function detectStage(body) {
@@ -227,7 +227,9 @@ function appendGroundingUrls(raw, urls) {
   const merged = uniqueUrls([...existing, ...urls]).slice(0, 4);
   if (merged.length < 2) return raw;
 
-  const anchor = `GROUNDING_URLS:\n${merged.slice(0, 2).map(u => `- ${u}`).join("\n")}`;
+  // Keep both grounding URLs on the FIRST content line so the current
+  // BUILD250 Context Bridge preserves both even with its multiline section bug.
+  const anchor = `GROUNDING_URLS: ${merged.slice(0, 2).join(" ")}`;
   let next = String(raw || "");
 
   if (/\bGROUNDING_URLS\s*:/i.test(next)) {
@@ -278,6 +280,7 @@ async function decorateHealth(request, env, ctx) {
     if (data && typeof data === "object") {
       data.researchGroundingGate = "ACTIVE";
       data.researchGroundingGateRevision = PATCH_REVISION;
+      data.bridgeGroundingInlineGate = "ACTIVE";
       return json(data, upstream.status, upstream.headers);
     }
   } catch {}
@@ -352,7 +355,8 @@ export default {
       researchGroundingGate:{
         applied:true,
         revision:PATCH_REVISION,
-        sourceCount:uniqueUrls(urlsInText(repaired)).length
+        sourceCount:uniqueUrls(urlsInText(repaired)).length,
+        inlineForContextBridge:true
       }
     }, upstream.status, upstream.headers);
   }
