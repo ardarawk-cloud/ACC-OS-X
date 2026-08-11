@@ -5,7 +5,7 @@
 import originalWorker from "./worker.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const PATCH_REVISION = "BUILD250_RESEARCH_RELIABILITY_V1";
+const PATCH_REVISION = "BUILD250_RESEARCH_RELIABILITY_V2_QC_CONTEXT_GUARD";
 
 const text = (v) => typeof v === "string" ? v.trim() : "";
 
@@ -257,6 +257,123 @@ function containsInternalLeak(value) {
   return /\b(?:gm5|acc os x|acc core|mission terminal|context vault|publish core|ai router)\b|one[- ]button production|(?:research|caption|poster|script)\s+worker|internal workflow/.test(v);
 }
 
+
+function isQcBody(body) {
+  const joined = (Array.isArray(body?.messages) ? body.messages : [])
+    .map(m => text(m?.content))
+    .join("\n");
+  return /(?:^|\n)STAGE:\s*QC\b/i.test(joined) || /Editorial QC Auditor/i.test(joined);
+}
+
+function normalizeUrlKey(raw) {
+  try {
+    const u = new URL(raw);
+    return `${u.origin}${u.pathname}${u.search}`.replace(/\/$/,"");
+  } catch {
+    return "";
+  }
+}
+
+function findResearchAsset(body) {
+  const rows = Array.isArray(body?.context?.upstreamAssets)
+    ? body.context.upstreamAssets
+    : [];
+  const index = rows.findIndex(item =>
+    String(item?.stage || "").toUpperCase() === "RESEARCH" &&
+    text(item?.output)
+  );
+  return index >= 0 ? {rows,index,asset:rows[index]} : null;
+}
+
+async function repairQcResearchContext(env, body) {
+  const found = findResearchAsset(body);
+  if (!found || !env.BROWSER || !env.AI) return body;
+
+  const raw = text(found.asset.output);
+  const currentUrls = uniqueUrls(urlsInText(raw));
+  if (currentUrls.length >= 2) return body;
+
+  const topic = extractTopic(raw);
+  if (!topic || containsInternalLeak(topic)) return body;
+
+  const profile = body?.context?.profile || {};
+  const category = text(profile.category);
+  const queries = [
+    `"${topic}"`,
+    `${topic}${category ? ` ${category}` : ""}`,
+    `${topic} official announcement news`
+  ];
+
+  const discovery = await collectSearchLinks(env, queries);
+  const candidates = uniqueUrls([...currentUrls, ...discovery.urls]).slice(0,10);
+  if (candidates.length < 2) return body;
+
+  const verified = await fetchEvidencePages(env, candidates);
+  if (verified.evidence.length < 2) return body;
+
+  const allowed = verified.evidence.map(x => x.url).slice(0,6);
+  const evidenceBundle = verified.evidence.map((e,i) =>
+    `PAGE ${i+1}\nURL: ${e.url}\nCONTENT:\n${e.excerpt}`
+  ).join("\n\n---\n\n");
+
+  const validator = await env.AI.run(TEXT_MODEL, {
+    messages:[
+      {
+        role:"system",
+        content:[
+          "You validate research sources for an existing ACC OS X research packet.",
+          "Do NOT rewrite the topic or facts.",
+          "Select ONLY URLs whose rendered page directly supports the existing TOPIC and at least one claim in VERIFIED_FACTS.",
+          "Never select a page merely because keywords are similar.",
+          "Return exactly:",
+          "SUPPORTED_URLS:",
+          "- <exact allowed URL>",
+          "- <exact allowed URL>",
+          "Return INSUFFICIENT if fewer than two pages genuinely support the packet."
+        ].join("\n")
+      },
+      {
+        role:"user",
+        content:[
+          `EXISTING RESEARCH PACKET:\n${raw}`,
+          `ALLOWED URLS:\n${allowed.join("\n")}`,
+          `RENDERED PAGES:\n${evidenceBundle}`
+        ].join("\n\n")
+      }
+    ],
+    max_tokens:500,
+    temperature:0
+  });
+
+  const validatorText = extractModelText(validator);
+  if (!validatorText || /^\s*INSUFFICIENT\b/i.test(validatorText)) return body;
+
+  const allowedMap = new Map(allowed.map(u => [normalizeUrlKey(u), u]));
+  const selected = [];
+  for (const u of urlsInText(validatorText)) {
+    const exact = allowedMap.get(normalizeUrlKey(u));
+    if (exact && !selected.includes(exact)) selected.push(exact);
+  }
+  if (selected.length < 2) return body;
+
+  const cloned = JSON.parse(JSON.stringify(body));
+  const target = cloned.context.upstreamAssets[found.index];
+  const withoutSources = text(target.output)
+    .replace(/\n\s*SOURCES?\s*:[\s\S]*$/i,"")
+    .trim();
+
+  // This server-side repair exists because the mobile client currently sends
+  // a truncated Research asset into QC. We restore only source URLs that were
+  // re-rendered and semantically validated against the same existing packet.
+  target.output = `${withoutSources}\n\nSOURCES:\n${selected.slice(0,4).map(u => `- ${u}`).join("\n")}`;
+  cloned.context.researchContextRepair = {
+    applied:true,
+    revision:PATCH_REVISION,
+    sourceCount:selected.length
+  };
+  return cloned;
+}
+
 async function browserResearchFallback(env, body, failurePayload) {
   if (!env.BROWSER || !env.AI) return null;
 
@@ -365,7 +482,7 @@ async function decorateHealth(request, env, ctx) {
     const data = await upstream.clone().json();
     if (data && typeof data === "object") {
       data.browserBinding = Boolean(env.BROWSER);
-      data.researchTransport = "NATIVE_WEB_SEARCH_THEN_RSS_NEWS_THEN_BROWSER_SEARCH_FALLBACK";
+      data.researchTransport = "NATIVE_WEB_SEARCH_THEN_RSS_NEWS_THEN_BROWSER_SEARCH_FALLBACK_PLUS_QC_CONTEXT_GUARD";
       data.researchReliabilityPatch = PATCH_REVISION;
       const headers = new Headers(upstream.headers);
       return json(data, upstream.status, headers);
@@ -396,7 +513,32 @@ export default {
       return originalWorker.fetch(request, env, ctx);
     }
 
-    const upstream = await originalWorker.fetch(request, env, ctx);
+    let effectiveBody = body;
+
+    // QC CONTEXT GUARD:
+    // The client currently trims upstream asset text before QC. If that trim
+    // leaves fewer than two Research URLs, restore only browser-rendered,
+    // AI-validated URLs for the exact same Research packet.
+    if (isQcBody(body)) {
+      try {
+        effectiveBody = await repairQcResearchContext(env, body);
+      } catch {
+        effectiveBody = body;
+      }
+    }
+
+    let upstreamRequest = request;
+    if (effectiveBody !== body) {
+      const headers = new Headers(request.headers);
+      headers.set("Content-Type","application/json");
+      upstreamRequest = new Request(request.url, {
+        method:"POST",
+        headers,
+        body:JSON.stringify(effectiveBody)
+      });
+    }
+
+    const upstream = await originalWorker.fetch(upstreamRequest, env, ctx);
 
     if (upstream.status !== 422) return upstream;
 
@@ -408,7 +550,10 @@ export default {
     }
 
     const failureCode = text(failurePayload?.errorDetail?.code);
-    if (failureCode !== "RESEARCH_FAILED_NO_USABLE_SOURCES") {
+    if (
+      failureCode !== "RESEARCH_FAILED_NO_USABLE_SOURCES" &&
+      failureCode !== "RESEARCH_FAILED_GROUNDING_CONTRACT"
+    ) {
       return upstream;
     }
 

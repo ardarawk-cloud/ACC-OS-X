@@ -1,30 +1,37 @@
-ACC OS X — BUILD 250 RESEARCH RELIABILITY FIX
+ACC OS X — BUILD 250 QC RESEARCH CONTEXT FIX
 
-PRODUCTION SCOPE
+WHAT THE TEST PROVED
+- RESEARCH now passes.
+- MATERIAL / POSTER / CAPTION also pass.
+- QC fails because the QC context sees only 1 Research URL.
+
+ROOT CAUSE
+- The mobile app trims each upstream asset output before sending it to downstream workers.
+- Research SOURCES are at the end of the Research packet, so the QC request can receive only one URL even though server Research passed with >=2 sources.
+
+THIS PATCH
+- Updates ONLY worker-research-reliability.js.
+- Before a QC request reaches the frozen original worker:
+  1) Detect Research context with fewer than 2 URLs.
+  2) Browser-search the exact existing Research TOPIC.
+  3) Render candidate source pages.
+  4) AI-validates that each selected page supports the SAME existing TOPIC and VERIFIED_FACTS.
+  5) Append 2-4 validated URLs to the server-side QC context.
+- If 2 valid pages cannot be confirmed, it FAILS CLOSED and QC remains blocked.
+- QC threshold is NOT reduced.
+- Meta Publish Connector, Page ID resolution, tokens, permissions and publish endpoint are NOT touched.
 - Build remains 250.
-- Adds Browser Search fallback ONLY after the existing Research engine returns RESEARCH_FAILED_NO_USABLE_SOURCES.
-- Existing worker.js remains intact and is imported as the primary engine.
-- Adds Cloudflare Browser Run binding BROWSER.
-- Browser fallback requires at least 2 readable source pages before it may return RESEARCH_PASS.
-- QC standards are NOT reduced.
-- Meta Publish Connector / tokens / Page ID resolution / verified publish endpoint are NOT edited.
-- Mobile terminal timestamp no longer wraps onto a second line.
 
-FILES TO UPLOAD TO GITHUB ROOT
-1. worker-research-reliability.js   (NEW)
-2. wrangler.jsonc                  (REPLACE)
-3. index.html                      (REPLACE)
+GITHUB — PRODUCTION
+Replace ONLY:
+  worker-research-reliability.js
 
-DO NOT DELETE OR REPLACE
-- worker.js
-- acc-publish-worker.js
-- acc-publish.js
-- service-worker files
-- Meta connector configuration/secrets
+Do NOT replace:
+  worker.js
+  wrangler.jsonc
+  index.html
+  Meta connector files
 
-AFTER DEPLOY
-1. Open /health and confirm:
-   browserBinding = true
-   researchReliabilityPatch = BUILD250_RESEARCH_RELIABILITY_V1
-2. Run TechVerse START MISSION once.
-3. If native/RSS discovery fails, Browser fallback activates automatically.
+After Cloudflare deploy finishes:
+- Reopen PWA.
+- TechVerse → PRODUCE → RETRY MISSION.
