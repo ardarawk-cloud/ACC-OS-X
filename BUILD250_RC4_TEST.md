@@ -1,1 +1,0 @@
-RC4 TEST: after Cloudflare deploy, run one fresh TechVerse RETRY MISSION. Expected: Research either completes with >=2 grounded URLs or halts at RESEARCH; the old pattern of RESEARCH passing with one URL and failing later at QC must not recur.
