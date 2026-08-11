@@ -1,4 +1,4 @@
-// ACC OS X — HOME DIRECT DIVISION LAUNCHPAD v2
+// ACC OS X — HOME DIRECT DIVISION LAUNCHPAD v3
 // HOME presentation/integration only. ACC CORE remains registry/detail center.
 // Division appUrl from ACC Sync Hub is authoritative; fallback URLs only cover first-load sync delay.
 (() => {
@@ -68,7 +68,7 @@
       if (window.ACCSyncHub?.refresh) {
         await Promise.race([
           window.ACCSyncHub.refresh(),
-          new Promise(resolve => setTimeout(resolve, 1800))
+          new Promise(resolve => setTimeout(resolve, 1200))
         ]);
       }
       const state = window.ACCSyncHub?.getState?.() || {};
@@ -134,6 +134,7 @@
     section.querySelector(".grid.stats")?.remove();
     if (section.querySelector(`#${LAUNCHPAD_ID}`)) return;
     hero.insertAdjacentElement("afterend", buildLaunchpad());
+    window.ACCSyncHub?.patchCards?.();
   }
 
   let queued = false;
@@ -146,16 +147,19 @@
     });
   };
 
-  const observer = new MutationObserver(schedulePatch);
+  const observer = new MutationObserver(() => {
+    if (document.getElementById(LAUNCHPAD_ID)) return;
+    schedulePatch();
+  });
   observer.observe(document.documentElement, { childList:true, subtree:true });
   schedulePatch();
 })();
 
 (() => {
-  if (document.querySelector('script[data-acc-sync-hub="v1"]')) return;
+  if (document.querySelector('script[data-acc-sync-hub="v2"]')) return;
   const script = document.createElement("script");
-  script.src = "./division-sync-hub.js";
-  script.dataset.accSyncHub = "v1";
+  script.src = "./division-sync-hub-v2.js";
+  script.dataset.accSyncHub = "v2";
   script.async = true;
   document.head.appendChild(script);
 })();
