@@ -1,0 +1,28 @@
+# ACC OS X — Cloudflare Static Asset Boundary
+# Keep runtime PWA files public; exclude dependencies, backend source, archives and build docs.
+
+node_modules/
+node_modules/**
+.wrangler/
+.wrangler/**
+.git/
+.git/**
+
+# Backend Worker source is bundled through wrangler main/imports, not served as public assets.
+worker.js
+worker-*.js
+
+# Deployment/build metadata should not be public assets.
+wrangler.jsonc
+package.json
+package-lock.json
+bun.lock
+bun.lockb
+
+# Internal archives and documentation are not runtime PWA assets.
+*.zip
+*.md
+*.txt
+
+# Local/editor noise.
+.DS_Store
