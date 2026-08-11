@@ -5,7 +5,7 @@
 import originalWorker from "./worker.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const PATCH_REVISION = "BUILD250_V3_CAPTION_INTEGRITY_GUARD";
+const PATCH_REVISION = "BUILD250_V4_CAPTION_GUARD_FALSE_POSITIVE_FIX";
 
 const text = (v) => typeof v === "string" ? v.trim() : "";
 
@@ -296,12 +296,33 @@ function stripCaptionShell(value) {
 function unsupportedQuotedFragments(caption, evidence) {
   const corpus = String(evidence || "").toLowerCase().replace(/\s+/g, " ");
   const out = [];
-  const re = /["“”'‘’]([^"“”'‘’]{8,160})["“”'‘’]/g;
-  for (const match of String(caption || "").matchAll(re)) {
-    const fragment = text(match[1]).toLowerCase().replace(/\s+/g, " ");
-    if (fragment && !corpus.includes(fragment)) out.push(fragment);
+  // IMPORTANT: only paired DOUBLE quotes count as attributed quote-like text.
+  // Apostrophes in normal words/contractions (e.g. NVIDIA's, it's) must not
+  // create a false unsupportedQuotedText failure.
+  const patterns = [
+    /"([^"]{8,160})"/g,
+    /“([^”]{8,160})”/g
+  ];
+  for (const re of patterns) {
+    for (const match of String(caption || "").matchAll(re)) {
+      const fragment = text(match[1]).toLowerCase().replace(/\s+/g, " ");
+      if (fragment && !corpus.includes(fragment)) out.push(fragment);
+    }
   }
-  return out;
+  return [...new Set(out)];
+}
+
+function hardCaptionProblems(problems) {
+  const hard = new Set([
+    "emptyCaption",
+    "markdownFence",
+    "wrapperLabel",
+    "internalLeak",
+    "researchOrSystemLabel",
+    "placeholderOrPseudoText",
+    "unsupportedQuotedText"
+  ]);
+  return (Array.isArray(problems) ? problems : []).filter(p => hard.has(p));
 }
 
 function captionIntegrityProblems(caption, body, evidence) {
@@ -350,7 +371,7 @@ async function repairCaptionIntegrity(env, body, upstream) {
   const draft = stripCaptionShell(payload.reply);
   const profile = body?.context?.profile || {};
   const research = findStageAssetOutput(body, "RESEARCH").slice(0,7000);
-  const material = findStageAssetOutput(body, "SCRIPT").slice(0,7000);
+  const material = (findStageAssetOutput(body, "MATERIAL") || findStageAssetOutput(body, "SCRIPT")).slice(0,7000);
   const evidence = `${research}\n\n${material}`.trim();
 
   if (!evidence) return null;
@@ -371,7 +392,7 @@ async function repairCaptionIntegrity(env, body, upstream) {
             "Rewrite the draft into ONLY the final public caption.",
             "SOURCE OF TRUTH: use ONLY facts already present in RESEARCH EVIDENCE and MATERIAL EVIDENCE.",
             "Do not add a new fact, statistic, name, organization, location, consequence, prediction, opinion, quote, slogan, campaign line, headline, or pseudo-text.",
-            "Any quoted phrase is forbidden unless that exact phrase appears verbatim in the supplied evidence.",
+            "Do not use quotation marks in the public caption. Paraphrase instead. Only an exact verified quote from the supplied evidence may be quoted, but prefer no quotes.",
             "Remove invented quotation-style slogans, faux campaign names, fake headlines, placeholders, labels, and internal/system terminology.",
             "Write natural public-facing prose; do not output section labels such as Caption, Key Takeaways, Discussion, Sources, or Result.",
             "Preserve the Channel Passport language, tone, credits/tag requirements, and platform style.",
@@ -407,8 +428,12 @@ async function repairCaptionIntegrity(env, body, upstream) {
 
     const candidate = stripCaptionShell(extractModelText(result));
     const problems = captionIntegrityProblems(candidate, body, evidence);
+    const hardProblems = hardCaptionProblems(problems);
 
-    if (candidate && problems.length === 0) {
+    // Integrity Guard only hard-blocks concrete integrity defects.
+    // Length / CTA / hashtag preferences are quality signals and remain the
+    // responsibility of the existing HARD QC gate.
+    if (candidate && hardProblems.length === 0) {
       const next = {
         ...payload,
         reply: candidate,
@@ -417,7 +442,8 @@ async function repairCaptionIntegrity(env, body, upstream) {
           applied: true,
           revision: PATCH_REVISION,
           attempts: attempt,
-          length: candidate.length
+          length: candidate.length,
+          softWarnings: problems
         }
       };
       const headers = new Headers(upstream.headers);
@@ -432,10 +458,11 @@ async function repairCaptionIntegrity(env, body, upstream) {
     ok: false,
     stage: "CAPTION",
     status: "CAPTION_INTEGRITY_FAILED",
-    error: "Caption Integrity Guard could not produce a publication-safe caption.",
+    error: "Caption Integrity Guard found a concrete integrity defect after automatic repair.",
     errorDetail: {
       code: "CAPTION_INTEGRITY_FAILED",
       problems: lastProblems,
+      hardProblems: hardCaptionProblems(lastProblems),
       revision: PATCH_REVISION
     }
   }, 422);
