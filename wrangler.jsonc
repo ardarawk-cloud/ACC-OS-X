@@ -1,6 +1,6 @@
 {
   "name": "acc-os-x-baxkup",
-  "main": "worker-caption-context-firewall.js",
+  "main": "worker-deploy-gate.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "directory": ".",
