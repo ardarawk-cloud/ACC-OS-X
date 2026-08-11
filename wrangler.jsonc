@@ -1,6 +1,6 @@
 {
   "name": "acc-os-x-baxkup",
-  "main": "worker-stage-normalizer.js",
+  "main": "worker-caption-context-firewall.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "directory": ".",
