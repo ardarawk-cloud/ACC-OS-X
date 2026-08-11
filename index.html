@@ -180,7 +180,6 @@
     min-width:0!important;
   }
 
-  /* 9-step mission strip: stop forcing an 860px-wide row on phones. */
   .mission-live-card > div[style*="overflow-x:auto"]{
     overflow-x:hidden!important;
     max-width:100%!important;
@@ -200,14 +199,12 @@
     white-space:nowrap!important;
   }
 
-
   .mission-terminal > div[style*="display:grid"][style*="grid-template-columns:64px 1fr"] > span:first-child{
     white-space:nowrap!important;
     word-break:normal!important;
     overflow-wrap:normal!important;
   }
 
-  /* Keep terminal/log content inside the phone viewport. */
   .mission-terminal{
     width:100%!important;
     max-width:100%!important;
@@ -224,7 +221,6 @@
     word-break:break-word!important;
   }
 
-  /* Global phone rule makes every button 100% wide; keep terminal DETAILS compact. */
   .mission-terminal .small-btn{
     width:auto!important;
     min-width:92px!important;
@@ -339,8 +335,6 @@
       const next = JSON.parse(JSON.stringify(body));
       const rows = Array.isArray(next.context.upstreamAssets) ? next.context.upstreamAssets : [];
 
-      // Preserve the in-memory POSTER media row exactly as the app sent it,
-      // but replace textual stage outputs with the fuller persisted evidence.
       for (const row of rows) {
         const st = String(row?.stage || "").toUpperCase();
         if (!fullByStage[st]) continue;
@@ -348,8 +342,6 @@
         row.output = fullByStage[st];
       }
 
-      // If a required text stage fell outside the app's latest-five slice,
-      // append it deterministically.
       const ensureStage = (st, output) => {
         if (!output) return;
         if (rows.some(x => String(x?.stage || "").toUpperCase() === st && !(st === "POSTER" && x?.hasMedia))) return;
@@ -387,7 +379,6 @@
           if (hydrated !== body) init = {...init, body: JSON.stringify(hydrated)};
         }
       } catch {
-        // Never break the production app because of the bridge.
       }
       return nativeFetch(input, init);
     };
@@ -395,6 +386,7 @@
   </script>
 
   <script src="./app.js"></script>
+  <script src="./home-launchpad.js"></script>
   <script>
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const b=document.getElementById('boot'); if(b){b.classList.add('done');setTimeout(()=>b.remove(),220);}
