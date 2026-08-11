@@ -1,0 +1,6 @@
+BUILD250 RC3 — RESEARCH SOURCE ANCHOR
+- Preserve the first two already-validated Research URLs inside SOURCE_NOTES.
+- Keep URLs alive through BUILD250 mobile context compaction.
+- Add health revision marker.
+- Keep RC2 fallback and two-source QC rule.
+- Do not touch Meta publishing path.
