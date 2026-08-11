@@ -169,3 +169,12 @@
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeModule(); });
   schedulePatch();
 })();
+
+(() => {
+  if (document.querySelector('script[data-acc-sync-hub="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./division-sync-hub.js";
+  script.dataset.accSyncHub = "v1";
+  script.async = true;
+  document.head.appendChild(script);
+})();
