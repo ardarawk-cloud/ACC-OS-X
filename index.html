@@ -200,6 +200,13 @@
     white-space:nowrap!important;
   }
 
+
+  .mission-terminal > div[style*="display:grid"][style*="grid-template-columns:64px 1fr"] > span:first-child{
+    white-space:nowrap!important;
+    word-break:normal!important;
+    overflow-wrap:normal!important;
+  }
+
   /* Keep terminal/log content inside the phone viewport. */
   .mission-terminal{
     width:100%!important;
@@ -208,7 +215,7 @@
     overflow-x:hidden!important;
   }
   .mission-terminal > div[style*="display:grid"][style*="grid-template-columns:64px 1fr"]{
-    grid-template-columns:48px minmax(0,1fr)!important;
+    grid-template-columns:68px minmax(0,1fr)!important;
     gap:6px!important;
   }
   .mission-terminal > div[style*="display:grid"][style*="grid-template-columns:64px 1fr"] > span{
