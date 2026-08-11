@@ -1,6 +1,6 @@
 {
   "name": "acc-os-x-baxkup",
-  "main": "worker-caption-evidence-sanitizer.js",
+  "main": "worker-package-gate.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "directory": ".",
