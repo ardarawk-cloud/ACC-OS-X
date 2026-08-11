@@ -1,10 +1,10 @@
-// ACC OS X — BUILD 250 RC3 RESEARCH SOURCE ANCHOR
-// Scope: preserve already-validated Research source URLs through mobile context compaction.
+// ACC OS X — BUILD 250 RC6 BRIDGE GROUNDING INLINE
+// Scope: preserve already-validated Research source URLs through the current mobile context bridge.
 // Meta Publish Connector, tokens, Page IDs, worker.js and publishing path are NOT modified.
 
 import baseWorker from "./worker-qc-source-recovery.js";
 
-const PATCH_REVISION = "BUILD250_RC3_RESEARCH_SOURCE_ANCHOR";
+const PATCH_REVISION = "BUILD250_RC6_BRIDGE_GROUNDING_INLINE";
 
 const text = (v) => typeof v === "string" ? v.trim() : "";
 
@@ -61,11 +61,12 @@ function anchorResearchReply(reply) {
   const urls = uniqueUrls(urlsInText(raw)).slice(0, 2);
   if (urls.length < 2) return { reply: raw, applied: false, urls };
 
-  const anchor = `GROUNDING_URLS:\n- ${urls[0]}\n- ${urls[1]}`;
+  // IMPORTANT: both URLs stay on the FIRST SOURCE_NOTES content line.
+  // BUILD250 Context Bridge currently truncates multi-line sections at the first
+  // line boundary, so this bridge-compatible form keeps both validated URLs alive.
+  const anchor = `GROUNDING_URLS: ${urls[0]} ${urls[1]}`;
   let next = raw;
 
-  // SOURCE_NOTES is intentionally used because the BUILD250 client bridge
-  // preserves this section early in compactResearch (900-char budget).
   if (/^\s*SOURCE_NOTES\s*:/im.test(next)) {
     next = next.replace(
       /^(\s*SOURCE_NOTES\s*:)\s*/im,
@@ -100,6 +101,7 @@ async function decorateHealth(request, env, ctx) {
     if (data && typeof data === "object") {
       data.researchSourceAnchor = "ACTIVE";
       data.researchSourceAnchorRevision = PATCH_REVISION;
+      data.bridgeGroundingInline = "ACTIVE";
       return jsonResponse(data, upstream);
     }
   } catch {}
@@ -154,7 +156,8 @@ export default {
         applied: true,
         revision: PATCH_REVISION,
         sourceCount: anchored.urls.length,
-        urls: anchored.urls
+        urls: anchored.urls,
+        inlineForContextBridge: true
       }
     }, upstream);
   }
