@@ -5,7 +5,7 @@
 import originalWorker from "./worker.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const PATCH_REVISION = "BUILD250_RESEARCH_RELIABILITY_V2_QC_CONTEXT_GUARD";
+const PATCH_REVISION = "BUILD250_V3_CAPTION_INTEGRITY_GUARD";
 
 const text = (v) => typeof v === "string" ? v.trim() : "";
 
@@ -265,6 +265,182 @@ function isQcBody(body) {
   return /(?:^|\n)STAGE:\s*QC\b/i.test(joined) || /Editorial QC Auditor/i.test(joined);
 }
 
+
+function detectBodyStage(body) {
+  const joined = (Array.isArray(body?.messages) ? body.messages : [])
+    .map(m => text(m?.content))
+    .join("\n");
+  const m = joined.match(/(?:^|\n)STAGE:\s*(RESEARCH|SCRIPT|POSTER|CAPTION|QC|PUBLISHING)\b/i);
+  return m ? String(m[1] || "").toUpperCase() : "";
+}
+
+function findStageAssetOutput(body, stage) {
+  const rows = Array.isArray(body?.context?.upstreamAssets)
+    ? body.context.upstreamAssets
+    : [];
+  const item = rows.find(x =>
+    String(x?.stage || "").toUpperCase() === String(stage || "").toUpperCase() &&
+    text(x?.output)
+  );
+  return text(item?.output);
+}
+
+function stripCaptionShell(value) {
+  return text(value)
+    .replace(/^```[\w-]*\s*/i, "")
+    .replace(/```$/i, "")
+    .replace(/^\s*(?:Caption Output|Generated Caption|Result|Final Caption|Caption)\s*:?\s*/i, "")
+    .trim();
+}
+
+function unsupportedQuotedFragments(caption, evidence) {
+  const corpus = String(evidence || "").toLowerCase().replace(/\s+/g, " ");
+  const out = [];
+  const re = /["“”'‘’]([^"“”'‘’]{8,160})["“”'‘’]/g;
+  for (const match of String(caption || "").matchAll(re)) {
+    const fragment = text(match[1]).toLowerCase().replace(/\s+/g, " ");
+    if (fragment && !corpus.includes(fragment)) out.push(fragment);
+  }
+  return out;
+}
+
+function captionIntegrityProblems(caption, body, evidence) {
+  const out = stripCaptionShell(caption);
+  const profile = body?.context?.profile || {};
+  const name = text(profile.name).toLowerCase();
+  const problems = [];
+
+  if (!out) problems.push("emptyCaption");
+  if (/```/.test(out)) problems.push("markdownFence");
+  if (/^\s*(?:Caption Output|Generated Caption|Result|Final Caption|Caption)\s*:/i.test(out)) problems.push("wrapperLabel");
+  if (containsInternalLeak(out)) problems.push("internalLeak");
+  if (/\b(?:PUBLIC_HEADLINE|VERIFIED_FACTS|SOURCE_NOTES|KEY_POINTS|VISUAL_FACTS|RISK_NOTES|SOURCES|PRIMARY VISUAL BASIS)\s*:/i.test(out)) {
+    problems.push("researchOrSystemLabel");
+  }
+  if (/<[^>]{2,80}>|\[(?:INSERT|PLACEHOLDER|TBD|TODO|TEXT|HEADLINE|CAPTION)[^\]]*\]|\blorem ipsum\b/i.test(out)) {
+    problems.push("placeholderOrPseudoText");
+  }
+  if (unsupportedQuotedFragments(out, evidence).length) problems.push("unsupportedQuotedText");
+
+  if (out.length > 1900) problems.push("captionTooLong");
+
+  if (name === "techverse") {
+    if (out.length < 420) problems.push("techverseTooShort");
+    if (out.length > 1500) problems.push("techverseTooLong");
+    if (!/\?/.test(out)) problems.push("discussionPromptMissing");
+    const hashtags = out.match(/#[\p{L}\p{N}_]+/gu) || [];
+    if (hashtags.length < 2) problems.push("hashtagsMissing");
+  }
+
+  return [...new Set(problems)];
+}
+
+async function repairCaptionIntegrity(env, body, upstream) {
+  if (!env.AI) return null;
+
+  let payload = null;
+  try {
+    payload = await upstream.clone().json();
+  } catch {
+    return null;
+  }
+
+  if (!payload || payload?.ok === false || !text(payload?.reply)) return null;
+
+  const draft = stripCaptionShell(payload.reply);
+  const profile = body?.context?.profile || {};
+  const research = findStageAssetOutput(body, "RESEARCH").slice(0,7000);
+  const material = findStageAssetOutput(body, "SCRIPT").slice(0,7000);
+  const evidence = `${research}\n\n${material}`.trim();
+
+  if (!evidence) return null;
+
+  let previous = draft;
+  let lastProblems = captionIntegrityProblems(previous, body, evidence);
+
+  // Even when the draft passes simple regex checks, run one integrity rewrite.
+  // This specifically removes unsupported faux slogans / pseudo-text that the
+  // semantic QC can catch later.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const result = await env.AI.run(TEXT_MODEL, {
+      messages: [
+        {
+          role: "system",
+          content: [
+            "You are ACC OS X Caption Integrity Guard.",
+            "Rewrite the draft into ONLY the final public caption.",
+            "SOURCE OF TRUTH: use ONLY facts already present in RESEARCH EVIDENCE and MATERIAL EVIDENCE.",
+            "Do not add a new fact, statistic, name, organization, location, consequence, prediction, opinion, quote, slogan, campaign line, headline, or pseudo-text.",
+            "Any quoted phrase is forbidden unless that exact phrase appears verbatim in the supplied evidence.",
+            "Remove invented quotation-style slogans, faux campaign names, fake headlines, placeholders, labels, and internal/system terminology.",
+            "Write natural public-facing prose; do not output section labels such as Caption, Key Takeaways, Discussion, Sources, or Result.",
+            "Preserve the Channel Passport language, tone, credits/tag requirements, and platform style.",
+            "Preserve evidence strength: concerns/opinions remain attributed concerns/opinions.",
+            "End with one natural audience discussion question when appropriate.",
+            "Keep hashtags concise and relevant; do not invent branded campaign hashtags.",
+            "For TechVerse specifically: professional journalistic + educational Facebook tone, clear why-it-matters context, compact paragraphs, one discussion question, and 3-6 relevant hashtags. Aim roughly 650-1400 characters.",
+            "Return the corrected caption only. No explanation, no markdown fences."
+          ].join("\n")
+        },
+        {
+          role: "user",
+          content: [
+            `CHANNEL PROFILE:\n${JSON.stringify({
+              name: profile.name || "",
+              category: profile.category || "",
+              platform: profile.platform || "",
+              productionFormat: profile.productionFormat || "",
+              communication: profile.communication || "",
+              mission: profile.mission || "",
+              canon: profile.canon || ""
+            })}`,
+            `RESEARCH EVIDENCE:\n${research}`,
+            `MATERIAL EVIDENCE:\n${material}`,
+            `DRAFT TO REPAIR:\n${previous}`,
+            `KNOWN PROBLEMS:\n${lastProblems.join(", ") || "semantic integrity / pseudo-text risk"}`
+          ].join("\n\n")
+        }
+      ],
+      max_tokens: 1200,
+      temperature: attempt === 1 ? 0.08 : 0
+    });
+
+    const candidate = stripCaptionShell(extractModelText(result));
+    const problems = captionIntegrityProblems(candidate, body, evidence);
+
+    if (candidate && problems.length === 0) {
+      const next = {
+        ...payload,
+        reply: candidate,
+        provider: `${text(payload.provider) || "ACC OS X"} + ACC Caption Integrity Guard`,
+        captionIntegrityGuard: {
+          applied: true,
+          revision: PATCH_REVISION,
+          attempts: attempt,
+          length: candidate.length
+        }
+      };
+      const headers = new Headers(upstream.headers);
+      return json(next, upstream.status, headers);
+    }
+
+    previous = candidate || previous;
+    lastProblems = problems;
+  }
+
+  return json({
+    ok: false,
+    stage: "CAPTION",
+    status: "CAPTION_INTEGRITY_FAILED",
+    error: "Caption Integrity Guard could not produce a publication-safe caption.",
+    errorDetail: {
+      code: "CAPTION_INTEGRITY_FAILED",
+      problems: lastProblems,
+      revision: PATCH_REVISION
+    }
+  }, 422);
+}
+
 function normalizeUrlKey(raw) {
   try {
     const u = new URL(raw);
@@ -483,6 +659,7 @@ async function decorateHealth(request, env, ctx) {
     if (data && typeof data === "object") {
       data.browserBinding = Boolean(env.BROWSER);
       data.researchTransport = "NATIVE_WEB_SEARCH_THEN_RSS_NEWS_THEN_BROWSER_SEARCH_FALLBACK_PLUS_QC_CONTEXT_GUARD";
+      data.captionIntegrityGuard = "ACTIVE";
       data.researchReliabilityPatch = PATCH_REVISION;
       const headers = new Headers(upstream.headers);
       return json(data, upstream.status, headers);
@@ -539,6 +716,16 @@ export default {
     }
 
     const upstream = await originalWorker.fetch(upstreamRequest, env, ctx);
+
+    if (detectBodyStage(body) === "CAPTION" && upstream.ok) {
+      try {
+        const guardedCaption = await repairCaptionIntegrity(env, body, upstream);
+        if (guardedCaption) return guardedCaption;
+      } catch {
+        // Fail closed only if a bad caption is detected by the guard path.
+        // Otherwise preserve the original worker response.
+      }
+    }
 
     if (upstream.status !== 422) return upstream;
 
