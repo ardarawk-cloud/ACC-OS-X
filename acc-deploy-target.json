@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
-  "healthField": "captionContextFirewallRevision",
-  "expectedRevision": "BUILD250_RC7_1_CAPTION_DIRECT_PATH",
-  "label": "BUILD250 RC7.1",
-  "updatedAt": "2026-08-12T01:54:00+08:00"
+  "healthField": "captionEvidenceSanitizerRevision",
+  "expectedRevision": "BUILD250_RC7_2_CAPTION_EVIDENCE_SANITIZER",
+  "label": "BUILD250 RC7.2",
+  "updatedAt": "2026-08-12T02:23:00+08:00"
 }
