@@ -1,0 +1,11 @@
+{
+  "name": "acc-os-x",
+  "private": true,
+  "version": "250.0.0",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.115.0"
+  }
+}
