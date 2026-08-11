@@ -171,6 +171,69 @@
     white-space:nowrap!important;
   }
 }
+/* BUILD 250 — LIVE OPERATIONS MOBILE FIT FIX
+   Scope: mobile layout only. Workflow/data logic unchanged. */
+@media(max-width:430px){
+  .mission-live-card{
+    overflow:hidden!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+
+  /* 9-step mission strip: stop forcing an 860px-wide row on phones. */
+  .mission-live-card > div[style*="overflow-x:auto"]{
+    overflow-x:hidden!important;
+    max-width:100%!important;
+  }
+  .mission-live-card > div[style*="overflow-x:auto"] > div[style*="min-width:860px"]{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+    min-width:0!important;
+    width:100%!important;
+  }
+  .mission-live-card > div[style*="overflow-x:auto"] > div[style*="min-width:860px"] > div{
+    min-width:0!important;
+    width:auto!important;
+    font-size:.58rem!important;
+    gap:4px!important;
+    white-space:nowrap!important;
+  }
+
+  /* Keep terminal/log content inside the phone viewport. */
+  .mission-terminal{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:hidden!important;
+  }
+  .mission-terminal > div[style*="display:grid"][style*="grid-template-columns:64px 1fr"]{
+    grid-template-columns:48px minmax(0,1fr)!important;
+    gap:6px!important;
+  }
+  .mission-terminal > div[style*="display:grid"][style*="grid-template-columns:64px 1fr"] > span{
+    min-width:0!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+  }
+
+  /* Global phone rule makes every button 100% wide; keep terminal DETAILS compact. */
+  .mission-terminal .small-btn{
+    width:auto!important;
+    min-width:92px!important;
+    min-height:36px!important;
+    padding:7px 10px!important;
+    flex:0 0 auto!important;
+  }
+
+  .mission-live-card .item,
+  .mission-live-card .row,
+  .mission-live-card strong,
+  .mission-live-card span{
+    min-width:0!important;
+  }
+}
+
 </style>
   <style>
     html,body{margin:0;min-height:100%;background:#020617;color:#f8fafc}
