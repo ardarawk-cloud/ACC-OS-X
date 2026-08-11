@@ -1,11 +1,13 @@
-// ACC OS X — BUILD 250 RC7 CAPTION CONTEXT FIREWALL
-// Scope: isolate public caption generation from poster/visual-production context.
+// ACC OS X — BUILD 250 RC7.1 CAPTION DIRECT PATH
+// Scope: CAPTION only. Bypass the legacy caption-integrity wrapper ordering bug while
+// preserving the same production worker.js engine, hard integrity checks and HARD QC.
 // Meta Publish Connector, tokens, Page IDs, worker.js and publishing payload/path are NOT modified.
 
 import baseWorker from "./worker-stage-normalizer.js";
+import productionWorker from "./worker.js";
 
 const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const PATCH_REVISION = "BUILD250_RC7_CAPTION_CONTEXT_FIREWALL";
+const PATCH_REVISION = "BUILD250_RC7_1_CAPTION_DIRECT_PATH";
 const text = v => typeof v === "string" ? v.trim() : "";
 
 function canonicalStage(body) {
@@ -22,16 +24,22 @@ function canonicalStage(body) {
   return "";
 }
 
-function sectionWithoutVisualFacts(raw) {
+function stripVisualFacts(raw) {
   const source = String(raw || "");
   if (!source) return "";
-  return source
-    .replace(
-      /^\s*VISUAL_FACTS\s*:\s*[\s\S]*?(?=^\s*(?:RISK_NOTES|SOURCES|ANGLE|KEY_POINTS|SOURCE_NOTES|VERIFIED_FACTS|TOPIC)\s*:|$)/gim,
-      ""
-    )
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  const lines = source.split(/\r?\n/);
+  const out = [];
+  let skipping = false;
+  const sectionHeader = /^\s*(TOPIC|VERIFIED_FACTS|SOURCE_NOTES|ANGLE|KEY_POINTS|VISUAL_FACTS|RISK_NOTES|SOURCES)\s*:/i;
+  for (const line of lines) {
+    const m = line.match(sectionHeader);
+    if (m) {
+      skipping = String(m[1]).toUpperCase() === "VISUAL_FACTS";
+      if (skipping) continue;
+    }
+    if (!skipping) out.push(line);
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function sanitizeCaptionBody(body) {
@@ -43,23 +51,26 @@ function sanitizeCaptionBody(body) {
     .filter(row => String(row?.stage || "").toUpperCase() !== "POSTER")
     .map(row => {
       if (String(row?.stage || "").toUpperCase() !== "RESEARCH") return row;
-      return { ...row, output: sectionWithoutVisualFacts(row?.output) };
+      return { ...row, output: stripVisualFacts(row?.output) };
     });
 
   next.context.captionContextFirewall = {
     active: true,
     revision: PATCH_REVISION,
     posterContextRemoved: true,
-    researchVisualFactsRemoved: true
+    researchVisualFactsRemoved: true,
+    directCaptionPath: true
   };
 
   const guard = [
+    "STAGE: CAPTION",
     "CAPTION PUBLIC CONTEXT FIREWALL:",
-    "Write only the final public-facing caption about the verified topic and material facts.",
+    "Return ONLY the final public-facing caption about the verified topic and material facts.",
     "Do not describe or refer to this post's production artifact or visual format.",
-    "Never mention our poster, image, diagram, illustrative scene, visual direction, layout, background, overlay, logo placement, rendering, or artwork.",
+    "Never mention our poster, generated image, diagram, illustrative scene, visual direction, layout, background, overlay, logo placement, rendering, watermark, or artwork.",
     "Do not narrate what the audience is seeing in the generated visual.",
-    "If a real external diagram/image is itself a verified news fact, mention it only when VERIFIED_FACTS explicitly establishes that external artifact; otherwise omit it.",
+    "Do not output quotation marks; paraphrase instead.",
+    "Never output internal/system labels such as Caption, Result, Sources, VERIFIED_FACTS, SOURCE_NOTES, KEY_POINTS, VISUAL_FACTS, RISK_NOTES, PUBLIC_HEADLINE or PRIMARY VISUAL BASIS.",
     "Preserve the profile language, tone, CTA, credits/tag rules, discussion prompt and hashtags.",
     "Do not add new factual claims."
   ].join("\n");
@@ -79,6 +90,15 @@ function buildRequest(request, body) {
   });
 }
 
+function normalizeCaption(value) {
+  return text(value)
+    .replace(/^```[\w-]*\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .replace(/^\s*(?:Caption Output|Generated Caption|Result|Final Caption|Caption)\s*:?\s*/i, "")
+    .replace(/[“”"]/g, "")
+    .trim();
+}
+
 function productionLeak(value) {
   const out = text(value);
   if (!out) return false;
@@ -88,6 +108,29 @@ function productionLeak(value) {
     /\b(?:image|poster|visual)\s+(?:shows?|depicts?|should|will|features?)\b/i.test(out) ||
     /\bdiagram\s+(?:of|showing|depicting)\b/i.test(out)
   );
+}
+
+function containsInternalLeak(value) {
+  const v = text(value).toLowerCase();
+  if (!v) return false;
+  return /\b(?:gm5|acc os x|acc core|mission terminal|context vault|publish core|ai router)\b|one[- ]button production|(?:research|caption|poster|script)\s+worker|internal workflow/.test(v);
+}
+
+function integrityProblems(value) {
+  const out = text(value);
+  const problems = [];
+  if (!out) problems.push("emptyCaption");
+  if (/```/.test(out)) problems.push("markdownFence");
+  if (/^\s*(?:Caption Output|Generated Caption|Result|Final Caption|Caption)\s*:/i.test(out)) problems.push("wrapperLabel");
+  if (containsInternalLeak(out)) problems.push("internalLeak");
+  if (/\b(?:PUBLIC_HEADLINE|VERIFIED_FACTS|SOURCE_NOTES|KEY_POINTS|VISUAL_FACTS|RISK_NOTES|SOURCES|PRIMARY VISUAL BASIS)\s*:/i.test(out)) {
+    problems.push("researchOrSystemLabel");
+  }
+  if (/<[^>]{2,80}>|\[(?:INSERT|PLACEHOLDER|TBD|TODO|TEXT|HEADLINE|CAPTION)[^\]]*\]|\blorem ipsum\b/i.test(out)) {
+    problems.push("placeholderOrPseudoText");
+  }
+  if (productionLeak(out)) problems.push("productionVisualLeak");
+  return [...new Set(problems)];
 }
 
 function modelText(result) {
@@ -112,48 +155,59 @@ function evidenceFrom(body) {
     .slice(0,12000);
 }
 
-async function repairCaptionLeak(env, body, draft) {
+async function repairCaption(env, body, draft, problems) {
   if (!env?.AI) return "";
   const evidence = evidenceFrom(body);
   if (!evidence) return "";
 
-  const result = await env.AI.run(TEXT_MODEL, {
-    messages: [
-      {
-        role: "system",
-        content: [
-          "You are ACC OS X Caption Public Firewall.",
-          "Rewrite the draft into ONLY the final publish-ready public caption.",
-          "Use only facts supported by EVIDENCE.",
-          "Remove all references to the post's production format or visual asset, including poster, generated image, diagram, illustrative scene, visual representation, layout, background, overlay, logo placement, rendering, or artwork.",
-          "Do not narrate what the audience is seeing in our visual.",
-          "If an external diagram/image is itself explicitly verified in EVIDENCE, it may remain only as a real-world fact; otherwise remove it.",
-          "Preserve the original language, useful context, CTA/discussion question, credits/tags and hashtags.",
-          "Do not add new facts, internal labels, markdown wrappers or commentary.",
-          "Return only the repaired caption."
-        ].join("\n")
-      },
-      {
-        role: "user",
-        content: `DRAFT:\n${String(draft || "").slice(0,2200)}\n\nEVIDENCE:\n${evidence}`
-      }
-    ],
-    max_tokens: 1200,
-    temperature: 0
-  });
+  let previous = normalizeCaption(draft);
+  let lastProblems = Array.isArray(problems) ? problems : integrityProblems(previous);
 
-  const repaired = modelText(result);
-  return repaired && !productionLeak(repaired) ? repaired : "";
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const result = await env.AI.run(TEXT_MODEL, {
+      messages: [
+        {
+          role: "system",
+          content: [
+            "You are ACC OS X Caption Public Integrity Firewall.",
+            "Rewrite the draft into ONLY the final publish-ready public caption.",
+            "Use only facts supported by EVIDENCE.",
+            "Remove every defect listed in PROBLEMS.",
+            "Do not mention the post's production format or visual asset, including poster, generated image, diagram, illustrative scene, visual representation, layout, background, overlay, logo placement, rendering, watermark, or artwork.",
+            "Do not output quotation marks. Paraphrase instead.",
+            "Never output internal labels, system labels, markdown fences, placeholders or commentary.",
+            "Preserve the profile language, useful context, CTA/discussion question, credits/tags and hashtags.",
+            "Do not add new facts.",
+            "Return only the repaired caption."
+          ].join("\n")
+        },
+        {
+          role: "user",
+          content: [
+            `PROBLEMS:\n${lastProblems.join(", ") || "none"}`,
+            `DRAFT:\n${String(previous || "").slice(0,2200)}`,
+            `EVIDENCE:\n${evidence}`
+          ].join("\n\n")
+        }
+      ],
+      max_tokens: 1200,
+      temperature: 0
+    });
+
+    const candidate = normalizeCaption(modelText(result));
+    const nextProblems = integrityProblems(candidate);
+    if (candidate && nextProblems.length === 0) return candidate;
+    previous = candidate || previous;
+    lastProblems = nextProblems.length ? nextProblems : lastProblems;
+  }
+  return "";
 }
 
-function jsonResponse(payload, upstream) {
+function jsonResponse(payload, upstream, status=upstream.status) {
   const headers = new Headers(upstream.headers);
   headers.set("Content-Type", "application/json;charset=UTF-8");
   headers.set("Cache-Control", "no-store");
-  return new Response(JSON.stringify(payload, null, 2), {
-    status: upstream.status,
-    headers
-  });
+  return new Response(JSON.stringify(payload, null, 2), { status, headers });
 }
 
 async function decorateHealth(request, env, ctx) {
@@ -163,6 +217,7 @@ async function decorateHealth(request, env, ctx) {
     if (data && typeof data === "object") {
       data.captionContextFirewall = "ACTIVE";
       data.captionContextFirewallRevision = PATCH_REVISION;
+      data.captionDirectPath = "ACTIVE";
       return jsonResponse(data, upstream);
     }
   } catch {}
@@ -192,8 +247,10 @@ export default {
       return baseWorker.fetch(request, env, ctx);
     }
 
+    // CAPTION uses the production core directly so the legacy outer caption guard
+    // cannot fail before this firewall performs its own deterministic cleanup.
     const sanitizedBody = sanitizeCaptionBody(body);
-    const upstream = await baseWorker.fetch(buildRequest(request, sanitizedBody), env, ctx);
+    const upstream = await productionWorker.fetch(buildRequest(request, sanitizedBody), env, ctx);
     if (!upstream.ok) return upstream;
 
     let payload = null;
@@ -203,51 +260,56 @@ export default {
       return upstream;
     }
 
-    const draft = text(payload?.reply);
+    const draft = normalizeCaption(payload?.reply);
     if (!payload || payload?.ok === false || !draft) return upstream;
 
-    if (!productionLeak(draft)) {
+    const problems = integrityProblems(draft);
+    if (problems.length === 0) {
       return jsonResponse({
         ...payload,
+        reply: draft,
+        provider: `${text(payload.provider) || "ACC OS X"} + Caption Direct Firewall`,
         captionContextFirewall: {
           applied: true,
           revision: PATCH_REVISION,
-          posterContextRemoved: true,
-          visualLeakRepair: false
+          directCaptionPath: true,
+          repaired: false,
+          problems: []
         }
       }, upstream);
     }
 
     let repaired = "";
     try {
-      repaired = await repairCaptionLeak(env, sanitizedBody, draft);
+      repaired = await repairCaption(env, sanitizedBody, draft, problems);
     } catch {
       repaired = "";
     }
 
     if (!repaired) {
-      // Preserve the original output so HARD QC remains authoritative.
       return jsonResponse({
-        ...payload,
-        captionContextFirewall: {
-          applied: true,
-          revision: PATCH_REVISION,
-          posterContextRemoved: true,
-          visualLeakRepair: false,
-          leakDetected: true
+        ok: false,
+        stage: "CAPTION",
+        status: "CAPTION_PUBLIC_FIREWALL_FAILED",
+        error: "Caption Public Firewall could not produce a clean public caption.",
+        errorDetail: {
+          code: "CAPTION_PUBLIC_FIREWALL_FAILED",
+          problems,
+          revision: PATCH_REVISION
         }
-      }, upstream);
+      }, upstream, 422);
     }
 
     return jsonResponse({
       ...payload,
       reply: repaired,
-      provider: `${text(payload.provider) || "ACC OS X"} + Caption Context Firewall`,
+      provider: `${text(payload.provider) || "ACC OS X"} + Caption Direct Firewall`,
       captionContextFirewall: {
         applied: true,
         revision: PATCH_REVISION,
-        posterContextRemoved: true,
-        visualLeakRepair: true
+        directCaptionPath: true,
+        repaired: true,
+        problems
       }
     }, upstream);
   }
