@@ -2,29 +2,29 @@
   "id": "/acc-os-x-build250",
   "name": "ACC OS X",
   "short_name": "ACC OS X",
-  "start_url": "/?pwa=build250",
+  "start_url": "/?pwa=build256",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#020617",
   "theme_color": "#020617",
   "lang": "id-ID",
-  "description": "ACC OS X — AI-native operating platform for Arda Core Corporation.",
+  "description": "ACC OS X — AI-native operating platform for Arda Core Corporation. Build 256.",
   "icons": [
     {
-      "src": "/acc-os-x-192-build250.png?v=250-iconfix",
+      "src": "/acc-os-x-192-build250.png?v=256-release-sync",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/acc-os-x-512-build250.png?v=250-iconfix",
+      "src": "/acc-os-x-512-build250.png?v=256-release-sync",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/acc-os-x-maskable-512-build250.png?v=250-iconfix",
+      "src": "/acc-os-x-maskable-512-build250.png?v=256-release-sync",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -34,10 +34,10 @@
     {
       "name": "Produce",
       "short_name": "Produce",
-      "url": "/?open=produce&pwa=build250",
+      "url": "/?open=produce&pwa=build256",
       "icons": [
         {
-          "src": "/acc-os-x-192-build250.png?v=250-iconfix",
+          "src": "/acc-os-x-192-build250.png?v=256-release-sync",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -46,10 +46,10 @@
     {
       "name": "ACC Core",
       "short_name": "Core",
-      "url": "/?open=core&pwa=build250",
+      "url": "/?open=core&pwa=build256",
       "icons": [
         {
-          "src": "/acc-os-x-192-build250.png?v=250-iconfix",
+          "src": "/acc-os-x-192-build250.png?v=256-release-sync",
           "sizes": "192x192",
           "type": "image/png"
         }
