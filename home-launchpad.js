@@ -163,3 +163,15 @@
   script.async = true;
   document.head.appendChild(script);
 })();
+
+// BUILD 251 — load Studio Poster Renderer after ACC Core boot.
+// App functions are already defined by this point, but poster rendering only occurs during a mission,
+// so installing the canvas/fetch hooks here is early enough and avoids touching the production core.
+(() => {
+  if (document.querySelector('script[data-acc-studio-poster="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./poster-studio-v1.js";
+  script.dataset.accStudioPoster = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();

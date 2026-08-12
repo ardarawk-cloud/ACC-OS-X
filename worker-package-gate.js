@@ -1,15 +1,15 @@
-// ACC OS X — BUILD 250 PACKAGE DEPLOY GATE V2
-// Final production entrypoint. It blocks only RESEARCH while GitHub's target package
-// revision is newer than this live Worker package. Once matched, runtime bypasses the
-// legacy deploy-gate wrapper and uses the existing quality chain directly.
+// ACC OS X — BUILD 251 PACKAGE DEPLOY GATE
+// Production entrypoint. RESEARCH is deploy-gated; POSTER/CAPTION keep their hardened
+// routes; content-channel QC additionally requires Studio Poster Renderer proof.
 // Meta publishing, tokens, Page IDs, worker.js and publishing payload/path are untouched.
 
 import coreWorker from "./worker-stage-normalizer.js";
 import captionWorker from "./worker-caption-public-cleaner.js";
 import posterWorker from "./worker-poster-brief-sanitizer.js";
+import qcWorker from "./worker-studio-poster-qc.js";
 
-const PACKAGE_REVISION = "BUILD250_RC8_2_CAPTION_PUBLIC_CLEANER";
-const GATE_REVISION = "BUILD250_PACKAGE_DEPLOY_GATE_V2";
+const PACKAGE_REVISION = "BUILD251_STUDIO_POSTER_V1";
+const GATE_REVISION = "BUILD251_PACKAGE_DEPLOY_GATE";
 const TARGET_URL = "https://raw.githubusercontent.com/ardarawk-cloud/ACC-OS-X/main/acc-deploy-target.json";
 const text = v => typeof v === "string" ? v.trim() : "";
 
@@ -32,6 +32,7 @@ function stageOf(body){
   if(/Research Specialist/i.test(joined))return "RESEARCH";
   if(/Poster Creator/i.test(joined))return "POSTER";
   if(/Social Captioner/i.test(joined))return "CAPTION";
+  if(/Editorial QC Auditor/i.test(joined))return "QC";
   return "";
 }
 
@@ -51,7 +52,7 @@ async function targetState(){
 }
 
 async function health(request,env,ctx){
-  const upstream=await posterWorker.fetch(request,env,ctx);
+  const upstream=await qcWorker.fetch(request,env,ctx);
   let data={};
   try{data=await upstream.clone().json();}catch{}
   const target=await targetState();
@@ -60,6 +61,9 @@ async function health(request,env,ctx){
     packageDeployGate:"ACTIVE",
     packageDeployGateRevision:GATE_REVISION,
     packageRevision:PACKAGE_REVISION,
+    studioPosterRendererRequired:true,
+    studioPosterRendererRevision:"BUILD251_STUDIO_POSTER_V1",
+    studioPosterBenchmark:"TECHVERSE_POSTER_QUALITY_BENCHMARK_V1",
     deployTargetAvailable:target.available,
     deploymentSynchronized:target.synchronized,
     deployTargetRevision:target.expected||null,
@@ -80,6 +84,7 @@ export default{
 
     if(stage==="POSTER")return posterWorker.fetch(request,env,ctx);
     if(stage==="CAPTION")return captionWorker.fetch(request,env,ctx);
+    if(stage==="QC")return qcWorker.fetch(request,env,ctx);
 
     if(stage==="RESEARCH"){
       const target=await targetState();
