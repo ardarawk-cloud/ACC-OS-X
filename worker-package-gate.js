@@ -1,6 +1,6 @@
-// ACC OS X — BUILD 251 PACKAGE DEPLOY GATE
-// Production entrypoint. RESEARCH is deploy-gated; POSTER/CAPTION keep their hardened
-// routes; content-channel QC additionally requires Studio Poster Renderer proof.
+// ACC OS X — BUILD 252 PACKAGE DEPLOY GATE
+// Production entrypoint. RESEARCH is deploy-gated; POSTER/CAPTION keep their hardened routes;
+// content-channel QC requires Studio Poster Renderer v2 proof.
 // Meta publishing, tokens, Page IDs, worker.js and publishing payload/path are untouched.
 
 import coreWorker from "./worker-stage-normalizer.js";
@@ -8,8 +8,8 @@ import captionWorker from "./worker-caption-public-cleaner.js";
 import posterWorker from "./worker-poster-brief-sanitizer.js";
 import qcWorker from "./worker-studio-poster-qc.js";
 
-const PACKAGE_REVISION = "BUILD251_STUDIO_POSTER_V1";
-const GATE_REVISION = "BUILD251_PACKAGE_DEPLOY_GATE";
+const PACKAGE_REVISION = "BUILD252_STUDIO_POSTER_V2";
+const GATE_REVISION = "BUILD252_PACKAGE_DEPLOY_GATE";
 const TARGET_URL = "https://raw.githubusercontent.com/ardarawk-cloud/ACC-OS-X/main/acc-deploy-target.json";
 const text = v => typeof v === "string" ? v.trim() : "";
 
@@ -62,8 +62,9 @@ async function health(request,env,ctx){
     packageDeployGateRevision:GATE_REVISION,
     packageRevision:PACKAGE_REVISION,
     studioPosterRendererRequired:true,
-    studioPosterRendererRevision:"BUILD251_STUDIO_POSTER_V1",
-    studioPosterBenchmark:"TECHVERSE_POSTER_QUALITY_BENCHMARK_V1",
+    studioPosterRendererRevision:"BUILD252_STUDIO_POSTER_V2",
+    studioPosterStandard:"STUDIO_CONTENT_V2",
+    studioPosterBenchmark:"TECHVERSE_POSTER_QUALITY_BENCHMARK_V2",
     deployTargetAvailable:target.available,
     deploymentSynchronized:target.synchronized,
     deployTargetRevision:target.expected||null,
