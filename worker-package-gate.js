@@ -5,10 +5,10 @@
 // Meta publishing, tokens, Page IDs, worker.js and publishing payload/path are untouched.
 
 import coreWorker from "./worker-stage-normalizer.js";
-import captionWorker from "./worker-caption-label-recovery.js";
+import captionWorker from "./worker-caption-public-cleaner.js";
 import posterWorker from "./worker-poster-brief-sanitizer.js";
 
-const PACKAGE_REVISION = "BUILD250_RC8_1_CAPTION_LABEL_RECOVERY";
+const PACKAGE_REVISION = "BUILD250_RC8_2_CAPTION_PUBLIC_CLEANER";
 const GATE_REVISION = "BUILD250_PACKAGE_DEPLOY_GATE_V2";
 const TARGET_URL = "https://raw.githubusercontent.com/ardarawk-cloud/ACC-OS-X/main/acc-deploy-target.json";
 const text = v => typeof v === "string" ? v.trim() : "";
