@@ -31,6 +31,14 @@
       }
     });
 
+    document.querySelectorAll(".item.row.between").forEach(row => {
+      const label = row.querySelector("span");
+      const value = row.querySelector("strong");
+      if (label && value && String(label.textContent || "").trim() === "New Version") {
+        value.textContent = String(RELEASE.build);
+      }
+    });
+
     const boot = document.querySelector("#boot .boot-sub");
     if (boot && /BUILD\s+250/i.test(String(boot.textContent || ""))) {
       boot.textContent = `ACC OS X • BUILD ${RELEASE.build}`;
@@ -49,9 +57,34 @@
 
   const previousFetch = window.fetch.bind(window);
   window.fetch = async (input, init = {}) => {
+    const url = typeof input === "string" ? input : input?.url || "";
+    const method = String(init?.method || (typeof input !== "string" ? input?.method : "GET") || "GET").toUpperCase();
+
+    // app.js still uses CURRENT_VERSION=250 as both its historical schema and update comparator.
+    // Keep that comparator stable while exposing the real release build through ACCRelease/version metadata.
+    if (method === "GET" && /(?:^|\/)version\.json(?:\?|$)/.test(url)) {
+      const response = await previousFetch(input, init);
+      if (!response.ok) return response;
+      try {
+        const data = await response.clone().json();
+        const headers = new Headers(response.headers);
+        headers.set("Content-Type", "application/json;charset=UTF-8");
+        headers.set("Cache-Control", "no-store");
+        return new Response(JSON.stringify({
+          ...data,
+          version: RELEASE.dataSchema,
+          appBuild: RELEASE.build,
+          appRevision: RELEASE.revision,
+          dataSchema: RELEASE.dataSchema,
+          corePackageRevision: RELEASE.corePackageRevision,
+          kaiSystemRevision: RELEASE.kaiSystemRevision
+        }), {status: response.status, statusText: response.statusText, headers});
+      } catch {
+        return response;
+      }
+    }
+
     try {
-      const url = typeof input === "string" ? input : input?.url || "";
-      const method = String(init?.method || (typeof input !== "string" ? input?.method : "GET") || "GET").toUpperCase();
       if (method === "POST" && /\/api\/acc-ai(?:\?|$)/.test(url) && typeof init?.body === "string") {
         const body = JSON.parse(init.body);
         body.context = body.context && typeof body.context === "object" ? body.context : {};
