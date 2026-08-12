@@ -6,8 +6,9 @@
 
 import coreWorker from "./worker-stage-normalizer.js";
 import captionWorker from "./worker-caption-evidence-sanitizer.js";
+import posterWorker from "./worker-poster-brief-sanitizer.js";
 
-const PACKAGE_REVISION = "BUILD250_RC7_2_CAPTION_EVIDENCE_SANITIZER";
+const PACKAGE_REVISION = "BUILD250_RC8_POSTER_BRIEF_SANITIZER";
 const GATE_REVISION = "BUILD250_PACKAGE_DEPLOY_GATE_V2";
 const TARGET_URL = "https://raw.githubusercontent.com/ardarawk-cloud/ACC-OS-X/main/acc-deploy-target.json";
 const text = v => typeof v === "string" ? v.trim() : "";
@@ -29,6 +30,7 @@ function stageOf(body){
   const m=joined.match(/(?:^|\n)STAGE:\s*(RESEARCH|SCRIPT|POSTER|CAPTION|QC|PUBLISHING)\b/i);
   if(m)return String(m[1]).toUpperCase();
   if(/Research Specialist/i.test(joined))return "RESEARCH";
+  if(/Poster Creator/i.test(joined))return "POSTER";
   if(/Social Captioner/i.test(joined))return "CAPTION";
   return "";
 }
@@ -49,7 +51,7 @@ async function targetState(){
 }
 
 async function health(request,env,ctx){
-  const upstream=await coreWorker.fetch(request,env,ctx);
+  const upstream=await posterWorker.fetch(request,env,ctx);
   let data={};
   try{data=await upstream.clone().json();}catch{}
   const target=await targetState();
@@ -76,6 +78,7 @@ export default{
     try{body=await request.clone().json();}catch{return coreWorker.fetch(request,env,ctx);}
     const stage=stageOf(body);
 
+    if(stage==="POSTER")return posterWorker.fetch(request,env,ctx);
     if(stage==="CAPTION")return captionWorker.fetch(request,env,ctx);
 
     if(stage==="RESEARCH"){
