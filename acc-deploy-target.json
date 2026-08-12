@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD254_2_ITERATIVE_STUDIO_BOARD",
-  "label": "BUILD254.2 ITERATIVE STUDIO BOARD",
-  "updatedAt": "2026-08-12T22:40:00+08:00"
+  "expectedRevision": "BUILD255_RESEARCH_INTELLIGENCE",
+  "label": "BUILD255 RESEARCH INTELLIGENCE",
+  "updatedAt": "2026-08-12T23:18:00+08:00"
 }
