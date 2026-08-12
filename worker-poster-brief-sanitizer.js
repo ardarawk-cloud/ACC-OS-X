@@ -1,12 +1,11 @@
-// ACC OS X — BUILD 250 RC8 POSTER BRIEF SANITIZER
-// POSTER-only response normalizer. Removes chart/graph/diagram wording from an
-// already-converted illustrative poster brief so semantic QC cannot misread
-// negative instructions as an affirmative request for unsupported data visuals.
+// ACC OS X — BUILD 253 POSTER BRIEF SANITIZER
+// POSTER-only safety normalizer after KAI Art Director. Removes forbidden data-visual
+// wording if it ever appears while preserving the creative brief whenever clean.
 // Meta publishing, tokens, Page IDs, worker.js and publish payload/path are untouched.
 
-import baseWorker from "./worker-stage-normalizer.js";
+import baseWorker from "./worker-kai-creative-engine.js";
 
-const PATCH_REVISION = "BUILD250_RC8_POSTER_BRIEF_SANITIZER";
+const PATCH_REVISION = "BUILD253_POSTER_BRIEF_SANITIZER";
 const text = v => typeof v === "string" ? v.trim() : "";
 
 function stageOf(body){
@@ -32,18 +31,20 @@ function needsSanitize(raw){
 function cleanBrief(raw){
   const topic=extractLine(raw,"PUBLIC TOPIC") || "the verified public topic";
   let basis=extractLine(raw,"PRIMARY VISUAL BASIS");
-  if(!basis || needsSanitize(basis)){
-    basis=`Illustrative editorial scene representing exactly: ${topic}. Show only people, objects, places, or actions directly supported by this public topic.`;
-  }
+  if(!basis || needsSanitize(basis))basis=`Premium editorial hero scene representing exactly: ${topic}. Show only subjects, objects, places or actions supported by the verified topic.`;
   return [
     `PUBLIC TOPIC: ${topic}`,
     `PRIMARY VISUAL BASIS: ${basis}`,
-    "Create one clean editorial artwork/background for this exact public topic and nothing adjacent.",
-    "Use a single topic-faithful illustrative scene with strong subject clarity.",
-    "Represent only people, objects, institutions, locations, or actions supported by PRIMARY VISUAL BASIS or directly implied by PUBLIC TOPIC.",
-    "Do not invent numbers, dashboards, UI panels, unrelated devices, unrelated industries, or unsupported factual visual claims.",
-    "No headline, logo, watermark, signage, UI text, letters, pseudo-text, or ACC/internal terminology inside the AI artwork.",
-    "Keep safe negative space for deterministic headline/logo overlays."
+    `CREATIVE CONCEPT: A single premium editorial metaphor or story moment that makes ${topic} immediately understandable without rendered text.`,
+    "HERO SUBJECT: One unmistakable primary subject with clear story meaning and no unrelated decorative objects.",
+    "COMPOSITION: Cinematic editorial composition with strong foreground, midground and background separation; deliberate focal hierarchy.",
+    "CAMERA LANGUAGE: Purposeful medium-wide or close editorial angle chosen to make the hero subject dominant.",
+    "LIGHTING: Premium cinematic key light with controlled contrast, visible detail and dimensional depth.",
+    "COLOR DIRECTION: Cohesive channel-appropriate premium palette with disciplined accent color and no muddy grading.",
+    "ATMOSPHERE: Credible, sophisticated, contemporary editorial mood; avoid generic stock-art energy.",
+    "NEGATIVE SPACE: Preserve clean safe areas for deterministic Studio Renderer headline, branding and information panels.",
+    "EDITORIAL ENERGY: Specific, intelligent and story-driven rather than decorative.",
+    "QUALITY TARGET: STUDIO CONTENT PREMIUM"
   ].join("\n");
 }
 
