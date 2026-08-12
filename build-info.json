@@ -1,7 +1,11 @@
 {
-  "version": "1.2.1",
-  "buildId": "2026.08.07.001",
-  "cache": "acc-os-x-v1.2.1-stable",
-  "release": "PWA Stabilization",
-  "generatedAt": "2026-08-07T00:00:00+08:00"
+  "version": "256.0.0",
+  "buildId": "2026.08.13.0226",
+  "cache": "acc-os-x-build-256-release-sync",
+  "release": "KAI System Orchestrator + Release Version Sync",
+  "appBuild": 256,
+  "appRevision": "BUILD256_KAI_SYSTEM_ORCHESTRATOR",
+  "corePackageRevision": "BUILD255_2_BUDGETED_RESEARCH",
+  "dataSchema": 250,
+  "generatedAt": "2026-08-13T02:26:00+08:00"
 }

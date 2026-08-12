@@ -195,3 +195,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// BUILD 256 — release identity bridge. Keeps installed PWA identity and data schema stable.
+(() => {
+  if (document.querySelector('script[data-acc-release="v256"]')) return;
+  const script = document.createElement("script");
+  script.src = "./release-version-v256.js?rev=BUILD256_RELEASE_SYNC";
+  script.dataset.accRelease = "v256";
+  script.async = false;
+  document.head.appendChild(script);
+})();

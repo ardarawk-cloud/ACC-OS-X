@@ -1,8 +1,11 @@
 {
-  "version": 250,
-  "revision": "BUILD250-ACC-CORE-V1-STABLE-RC",
-  "channel": "ACC CORE v1.0",
-  "releasedAt": "2026-08-10T23:34:00+08:00",
-  "build": 250,
-  "patch": "KAI_CHAT_UI_FIX"
+  "version": 256,
+  "revision": "BUILD256_KAI_SYSTEM_ORCHESTRATOR",
+  "channel": "ACC OS X",
+  "releasedAt": "2026-08-13T02:26:00+08:00",
+  "build": 256,
+  "patch": "RELEASE_VERSION_SYNC",
+  "dataSchema": 250,
+  "corePackageRevision": "BUILD255_2_BUDGETED_RESEARCH",
+  "kaiSystemRevision": "BUILD256_KAI_SYSTEM_ORCHESTRATOR"
 }
