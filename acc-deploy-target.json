@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD252_1_RENDERER_CACHE_BUST",
-  "label": "BUILD252.1 RENDERER CACHE BUST",
-  "updatedAt": "2026-08-12T14:43:00+08:00"
+  "expectedRevision": "BUILD253_KAI_CREATIVE_ENGINE_V1",
+  "label": "BUILD253 KAI CREATIVE ENGINE V1",
+  "updatedAt": "2026-08-12T15:23:00+08:00"
 }
