@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
-  "healthField": "captionEvidenceSanitizerRevision",
-  "expectedRevision": "BUILD250_RC7_2_CAPTION_EVIDENCE_SANITIZER",
-  "label": "BUILD250 RC7.2",
-  "updatedAt": "2026-08-12T02:23:00+08:00"
+  "healthField": "packageRevision",
+  "expectedRevision": "BUILD250_RC8_POSTER_BRIEF_SANITIZER",
+  "label": "BUILD250 RC8",
+  "updatedAt": "2026-08-12T10:44:00+08:00"
 }
