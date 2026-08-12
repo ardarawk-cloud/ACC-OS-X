@@ -164,15 +164,23 @@
   document.head.appendChild(script);
 })();
 
-// BUILD 252.1 — force the current Studio Poster Renderer through a versioned URL.
-// This prevents an older BUILD 251 renderer cached on mobile/edge from being reused against QC v2.
+// BUILD 253 — versioned Studio Poster Renderer + KAI Creative Client bridge.
 (() => {
   const current = document.querySelector('script[data-acc-studio-poster]');
-  if (current?.dataset?.accStudioPoster === "v2.1") return;
-  if (current) current.remove();
-  const script = document.createElement("script");
-  script.src = "./poster-studio-v1.js?rev=BUILD252_1_STUDIO_POSTER_V2";
-  script.dataset.accStudioPoster = "v2.1";
-  script.async = false;
-  document.head.appendChild(script);
+  if (!current || current.dataset.accStudioPoster !== "v2.53") {
+    if (current) current.remove();
+    const renderer = document.createElement("script");
+    renderer.src = "./poster-studio-v1.js?rev=BUILD253_KAI_CREATIVE";
+    renderer.dataset.accStudioPoster = "v2.53";
+    renderer.async = false;
+    document.head.appendChild(renderer);
+  }
+
+  if (!document.querySelector('script[data-acc-kai-creative="v1"]')) {
+    const bridge = document.createElement("script");
+    bridge.src = "./kai-creative-client.js?rev=BUILD253_KAI_CREATIVE_CLIENT_V1";
+    bridge.dataset.accKaiCreative = "v1";
+    bridge.async = false;
+    document.head.appendChild(bridge);
+  }
 })();
