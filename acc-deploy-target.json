@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD250_RC8_1_CAPTION_LABEL_RECOVERY",
-  "label": "BUILD250 RC8.1",
-  "updatedAt": "2026-08-12T10:58:00+08:00"
+  "expectedRevision": "BUILD250_RC8_2_CAPTION_PUBLIC_CLEANER",
+  "label": "BUILD250 RC8.2",
+  "updatedAt": "2026-08-12T11:29:00+08:00"
 }
