@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD250_RC8_2_CAPTION_PUBLIC_CLEANER",
-  "label": "BUILD250 RC8.2",
-  "updatedAt": "2026-08-12T11:29:00+08:00"
+  "expectedRevision": "BUILD251_STUDIO_POSTER_V1",
+  "label": "BUILD251 STUDIO POSTER V1",
+  "updatedAt": "2026-08-12T13:24:00+08:00"
 }
