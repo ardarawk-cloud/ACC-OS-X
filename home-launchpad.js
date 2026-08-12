@@ -164,14 +164,15 @@
   document.head.appendChild(script);
 })();
 
-// BUILD 251 — load Studio Poster Renderer after ACC Core boot.
-// App functions are already defined by this point, but poster rendering only occurs during a mission,
-// so installing the canvas/fetch hooks here is early enough and avoids touching the production core.
+// BUILD 252.1 — force the current Studio Poster Renderer through a versioned URL.
+// This prevents an older BUILD 251 renderer cached on mobile/edge from being reused against QC v2.
 (() => {
-  if (document.querySelector('script[data-acc-studio-poster="v1"]')) return;
+  const current = document.querySelector('script[data-acc-studio-poster]');
+  if (current?.dataset?.accStudioPoster === "v2.1") return;
+  if (current) current.remove();
   const script = document.createElement("script");
-  script.src = "./poster-studio-v1.js";
-  script.dataset.accStudioPoster = "v1";
+  script.src = "./poster-studio-v1.js?rev=BUILD252_1_STUDIO_POSTER_V2";
+  script.dataset.accStudioPoster = "v2.1";
   script.async = false;
   document.head.appendChild(script);
 })();
