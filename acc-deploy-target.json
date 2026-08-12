@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD255_1_MULTISOURCE_RESEARCH",
-  "label": "BUILD255.1 MULTISOURCE RESEARCH",
-  "updatedAt": "2026-08-12T23:36:00+08:00"
+  "expectedRevision": "BUILD255_2_BUDGETED_RESEARCH",
+  "label": "BUILD255.2 BUDGETED RESEARCH",
+  "updatedAt": "2026-08-12T23:50:00+08:00"
 }
