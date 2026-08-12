@@ -1,6 +1,6 @@
 {
   "name": "acc-os-x-baxkup",
-  "main": "worker-package-gate.js",
+  "main": "worker-build254-gate.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "directory": ".",
