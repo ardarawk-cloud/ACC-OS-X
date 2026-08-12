@@ -184,3 +184,14 @@
     document.head.appendChild(bridge);
   }
 })();
+
+// PWA OWNER SAFETY v1 — presentation/sound/brand convenience only.
+// No AI engine, production Worker or Meta publishing connector changes.
+(() => {
+  if (document.querySelector('script[data-acc-owner-safety="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./pwa-owner-safety-v1.js?rev=PWA_OWNER_SAFETY_V1";
+  script.dataset.accOwnerSafety = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
