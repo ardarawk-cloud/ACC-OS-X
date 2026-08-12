@@ -1,11 +1,12 @@
-// ACC OS X — BUILD 251 STUDIO POSTER QC GATE
-// Content-channel QC requires proof that the final 1080x1920 poster passed the
-// deterministic Studio Poster Renderer before semantic QC may approve publishing.
+// ACC OS X — BUILD 252 STUDIO POSTER QC GATE v2
+// Content-channel QC requires deterministic Studio Poster v2 proof before semantic QC may approve publish.
+// TechVerse additionally requires dense newsroom hierarchy, verified-source presence and Visual Kit v2.
 
 import baseWorker from "./worker-stage-normalizer.js";
 
-const REVISION = "BUILD251_STUDIO_POSTER_QC_V1";
-const STANDARD = "STUDIO_CONTENT_V1";
+const REVISION = "BUILD252_STUDIO_POSTER_QC_V2";
+const STANDARD = "STUDIO_CONTENT_V2";
+const TECHVERSE_BENCHMARK = "TECHVERSE_POSTER_QUALITY_BENCHMARK_V2";
 const text = v => typeof v === "string" ? v.trim() : "";
 
 function json(data,status=200,headersLike=null){
@@ -24,25 +25,38 @@ function stageOf(body){
 }
 
 function isContentChannel(context){
-  const kind=String(context?.profile?.kind||"").toUpperCase();
-  return kind==="CHANNEL";
+  return String(context?.profile?.kind||"").toUpperCase()==="CHANNEL";
+}
+
+function hasBlocks(meta, required){
+  const blocks=Array.isArray(meta?.layoutBlocks)?meta.layoutBlocks:[];
+  return required.every(name=>blocks.includes(name));
 }
 
 function validateStudio(context){
   const meta=context?.studioPosterQuality;
   const channelId=text(context?.profile?.id);
   const failures=[];
+
   if(!meta||typeof meta!=="object")failures.push("studioRendererProofMissing");
   else{
-    if(meta.standard!==STANDARD)failures.push("studioStandardMissing");
-    if(!String(meta.rendererRevision||"").startsWith("BUILD251_STUDIO_POSTER"))failures.push("rendererRevisionInvalid");
+    if(meta.standard!==STANDARD)failures.push("studioStandardV2Missing");
+    if(!String(meta.rendererRevision||"").startsWith("BUILD252_STUDIO_POSTER_V2"))failures.push("rendererRevisionInvalid");
     if(String(meta.channelId||"")!==channelId)failures.push("channelMismatch");
     if(Number(meta.width)!==1080||Number(meta.height)!==1920)failures.push("posterSizeInvalid");
-    if(text(meta.headline).length<8)failures.push("headlineWeak");
-    if(!Array.isArray(meta.layoutBlocks)||meta.layoutBlocks.length<7)failures.push("studioLayoutIncomplete");
+    if(text(meta.headline).length<14)failures.push("headlineWeak");
+    if(text(meta.editorialHierarchy)!=="NEWSROOM_DENSE_V2")failures.push("editorialHierarchyMissing");
+    if(text(meta.heroTreatment)!=="EDITORIAL_HERO_FRAME")failures.push("heroTreatmentMissing");
+    if(Number(meta.informationCards||0)<6)failures.push("informationArchitectureTooThin");
+    if(Number(meta.densityScore||0)<8)failures.push("studioDensityBelowThreshold");
+    if(!hasBlocks(meta,["brandHeader","dateVerification","categoryRibbon","heroFrame","headlineHierarchy","editorialDeck","keyMetric","whyItMatters","threeKeyPoints","bottomLine","verifiedSources","studioFooter"])) failures.push("studioLayoutIncomplete");
+
     if(channelId==="ch-techverse"){
-      if(meta.benchmark!=="TECHVERSE_POSTER_QUALITY_BENCHMARK_V1")failures.push("techverseBenchmarkMissing");
-      if(Number(meta.factsCount||0)<2)failures.push("techverseInformationDensityLow");
+      if(meta.benchmark!==TECHVERSE_BENCHMARK)failures.push("techverseBenchmarkV2Missing");
+      if(meta.visualKitVersion!=="TECHVERSE_VISUAL_KIT_V2")failures.push("techverseVisualKitV2Missing");
+      if(meta.brandLock!=="TECHVERSE_EDITORIAL_IDENTITY_LOCKED")failures.push("techverseBrandIdentityMissing");
+      if(Number(meta.factsCount||0)<3)failures.push("techverseInformationDensityLow");
+      if(Number(meta.sourceCount||0)<1)failures.push("techverseVerifiedSourceMissing");
     }
   }
   return {ok:failures.length===0,failures,meta:meta||null};
@@ -56,7 +70,11 @@ async function health(request,env,ctx){
     ...(data&&typeof data==="object"?data:{}),
     studioPosterQc:"ACTIVE",
     studioPosterQcRevision:REVISION,
-    studioPosterStandard:STANDARD
+    studioPosterStandard:STANDARD,
+    techversePosterBenchmark:TECHVERSE_BENCHMARK,
+    minStudioDensityScore:8,
+    minTechverseFacts:3,
+    verifiedSourceRequired:true
   },upstream.status,upstream.headers);
 }
 
@@ -76,10 +94,10 @@ export default{
         ok:true,
         reply:[
           "FAIL",
-          `Studio Poster QC failed: ${studio.failures.join(", ")}.`,
-          "Final poster must be assembled by BUILD 251 Studio Poster Renderer before publish."
+          `Studio Poster QC v2 failed: ${studio.failures.join(", ")}.`,
+          "Poster is below Studio Content quality and publish is blocked. Regenerate through BUILD 252 Studio Poster Renderer v2."
         ].join("\n"),
-        model:"ACC_DETERMINISTIC_STUDIO_POSTER_QC",
+        model:"ACC_DETERMINISTIC_STUDIO_POSTER_QC_V2",
         provider:"ACC OS X Studio Poster QC Gate",
         mode:"PRODUCTION_AI",
         studioPosterQc:{revision:REVISION,standard:STANDARD,passed:false,failures:studio.failures}
@@ -97,8 +115,12 @@ export default{
           standard:STANDARD,
           passed:true,
           benchmark:studio.meta?.benchmark||null,
+          visualKitVersion:studio.meta?.visualKitVersion||null,
           layoutBlocks:studio.meta?.layoutBlocks||[],
-          factsCount:Number(studio.meta?.factsCount||0)
+          factsCount:Number(studio.meta?.factsCount||0),
+          sourceCount:Number(studio.meta?.sourceCount||0),
+          informationCards:Number(studio.meta?.informationCards||0),
+          densityScore:Number(studio.meta?.densityScore||0)
         }
       },upstream.status,upstream.headers);
     }catch{return upstream;}
