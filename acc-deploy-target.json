@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD251_STUDIO_POSTER_V1",
-  "label": "BUILD251 STUDIO POSTER V1",
-  "updatedAt": "2026-08-12T13:24:00+08:00"
+  "expectedRevision": "BUILD252_STUDIO_POSTER_V2",
+  "label": "BUILD252 STUDIO POSTER V2",
+  "updatedAt": "2026-08-12T14:24:00+08:00"
 }
