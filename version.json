@@ -1,11 +1,11 @@
 {
-  "version": 256,
-  "revision": "BUILD256_KAI_SYSTEM_ORCHESTRATOR",
+  "version": 257,
+  "revision": "BUILD257_KAI_AUTONOMOUS_QUALITY_RECOVERY",
   "channel": "ACC OS X",
-  "releasedAt": "2026-08-13T02:26:00+08:00",
-  "build": 256,
-  "patch": "RELEASE_VERSION_SYNC",
+  "releasedAt": "2026-08-13T12:21:00+08:00",
+  "build": 257,
+  "patch": "AUTONOMOUS_QUALITY_RECOVERY",
   "dataSchema": 250,
-  "corePackageRevision": "BUILD255_2_BUDGETED_RESEARCH",
+  "corePackageRevision": "BUILD257_KAI_AUTONOMOUS_QUALITY_RECOVERY",
   "kaiSystemRevision": "BUILD256_KAI_SYSTEM_ORCHESTRATOR"
 }
