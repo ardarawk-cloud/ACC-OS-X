@@ -1,0 +1,3 @@
+<resources>
+    <item name="ic_acc_os_x" type="drawable">@android:drawable/sym_def_app_icon</item>
+</resources>
