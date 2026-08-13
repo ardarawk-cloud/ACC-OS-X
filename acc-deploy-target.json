@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD257_5_DETERMINISTIC_CRITIC",
-  "label": "BUILD257.5 DETERMINISTIC CRITIC",
-  "updatedAt": "2026-08-13T17:46:00+08:00"
+  "expectedRevision": "BUILD257_6_PRODUCE_COPILOT",
+  "label": "BUILD257.6 PRODUCE COPILOT",
+  "updatedAt": "2026-08-13T18:10:00+08:00"
 }
