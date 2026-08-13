@@ -107,3 +107,13 @@
 
   window.dispatchEvent(new CustomEvent("acc-release-ready", {detail: RELEASE}));
 })();
+
+// BUILD 257.6 — semi-automatic Produce Copilot panel.
+(() => {
+  if (document.querySelector('script[data-acc-produce-copilot="v2576"]')) return;
+  const script = document.createElement("script");
+  script.src = "./produce-copilot-v2576.js?rev=BUILD257_6_PRODUCE_COPILOT";
+  script.dataset.accProduceCopilot = "v2576";
+  script.async = false;
+  document.head.appendChild(script);
+})();
