@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD257_4_RESILIENT_MODEL_IO",
-  "label": "BUILD257.4 RESILIENT MODEL I/O",
-  "updatedAt": "2026-08-13T16:45:00+08:00"
+  "expectedRevision": "BUILD257_5_DETERMINISTIC_CRITIC",
+  "label": "BUILD257.5 DETERMINISTIC CRITIC",
+  "updatedAt": "2026-08-13T17:46:00+08:00"
 }
