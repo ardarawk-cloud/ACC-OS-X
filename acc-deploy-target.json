@@ -1,7 +1,7 @@
 {
   "schema": "ACC_OS_X_DEPLOY_TARGET_V1",
   "healthField": "packageRevision",
-  "expectedRevision": "BUILD257_KAI_AUTONOMOUS_QUALITY_RECOVERY",
-  "label": "BUILD257 AUTONOMOUS QUALITY RECOVERY",
-  "updatedAt": "2026-08-13T12:21:00+08:00"
+  "expectedRevision": "BUILD257_1_LATENCY_BUDGETED_RECOVERY",
+  "label": "BUILD257.1 LATENCY BUDGETED RECOVERY",
+  "updatedAt": "2026-08-13T13:18:00+08:00"
 }
