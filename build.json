@@ -1,15 +1,18 @@
 {
   "product": "ACC OS X",
-  "build": 256,
-  "releaseRevision": "BUILD256_KAI_SYSTEM_ORCHESTRATOR",
-  "milestone": "KAI System Orchestrator + Release Version Sync",
+  "build": 257,
+  "releaseRevision": "BUILD257_KAI_AUTONOMOUS_QUALITY_RECOVERY",
+  "milestone": "KAI Autonomous Quality Recovery",
   "schemaVersion": 250,
   "storageKey": "acc_os_x_ecosystem_v214",
   "pwaIdentity": "/acc-os-x-build250",
   "pwaIdentityPolicy": "LEGACY_ID_PRESERVED_FOR_INSTALLED_PWA_CONTINUITY",
-  "corePackageRevision": "BUILD255_2_BUDGETED_RESEARCH",
+  "corePackageRevision": "BUILD257_KAI_AUTONOMOUS_QUALITY_RECOVERY",
+  "kaiBrainRevision": "BUILD257_KAI_AUTONOMOUS_QUALITY_RECOVERY",
   "kaiSystemRevision": "BUILD256_KAI_SYSTEM_ORCHESTRATOR",
+  "qualityThreshold": 8.5,
+  "qualityRecovery": "BOUNDED_EVIDENCE_OR_REFRAME_FAIL_CLOSED",
   "deploymentStrategy": "in-place-pwa-update",
   "externalAiConnected": true,
-  "generatedAt": "2026-08-13T02:26:00+08:00"
+  "generatedAt": "2026-08-13T12:21:00+08:00"
 }
