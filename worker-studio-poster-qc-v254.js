@@ -1,11 +1,11 @@
-// ACC OS X — BUILD 254.2 MASTER BRAIN STUDIO QC
-// Requires iterative Qwen3 Studio Board proof plus renderer/evidence quality before publish.
+// ACC OS X — BUILD 257 MASTER BRAIN STUDIO QC
+// Accepts strict BUILD254.2 Studio Board proof or BUILD257 Autonomous Recovery proof plus renderer/evidence quality before publish.
 import baseWorker from "./worker-stage-normalizer.js";
 
-const REVISION="BUILD254_2_MASTER_BRAIN_STUDIO_QC";
+const REVISION="BUILD257_MASTER_BRAIN_STUDIO_QC";
 const STANDARD="STUDIO_CONTENT_V2";
 const TECHVERSE_BENCHMARK="TECHVERSE_POSTER_QUALITY_BENCHMARK_V2";
-const CREATIVE_ENGINE="BUILD254_2_KAI_BRAIN_ITERATIVE_BOARD";
+const CREATIVE_ENGINES=new Set(["BUILD254_2_KAI_BRAIN_ITERATIVE_BOARD","BUILD257_KAI_AUTONOMOUS_QUALITY_RECOVERY"]);
 const MIN_EDITORIAL=8.5,MIN_CREATIVE=8.5,MIN_ART=8.5;
 const text=v=>typeof v==="string"?v.trim():"";
 function json(data,status=200,headersLike=null){const headers=new Headers(headersLike||{});headers.set("Content-Type","application/json;charset=UTF-8");headers.set("Cache-Control","no-store");headers.set("Access-Control-Allow-Origin","*");return new Response(JSON.stringify(data,null,2),{status,headers});}
@@ -28,7 +28,7 @@ function validate(context){
     if(n(meta.informationCards)<6)failures.push("informationArchitectureTooThin");
     if(n(meta.densityScore)<8)failures.push("studioDensityBelowThreshold");
     if(!hasBlocks(meta,["brandHeader","dateVerification","categoryRibbon","heroFrame","headlineHierarchy","editorialDeck","keyMetric","whyItMatters","threeKeyPoints","bottomLine","verifiedSources","studioFooter"]))failures.push("studioLayoutIncomplete");
-    if(text(meta.kaiCreativeEngineRevision)!==CREATIVE_ENGINE)failures.push("kaiMasterBrainProofMissing");
+    if(!CREATIVE_ENGINES.has(text(meta.kaiCreativeEngineRevision)))failures.push("kaiMasterBrainProofMissing");
     if(n(meta.kaiEditorialScore)<MIN_EDITORIAL)failures.push("kaiEditorialScoreLow");
     if(n(meta.kaiCreativeScore)<MIN_CREATIVE)failures.push("kaiCreativeScoreLow");
     if(n(meta.kaiArtDirectionScore)<MIN_ART)failures.push("kaiArtDirectionScoreLow");
@@ -42,5 +42,5 @@ function validate(context){
   }
   return{ok:failures.length===0,failures,meta:meta||null};
 }
-async function health(request,env,ctx){const upstream=await baseWorker.fetch(request,env,ctx);let data={};try{data=await upstream.clone().json();}catch{}return json({...(data&&typeof data==="object"?data:{}),studioPosterQc:"ACTIVE",studioPosterQcRevision:REVISION,kaiCreativeEngineRequired:CREATIVE_ENGINE,kaiEditorialThreshold:MIN_EDITORIAL,kaiCreativeThreshold:MIN_CREATIVE,kaiArtDirectionThreshold:MIN_ART,verifiedSourceRequired:true},upstream.status,upstream.headers);}
-export default{async fetch(request,env,ctx){const url=new URL(request.url);if(request.method==="GET"&&(url.pathname==="/health"||url.pathname==="/api/acc-ai"))return health(request,env,ctx);if(!(request.method==="POST"&&url.pathname==="/api/acc-ai"))return baseWorker.fetch(request,env,ctx);let body;try{body=await request.clone().json();}catch{return baseWorker.fetch(request,env,ctx);}if(stageOf(body)!=="QC"||!isContent(body?.context))return baseWorker.fetch(request,env,ctx);const studio=validate(body.context);if(!studio.ok)return json({ok:true,reply:["FAIL",`Build 254.2 Studio Board QC failed: ${studio.failures.join(", ")}.`,`Received quality: ${JSON.stringify(snapshot(studio.meta))}.`,"Publish blocked. Regenerate with KAI iterative Studio Board / Studio Renderer."].join("\n"),model:"ACC_KAI_ITERATIVE_STUDIO_BOARD_QC",provider:"ACC OS X Build254.2 Studio Board + Studio QC",mode:"PRODUCTION_AI",studioPosterQc:{revision:REVISION,passed:false,failures:studio.failures,received:snapshot(studio.meta)}},200);const upstream=await baseWorker.fetch(request,env,ctx);if(!upstream.ok)return upstream;try{const data=await upstream.clone().json();return json({...data,studioPosterQc:{revision:REVISION,passed:true,...snapshot(studio.meta),layoutBlocks:studio.meta?.layoutBlocks||[],verifiedSourceHosts:studio.meta?.verifiedSourceHosts||[]}},upstream.status,upstream.headers);}catch{return upstream;}}};
+async function health(request,env,ctx){const upstream=await baseWorker.fetch(request,env,ctx);let data={};try{data=await upstream.clone().json();}catch{}return json({...(data&&typeof data==="object"?data:{}),studioPosterQc:"ACTIVE",studioPosterQcRevision:REVISION,kaiCreativeEngineRequired:Array.from(CREATIVE_ENGINES),kaiEditorialThreshold:MIN_EDITORIAL,kaiCreativeThreshold:MIN_CREATIVE,kaiArtDirectionThreshold:MIN_ART,verifiedSourceRequired:true},upstream.status,upstream.headers);}
+export default{async fetch(request,env,ctx){const url=new URL(request.url);if(request.method==="GET"&&(url.pathname==="/health"||url.pathname==="/api/acc-ai"))return health(request,env,ctx);if(!(request.method==="POST"&&url.pathname==="/api/acc-ai"))return baseWorker.fetch(request,env,ctx);let body;try{body=await request.clone().json();}catch{return baseWorker.fetch(request,env,ctx);}if(stageOf(body)!=="QC"||!isContent(body?.context))return baseWorker.fetch(request,env,ctx);const studio=validate(body.context);if(!studio.ok)return json({ok:true,reply:["FAIL",`Build 257 Studio Quality QC failed: ${studio.failures.join(", ")}.`,`Received quality: ${JSON.stringify(snapshot(studio.meta))}.`,"Publish blocked. Regenerate with KAI Studio Board / Autonomous Recovery / Studio Renderer."].join("\n"),model:"ACC_KAI_AUTONOMOUS_STUDIO_QC",provider:"ACC OS X Build257 Studio QC",mode:"PRODUCTION_AI",studioPosterQc:{revision:REVISION,passed:false,failures:studio.failures,received:snapshot(studio.meta)}},200);const upstream=await baseWorker.fetch(request,env,ctx);if(!upstream.ok)return upstream;try{const data=await upstream.clone().json();return json({...data,studioPosterQc:{revision:REVISION,passed:true,...snapshot(studio.meta),layoutBlocks:studio.meta?.layoutBlocks||[],verifiedSourceHosts:studio.meta?.verifiedSourceHosts||[]}},upstream.status,upstream.headers);}catch{return upstream;}}};
