@@ -117,3 +117,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// BUILD 257.6.2 — poster preview/storage fix for Produce Copilot.
+(() => {
+  if (document.querySelector('script[data-acc-copilot-preview-fix="v25762"]')) return;
+  const script = document.createElement("script");
+  script.src = "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_2_POSTER_PREVIEW_MEMORY_FIX";
+  script.dataset.accCopilotPreviewFix = "v25762";
+  script.async = false;
+  document.head.appendChild(script);
+})();
