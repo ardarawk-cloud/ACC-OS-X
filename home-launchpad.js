@@ -196,12 +196,12 @@
   document.head.appendChild(script);
 })();
 
-// BUILD 256 — release identity bridge. Keeps installed PWA identity and data schema stable.
+// BUILD 257 — release identity bridge. Keeps installed PWA identity and data schema stable.
 (() => {
-  if (document.querySelector('script[data-acc-release="v256"]')) return;
+  if (document.querySelector('script[data-acc-release="v257"]')) return;
   const script = document.createElement("script");
-  script.src = "./release-version-v256.js?rev=BUILD256_RELEASE_SYNC";
-  script.dataset.accRelease = "v256";
+  script.src = "./release-version-v257.js?rev=BUILD257_AUTONOMOUS_QUALITY_RECOVERY";
+  script.dataset.accRelease = "v257";
   script.async = false;
   document.head.appendChild(script);
 })();
