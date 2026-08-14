@@ -15,6 +15,9 @@ Official hybrid Android shell for ACC OS X.
 - WebView debugging follows the APK debuggable flag and is disabled in release builds.
 - Downloads require HTTPS and use Android DownloadManager.
 
+## CI policy
+Every Android change on `main` must pass both the debug build and the release/minify build before it is considered valid.
+
 ## Production signing
 The production release workflow requires these GitHub Actions secrets:
 - `ACC_OS_X_ANDROID_KEYSTORE_B64`
