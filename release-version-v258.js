@@ -23,12 +23,35 @@
   const RUNTIME=detectRuntime();
   window.ACCRelease=RELEASE;
   window.ACCRuntime=RUNTIME;
+
+  // Presentation-only sorting. Channel/division IDs, registry order, passports,
+  // workflow and Current State remain untouched; only the visible profile select
+  // options are reordered A-Z for faster lookup on mobile.
+  const sortProfileSelects=()=>{
+    document.querySelectorAll("select").forEach(select=>{
+      const options=Array.from(select.options||[]);
+      const profiles=options.filter(option=>/^ch-/i.test(String(option.value||"")));
+      if(profiles.length<2)return;
+      const sorted=[...profiles].sort((a,b)=>String(a.textContent||"").trim().localeCompare(String(b.textContent||"").trim(),"id",{sensitivity:"base",numeric:true}));
+      const already=profiles.every((option,index)=>option===sorted[index]);
+      if(already)return;
+      const selected=select.value;
+      const profileSet=new Set(profiles);
+      const fixed=options.filter(option=>!profileSet.has(option));
+      fixed.forEach(option=>select.appendChild(option));
+      sorted.forEach(option=>select.appendChild(option));
+      select.value=selected;
+      select.dataset.displaySort="AZ";
+    });
+  };
+
   const patchText=()=>{
     document.querySelectorAll(".build").forEach(node=>{const value=String(node.textContent||"");if(/Build\s+(?:250|256|257)\s*•/i.test(value))node.textContent=`Build ${RELEASE.build} • Core ${RELEASE.corePackageLabel} • KAI System ${RELEASE.kaiSystemLabel}`;});
     document.querySelectorAll(".badge").forEach(node=>{const value=String(node.textContent||"").trim().toUpperCase();if(["BUILD 250","BUILD 256","BUILD 257"].includes(value))node.textContent=`BUILD ${RELEASE.build}`;});
     document.querySelectorAll(".brand-line .badge").forEach(node=>{const value=String(node.textContent||"").trim().toUpperCase();if(["BROWSER","PWA INSTALLED","ANDROID APP"].includes(value)){node.textContent=RUNTIME.label;node.dataset.runtime=RUNTIME.id;}});
     document.querySelectorAll(".item.row.between").forEach(row=>{const label=row.querySelector("span"),value=row.querySelector("strong");if(!label||!value)return;const name=String(label.textContent||"").trim();if(name==="New Version")value.textContent=String(RELEASE.build);if(name==="PWA"){label.textContent="RUNTIME";value.textContent=RUNTIME.label;}});
     const boot=document.querySelector("#boot .boot-sub");if(boot&&/BUILD\s+(?:250|256|257)/i.test(String(boot.textContent||"")))boot.textContent=`ACC OS X • BUILD ${RELEASE.build}`;
+    sortProfileSelects();
   };
   let queued=false;const queuePatch=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;patchText();});};
   const previousFetch=window.fetch.bind(window);
