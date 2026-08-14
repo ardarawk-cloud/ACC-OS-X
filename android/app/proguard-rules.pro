@@ -1,2 +1,5 @@
-# ACC OS X Android shell currently uses only platform Android APIs.
-# Keep this file explicit so release minification can be enabled safely.
+# ACC OS X Android production shell.
+# Keep JavaScript bridge methods callable after release minification.
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
