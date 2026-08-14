@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+def releaseKeystorePath = System.getenv('ACC_ANDROID_KEYSTORE_PATH')
+def releaseStorePassword = System.getenv('ACC_ANDROID_KEYSTORE_PASSWORD')
+def releaseKeyAlias = System.getenv('ACC_ANDROID_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('ACC_ANDROID_KEY_PASSWORD')
+def releaseSigningReady = [releaseKeystorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword]
+        .every { value -> value != null && !value.trim().isEmpty() }
+
 android {
     namespace 'com.ardacore.accosx'
     compileSdk 36
@@ -8,13 +15,33 @@ android {
         applicationId 'com.ardacore.accosx'
         minSdk 26
         targetSdk 36
-        versionCode 2
-        versionName '0.2.0-pilot'
+        versionCode 3
+        versionName '1.0.0-rc1'
+    }
+
+    signingConfigs {
+        release {
+            if (releaseSigningReady) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            debuggable true
+        }
         release {
-            minifyEnabled false
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            if (releaseSigningReady) {
+                signingConfig signingConfigs.release
+            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
