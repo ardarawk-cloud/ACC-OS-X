@@ -71,5 +71,3 @@
 (()=>{if(document.querySelector('script[data-acc-produce-copilot="v2576"]'))return;const script=document.createElement("script");script.src="./produce-copilot-v2576.js?rev=BUILD257_6_PRODUCE_COPILOT";script.dataset.accProduceCopilot="v2576";script.async=false;document.head.appendChild(script);})();
 // Poster preview/storage fix remains underneath the Build 258 contract runtime injected by the Worker.
 (()=>{if(document.querySelector('script[data-acc-copilot-preview-fix="v25762"]'))return;const script=document.createElement("script");script.src="./produce-copilot-preview-fix-v25762.js?rev=BUILD258_1_CONTRACT_HARDENING";script.dataset.accCopilotPreviewFix="v25762";script.async=false;document.head.appendChild(script);})();
-// Semi-auto owner mode: Android APK uses native ACTION_SEND; browser/PWA keeps safe fallbacks.
-(()=>{if(document.querySelector('script[data-acc-semi-auto-publish="v2586"]'))return;const script=document.createElement("script");script.src="./produce-copilot-semi-auto-v2586.js?rev=BUILD258_6_SEMI_AUTO_NATIVE_SHARE";script.dataset.accSemiAutoPublish="v2586";script.async=false;document.head.appendChild(script);})();
