@@ -81,6 +81,26 @@
       const response=await previousFetch(input,init);if(!response.ok)return response;
       try{const data=await response.clone().json(),headers=new Headers(response.headers);headers.set("Content-Type","application/json;charset=UTF-8");headers.set("Cache-Control","no-store");return new Response(JSON.stringify({...data,version:RELEASE.dataSchema,appBuild:RELEASE.build,appRevision:RELEASE.revision,dataSchema:RELEASE.dataSchema,corePackageRevision:RELEASE.corePackageRevision,kaiSystemRevision:RELEASE.kaiSystemRevision,runtime:RUNTIME.id}),{status:response.status,statusText:response.statusText,headers});}catch{return response;}
     }
+
+    // Publish Connector access is a separate credential from AI access.
+    // Android WebView has its own localStorage, so never silently substitute AI access
+    // when the publish credential has not yet been saved in the APK runtime.
+    if(method==="POST"&&/\/api\/acc-publish(?:\?|$)/.test(url)){
+      const publishAccess=String(localStorage.getItem("acc_os_x_publish_access_v1")||"").trim();
+      if(!publishAccess){
+        return new Response(JSON.stringify({
+          ok:false,
+          error:{
+            code:"PUBLISH_CONNECTOR_ACCESS_MISSING",
+            message:RUNTIME.id==="android"?"Publish Connector access belum tersimpan di APK. Isi ulang Connector Access sekali di Publishing Hub.":"Publish Connector access belum tersimpan di perangkat."
+          }
+        }),{status:401,headers:{"Content-Type":"application/json;charset=UTF-8","Cache-Control":"no-store"}});
+      }
+      const headers=new Headers(init?.headers||(typeof input!=="string"?input?.headers:undefined));
+      headers.set("X-ACC-Access-Code",publishAccess);
+      init={...init,headers};
+    }
+
     try{if(method==="POST"&&/\/api\/acc-ai(?:\?|$)/.test(url)&&typeof init?.body==="string"){const body=JSON.parse(init.body);body.context=body.context&&typeof body.context==="object"?body.context:{};body.context.client=body.context.client&&typeof body.context.client==="object"?body.context.client:{};body.context.client.build=RELEASE.build;body.context.client.revision=RELEASE.revision;body.context.client.dataSchema=RELEASE.dataSchema;body.context.client.corePackageRevision=RELEASE.corePackageRevision;body.context.client.kaiSystemRevision=RELEASE.kaiSystemRevision;body.context.client.runtime=RUNTIME.id;init={...init,body:JSON.stringify(body)};}}catch{}
     return previousFetch(input,init);
   };
