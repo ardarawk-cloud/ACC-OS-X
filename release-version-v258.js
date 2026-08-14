@@ -24,6 +24,26 @@
   window.ACCRelease=RELEASE;
   window.ACCRuntime=RUNTIME;
 
+  // Existing Publishing Hub mapping seed only. Do not touch the connector.
+  // The verified connector resolves the actual Facebook Page/token by exact channel name.
+  const seedExistingPublishMapping=()=>{
+    const key="acc_os_x_ecosystem_v214";
+    try{
+      const state=JSON.parse(localStorage.getItem(key)||"{}");
+      state.settings=state.settings&&typeof state.settings==="object"?state.settings:{};
+      state.settings.publishMappings=state.settings.publishMappings&&typeof state.settings.publishMappings==="object"?state.settings.publishMappings:{};
+      if(!state.settings.publishMappings["ch-berita-terkini"]){
+        state.settings.publishMappings["ch-berita-terkini"]={
+          connector:"META_FACEBOOK",
+          pageName:"Berita Terkini",
+          source:"CHANNEL_NAME_DISCOVERY"
+        };
+        localStorage.setItem(key,JSON.stringify(state));
+      }
+    }catch{}
+  };
+  seedExistingPublishMapping();
+
   // Presentation-only sorting. Channel/division IDs, registry order, passports,
   // workflow and Current State remain untouched; only the visible profile select
   // options are reordered A-Z for faster lookup on mobile.
