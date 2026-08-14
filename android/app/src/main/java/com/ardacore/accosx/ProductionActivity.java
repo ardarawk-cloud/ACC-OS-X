@@ -2,6 +2,7 @@ package com.ardacore.accosx;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -104,7 +105,8 @@ public class ProductionActivity extends Activity {
         settings.setSafeBrowsingEnabled(true);
         settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXAndroid/1.0");
 
-        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+        boolean debuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        WebView.setWebContentsDebuggingEnabled(debuggable);
         webView.setWebViewClient(new ProductionWebViewClient());
         webView.setWebChromeClient(new ProductionChromeClient());
         webView.setDownloadListener(new AccDownloadBridge(this, settings.getUserAgentString()));
