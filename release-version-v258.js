@@ -12,11 +12,22 @@
     kaiSystemLabel:"256",
     dataSchema:250
   });
+  const detectRuntime=()=>{
+    const params=new URLSearchParams(location.search);
+    const ua=String(navigator.userAgent||"");
+    const android=params.get("native")==="android"||/\bACCOSXAndroid\//i.test(ua);
+    if(android)return Object.freeze({id:"android",label:"ANDROID APP",native:true,standalone:true});
+    const standalone=Boolean(window.matchMedia?.("(display-mode: standalone)")?.matches||navigator.standalone===true);
+    return Object.freeze({id:standalone?"pwa":"browser",label:standalone?"PWA INSTALLED":"BROWSER",native:false,standalone});
+  };
+  const RUNTIME=detectRuntime();
   window.ACCRelease=RELEASE;
+  window.ACCRuntime=RUNTIME;
   const patchText=()=>{
     document.querySelectorAll(".build").forEach(node=>{const value=String(node.textContent||"");if(/Build\s+(?:250|256|257)\s*•/i.test(value))node.textContent=`Build ${RELEASE.build} • Core ${RELEASE.corePackageLabel} • KAI System ${RELEASE.kaiSystemLabel}`;});
     document.querySelectorAll(".badge").forEach(node=>{const value=String(node.textContent||"").trim().toUpperCase();if(["BUILD 250","BUILD 256","BUILD 257"].includes(value))node.textContent=`BUILD ${RELEASE.build}`;});
-    document.querySelectorAll(".item.row.between").forEach(row=>{const label=row.querySelector("span"),value=row.querySelector("strong");if(label&&value&&String(label.textContent||"").trim()==="New Version")value.textContent=String(RELEASE.build);});
+    document.querySelectorAll(".brand-line .badge").forEach(node=>{const value=String(node.textContent||"").trim().toUpperCase();if(["BROWSER","PWA INSTALLED","ANDROID APP"].includes(value)){node.textContent=RUNTIME.label;node.dataset.runtime=RUNTIME.id;}});
+    document.querySelectorAll(".item.row.between").forEach(row=>{const label=row.querySelector("span"),value=row.querySelector("strong");if(!label||!value)return;const name=String(label.textContent||"").trim();if(name==="New Version")value.textContent=String(RELEASE.build);if(name==="PWA"){label.textContent="RUNTIME";value.textContent=RUNTIME.label;}});
     const boot=document.querySelector("#boot .boot-sub");if(boot&&/BUILD\s+(?:250|256|257)/i.test(String(boot.textContent||"")))boot.textContent=`ACC OS X • BUILD ${RELEASE.build}`;
   };
   let queued=false;const queuePatch=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;patchText();});};
@@ -25,12 +36,12 @@
     const url=typeof input==="string"?input:input?.url||"",method=String(init?.method||(typeof input!=="string"?input?.method:"GET")||"GET").toUpperCase();
     if(method==="GET"&&/(?:^|\/)version\.json(?:\?|$)/.test(url)){
       const response=await previousFetch(input,init);if(!response.ok)return response;
-      try{const data=await response.clone().json(),headers=new Headers(response.headers);headers.set("Content-Type","application/json;charset=UTF-8");headers.set("Cache-Control","no-store");return new Response(JSON.stringify({...data,version:RELEASE.dataSchema,appBuild:RELEASE.build,appRevision:RELEASE.revision,dataSchema:RELEASE.dataSchema,corePackageRevision:RELEASE.corePackageRevision,kaiSystemRevision:RELEASE.kaiSystemRevision}),{status:response.status,statusText:response.statusText,headers});}catch{return response;}
+      try{const data=await response.clone().json(),headers=new Headers(response.headers);headers.set("Content-Type","application/json;charset=UTF-8");headers.set("Cache-Control","no-store");return new Response(JSON.stringify({...data,version:RELEASE.dataSchema,appBuild:RELEASE.build,appRevision:RELEASE.revision,dataSchema:RELEASE.dataSchema,corePackageRevision:RELEASE.corePackageRevision,kaiSystemRevision:RELEASE.kaiSystemRevision,runtime:RUNTIME.id}),{status:response.status,statusText:response.statusText,headers});}catch{return response;}
     }
-    try{if(method==="POST"&&/\/api\/acc-ai(?:\?|$)/.test(url)&&typeof init?.body==="string"){const body=JSON.parse(init.body);body.context=body.context&&typeof body.context==="object"?body.context:{};body.context.client=body.context.client&&typeof body.context.client==="object"?body.context.client:{};body.context.client.build=RELEASE.build;body.context.client.revision=RELEASE.revision;body.context.client.dataSchema=RELEASE.dataSchema;body.context.client.corePackageRevision=RELEASE.corePackageRevision;body.context.client.kaiSystemRevision=RELEASE.kaiSystemRevision;init={...init,body:JSON.stringify(body)};}}catch{}
+    try{if(method==="POST"&&/\/api\/acc-ai(?:\?|$)/.test(url)&&typeof init?.body==="string"){const body=JSON.parse(init.body);body.context=body.context&&typeof body.context==="object"?body.context:{};body.context.client=body.context.client&&typeof body.context.client==="object"?body.context.client:{};body.context.client.build=RELEASE.build;body.context.client.revision=RELEASE.revision;body.context.client.dataSchema=RELEASE.dataSchema;body.context.client.corePackageRevision=RELEASE.corePackageRevision;body.context.client.kaiSystemRevision=RELEASE.kaiSystemRevision;body.context.client.runtime=RUNTIME.id;init={...init,body:JSON.stringify(body)};}}catch{}
     return previousFetch(input,init);
   };
-  const observer=new MutationObserver(queuePatch);observer.observe(document.documentElement,{childList:true,subtree:true});queuePatch();window.dispatchEvent(new CustomEvent("acc-release-ready",{detail:RELEASE}));
+  const observer=new MutationObserver(queuePatch);observer.observe(document.documentElement,{childList:true,subtree:true});queuePatch();window.dispatchEvent(new CustomEvent("acc-release-ready",{detail:{...RELEASE,runtime:RUNTIME}}));
 })();
 
 // Produce Copilot base panel remains the proven 257.6 UI implementation.
