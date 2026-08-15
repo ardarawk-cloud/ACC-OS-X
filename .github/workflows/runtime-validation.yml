@@ -10,6 +10,7 @@ on:
       - 'produce-copilot-contract-guard-v259.js'
       - 'native-scroll-performance-v1.js'
       - 'release-version-v257.js'
+      - 'worker-brain-runtime-rescue-v1.js'
       - 'worker-brain-isolation-runtime-v1.js'
       - 'worker-channel-master-authority-v1.js'
       - 'worker-contract-router-v258.js'
@@ -54,6 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           for f in \
+            worker-brain-runtime-rescue-v1.js \
             worker-brain-isolation-runtime-v1.js \
             worker-channel-master-authority-v1.js \
             worker-contract-router-v258.js \
@@ -77,6 +79,7 @@ jobs:
           if not entry or not (root/entry).is_file():
               raise SystemExit(f'Invalid wrangler main: {entry!r}')
           files = [
+              'worker-brain-runtime-rescue-v1.js',
               'worker-brain-isolation-runtime-v1.js',
               'worker-channel-master-authority-v1.js',
               'worker-contract-router-v258.js',
