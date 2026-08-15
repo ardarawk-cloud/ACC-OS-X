@@ -7,7 +7,7 @@ on:
       - 'acc-os-x-android-v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
@@ -77,6 +77,14 @@ jobs:
           jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab >/dev/null
           echo "AAB signature verified"
 
+      - name: Prepare stable release filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/acc-os-x-release"
+          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/acc-os-x-release/ACC-OS-X.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-Play.aab"
+
       - name: Export upload certificate fingerprints
         shell: bash
         run: |
@@ -85,22 +93,22 @@ jobs:
             -keystore "$ACC_ANDROID_KEYSTORE_PATH" \
             -storepass "$ACC_ANDROID_KEYSTORE_PASSWORD" \
             -alias "$ACC_ANDROID_KEY_ALIAS" \
-            > "$RUNNER_TEMP/ACC-OS-X-upload-certificate.txt"
-          grep -E 'Alias name:|SHA1:|SHA256:' "$RUNNER_TEMP/ACC-OS-X-upload-certificate.txt" || true
+            > "$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-upload-certificate.txt"
+          grep -E 'Alias name:|SHA1:|SHA256:' "$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-upload-certificate.txt" || true
 
-      - name: Upload Play-ready AAB
+      - name: Upload Play-ready AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: ACC-OS-X-Android-Play-AAB
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: ${{ runner.temp }}/acc-os-x-release/ACC-OS-X-Play.aab
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload sideload APK
+      - name: Upload sideload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ACC-OS-X-Android-Production-APK
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: ${{ runner.temp }}/acc-os-x-release/ACC-OS-X.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -108,6 +116,25 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ACC-OS-X-Android-Upload-Certificate
-          path: ${{ runner.temp }}/ACC-OS-X-upload-certificate.txt
+          path: ${{ runner.temp }}/acc-os-x-release/ACC-OS-X-upload-certificate.txt
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish GitHub Release for direct download
+        if: startsWith(github.ref, 'refs/tags/acc-os-x-android-v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="$GITHUB_REF_NAME"
+          APK="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X.apk"
+          AAB="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-Play.aab"
+          CERT="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-upload-certificate.txt"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$AAB" "$CERT" --clobber
+          else
+            gh release create "$TAG" "$APK" "$AAB" "$CERT" \
+              --title "ACC OS X Android ${TAG#acc-os-x-android-v}" \
+              --generate-notes
+          fi
