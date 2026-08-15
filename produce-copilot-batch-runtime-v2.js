@@ -4,7 +4,7 @@
   "use strict";
   if(window.__ACC_COPILOT_BATCH_RUNTIME_V2__)return;
   window.__ACC_COPILOT_BATCH_RUNTIME_V2__=true;
-  const REVISION="MASTER_DERIVED_BATCH_RUNTIME_V2_R1";
+  const REVISION="MASTER_DERIVED_BATCH_RUNTIME_V2_R2";
   const MAIN_KEY="acc_os_x_ecosystem_v214",STORE_KEY="acc_os_x_produce_copilot_v1",AI_ACCESS_KEY="acc_os_x_ai_access_v1",PUBLISH_ENDPOINT_KEY="acc_os_x_publish_endpoint_v1",PUBLISH_ACCESS_KEY="acc_os_x_publish_access_v1";
   const DEFAULT_PUBLISH_ENDPOINT="https://acc-publish-connector.ardarawk.workers.dev/api/acc-publish";
   const txt=v=>typeof v==="string"?v.trim():"",now=()=>new Date().toISOString(),uid=p=>`${p}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
@@ -14,18 +14,20 @@
   function main(){return read(MAIN_KEY,{})}function store(){const s=read(STORE_KEY,{channels:{}});if(!s.channels)s.channels={};return s}function save(s){try{localStorage.setItem(STORE_KEY,JSON.stringify(s))}catch{}}
   function channelId(){return txt(document.getElementById("acc-produce-copilot-panel")?.dataset?.channelId)||txt(main().activeChannelId)}
   function lane(s,id){if(!s.channels[id])s.channels[id]={messages:[],package:{},updatedAt:now()};const r=s.channels[id];r.messages=Array.isArray(r.messages)?r.messages:[];r.package=r.package||{};return r}
-  function contexts(id){return(Array.isArray(main()?.ai?.contexts?.[id])?main().ai.contexts[id]:[]).filter(x=>x?.active!==false).slice(0,16).map(x=>({...x,channelId:id,profileId:id,brainId:`acc-brain:${id}`,locked:true,authority:"CHANNEL_MASTER"}))}
+  function contexts(id){const m=main();return(Array.isArray(m?.ai?.contexts?.[id])?m.ai.contexts[id]:[]).filter(x=>x?.active!==false).slice(0,16).map(x=>({...x,channelId:id,profileId:id,brainId:`acc-brain:${id}`,locked:true,authority:"CHANNEL_MASTER"}))}
   function ctxContent(rows,type){return txt(rows.find(x=>String(x?.type||"").toUpperCase()===type)?.content)}
   function value(content,label){const re=new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`,"im");return txt(String(content||"").match(re)?.[1])}
+  function guardLabels(id,count){try{const c=window.ACCProductionContracts?.get?.(id),series=Array.isArray(c?.batch?.series)?c.batch.series.map(txt).filter(Boolean):[];if(Number(c?.batch?.count)===count&&series.length===count)return series}catch{}return[]}
   function batchSpec(id){
     const rows=contexts(id),w=ctxContent(rows,"WORKFLOW_RULES"),workflow=value(w,"Production workflow"),format=value(w,"Production format"),s=`${workflow}\n${format}`;
     let count=Number(s.match(/\bK\s*=\s*(\d+)\b/i)?.[1]||0);
-    if(!count)count=Number(s.match(/\b(\d+)\b(?:\s+\w+){0,3}\s+(?:series|seri|contents?|konten|posts?|reels?|slots?|sessions?|materials?)\b/i)?.[1]||0);
-    if(!count){const m=s.match(/\b(one|two|three|four|five|six|seven|eight|satu|dua|tiga|empat|lima|enam|tujuh|delapan)\b(?:\s+\w+){0,3}\s+(?:series|seri|contents?|konten|posts?|reels?|slots?|sessions?|materials?)\b/i);if(m)count=WORD_NUM[m[1].toLowerCase()]||0;}
+    if(!count)count=Number(s.match(/\b(\d+)\b[^\n]{0,55}?\b(?:series|seri|contents?|konten|posts?|reels?|slots?|sessions?|materials?)\b/i)?.[1]||0);
+    if(!count){const m=s.match(/\b(one|two|three|four|five|six|seven|eight|satu|dua|tiga|empat|lima|enam|tujuh|delapan)\b[^\n]{0,55}?\b(?:series|seri|contents?|konten|posts?|reels?|slots?|sessions?|materials?)\b/i);if(m)count=WORD_NUM[m[1].toLowerCase()]||0;}
     if(!(count>=1&&count<=8))count=1;
     let labels=[];
     const numbered=[...format.matchAll(/(?:^|[,;:]\s*)\d+\)\s*([^,;\n.]+)/g)].map(m=>txt(m[1])).filter(Boolean);if(numbered.length>=count)labels=numbered.slice(0,count);
     if(labels.length!==count){const colon=format.match(/(?:slots?|series|seri|contents?|konten)\s*:\s*([^\n.]+)/i);if(colon){const parts=colon[1].split(/\s*;\s*/).map(txt).filter(Boolean);if(parts.length>=count)labels=parts.slice(0,count)}}
+    if(labels.length!==count){const fallback=guardLabels(id,count);if(fallback.length===count)labels=fallback;}
     if(labels.length!==count)labels=Array.from({length:count},(_,i)=>`Item ${i+1}`);
     return{count,labels,contexts:rows,workflow,productionFormat:format};
   }
