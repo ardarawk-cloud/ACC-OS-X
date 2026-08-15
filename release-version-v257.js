@@ -127,3 +127,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// Native Android scroll performance runtime — presentation only.
+(() => {
+  if (document.querySelector('script[data-acc-native-scroll-perf="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./native-scroll-performance-v1.js?rev=NATIVE_ANDROID_SCROLL_PERF_V1_R1";
+  script.dataset.accNativeScrollPerf = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
