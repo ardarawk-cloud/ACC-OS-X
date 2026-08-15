@@ -14,7 +14,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       ACC_OS_X_ANDROID_KEYSTORE_B64: ${{ secrets.ACC_OS_X_ANDROID_KEYSTORE_B64 }}
       ACC_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ACC_OS_X_ANDROID_KEYSTORE_PASSWORD }}
@@ -53,18 +53,18 @@ jobs:
             fi
           done
 
-      - name: Restore production keystore
+      - name: Restore production upload keystore
         shell: bash
         run: |
           set -euo pipefail
-          KEYSTORE="$RUNNER_TEMP/acc-os-x-production.jks"
+          KEYSTORE="$RUNNER_TEMP/acc-os-x-production-upload.jks"
           printf '%s' "$ACC_OS_X_ANDROID_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
           chmod 600 "$KEYSTORE"
           echo "ACC_ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
 
-      - name: Build signed production APK
+      - name: Build signed production APK and Android App Bundle
         working-directory: android
-        run: gradle --no-daemon clean assembleRelease
+        run: gradle --no-daemon clean assembleRelease bundleRelease
 
       - name: Verify APK signature
         shell: bash
@@ -72,10 +72,44 @@ jobs:
           set -euo pipefail
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/release/app-release.apk
 
-      - name: Upload production APK
+      - name: Verify AAB signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab >/dev/null
+          echo "AAB signature verified"
+
+      - name: Export upload certificate fingerprints
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -list -v \
+            -keystore "$ACC_ANDROID_KEYSTORE_PATH" \
+            -storepass "$ACC_ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ACC_ANDROID_KEY_ALIAS" \
+            > "$RUNNER_TEMP/ACC-OS-X-upload-certificate.txt"
+          grep -E 'Alias name:|SHA1:|SHA256:' "$RUNNER_TEMP/ACC-OS-X-upload-certificate.txt" || true
+
+      - name: Upload Play-ready AAB
         uses: actions/upload-artifact@v4
         with:
-          name: ACC-OS-X-Android-Production
+          name: ACC-OS-X-Android-Play-AAB
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload sideload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ACC-OS-X-Android-Production-APK
           path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload upload-certificate metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: ACC-OS-X-Android-Upload-Certificate
+          path: ${{ runner.temp }}/ACC-OS-X-upload-certificate.txt
           if-no-files-found: error
           retention-days: 30
