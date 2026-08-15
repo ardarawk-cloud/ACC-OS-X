@@ -3,8 +3,6 @@ name: ACC OS X Android Production Release
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
     tags:
       - 'acc-os-x-android-v*'
 
