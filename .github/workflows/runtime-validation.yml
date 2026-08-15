@@ -7,6 +7,7 @@ on:
     paths:
       - 'produce-copilot-brain-firewall-v1.js'
       - 'produce-copilot-batch-runtime-v2.js'
+      - 'produce-copilot-contract-guard-v259.js'
       - 'worker-brain-isolation-runtime-v1.js'
       - 'worker-channel-master-authority-v1.js'
       - 'worker-contract-router-v258.js'
@@ -42,6 +43,7 @@ jobs:
           set -euo pipefail
           node --check produce-copilot-brain-firewall-v1.js
           node --check produce-copilot-batch-runtime-v2.js
+          node --input-type=module --check < produce-copilot-contract-guard-v259.js
 
       - name: Validate Worker module syntax
         shell: bash
@@ -64,7 +66,7 @@ jobs:
       - name: Validate local Worker imports and Wrangler entrypoint
         shell: python
         run: |
-          import json, pathlib, re, sys
+          import json, pathlib, re
           root = pathlib.Path('.')
           wrangler = json.loads((root/'wrangler.jsonc').read_text())
           entry = wrangler.get('main')
@@ -82,8 +84,8 @@ jobs:
           ]
           missing=[]
           for name in files:
-              text=(root/name).read_text()
-              for rel in re.findall(r'from\s+["\'](\./[^"\']+)["\']', text):
+              source=(root/name).read_text()
+              for rel in re.findall(r'from\s+["\'](\./[^"\']+)["\']', source):
                   target=(root/name).parent/rel
                   if not target.is_file(): missing.append(f'{name} -> {rel}')
           if missing:
