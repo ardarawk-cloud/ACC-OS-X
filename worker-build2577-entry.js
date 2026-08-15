@@ -1,10 +1,10 @@
-// ACC OS X — BUILD 257.7 ENTRY WRAPPER
-// Loads the Channel Master Runtime without modifying legacy static source files.
-import baseWorker from "./worker-copilot-master-runtime-v2577.js";
+// ACC OS X — BUILD 257.7 ENTRY WRAPPER R2
+// Loads the 1:1 brain firewall client and routes K/N through locked channel-master authority.
+import baseWorker from "./worker-channel-master-authority-v1.js";
 
-const REVISION="BUILD257_7_ENTRY_WRAPPER";
+const REVISION="BUILD257_7_ENTRY_WRAPPER_R2_BRAIN_LOCK";
 const LOADER=`
-;(()=>{if(!document.querySelector('script[data-acc-master-runtime="v2577"]')){const s=document.createElement("script");s.src="./produce-copilot-master-runtime-v2577.js?rev=BUILD257_7_CHANNEL_MASTER_RUNTIME";s.dataset.accMasterRuntime="v2577";s.async=false;document.head.appendChild(s);}})();
+;(()=>{if(!document.querySelector('script[data-acc-brain-firewall="v1"]')){const s=document.createElement("script");s.src="./produce-copilot-brain-firewall-v1.js?rev=PRODUCE_BRAIN_FIREWALL_V1_R1";s.dataset.accBrainFirewall="v1";s.async=false;document.head.appendChild(s);}})();
 ;(()=>{if(!document.querySelector('script[data-acc-batch-runtime="v2577"]')){const s=document.createElement("script");s.src="./produce-copilot-batch-runtime-v2577.js?rev=BUILD257_7_BATCH_RUNTIME";s.dataset.accBatchRuntime="v2577";s.async=false;document.head.appendChild(s);}})();
 `;
 function json(data,status=200){const h=new Headers({"Content-Type":"application/json;charset=UTF-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*"});return new Response(JSON.stringify(data),{status,headers:h});}
@@ -21,11 +21,11 @@ export default{
     if(request.method==="GET"&&url.pathname==="/produce-copilot-preview-fix-v25762.js"&&env?.ASSETS){
       const upstream=await env.ASSETS.fetch(request);if(!upstream.ok)return upstream;
       const headers=new Headers(upstream.headers);headers.set("Content-Type","application/javascript;charset=UTF-8");headers.set("Cache-Control","no-cache, no-store, must-revalidate");
-      return new Response(`${await upstream.text()}\n${LOADER}\nwindow.ACCBuild2577Entry=${JSON.stringify({revision:REVISION})};`,{status:upstream.status,headers});
+      return new Response(`${await upstream.text()}\n${LOADER}\nwindow.ACCBuild2577Entry=${JSON.stringify({revision:REVISION,brainIsolation:"HARD_1_TO_1",workflowAuthority:"LOCKED_CHANNEL_MASTER"})};`,{status:upstream.status,headers});
     }
     if(url.pathname==="/api/acc-ai"){
       const body=await bodyOf(request);
-      if(isCopilot(body)&&staleBatch(body))return json({ok:false,stage:"COPILOT",status:"BATCH_MATERIAL_STALE",error:"BATCH_MATERIAL_STALE_REGENERATE_K: Channel ini memakai batch master. Jalankan K sekali lagi agar material lama diganti dengan batch master baru sebelum P/C.",detail:{revision:REVISION,batchCount:Number(body?.context?.masterRuntime?.batchCount)||1}},422);
+      if(isCopilot(body)&&staleBatch(body))return json({ok:false,stage:"COPILOT",status:"BATCH_MATERIAL_STALE",error:"BATCH_MATERIAL_STALE_REGENERATE_K: Divisi ini memakai batch dari master channel. Jalankan K sekali lagi agar material lama diganti dengan batch master aktif sebelum P/C.",detail:{revision:REVISION,batchCount:Number(body?.context?.masterRuntime?.batchCount)||1}},422);
       return baseWorker.fetch(request,isCopilot(body)?copilotEnv(env):env,ctx);
     }
     return baseWorker.fetch(request,env,ctx);
