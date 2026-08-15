@@ -1,19 +1,21 @@
-// ACC OS X — BUILD 258.1 CLIENT CONTRACT HARDENING
-// Fresh-package gate: legacy/stale packages never publish silently.
+// ACC OS X — BUILD 258.1 CLIENT CONTRACT HARDENING R2
+// Fresh-package gate with channel-aware hold/choice/input states.
 import {getProductionContract,contractSummary,CONTRACT_VERSION} from "./production-contracts-v1.js";
 
-const REVISION="BUILD258_1_CONTRACT_RUNTIME";
+const REVISION="BUILD258_1_CONTRACT_RUNTIME_R2_CHANNEL_STATE";
 const KEY="acc_os_x_production_contract_runtime_v1";
 const PANEL="acc-produce-copilot-panel";
 const txt=v=>typeof v==="string"?v.trim():"";
 const originalFetch=window.fetch.bind(window);
+const SPECIAL_BLOCKS=new Set(["RESEARCH_HOLD","CHOICE","INPUT_REQUIRED"]);
 function read(){try{const x=JSON.parse(localStorage.getItem(KEY)||"{}");if(!x.channels)x.channels={};return x}catch{return{channels:{}}}}
 let state=read();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}}
 function newRow(id){const c=getProductionContract(id);return{contractVersion:CONTRACT_VERSION,contractId:c.id,materialReady:false,posterReady:false,captionReady:false,verification:"UNKNOWN",sourceCount:0,publishBlocked:true,reason:"LEGACY_PACKAGE",updatedAt:new Date().toISOString()}}
 function row(id){if(!state.channels[id])state.channels[id]=newRow(id);return state.channels[id]}
 function operation(command,contract){const c=txt(command);if(/^(k|konten|content)\b/i.test(c))return"K";if(/^(p|poster)\b/i.test(c))return"P";if(/^(c|caption)\b/i.test(c))return"C";if(/^(n|next|lanjut)\b/i.test(c))return"N";const q=c.toLowerCase();if(contract.interaction.mode==="CHOICE_REQUIRED"&&contract.interaction.options.some((x,i)=>q===String(i+1)||q===String(x).toLowerCase()||q.includes(String(x).toLowerCase())))return"K";return"CHAT"}
-function recalc(id){const r=row(id),c=getProductionContract(id),verified=!c.publish.requireVerifiedEvidence||r.sourceCount>=c.research.publishMinSources;if(r.reason==="LEGACY_PACKAGE"){r.publishBlocked=true}else if(!r.materialReady){r.publishBlocked=true;r.reason="FRESH_K_REQUIRED"}else if(!verified){r.publishBlocked=true;r.reason=`VERIFY_REQUIRED_${r.sourceCount}_OF_${c.research.publishMinSources}`}else if(!r.posterReady){r.publishBlocked=true;r.reason="POSTER_REQUIRED"}else if(!r.captionReady){r.publishBlocked=true;r.reason="CAPTION_REQUIRED"}else{r.reason="READY";r.publishBlocked=false}r.updatedAt=new Date().toISOString();save()}
+function evidenceSatisfied(r,c){if(!c.publish.requireVerifiedEvidence)return true;if(r.verification==="EVERGREEN_SAFE_MODE")return true;return r.sourceCount>=Number(c.research.publishMinSources||0)}
+function recalc(id){const r=row(id),c=getProductionContract(id);if(r.reason==="LEGACY_PACKAGE"){r.publishBlocked=true}else if(SPECIAL_BLOCKS.has(r.reason)){r.publishBlocked=true}else if(r.reason==="K_FAILED"){r.publishBlocked=true}else if(!r.materialReady){r.publishBlocked=true;r.reason="FRESH_K_REQUIRED"}else if(!evidenceSatisfied(r,c)){r.publishBlocked=true;r.reason=`VERIFY_REQUIRED_${r.sourceCount}_OF_${c.research.publishMinSources}`}else if(!r.posterReady){r.publishBlocked=true;r.reason="POSTER_REQUIRED"}else if(!r.captionReady){r.publishBlocked=true;r.reason="CAPTION_REQUIRED"}else{r.reason="READY";r.publishBlocked=false}r.updatedAt=new Date().toISOString();save()}
 function markBefore(id,op){const r=row(id),c=getProductionContract(id);r.contractId=c.id;r.contractVersion=c.version;if(op==="K"||op==="N"){r.materialReady=false;r.posterReady=false;r.captionReady=false;r.verification="PENDING";r.sourceCount=0;r.publishBlocked=true;r.reason="K_RUNNING"}else if(op==="P"){r.posterReady=false;r.publishBlocked=true;r.reason="P_RUNNING"}else if(op==="C"){r.captionReady=false;r.publishBlocked=true;r.reason="C_RUNNING"}r.updatedAt=new Date().toISOString();save();schedule()}
 function markAfter(id,op,data,ok){const r=row(id),c=getProductionContract(id);r.contractId=c.id;r.contractVersion=c.version;if(!ok){if(op==="K"||op==="N"){r.materialReady=false;r.posterReady=false;r.captionReady=false;r.reason="K_FAILED"}else if(op==="P"){r.posterReady=false;r.reason="P_FAILED"}else if(op==="C"){r.captionReady=false;r.reason="C_FAILED"}recalc(id);return}if(data?.kind==="material"){r.materialReady=true;r.posterReady=false;r.captionReady=false;r.verification=txt(data?.verification?.status)||((data?.masterRuntime?.sourceCount||0)>0?"GROUNDED":"NOT_REQUIRED");r.sourceCount=Number(data?.verification?.sourceCount??data?.masterRuntime?.sourceCount??0)||0;r.reason="MATERIAL_READY"}else if(data?.kind==="research_hold"||data?.kind==="choice"||data?.kind==="input_required"){r.materialReady=false;r.posterReady=false;r.captionReady=false;r.verification=txt(data?.verification?.status)||"WAITING";r.sourceCount=Number(data?.verification?.sourceCount||0);r.reason=data.kind.toUpperCase()}else if(data?.kind==="poster"||data?.kind==="poster_batch"){r.posterReady=true;r.reason="POSTER_READY"}else if(data?.kind==="caption"||data?.kind==="caption_batch"){r.captionReady=true;r.reason="CAPTION_READY"}recalc(id)}
 function activeId(){return txt(document.getElementById(PANEL)?.dataset?.channelId)}
