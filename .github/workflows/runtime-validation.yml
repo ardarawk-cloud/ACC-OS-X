@@ -1,0 +1,91 @@
+name: ACC OS X Runtime Validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'produce-copilot-brain-firewall-v1.js'
+      - 'produce-copilot-batch-runtime-v2.js'
+      - 'worker-brain-isolation-runtime-v1.js'
+      - 'worker-channel-master-authority-v1.js'
+      - 'worker-contract-router-v258.js'
+      - 'worker-contract-router-v259.js'
+      - 'worker-build2577-entry.js'
+      - 'worker-division-passport-runtime-v1.js'
+      - 'worker-division-passport-runtime-v1-r4.js'
+      - 'worker-poster-resilience-v258.js'
+      - 'worker-copilot-master-runtime-v2577.js'
+      - 'wrangler.jsonc'
+      - '.github/workflows/runtime-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate browser runtime syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check produce-copilot-brain-firewall-v1.js
+          node --check produce-copilot-batch-runtime-v2.js
+
+      - name: Validate Worker module syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in \
+            worker-brain-isolation-runtime-v1.js \
+            worker-channel-master-authority-v1.js \
+            worker-contract-router-v258.js \
+            worker-contract-router-v259.js \
+            worker-build2577-entry.js \
+            worker-division-passport-runtime-v1.js \
+            worker-division-passport-runtime-v1-r4.js \
+            worker-poster-resilience-v258.js \
+            worker-copilot-master-runtime-v2577.js; do
+            echo "Checking $f"
+            node --input-type=module --check < "$f"
+          done
+
+      - name: Validate local Worker imports and Wrangler entrypoint
+        shell: python
+        run: |
+          import json, pathlib, re, sys
+          root = pathlib.Path('.')
+          wrangler = json.loads((root/'wrangler.jsonc').read_text())
+          entry = wrangler.get('main')
+          if not entry or not (root/entry).is_file():
+              raise SystemExit(f'Invalid wrangler main: {entry!r}')
+          files = [
+              'worker-brain-isolation-runtime-v1.js',
+              'worker-channel-master-authority-v1.js',
+              'worker-contract-router-v258.js',
+              'worker-contract-router-v259.js',
+              'worker-build2577-entry.js',
+              'worker-division-passport-runtime-v1.js',
+              'worker-division-passport-runtime-v1-r4.js',
+              'worker-poster-resilience-v258.js',
+          ]
+          missing=[]
+          for name in files:
+              text=(root/name).read_text()
+              for rel in re.findall(r'from\s+["\'](\./[^"\']+)["\']', text):
+                  target=(root/name).parent/rel
+                  if not target.is_file(): missing.append(f'{name} -> {rel}')
+          if missing:
+              raise SystemExit('Missing imports:\n'+'\n'.join(missing))
+          print('Runtime chain OK; wrangler main =', entry)
