@@ -1,6 +1,6 @@
 {
   "name": "acc-os-x-baxkup",
-  "main": "worker-division-passport-runtime-v1-r4.js",
+  "main": "worker-brain-isolation-runtime-v1.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "directory": ".",
