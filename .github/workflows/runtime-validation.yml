@@ -18,6 +18,7 @@ on:
       - 'worker-brain-runtime-rescue-v2.js'
       - 'worker-brain-runtime-rescue-v3.js'
       - 'worker-brain-runtime-rescue-v4.js'
+      - 'worker-brain-runtime-rescue-v5.js'
       - 'worker-channel-master-authority-v1.js'
       - 'worker-contract-router-v258.js'
       - 'worker-contract-router-v259.js'
@@ -69,6 +70,7 @@ jobs:
             worker-brain-runtime-rescue-v2.js \
             worker-brain-runtime-rescue-v3.js \
             worker-brain-runtime-rescue-v4.js \
+            worker-brain-runtime-rescue-v5.js \
             worker-channel-master-authority-v1.js \
             worker-contract-router-v258.js \
             worker-contract-router-v259.js \
@@ -96,6 +98,7 @@ jobs:
               'worker-brain-runtime-rescue-v2.js',
               'worker-brain-runtime-rescue-v3.js',
               'worker-brain-runtime-rescue-v4.js',
+              'worker-brain-runtime-rescue-v5.js',
               'worker-channel-master-authority-v1.js',
               'worker-contract-router-v258.js',
               'worker-contract-router-v259.js',
