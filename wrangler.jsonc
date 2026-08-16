@@ -1,6 +1,6 @@
 {
   "name": "acc-os-x-baxkup",
-  "main": "worker-brain-runtime-rescue-v2.js",
+  "main": "worker-brain-runtime-rescue-v3.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "directory": ".",
