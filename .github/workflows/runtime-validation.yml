@@ -7,13 +7,16 @@ on:
     paths:
       - 'produce-copilot-brain-firewall-v1.js'
       - 'produce-copilot-batch-runtime-v2.js'
+      - 'produce-copilot-batch-runtime-v3.js'
       - 'produce-copilot-contract-guard-v259.js'
       - 'produce-copilot-busy-watchdog-v1.js'
       - 'native-scroll-performance-v1.js'
+      - 'native-scroll-performance-v2.js'
       - 'release-version-v257.js'
       - 'worker-brain-isolation-runtime-v1.js'
       - 'worker-brain-runtime-rescue-v1.js'
       - 'worker-brain-runtime-rescue-v2.js'
+      - 'worker-brain-runtime-rescue-v3.js'
       - 'worker-channel-master-authority-v1.js'
       - 'worker-contract-router-v258.js'
       - 'worker-contract-router-v259.js'
@@ -48,9 +51,11 @@ jobs:
           set -euo pipefail
           node --check produce-copilot-brain-firewall-v1.js
           node --check produce-copilot-batch-runtime-v2.js
+          node --check produce-copilot-batch-runtime-v3.js
           node --input-type=module --check < produce-copilot-contract-guard-v259.js
           node --check produce-copilot-busy-watchdog-v1.js
           node --check native-scroll-performance-v1.js
+          node --check native-scroll-performance-v2.js
           node --check release-version-v257.js
 
       - name: Validate Worker module syntax
@@ -61,6 +66,7 @@ jobs:
             worker-brain-isolation-runtime-v1.js \
             worker-brain-runtime-rescue-v1.js \
             worker-brain-runtime-rescue-v2.js \
+            worker-brain-runtime-rescue-v3.js \
             worker-channel-master-authority-v1.js \
             worker-contract-router-v258.js \
             worker-contract-router-v259.js \
@@ -86,6 +92,7 @@ jobs:
               'worker-brain-isolation-runtime-v1.js',
               'worker-brain-runtime-rescue-v1.js',
               'worker-brain-runtime-rescue-v2.js',
+              'worker-brain-runtime-rescue-v3.js',
               'worker-channel-master-authority-v1.js',
               'worker-contract-router-v258.js',
               'worker-contract-router-v259.js',
