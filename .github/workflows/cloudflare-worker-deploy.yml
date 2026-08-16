@@ -38,7 +38,7 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy
 
-      - name: Verify V5 health marker
+      - name: Verify V6 health marker
         shell: bash
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
@@ -53,4 +53,4 @@ jobs:
           echo "Checking $HEALTH_URL"
           BODY="$(curl --fail --silent --show-error --max-time 30 "$HEALTH_URL")"
           printf '%s\n' "$BODY"
-          printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V5_RATE_LIMIT_SAFE_DIRECT_RESEARCH'
+          printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V6_RSS_EVIDENCE_FALLBACK'
