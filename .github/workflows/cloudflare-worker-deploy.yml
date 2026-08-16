@@ -1,0 +1,56 @@
+name: ACC OS X Cloudflare Worker Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'worker-*.js'
+      - 'production-contracts-v1.js'
+      - 'division-passports-v1.js'
+      - 'wrangler.jsonc'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/cloudflare-worker-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acc-os-x-cloudflare-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Deploy production Worker
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          command: deploy
+
+      - name: Verify V5 health marker
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          echo "Deployment URL: ${DEPLOYMENT_URL:-<empty>}"
+          if [ -z "${DEPLOYMENT_URL:-}" ]; then
+            echo "::warning::Wrangler did not expose a deployment URL; deploy itself succeeded."
+            exit 0
+          fi
+          HEALTH_URL="${DEPLOYMENT_URL%/}/health"
+          echo "Checking $HEALTH_URL"
+          BODY="$(curl --fail --silent --show-error --max-time 30 "$HEALTH_URL")"
+          printf '%s\n' "$BODY"
+          printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V5_RATE_LIMIT_SAFE_DIRECT_RESEARCH'
