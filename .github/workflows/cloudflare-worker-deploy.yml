@@ -38,7 +38,7 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy
 
-      - name: Verify V7 health marker
+      - name: Verify V8 health marker
         shell: bash
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
@@ -54,12 +54,12 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             BODY="$(curl --fail --silent --show-error --max-time 30 "$HEALTH_URL" || true)"
             printf '%s\n' "$BODY"
-            if printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V7_POSTER_SCHEMA_HARDENING'; then
-              echo "V7 health marker confirmed on attempt $attempt"
+            if printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V8_CAPTION_NULL_SERIES_GUARD'; then
+              echo "V8 health marker confirmed on attempt $attempt"
               exit 0
             fi
-            echo "V7 marker not visible yet; waiting for edge propagation ($attempt/6)"
+            echo "V8 marker not visible yet; waiting for edge propagation ($attempt/6)"
             sleep 5
           done
-          echo "::error::V7 health marker not visible after propagation wait"
+          echo "::error::V8 health marker not visible after propagation wait"
           exit 1
