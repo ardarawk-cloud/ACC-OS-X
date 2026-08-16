@@ -1,11 +1,11 @@
-// ACC OS X — BUILD 257.7 ENTRY WRAPPER R3
+// ACC OS X — BUILD 257.7 ENTRY WRAPPER R4
 // Loads 1:1 brain firewall + master-derived batch runtime and routes K/N through locked channel-master authority.
 import baseWorker from "./worker-channel-master-authority-v1.js";
 
-const REVISION="BUILD257_7_ENTRY_WRAPPER_R3_MASTER_DERIVED_BATCH";
+const REVISION="BUILD257_7_ENTRY_WRAPPER_R4_MASTER_BATCH_PERF";
 const LOADER=`
 ;(()=>{if(!document.querySelector('script[data-acc-brain-firewall="v1"]')){const s=document.createElement("script");s.src="./produce-copilot-brain-firewall-v1.js?rev=PRODUCE_BRAIN_FIREWALL_V1_R1";s.dataset.accBrainFirewall="v1";s.async=false;document.head.appendChild(s);}})();
-;(()=>{if(!document.querySelector('script[data-acc-batch-runtime="v2"]')){const s=document.createElement("script");s.src="./produce-copilot-batch-runtime-v2.js?rev=MASTER_DERIVED_BATCH_RUNTIME_V2_R1";s.dataset.accBatchRuntime="v2";s.async=false;document.head.appendChild(s);}})();
+;(()=>{if(!document.querySelector('script[data-acc-batch-runtime="v3"]')){const s=document.createElement("script");s.src="./produce-copilot-batch-runtime-v3.js?rev=MASTER_DERIVED_BATCH_RUNTIME_V3_RENDER_ON_CHANGE";s.dataset.accBatchRuntime="v3";s.async=false;document.head.appendChild(s);}})();
 `;
 function json(data,status=200){const h=new Headers({"Content-Type":"application/json;charset=UTF-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*"});return new Response(JSON.stringify(data),{status,headers:h});}
 function normalizeGuided(value){if(!value||typeof value!=="object")return value;const candidates=[value.response,value.result?.response,value.result,value.output,value.data];for(const x of candidates){if(x&&typeof x==="object"&&!Array.isArray(x))return x;}return value;}
@@ -21,7 +21,7 @@ export default{
     if(request.method==="GET"&&url.pathname==="/produce-copilot-preview-fix-v25762.js"&&env?.ASSETS){
       const upstream=await env.ASSETS.fetch(request);if(!upstream.ok)return upstream;
       const headers=new Headers(upstream.headers);headers.set("Content-Type","application/javascript;charset=UTF-8");headers.set("Cache-Control","no-cache, no-store, must-revalidate");
-      return new Response(`${await upstream.text()}\n${LOADER}\nwindow.ACCBuild2577Entry=${JSON.stringify({revision:REVISION,brainIsolation:"HARD_1_TO_1",workflowAuthority:"LOCKED_CHANNEL_MASTER",batchAuthority:"LOCKED_MASTER_CONTEXTS"})};`,{status:upstream.status,headers});
+      return new Response(`${await upstream.text()}\n${LOADER}\nwindow.ACCBuild2577Entry=${JSON.stringify({revision:REVISION,brainIsolation:"HARD_1_TO_1",workflowAuthority:"LOCKED_CHANNEL_MASTER",batchAuthority:"LOCKED_MASTER_CONTEXTS",batchRuntime:"V3_RENDER_ON_CHANGE"})};`,{status:upstream.status,headers});
     }
     if(url.pathname==="/api/acc-ai"){
       const body=await bodyOf(request);
