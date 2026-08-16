@@ -137,3 +137,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// Produce Copilot busy watchdog — prevents K/P/C/N controls from remaining locked forever.
+(() => {
+  if (document.querySelector('script[data-acc-produce-busy-watchdog="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./produce-copilot-busy-watchdog-v1.js?rev=PRODUCE_COPILOT_BUSY_WATCHDOG_V1_R1";
+  script.dataset.accProduceBusyWatchdog = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
