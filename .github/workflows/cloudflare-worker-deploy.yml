@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'worker-*.js'
+      - 'produce-copilot-publish-queue-v1.js'
       - 'production-contracts-v1.js'
       - 'division-passports-v1.js'
       - 'wrangler.jsonc'
