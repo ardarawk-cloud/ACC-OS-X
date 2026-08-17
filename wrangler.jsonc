@@ -1,6 +1,6 @@
 {
   "name": "acc-os-x-baxkup",
-  "main": "worker-brain-runtime-rescue-v8.js",
+  "main": "worker-brain-runtime-rescue-v9.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "directory": ".",
@@ -10,5 +10,5 @@
   },
   "ai": {"binding":"AI"},
   "browser": {"binding":"BROWSER"},
-  "vars": {"ACC_AI_MODEL":"@cf/meta/llama-3.1-8b-instruct-fast","ACC_DEPLOY_REVISION":"V8_CAPTION_NULL_SERIES_GUARD"}
+  "vars": {"ACC_AI_MODEL":"@cf/meta/llama-3.1-8b-instruct-fast","ACC_DEPLOY_REVISION":"V9_HERO_IMAGE_ONLY_CHANNEL_LOCK"}
 }
