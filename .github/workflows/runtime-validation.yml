@@ -8,6 +8,7 @@ on:
       - 'produce-copilot-brain-firewall-v1.js'
       - 'produce-copilot-batch-runtime-v2.js'
       - 'produce-copilot-batch-runtime-v3.js'
+      - 'produce-copilot-publish-queue-v1.js'
       - 'produce-copilot-contract-guard-v259.js'
       - 'produce-copilot-busy-watchdog-v1.js'
       - 'native-scroll-performance-v1.js'
@@ -57,6 +58,7 @@ jobs:
           node --check produce-copilot-brain-firewall-v1.js
           node --check produce-copilot-batch-runtime-v2.js
           node --check produce-copilot-batch-runtime-v3.js
+          node --check produce-copilot-publish-queue-v1.js
           node --input-type=module --check < produce-copilot-contract-guard-v259.js
           node --check produce-copilot-busy-watchdog-v1.js
           node --check native-scroll-performance-v1.js
