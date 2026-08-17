@@ -1,0 +1,10 @@
+{
+  "name": "ACC OS X Content Hub",
+  "short_name": "ACC Content",
+  "description": "Mobile-first content operations backup for ACC OS X",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1326",
+  "theme_color": "#0b1326",
+  "icons": []
+}
