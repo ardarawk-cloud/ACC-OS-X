@@ -9,6 +9,7 @@ on:
       - 'produce-copilot-batch-runtime-v2.js'
       - 'produce-copilot-batch-runtime-v3.js'
       - 'produce-copilot-publish-queue-v1.js'
+      - 'produce-copilot-publish-queue-v2.js'
       - 'produce-copilot-contract-guard-v259.js'
       - 'produce-copilot-busy-watchdog-v1.js'
       - 'native-scroll-performance-v1.js'
@@ -23,6 +24,7 @@ on:
       - 'worker-brain-runtime-rescue-v6.js'
       - 'worker-brain-runtime-rescue-v7.js'
       - 'worker-brain-runtime-rescue-v8.js'
+      - 'worker-brain-runtime-rescue-v9.js'
       - 'worker-channel-master-authority-v1.js'
       - 'worker-contract-router-v258.js'
       - 'worker-contract-router-v259.js'
@@ -59,6 +61,7 @@ jobs:
           node --check produce-copilot-batch-runtime-v2.js
           node --check produce-copilot-batch-runtime-v3.js
           node --check produce-copilot-publish-queue-v1.js
+          node --check produce-copilot-publish-queue-v2.js
           node --input-type=module --check < produce-copilot-contract-guard-v259.js
           node --check produce-copilot-busy-watchdog-v1.js
           node --check native-scroll-performance-v1.js
@@ -79,6 +82,7 @@ jobs:
             worker-brain-runtime-rescue-v6.js \
             worker-brain-runtime-rescue-v7.js \
             worker-brain-runtime-rescue-v8.js \
+            worker-brain-runtime-rescue-v9.js \
             worker-channel-master-authority-v1.js \
             worker-contract-router-v258.js \
             worker-contract-router-v259.js \
@@ -110,6 +114,7 @@ jobs:
               'worker-brain-runtime-rescue-v6.js',
               'worker-brain-runtime-rescue-v7.js',
               'worker-brain-runtime-rescue-v8.js',
+              'worker-brain-runtime-rescue-v9.js',
               'worker-channel-master-authority-v1.js',
               'worker-contract-router-v258.js',
               'worker-contract-router-v259.js',
