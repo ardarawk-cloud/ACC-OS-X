@@ -38,6 +38,7 @@ public class ProductionActivity extends Activity {
         super.onCreate(state);
         buildUi();
         configureWebView();
+        webView.clearCache(true);
         webView.loadUrl(HOME_URL);
     }
 
@@ -103,7 +104,8 @@ public class ProductionActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
         settings.setSupportMultipleWindows(false);
         settings.setSafeBrowsingEnabled(true);
-        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXAndroid/1.0");
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.0 ACCOSXAndroid/1.1");
 
         boolean debuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         WebView.setWebContentsDebuggingEnabled(debuggable);

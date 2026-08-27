@@ -1,6 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <queries>
+        <package android:name="com.acc.cleaner" />
+        <package android:name="com.kaitradex.app.dev" />
+        <package android:name="com.kaitradex.app" />
+        <package android:name="com.nadmo.ai" />
+        <package android:name="com.kai.casinox" />
+        <package android:name="com.accbuilder.accmediadownloader" />
+        <package android:name="com.accbuilder.aimashupbootlegstudio" />
+        <package android:name="com.acc.contenthub" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_acc_os_x"
