@@ -83,3 +83,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — MY PROJECTS ChatGPT launcher. Owner-provided direct project URLs only.
+(() => {
+  if (document.querySelector('script[data-acc-my-projects="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V1";
+  script.dataset.accMyProjects = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
