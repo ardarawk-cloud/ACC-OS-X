@@ -205,3 +205,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — Publishing Hub unmatched Meta Page diagnostic (read-only).
+(() => {
+  if (document.querySelector('script[data-acc-meta-diagnostic="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./publishing-unmatched-meta-diagnostic-v1.js?rev=KAI_ONE_META_DIAGNOSTIC_V1";
+  script.dataset.accMetaDiagnostic = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
