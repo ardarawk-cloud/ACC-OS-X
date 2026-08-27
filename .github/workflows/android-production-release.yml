@@ -5,6 +5,10 @@ on:
   push:
     tags:
       - 'acc-os-x-android-v*'
+    branches:
+      - main
+    paths:
+      - '.acc-os-x-android-release-trigger'
 
 permissions:
   contents: write
