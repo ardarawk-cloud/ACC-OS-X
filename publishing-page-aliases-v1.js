@@ -58,8 +58,18 @@
 (() => {
   if (document.querySelector('script[data-acc-owner-app-launcher="v2"]')) return;
   const script = document.createElement("script");
-  script.src = "./owner-app-launcher-v2.js?rev=KAI_ONE_OWNER_APP_LAUNCHER_V2";
+  script.src = "./owner-app-launcher-v2.js?rev=KAI_ONE_OWNER_APP_LAUNCHER_V3_OFFICIAL_ICONS";
   script.dataset.accOwnerAppLauncher = "v2";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
+// KAI ONE — local AI Mashup icon hotfix. Avoids raw GitHub image loading issues in Android WebView.
+(() => {
+  if (document.querySelector('script[data-acc-ai-mashup-icon-fix="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./ai-mashup-icon-fix-v1.js?rev=KAI_ONE_AI_MASHUP_LOCAL_ICON_V1";
+  script.dataset.accAiMashupIconFix = "v1";
   script.async = false;
   document.head.appendChild(script);
 })();
