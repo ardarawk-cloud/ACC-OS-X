@@ -225,3 +225,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — owner-confirmed Page aliases (keeps ACC channel names independent from Facebook Page names).
+(() => {
+  if (document.querySelector('script[data-acc-page-aliases="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./publishing-page-aliases-v1.js?rev=KAI_ONE_OWNER_PAGE_ALIASES_V1";
+  script.dataset.accPageAliases = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
