@@ -215,3 +215,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — Android/WebView tap-safe Meta Page picker.
+(() => {
+  if (document.querySelector('script[data-acc-mobile-page-picker="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./publishing-mobile-page-picker-v1.js?rev=KAI_ONE_MOBILE_PAGE_PICKER_V1";
+  script.dataset.accMobilePagePicker = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
