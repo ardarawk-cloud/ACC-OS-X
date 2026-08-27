@@ -1,0 +1,4 @@
+ACC OS X Android production build trigger
+versionName=1.0.2
+versionCode=5
+reason=original native app launcher bridge
