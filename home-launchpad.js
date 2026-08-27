@@ -1,170 +1,123 @@
-// ACC OS X — HOME DIRECT DIVISION LAUNCHPAD v4
-// Compact app-launcher presentation only. No new divisions/apps are added to ACC OS X.
-// Division appUrl from ACC Sync Hub remains authoritative; fallbacks only cover sync delay.
+// ACC OS X — OWNER APP LAUNCHPAD v5
+// One front door for Arda's ACC phone apps. ACC OS X itself is intentionally excluded.
 (() => {
   "use strict";
 
   const STYLE_ID = "acc-home-launchpad-style";
   const LAUNCHPAD_ID = "acc-home-launchpad";
+  const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
 
-  const modules = {
-    trading: {
-      title: "KAI TRAD",
-      accent: "#55e6a5",
-      iconUrl: "https://kai-trad-pwa.ardarawk.workers.dev/kai-trad-logo.png",
-      iconFallback: "K",
-      fallbackUrl: "https://kai-trad-pwa.ardarawk.workers.dev/"
-    },
-    entego: {
-      title: "ENTEGO",
-      accent: "#67e8f9",
-      iconUrl: "https://entego-pwa.ardarawk.workers.dev/icon-512.png?v=79",
-      iconFallback: "E",
-      fallbackUrl: "https://entego-pwa.ardarawk.workers.dev/"
-    },
-    studio: {
-      title: "AM STUDIO",
-      accent: "#c28aff",
-      iconUrl: "https://am-studio-pwa.ardarawk.workers.dev/icon.svg",
-      iconFallback: "AM",
-      fallbackUrl: "https://am-studio-pwa.ardarawk.workers.dev/"
-    }
-  };
+  const apps = [
+    {key:"cleaner", title:"ACC Cleaner", accent:"#38bdf8", fallback:"CLN", native:["com.acc.cleaner"]},
+    {key:"dj", title:"ACC DJ", accent:"#f8fafc", fallback:"DJ", icon:"https://raw.githubusercontent.com/balinightlife666-web/DJ-AM/main/icon-192.png", web:"https://balinightlife666-web.github.io/DJ-AM/"},
+    {key:"entego", title:"ENTEGO", accent:"#ff7a18", fallback:"E", icon:"https://entego-pwa.ardarawk.workers.dev/icon-512.png?v=79", web:"https://entego-pwa.ardarawk.workers.dev/", syncKey:"entego"},
+    {key:"trade-x", title:"KAI TRADE X", accent:"#55d7ff", fallback:"KX", native:["com.kaitradex.app.dev","com.kaitradex.app"]},
+    {key:"trad", title:"KAI TRAD", accent:"#60a5fa", fallback:"K", icon:"https://kai-trad-pwa.ardarawk.workers.dev/kai-trad-logo.png", web:"https://kai-trad-pwa.ardarawk.workers.dev/", syncKey:"trading"},
+    {key:"studio", title:"AM STUDIO", accent:"#ef4444", fallback:"AM", icon:"https://am-studio-pwa.ardarawk.workers.dev/icon.svg", web:"https://am-studio-pwa.ardarawk.workers.dev/", syncKey:"studio"},
+    {key:"nadmo", title:"NADMO AI", accent:"#22d3ee", fallback:"N", native:["com.nadmo.ai"]},
+    {key:"casino", title:"KAI CASINO X", accent:"#facc15", fallback:"KC", native:["com.kai.casinox"]},
+    {key:"media", title:"ACC Media", accent:"#ff2d55", fallback:"M", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/acc-media-downloader/icon.svg", native:["com.accbuilder.accmediadownloader"]},
+    {key:"mashup", title:"AI Mashup", accent:"#a855f7", fallback:"AI", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/ai-mashup-bootleg-studio/icon.svg", native:["com.accbuilder.aimashupbootlegstudio"]},
+    {key:"content", title:"ACC Content Hub", accent:"#fbbf24", fallback:"ACC", native:["com.acc.contenthub"]}
+  ];
 
-  function ensureStyle() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement("style");
-    style.id = STYLE_ID;
-    style.textContent = `
-      .acc-home-launchpad{margin-top:18px;padding:14px 10px 8px;border-radius:20px;border:1px solid var(--line,#25324a);background:color-mix(in srgb,var(--panel,#10192d) 52%,transparent)}
-      .acc-launch-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:0 4px}
-      .acc-launch-head .card-title{font-size:.94rem;letter-spacing:.05em}
+  function ensureStyle(){
+    let style=document.getElementById(STYLE_ID);
+    if(!style){style=document.createElement("style");style.id=STYLE_ID;document.head.appendChild(style);}
+    style.textContent=`
+      .acc-home-launchpad{margin-top:14px;padding:12px 4px 8px;background:transparent!important;border:0!important;box-shadow:none!important}
+      .acc-launch-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:0 3px 13px}
+      .acc-launch-head .card-title{font-size:1rem;letter-spacing:.04em}
       .acc-launch-head .muted{display:none}
       .acc-launch-head .badge{min-height:24px;padding:3px 8px;font-size:.6rem}
-      .acc-launch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 7px;align-items:start}
-      .acc-launch-card{position:relative;appearance:none;border:0;background:transparent;color:var(--text,#f8fafc);padding:7px 3px 9px;min-width:0;min-height:118px;text-align:center;border-radius:18px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-      .acc-launch-card:active{background:color-mix(in srgb,var(--launch-accent) 8%,transparent);transform:scale(.97)}
-      .acc-launch-icon{position:relative;width:72px;height:72px;margin:0 auto;display:grid;place-items:center;overflow:hidden;border-radius:21px;border:1px solid color-mix(in srgb,var(--launch-accent) 38%,var(--line,#25324a));background:linear-gradient(145deg,color-mix(in srgb,var(--launch-accent) 13%,#071023),#071023);box-shadow:0 10px 24px rgba(0,0,0,.24)}
-      .acc-launch-icon img{width:100%;height:100%;object-fit:cover;display:block}
-      .acc-launch-icon-fallback{position:absolute;inset:0;display:grid;place-items:center;color:var(--launch-accent);font-size:1.2rem;font-weight:950;letter-spacing:-.04em;z-index:0}
-      .acc-launch-icon img+.acc-launch-icon-fallback{z-index:-1}
-      .acc-launch-title{margin-top:9px;font-size:.78rem;font-weight:900;line-height:1.2;letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-      .acc-launch-status{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:5px;color:var(--muted,#8390aa);font-size:.57rem;line-height:1}
-      .acc-launch-status-dot{width:6px;height:6px;border-radius:50%;background:var(--launch-accent);box-shadow:0 0 9px color-mix(in srgb,var(--launch-accent) 70%,transparent)}
-      .acc-launch-card>.eyebrow,.acc-launch-card>.acc-launch-desc,.acc-launch-card>.acc-launch-foot,.acc-launch-card>.acc-sync-line{display:none!important}
-      @media(min-width:700px){.acc-launch-grid{grid-template-columns:repeat(6,minmax(0,1fr));}.acc-launch-card{min-height:126px}.acc-launch-icon{width:78px;height:78px}}
-      @media(max-width:380px){.acc-home-launchpad{padding-left:5px;padding-right:5px}.acc-launch-grid{gap:8px 2px}.acc-launch-icon{width:66px;height:66px;border-radius:19px}.acc-launch-title{font-size:.72rem}}
+      .acc-launch-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px 7px;align-items:start}
+      .acc-launch-card{appearance:none;border:0;background:transparent;color:var(--text,#f8fafc);padding:3px 1px 5px;min-width:0;text-align:center;border-radius:16px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+      .acc-launch-card:active{transform:scale(.94);background:color-mix(in srgb,var(--launch-accent) 7%,transparent)}
+      .acc-launch-icon{position:relative;width:min(16.5vw,68px);height:min(16.5vw,68px);min-width:55px;min-height:55px;margin:0 auto;display:grid;place-items:center;overflow:hidden;border-radius:20px;border:1px solid color-mix(in srgb,var(--launch-accent) 35%,#25324a);background:linear-gradient(145deg,color-mix(in srgb,var(--launch-accent) 14%,#071023),#050b16);box-shadow:0 9px 22px rgba(0,0,0,.28)}
+      .acc-launch-icon img{width:100%;height:100%;object-fit:cover;display:block;position:relative;z-index:1}
+      .acc-launch-icon-fallback{position:absolute;inset:0;display:grid;place-items:center;color:var(--launch-accent);font-size:1rem;font-weight:950;letter-spacing:-.03em;z-index:0}
+      .acc-launch-title{margin-top:8px;font-size:.69rem;font-weight:900;line-height:1.15;min-height:1.6em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+      .acc-launch-kind{margin-top:4px;color:var(--muted,#8390aa);font-size:.5rem;font-weight:800;letter-spacing:.07em}
+      @media(min-width:700px){.acc-launch-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 12px}.acc-launch-icon{width:74px;height:74px}.acc-launch-title{font-size:.75rem}}
+      @media(max-width:345px){.acc-launch-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     `;
-    document.head.appendChild(style);
   }
 
-  async function launchDivision(key) {
-    const module = modules[key];
-    if (!module) return;
-    const card = document.querySelector(`[data-home-module="${key}"]`);
-    if (card?.dataset.opening === "1") return;
-    if (card) {
-      card.dataset.opening = "1";
-      card.setAttribute("aria-busy", "true");
-    }
-    try {
-      if (window.ACCSyncHub?.refresh) {
-        await Promise.race([
-          window.ACCSyncHub.refresh(),
-          new Promise(resolve => setTimeout(resolve, 1000))
-        ]);
-      }
-      const state = window.ACCSyncHub?.getState?.() || {};
-      const syncedUrl = state?.[key]?.manifest?.appUrl;
-      window.location.assign(syncedUrl || module.fallbackUrl);
-    } catch {
-      window.location.assign(module.fallbackUrl);
-    } finally {
-      if (card) {
-        delete card.dataset.opening;
-        card.removeAttribute("aria-busy");
-      }
-    }
+  function notifyNativeShell(){
+    const msg="APK native dibuka lewat ACC OS X Android Shell. Pasang/update ACC OS X Shell agar launcher APK aktif.";
+    if(typeof window.showToast==="function") window.showToast(msg); else alert(msg);
   }
 
-  function moduleCard(key) {
-    const m = modules[key];
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "acc-launch-card mono";
-    button.dataset.homeModule = key;
-    button.style.setProperty("--launch-accent", m.accent);
-    button.setAttribute("aria-label", `Open ${m.title}`);
-    button.innerHTML = `
+  async function launch(app){
+    if(app.native?.length){
+      if(!IS_NATIVE_SHELL){notifyNativeShell();return;}
+      const q=encodeURIComponent(app.native.join(","));
+      window.location.href=`accapp://launch?packages=${q}`;
+      return;
+    }
+
+    let url=app.web;
+    if(app.syncKey){
+      try{
+        if(window.ACCSyncHub?.refresh){
+          await Promise.race([window.ACCSyncHub.refresh(),new Promise(r=>setTimeout(r,700))]);
+        }
+        url=window.ACCSyncHub?.getState?.()?.[app.syncKey]?.manifest?.appUrl || url;
+      }catch{}
+    }
+    if(url) window.location.assign(url);
+  }
+
+  function appCard(app){
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="acc-launch-card mono";
+    button.dataset.ownerApp=app.key;
+    button.style.setProperty("--launch-accent",app.accent);
+    button.setAttribute("aria-label",`Open ${app.title}`);
+    button.innerHTML=`
       <div class="acc-launch-icon">
-        <img src="${m.iconUrl}" alt="" loading="lazy" referrerpolicy="no-referrer">
-        <span class="acc-launch-icon-fallback">${m.iconFallback}</span>
+        ${app.icon?`<img src="${app.icon}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}
+        <span class="acc-launch-icon-fallback">${app.fallback}</span>
       </div>
-      <div class="acc-launch-title">${m.title}</div>
-      <div class="acc-launch-status"><span class="acc-launch-status-dot"></span><span>OPEN</span></div>
-      <div class="eyebrow"></div>
-      <div class="acc-launch-desc"></div>
-      <div class="acc-launch-foot"><span class="badge"></span><span class="acc-launch-open"></span></div>
-    `;
-    const img = button.querySelector("img");
-    img?.addEventListener("error", () => { img.style.display = "none"; button.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index", "1"); }, { once:true });
-    button.addEventListener("click", () => launchDivision(key));
+      <div class="acc-launch-title">${app.title}</div>
+      <div class="acc-launch-kind">${app.native?.length?"APK":"WEB / PWA"}</div>`;
+    const img=button.querySelector("img");
+    img?.addEventListener("error",()=>{img.style.display="none";},{once:true});
+    button.addEventListener("click",()=>launch(app));
     return button;
   }
 
-  function buildLaunchpad() {
-    const box = document.createElement("div");
-    box.id = LAUNCHPAD_ID;
-    box.className = "acc-home-launchpad mono";
-    box.innerHTML = `
-      <div class="acc-launch-head">
-        <div><div class="eyebrow">ACC PERSONAL COMMAND</div><h2 class="card-title" style="margin-top:3px">OWNER LAUNCHPAD</h2><p class="muted small"></p></div>
-        <span class="badge">3 APPS</span>
-      </div>
-      <div class="acc-launch-grid"></div>
-    `;
-    const grid = box.querySelector(".acc-launch-grid");
-    grid.append(moduleCard("trading"), moduleCard("entego"), moduleCard("studio"));
+  function buildLaunchpad(){
+    const box=document.createElement("div");
+    box.id=LAUNCHPAD_ID;
+    box.className="acc-home-launchpad mono";
+    box.innerHTML=`<div class="acc-launch-head"><div><div class="eyebrow">ACC PERSONAL COMMAND</div><h2 class="card-title" style="margin-top:3px">MY APPS</h2></div><span class="badge">${apps.length} APPS</span></div><div class="acc-launch-grid"></div>`;
+    const grid=box.querySelector(".acc-launch-grid");
+    apps.forEach(app=>grid.appendChild(appCard(app)));
     return box;
   }
 
-  function patchHome() {
+  function patchHome(){
     ensureStyle();
-    const hero = document.querySelector(".acc250-hero");
-    if (!hero) return;
-    const section = hero.closest("section");
-    if (!section) return;
-
-    const registryButton = section.querySelector('button[data-action="module-tab-system"][data-value="registry"]');
-    if (registryButton) registryButton.parentElement?.remove();
-
-    [...section.querySelectorAll(".card")].forEach(card => {
-      const eyebrow = card.querySelector(".eyebrow");
-      if (eyebrow && eyebrow.textContent.trim().toUpperCase() === "CLASSIFICATION POLICY") card.remove();
-    });
-
+    const hero=document.querySelector(".acc250-hero");
+    if(!hero)return;
+    const section=hero.closest("section");
+    if(!section)return;
+    const registryButton=section.querySelector('button[data-action="module-tab-system"][data-value="registry"]');
+    if(registryButton)registryButton.parentElement?.remove();
+    [...section.querySelectorAll(".card")].forEach(card=>{const eyebrow=card.querySelector(".eyebrow");if(eyebrow&&eyebrow.textContent.trim().toUpperCase()==="CLASSIFICATION POLICY")card.remove();});
     section.querySelector(".grid.stats")?.remove();
-    if (section.querySelector(`#${LAUNCHPAD_ID}`)) return;
-    hero.insertAdjacentElement("afterend", buildLaunchpad());
+    document.getElementById(LAUNCHPAD_ID)?.remove();
+    hero.insertAdjacentElement("afterend",buildLaunchpad());
     window.ACCSyncHub?.patchCards?.();
   }
 
-  let queued = false;
-  const schedulePatch = () => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
-      patchHome();
-    });
-  };
-
-  const observer = new MutationObserver(() => {
-    if (document.getElementById(LAUNCHPAD_ID)) return;
-    schedulePatch();
-  });
-  observer.observe(document.documentElement, { childList:true, subtree:true });
-  schedulePatch();
+  let queued=false;
+  const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;patchHome();});};
+  const observer=new MutationObserver(()=>{if(!document.getElementById(LAUNCHPAD_ID))schedule();});
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  schedule();
 })();
 
 (() => {
@@ -198,7 +151,6 @@
 })();
 
 // PWA OWNER SAFETY v1 — presentation/sound/brand convenience only.
-// No AI engine, production Worker or Meta publishing connector changes.
 (() => {
   if (document.querySelector('script[data-acc-owner-safety="v1"]')) return;
   const script = document.createElement("script");
