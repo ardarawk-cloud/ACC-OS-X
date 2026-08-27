@@ -10,5 +10,5 @@
   },
   "ai": {"binding":"AI"},
   "browser": {"binding":"BROWSER"},
-  "vars": {"ACC_AI_MODEL":"@cf/meta/llama-3.1-8b-instruct-fast","ACC_DEPLOY_REVISION":"V9_HERO_IMAGE_ONLY_CHANNEL_LOCK"}
+  "vars": {"ACC_AI_MODEL":"@cf/meta/llama-3.1-8b-instruct-fast","ACC_DEPLOY_REVISION":"V10_OWNER_LAUNCHER_BRIDGE_FORCE_DEPLOY"}
 }
