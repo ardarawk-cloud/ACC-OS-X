@@ -53,3 +53,13 @@
   window.ACCPageAliases = { revision:REVISION, reconcile };
   schedule();
 })();
+
+// KAI ONE — full owner app launcher loader. Kept separate from ACC Core registry/publishing logic.
+(() => {
+  if (document.querySelector('script[data-acc-owner-app-launcher="v2"]')) return;
+  const script = document.createElement("script");
+  script.src = "./owner-app-launcher-v2.js?rev=KAI_ONE_OWNER_APP_LAUNCHER_V2";
+  script.dataset.accOwnerAppLauncher = "v2";
+  script.async = false;
+  document.head.appendChild(script);
+})();
