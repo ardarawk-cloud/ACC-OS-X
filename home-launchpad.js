@@ -1,6 +1,6 @@
-// ACC OS X — HOME DIRECT DIVISION LAUNCHPAD v3
-// HOME presentation/integration only. ACC CORE remains registry/detail center.
-// Division appUrl from ACC Sync Hub is authoritative; fallback URLs only cover first-load sync delay.
+// ACC OS X — HOME DIRECT DIVISION LAUNCHPAD v4
+// Compact app-launcher presentation only. No new divisions/apps are added to ACC OS X.
+// Division appUrl from ACC Sync Hub remains authoritative; fallbacks only cover sync delay.
 (() => {
   "use strict";
 
@@ -9,27 +9,24 @@
 
   const modules = {
     trading: {
-      kicker: "ACC FINANCE // TRADING",
       title: "KAI TRAD",
-      status: "FOUNDATION READY",
       accent: "#55e6a5",
-      description: "Trading Command Center untuk robot trading, signal validation, risk control, journal, dan performance monitoring.",
+      iconUrl: "https://kai-trad-pwa.ardarawk.workers.dev/kai-trad-logo.png",
+      iconFallback: "K",
       fallbackUrl: "https://kai-trad-pwa.ardarawk.workers.dev/"
     },
     entego: {
-      kicker: "ACC BUSINESS // STARTUP",
       title: "ENTEGO",
-      status: "WORKSPACE READY",
       accent: "#67e8f9",
-      description: "Startup Operations workspace untuk Customer, Mitra, Admin, service flow, transaksi, dan operational monitoring.",
+      iconUrl: "https://entego-pwa.ardarawk.workers.dev/icon-512.png?v=79",
+      iconFallback: "E",
       fallbackUrl: "https://entego-pwa.ardarawk.workers.dev/"
     },
     studio: {
-      kicker: "AM STUDIO // COMIC LIBRARY",
       title: "AM STUDIO",
-      status: "READER FOUNDATION",
       accent: "#c28aff",
-      description: "Library pribadi ACC untuk membaca komik dan IP AM STUDIO langsung dari ACC OS X.",
+      iconUrl: "https://am-studio-pwa.ardarawk.workers.dev/icon.svg",
+      iconFallback: "AM",
       fallbackUrl: "https://am-studio-pwa.ardarawk.workers.dev/"
     }
   };
@@ -39,18 +36,24 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      .acc-home-launchpad{margin-top:22px}
-      .acc-launch-head{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-      .acc-launch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-      .acc-launch-card{position:relative;overflow:hidden;text-align:left;min-height:188px;padding:17px;border-radius:20px;border:1px solid var(--line,#25324a);background:linear-gradient(160deg,var(--panel,#10192d),var(--panel2,#071023));color:var(--text,#f8fafc);appearance:none}
-      .acc-launch-card:before{content:"";position:absolute;inset:auto -30px -60px auto;width:150px;height:150px;border-radius:999px;background:var(--launch-accent);opacity:.09;filter:blur(2px)}
-      .acc-launch-card:active{transform:scale(.99)}
-      .acc-launch-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;border:1px solid color-mix(in srgb,var(--launch-accent) 40%,transparent);background:color-mix(in srgb,var(--launch-accent) 12%,transparent);color:var(--launch-accent);font-size:1.18rem;font-weight:900}
-      .acc-launch-title{font-size:1.18rem;font-weight:900;margin-top:14px;letter-spacing:.04em}
-      .acc-launch-desc{font-size:.76rem;color:var(--muted,#8390aa);margin-top:7px;line-height:1.5}
-      .acc-launch-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:17px}
-      .acc-launch-open{color:var(--launch-accent);font-size:.72rem;font-weight:900;letter-spacing:.06em}
-      @media(max-width:760px){.acc-launch-grid{grid-template-columns:1fr}.acc-launch-card{min-height:160px}}
+      .acc-home-launchpad{margin-top:18px;padding:14px 10px 8px;border-radius:20px;border:1px solid var(--line,#25324a);background:color-mix(in srgb,var(--panel,#10192d) 52%,transparent)}
+      .acc-launch-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:0 4px}
+      .acc-launch-head .card-title{font-size:.94rem;letter-spacing:.05em}
+      .acc-launch-head .muted{display:none}
+      .acc-launch-head .badge{min-height:24px;padding:3px 8px;font-size:.6rem}
+      .acc-launch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 7px;align-items:start}
+      .acc-launch-card{position:relative;appearance:none;border:0;background:transparent;color:var(--text,#f8fafc);padding:7px 3px 9px;min-width:0;min-height:118px;text-align:center;border-radius:18px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+      .acc-launch-card:active{background:color-mix(in srgb,var(--launch-accent) 8%,transparent);transform:scale(.97)}
+      .acc-launch-icon{position:relative;width:72px;height:72px;margin:0 auto;display:grid;place-items:center;overflow:hidden;border-radius:21px;border:1px solid color-mix(in srgb,var(--launch-accent) 38%,var(--line,#25324a));background:linear-gradient(145deg,color-mix(in srgb,var(--launch-accent) 13%,#071023),#071023);box-shadow:0 10px 24px rgba(0,0,0,.24)}
+      .acc-launch-icon img{width:100%;height:100%;object-fit:cover;display:block}
+      .acc-launch-icon-fallback{position:absolute;inset:0;display:grid;place-items:center;color:var(--launch-accent);font-size:1.2rem;font-weight:950;letter-spacing:-.04em;z-index:0}
+      .acc-launch-icon img+.acc-launch-icon-fallback{z-index:-1}
+      .acc-launch-title{margin-top:9px;font-size:.78rem;font-weight:900;line-height:1.2;letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+      .acc-launch-status{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:5px;color:var(--muted,#8390aa);font-size:.57rem;line-height:1}
+      .acc-launch-status-dot{width:6px;height:6px;border-radius:50%;background:var(--launch-accent);box-shadow:0 0 9px color-mix(in srgb,var(--launch-accent) 70%,transparent)}
+      .acc-launch-card>.eyebrow,.acc-launch-card>.acc-launch-desc,.acc-launch-card>.acc-launch-foot,.acc-launch-card>.acc-sync-line{display:none!important}
+      @media(min-width:700px){.acc-launch-grid{grid-template-columns:repeat(6,minmax(0,1fr));}.acc-launch-card{min-height:126px}.acc-launch-icon{width:78px;height:78px}}
+      @media(max-width:380px){.acc-home-launchpad{padding-left:5px;padding-right:5px}.acc-launch-grid{gap:8px 2px}.acc-launch-icon{width:66px;height:66px;border-radius:19px}.acc-launch-title{font-size:.72rem}}
     `;
     document.head.appendChild(style);
   }
@@ -58,44 +61,53 @@
   async function launchDivision(key) {
     const module = modules[key];
     if (!module) return;
-
     const card = document.querySelector(`[data-home-module="${key}"]`);
-    const openLabel = card?.querySelector(".acc-launch-open");
-    const previous = openLabel?.textContent || "OPEN →";
-    if (openLabel) openLabel.textContent = "OPENING…";
-
+    if (card?.dataset.opening === "1") return;
+    if (card) {
+      card.dataset.opening = "1";
+      card.setAttribute("aria-busy", "true");
+    }
     try {
       if (window.ACCSyncHub?.refresh) {
         await Promise.race([
           window.ACCSyncHub.refresh(),
-          new Promise(resolve => setTimeout(resolve, 1200))
+          new Promise(resolve => setTimeout(resolve, 1000))
         ]);
       }
       const state = window.ACCSyncHub?.getState?.() || {};
       const syncedUrl = state?.[key]?.manifest?.appUrl;
-      const target = syncedUrl || module.fallbackUrl;
-      window.location.assign(target);
+      window.location.assign(syncedUrl || module.fallbackUrl);
     } catch {
       window.location.assign(module.fallbackUrl);
     } finally {
-      if (openLabel) openLabel.textContent = previous;
+      if (card) {
+        delete card.dataset.opening;
+        card.removeAttribute("aria-busy");
+      }
     }
   }
 
-  function moduleCard(key, icon) {
+  function moduleCard(key) {
     const m = modules[key];
     const button = document.createElement("button");
     button.type = "button";
     button.className = "acc-launch-card mono";
     button.dataset.homeModule = key;
     button.style.setProperty("--launch-accent", m.accent);
+    button.setAttribute("aria-label", `Open ${m.title}`);
     button.innerHTML = `
-      <div class="acc-launch-icon">${icon}</div>
-      <div class="eyebrow" style="margin-top:13px">${m.kicker}</div>
+      <div class="acc-launch-icon">
+        <img src="${m.iconUrl}" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="acc-launch-icon-fallback">${m.iconFallback}</span>
+      </div>
       <div class="acc-launch-title">${m.title}</div>
-      <div class="acc-launch-desc">${m.description}</div>
-      <div class="acc-launch-foot"><span class="badge">${m.status}</span><span class="acc-launch-open">OPEN WEB →</span></div>
+      <div class="acc-launch-status"><span class="acc-launch-status-dot"></span><span>OPEN</span></div>
+      <div class="eyebrow"></div>
+      <div class="acc-launch-desc"></div>
+      <div class="acc-launch-foot"><span class="badge"></span><span class="acc-launch-open"></span></div>
     `;
+    const img = button.querySelector("img");
+    img?.addEventListener("error", () => { img.style.display = "none"; button.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index", "1"); }, { once:true });
     button.addEventListener("click", () => launchDivision(key));
     return button;
   }
@@ -106,13 +118,13 @@
     box.className = "acc-home-launchpad mono";
     box.innerHTML = `
       <div class="acc-launch-head">
-        <div><div class="eyebrow">ACC PERSONAL COMMAND WORKSPACES</div><h2 class="card-title" style="margin-top:5px">OWNER LAUNCHPAD</h2><p class="muted small" style="margin:7px 0 0">1 tap langsung ke HOME web masing-masing divisi. Registry lengkap tetap di ACC CORE.</p></div>
-        <span class="badge">3 DIRECT LINKS</span>
+        <div><div class="eyebrow">ACC PERSONAL COMMAND</div><h2 class="card-title" style="margin-top:3px">OWNER LAUNCHPAD</h2><p class="muted small"></p></div>
+        <span class="badge">3 APPS</span>
       </div>
       <div class="acc-launch-grid"></div>
     `;
     const grid = box.querySelector(".acc-launch-grid");
-    grid.append(moduleCard("trading", "↗"), moduleCard("entego", "E"), moduleCard("studio", "AM"));
+    grid.append(moduleCard("trading"), moduleCard("entego"), moduleCard("studio"));
     return box;
   }
 
@@ -226,7 +238,7 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — owner-confirmed Page aliases (keeps ACC channel names independent from Facebook Page names).
+// KAI ONE — owner-confirmed Page aliases.
 (() => {
   if (document.querySelector('script[data-acc-page-aliases="v1"]')) return;
   const script = document.createElement("script");
