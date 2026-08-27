@@ -1,22 +1,21 @@
-// KAI ONE — ACC OS X MY MAPS launcher v1
-// Owner map launcher for verified Roblox experiences. ACC OS X / publishing state is untouched.
+// KAI ONE — ACC OS X MY MAPS launcher v2
+// Direct Roblox thumbnail URLs for Android/WebView reliability.
 (() => {
   "use strict";
-
-  const REVISION = "KAI_ONE_MY_MAPS_V1";
-  const ROOT_ID = "acc-my-maps";
-  const STYLE_ID = "acc-my-maps-v1-style";
-
-  const MAPS = [
-    { key:"bbya-social-hub", title:"BBYA Social Hub", placeId:"131894120482837", accent:"#d946ef", fallback:"BBYA" },
-    { key:"zona-perang", title:"Zona Perang", placeId:"85866320744490", accent:"#ef4444", fallback:"ZP" },
-    { key:"after-school-city", title:"After School City", placeId:"121603385909425", accent:"#facc15", fallback:"ASC" },
-    { key:"becak-e-bike", title:"Becak E-bike", placeId:"80994730522893", accent:"#f59e0b", fallback:"BE" },
-    { key:"wonderpocket", title:"WONDERPOCKET", placeId:"124843214013484", accent:"#a78bfa", fallback:"WP" },
-    { key:"track-01", title:"Track 01", placeId:"79748872921213", accent:"#dc2626", fallback:"T01" },
-    { key:"gunung-bbya", title:"Gunung BBYA", placeId:"82661754996018", accent:"#22c55e", fallback:"GB" },
-    { key:"lost-found-night-shift", title:"Lost & Found: Night Shift", placeId:"93699016600671", accent:"#f97316", fallback:"LF" }
-  ];
+  const REVISION="KAI_ONE_MY_MAPS_V2_DIRECT_ICONS";
+  const ROOT_ID="acc-my-maps";
+  const STYLE_ID="acc-my-maps-v1-style";
+  const iconUrl=id=>`https://www.roblox.com/asset-thumbnail/image?assetId=${encodeURIComponent(id)}&width=420&height=420&format=png`;
+  const MAPS=[
+    {key:"bbya-social-hub",title:"BBYA Social Hub",placeId:"131894120482837",accent:"#d946ef",fallback:"BBYA"},
+    {key:"zona-perang",title:"Zona Perang",placeId:"85866320744490",accent:"#ef4444",fallback:"ZP"},
+    {key:"after-school-city",title:"After School City",placeId:"121603385909425",accent:"#facc15",fallback:"ASC"},
+    {key:"becak-e-bike",title:"Becak E-bike",placeId:"80994730522893",accent:"#f59e0b",fallback:"BE"},
+    {key:"wonderpocket",title:"WONDERPOCKET",placeId:"124843214013484",accent:"#a78bfa",fallback:"WP"},
+    {key:"track-01",title:"Track 01",placeId:"79748872921213",accent:"#dc2626",fallback:"T01"},
+    {key:"gunung-bbya",title:"Gunung BBYA",placeId:"82661754996018",accent:"#22c55e",fallback:"GB"},
+    {key:"lost-found-night-shift",title:"Lost & Found: Night Shift",placeId:"93699016600671",accent:"#f97316",fallback:"LF"}
+  ].map(map=>({...map,icon:iconUrl(map.placeId)}));
 
   function ensureStyle(){
     if(document.getElementById(STYLE_ID)) return;
@@ -40,9 +39,7 @@
     document.head.appendChild(style);
   }
 
-  function robloxUrl(map){
-    return `https://www.roblox.com/games/${encodeURIComponent(map.placeId)}`;
-  }
+  const robloxUrl=map=>`https://www.roblox.com/games/${encodeURIComponent(map.placeId)}`;
 
   function tile(map){
     const button=document.createElement("button");
@@ -51,43 +48,11 @@
     button.dataset.ownerMap=map.key;
     button.style.setProperty("--map-accent",map.accent);
     button.setAttribute("aria-label",`Open ${map.title} on Roblox`);
-    button.innerHTML=`
-      <div class="acc-map-icon"><span class="acc-map-fallback">${map.fallback}</span></div>
-      <div class="acc-map-title">${map.title}</div>
-      <div class="acc-map-status">ROBLOX</div>
-    `;
-    button.addEventListener("click",event=>{
-      event.preventDefault();
-      location.href=robloxUrl(map);
-    });
+    button.innerHTML=`<div class="acc-map-icon"><span class="acc-map-fallback">${map.fallback}</span><img alt="" loading="lazy" referrerpolicy="no-referrer" src="${map.icon}"></div><div class="acc-map-title">${map.title}</div><div class="acc-map-status">ROBLOX</div>`;
+    const img=button.querySelector("img");
+    img?.addEventListener("error",()=>img.remove(),{once:true});
+    button.addEventListener("click",event=>{event.preventDefault();location.href=robloxUrl(map);});
     return button;
-  }
-
-  async function hydrateIcons(root){
-    const ids=MAPS.map(map=>map.placeId).join(",");
-    const endpoint=`https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${encodeURIComponent(ids)}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`;
-    try{
-      const response=await fetch(endpoint,{cache:"force-cache"});
-      if(!response.ok) return;
-      const payload=await response.json();
-      const rows=Array.isArray(payload?.data)?payload.data:[];
-      for(const row of rows){
-        const placeId=String(row?.targetId||"");
-        const imageUrl=String(row?.imageUrl||"");
-        if(!placeId||!imageUrl) continue;
-        const map=MAPS.find(item=>item.placeId===placeId);
-        if(!map) continue;
-        const icon=root.querySelector(`[data-owner-map="${map.key}"] .acc-map-icon`);
-        if(!icon||icon.querySelector("img")) continue;
-        const img=document.createElement("img");
-        img.alt="";
-        img.loading="lazy";
-        img.referrerPolicy="no-referrer";
-        img.src=imageUrl;
-        img.addEventListener("error",()=>img.remove(),{once:true});
-        icon.appendChild(img);
-      }
-    }catch{}
   }
 
   function render(){
@@ -95,40 +60,18 @@
     const apps=document.getElementById("acc-home-launchpad");
     if(!apps) return false;
     let root=document.getElementById(ROOT_ID);
-    if(!root){
-      root=document.createElement("section");
-      root.id=ROOT_ID;
-      root.className="card";
-      apps.insertAdjacentElement("afterend",root);
-    }
+    if(!root){root=document.createElement("section");root.id=ROOT_ID;root.className="card";apps.insertAdjacentElement("afterend",root);}
     if(root.dataset.mapsRevision===REVISION) return true;
     root.dataset.mapsRevision=REVISION;
-    root.innerHTML=`
-      <div class="acc-map-head">
-        <div><div class="eyebrow">ACC ROBLOX COMMAND</div><h2 class="card-title" style="margin:3px 0 0">MY MAPS</h2></div>
-        <span class="badge">${MAPS.length} MAPS</span>
-      </div>
-      <div class="acc-map-grid"></div>
-    `;
+    root.innerHTML=`<div class="acc-map-head"><div><div class="eyebrow">ACC ROBLOX COMMAND</div><h2 class="card-title" style="margin:3px 0 0">MY MAPS</h2></div><span class="badge">${MAPS.length} MAPS</span></div><div class="acc-map-grid"></div>`;
     const grid=root.querySelector(".acc-map-grid");
     MAPS.forEach(map=>grid.appendChild(tile(map)));
-    hydrateIcons(root);
     return true;
   }
 
   let queued=false;
-  function schedule(){
-    if(queued) return;
-    queued=true;
-    requestAnimationFrame(()=>{queued=false;render();});
-    setTimeout(render,120);
-    setTimeout(render,520);
-  }
-
-  new MutationObserver(()=>{
-    const root=document.getElementById(ROOT_ID);
-    if(!root||root.dataset.mapsRevision!==REVISION) schedule();
-  }).observe(document.documentElement,{childList:true,subtree:true});
+  function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;render();});setTimeout(render,120);setTimeout(render,520);}
+  new MutationObserver(()=>{const root=document.getElementById(ROOT_ID);if(!root||root.dataset.mapsRevision!==REVISION)schedule();}).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener("pageshow",schedule);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedule();});
   window.ACCMyMaps={revision:REVISION,maps:MAPS.map(({key,title,placeId})=>({key,title,placeId})),render:schedule};
