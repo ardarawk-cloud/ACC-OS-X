@@ -88,7 +88,7 @@
 (() => {
   if (document.querySelector('script[data-acc-my-projects="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V1";
+  script.src = "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V2_VECTOR_ICONS";
   script.dataset.accMyProjects = "v1";
   script.async = false;
   document.head.appendChild(script);
