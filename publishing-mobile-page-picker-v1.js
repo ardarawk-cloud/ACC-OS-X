@@ -1,17 +1,17 @@
-// KAI ONE — Publishing Hub Mobile Page Picker v1
-// Adds tap-safe page buttons under the owner mapping card for Android/WebView
-// environments where the native <select> popup is unreliable.
+// KAI ONE — Publishing Hub Mobile Page Picker v2
+// Android-safe direct owner mapping. Does not depend on native <select> or the legacy click handler.
 (() => {
   "use strict";
 
+  const REVISION = "KAI_ONE_DIRECT_OWNER_PAGE_MAP_V2";
   const STATE_KEY = "acc_os_x_ecosystem_v214";
   const SAFE_CARD_ID = "acc-safe-publish-admin";
   const PICKER_ID = "acc-mobile-page-picker-v1";
-  const STYLE_ID = "acc-mobile-page-picker-style-v1";
+  const STYLE_ID = "acc-mobile-page-picker-style-v2";
 
   const CONFIRMED_PAGE_BY_CHANNEL = {
-    "ch-arda-gaming": "1296361826889422",
-    "ch-mr-laziz": "102412098142218"
+    "ch-arda-gaming": { id:"1296361826889422", name:"Arda Gaming" },
+    "ch-mr-laziz": { id:"102412098142218", name:"Mister Laziz" }
   };
 
   const text = value => typeof value === "string" ? value.trim() : "";
@@ -20,8 +20,34 @@
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
   function readState() {
-    try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); }
-    catch { return {}; }
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STATE_KEY) || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch { return {}; }
+  }
+
+  function writeState(state) {
+    try {
+      localStorage.setItem(STATE_KEY, JSON.stringify(state));
+      return true;
+    } catch { return false; }
+  }
+
+  function currentChannelId(state = readState()) {
+    return text(state?.activeChannelId);
+  }
+
+  function metaPages(state = readState()) {
+    return Array.isArray(state?.settings?.metaPages)
+      ? state.settings.metaPages
+          .map(page => ({ id:text(String(page?.id || "")), name:text(page?.name) }))
+          .filter(page => page.id && page.name)
+      : [];
+  }
+
+  function currentTarget(state, channelId) {
+    const mappings = state?.settings?.publishMappings;
+    return mappings && typeof mappings === "object" ? mappings[channelId] || null : null;
   }
 
   function ensureStyle() {
@@ -29,34 +55,27 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      #${PICKER_ID}{margin-top:12px;padding:12px;border:1px solid var(--line,#25324a);border-radius:14px;background:var(--panel3,#02081a)}
+      #${PICKER_ID}{margin-top:12px;padding:12px;border:1px solid var(--line,#25324a);border-radius:14px;background:var(--panel3,#02081a);position:relative;z-index:4}
       #${PICKER_ID} .acc-mobile-page-list{display:grid;gap:8px;margin-top:9px}
-      #${PICKER_ID} .acc-mobile-page-btn{width:100%;min-height:54px;text-align:left;padding:10px 12px;border:1px solid var(--line2,#40506a);border-radius:12px;background:var(--panel2,#071023);color:var(--text,#f8fafc)}
+      #${PICKER_ID} .acc-mobile-page-btn{width:100%;min-height:58px;text-align:left;padding:11px 12px;border:1px solid var(--line2,#40506a);border-radius:12px;background:var(--panel2,#071023);color:var(--text,#f8fafc);touch-action:manipulation;pointer-events:auto;-webkit-tap-highlight-color:transparent}
       #${PICKER_ID} .acc-mobile-page-btn strong{display:block;font-size:.83rem}
-      #${PICKER_ID} .acc-mobile-page-btn span{display:block;margin-top:3px;color:var(--muted,#8390aa);font-size:.66rem}
-      #${PICKER_ID} .acc-mobile-page-btn.recommended{border-color:#55e6a5;background:rgba(10,161,116,.13)}
+      #${PICKER_ID} .acc-mobile-page-btn span{display:block;margin-top:4px;color:var(--muted,#8390aa);font-size:.66rem;overflow-wrap:anywhere}
+      #${PICKER_ID} .acc-mobile-page-btn.recommended{border-color:#55e6a5;background:rgba(10,161,116,.15)}
+      #${PICKER_ID} .acc-mobile-page-btn.current{border-color:#3b82f6;background:rgba(59,130,246,.12)}
+      #${PICKER_ID} .acc-mobile-page-btn:disabled{opacity:.72}
       #${PICKER_ID} details{margin-top:10px}
-      #${PICKER_ID} summary{cursor:pointer;color:var(--muted,#8390aa);font-size:.72rem;font-weight:900;letter-spacing:.05em}
+      #${PICKER_ID} summary{cursor:pointer;color:var(--muted,#8390aa);font-size:.72rem;font-weight:900;letter-spacing:.05em;touch-action:manipulation}
+      #${PICKER_ID} .acc-direct-status{margin-top:8px;font-size:.7rem;color:var(--muted,#8390aa)}
     `;
     document.head.appendChild(style);
   }
 
-  function currentChannelId() {
-    return text(readState()?.activeChannelId);
-  }
-
-  function optionRows(select) {
-    return [...(select?.options || [])]
-      .map(option => ({ id:text(option.value), name:text(option.textContent) }))
-      .filter(row => row.id && row.name);
-  }
-
-  function scorePage(channelName, row) {
+  function scorePage(channelName, page) {
     const c = normalize(channelName);
-    const p = normalize(row.name);
+    const p = normalize(page.name);
     if (!c || !p) return 0;
     if (c === p) return 100;
-    if (c.includes(p) || p.includes(c)) return 80;
+    if (c.includes(p) || p.includes(c)) return 82;
     const ct = new Set(c.split(" ").filter(Boolean));
     const pt = new Set(p.split(" ").filter(Boolean));
     let overlap = 0;
@@ -64,26 +83,89 @@
     return overlap ? Math.round((overlap / Math.max(ct.size, pt.size)) * 60) : 0;
   }
 
-  function invokeRealLink(card, select, pageId) {
-    select.value = pageId;
-    select.dispatchEvent(new Event("change", { bubbles:true }));
-    const realLink = card.querySelector('[data-action="link-publish-page"]');
-    if (!realLink) return;
-    realLink.click();
+  function directMap(channelId, requestedPage) {
+    const state = readState();
+    if (!channelId || currentChannelId(state) !== channelId) {
+      return { ok:false, message:"Active channel berubah. Buka channel ini lagi." };
+    }
+
+    const available = metaPages(state).find(page => page.id === String(requestedPage.id));
+    if (!available) {
+      return { ok:false, message:`Page ${requestedPage.name} belum tersedia dari hasil Meta sync.` };
+    }
+
+    state.settings = state.settings && typeof state.settings === "object" ? state.settings : {};
+    const mappings = state.settings.publishMappings && typeof state.settings.publishMappings === "object"
+      ? state.settings.publishMappings
+      : {};
+
+    state.settings.publishMappings = {
+      ...mappings,
+      [channelId]: {
+        connector:"META_FACEBOOK",
+        pageId:String(available.id),
+        pageName:available.name,
+        source:"OWNER_DIRECT_ANDROID"
+      }
+    };
+
+    if (!writeState(state)) return { ok:false, message:"Gagal menyimpan mapping ke PWA storage." };
+    return { ok:true, page:available };
   }
 
-  function pageButton(card, select, row, recommended = false) {
+  function makePageButton(channelId, page, options = {}) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `acc-mobile-page-btn mono${recommended ? " recommended" : ""}`;
-    button.innerHTML = `<strong>${recommended ? "LINK → " : "LINK PAGE → "}${row.name}</strong><span>Page ID ${row.id}${recommended ? " • RECOMMENDED" : ""}</span>`;
+    button.className = `acc-mobile-page-btn mono${options.recommended ? " recommended" : ""}${options.current ? " current" : ""}`;
+
+    const strong = document.createElement("strong");
+    strong.textContent = options.current
+      ? `CURRENT → ${page.name}`
+      : options.recommended
+        ? `LINK NOW → ${page.name}`
+        : `LINK PAGE → ${page.name}`;
+
+    const detail = document.createElement("span");
+    detail.textContent = `Page ID ${page.id}${options.recommended ? " • OWNER CONFIRMED" : ""}`;
+    button.append(strong, detail);
+
+    if (options.current) {
+      button.disabled = true;
+      return button;
+    }
+
+    let handled = false;
+    const apply = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (handled) return;
+      handled = true;
+      button.disabled = true;
+      strong.textContent = `SAVING → ${page.name}`;
+
+      const result = directMap(channelId, page);
+      if (!result.ok) {
+        handled = false;
+        button.disabled = false;
+        strong.textContent = `ERROR — TAP AGAIN`;
+        detail.textContent = result.message;
+        return;
+      }
+
+      strong.textContent = `LINKED ✓ ${result.page.name}`;
+      detail.textContent = `Page ID ${result.page.id} • reloading…`;
+      setTimeout(() => location.reload(), 120);
+    };
+
+    // pointerdown is intentional: the older safety layer rebuilds the card on click.
+    // Saving before click avoids Android/WebView losing the target during that rebuild.
+    button.addEventListener("pointerdown", apply, { passive:false });
+    button.addEventListener("touchstart", apply, { passive:false });
+    button.addEventListener("mousedown", apply, { passive:false });
     button.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
-      button.disabled = true;
-      button.querySelector("strong").textContent = `LINKING → ${row.name}`;
-      invokeRealLink(card, select, row.id);
-      setTimeout(() => { if (button.isConnected) button.disabled = false; }, 1200);
+      if (!handled) apply(event);
     });
     return button;
   }
@@ -97,56 +179,78 @@
     }
     if (card.querySelector(`#${PICKER_ID}`)) return;
 
-    const select = card.querySelector("#publish-page-select");
-    if (!select) return;
-    const rows = optionRows(select);
-    if (!rows.length) return;
+    const state = readState();
+    const channelId = currentChannelId(state);
+    if (!channelId) return;
+    const pages = metaPages(state);
+    if (!pages.length) return;
 
-    const channelId = currentChannelId();
     const channelName = text(card.querySelector("h3.card-title")?.textContent) || channelId;
-    const confirmedId = CONFIRMED_PAGE_BY_CHANNEL[channelId] || "";
-    const confirmed = confirmedId ? rows.find(row => row.id === confirmedId) : null;
+    const target = currentTarget(state, channelId);
+    const confirmed = CONFIRMED_PAGE_BY_CHANNEL[channelId] || null;
+    const confirmedPage = confirmed ? pages.find(page => page.id === confirmed.id) || null : null;
 
-    const ranked = rows
-      .map(row => ({ ...row, score:scorePage(channelName, row) }))
+    const ranked = pages
+      .map(page => ({ ...page, score:scorePage(channelName, page) }))
       .sort((a,b) => b.score - a.score || a.name.localeCompare(b.name));
-    const recommended = confirmed || ranked.find(row => row.score >= 35) || null;
+    const recommended = confirmedPage || ranked.find(page => page.score >= 35) || null;
 
     const picker = document.createElement("div");
     picker.id = PICKER_ID;
     picker.className = "mono";
+    picker.dataset.revision = REVISION;
 
     const label = document.createElement("div");
     label.className = "eyebrow";
-    label.textContent = "MOBILE QUICK PICK • TAP-SAFE";
-    picker.appendChild(label);
+    label.textContent = "DIRECT PAGE MAP • ANDROID SAFE";
 
     const help = document.createElement("div");
     help.className = "meta";
     help.style.marginTop = "4px";
-    help.textContent = "Alternatif tombol untuk Android jika dropdown Select Facebook Page tidak merespons.";
-    picker.appendChild(help);
+    help.textContent = "Tidak memakai dropdown. Tap tombol Page untuk menyimpan mapping langsung ke PWA.";
+    picker.append(label, help);
 
     const primary = document.createElement("div");
     primary.className = "acc-mobile-page-list";
-    if (recommended) primary.appendChild(pageButton(card, select, recommended, true));
+
+    if (target?.pageId) {
+      const current = pages.find(page => page.id === String(target.pageId)) || { id:String(target.pageId), name:text(target.pageName) || "Facebook Page" };
+      primary.appendChild(makePageButton(channelId, current, { current:true }));
+    } else if (recommended) {
+      primary.appendChild(makePageButton(channelId, recommended, { recommended:true }));
+    }
     picker.appendChild(primary);
 
-    const remaining = ranked.filter(row => !recommended || row.id !== recommended.id);
-    if (remaining.length) {
+    const remaining = ranked.filter(page => {
+      if (target?.pageId && page.id === String(target.pageId)) return false;
+      if (!target?.pageId && recommended && page.id === recommended.id) return false;
+      return true;
+    });
+
+    if (!target?.pageId && remaining.length) {
       const details = document.createElement("details");
       const summary = document.createElement("summary");
       summary.textContent = `SHOW ALL FACEBOOK PAGES (${remaining.length})`;
-      details.appendChild(summary);
       const all = document.createElement("div");
       all.className = "acc-mobile-page-list";
-      remaining.forEach(row => all.appendChild(pageButton(card, select, row, false)));
-      details.appendChild(all);
+      remaining.forEach(page => all.appendChild(makePageButton(channelId, page)));
+      details.append(summary, all);
       picker.appendChild(details);
     }
 
-    const form = select.closest(".form-grid") || select.parentElement;
-    form?.insertAdjacentElement("afterend", picker);
+    const status = document.createElement("div");
+    status.className = "acc-direct-status";
+    status.textContent = `Revision ${REVISION}`;
+    picker.appendChild(status);
+
+    const oldForm = card.querySelector("#publish-page-select")?.closest(".form-grid");
+    if (oldForm) {
+      oldForm.style.opacity = ".35";
+      oldForm.style.pointerEvents = "none";
+      oldForm.insertAdjacentElement("afterend", picker);
+    } else {
+      card.appendChild(picker);
+    }
   }
 
   let queued = false;
@@ -161,12 +265,8 @@
 
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList:true, subtree:true });
-  document.addEventListener("click", event => {
-    const action = event.target?.closest?.("[data-action]")?.getAttribute("data-action") || "";
-    if (["open-channel","module-tab-system","sync-meta-pages","link-publish-page"].includes(action)) {
-      setTimeout(schedule, 80);
-      setTimeout(schedule, 500);
-    }
-  }, true);
+  window.addEventListener("pageshow", schedule);
+  window.addEventListener("focus", schedule);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) schedule(); });
   schedule();
 })();
