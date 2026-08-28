@@ -10,6 +10,7 @@
         <package android:name="com.accbuilder.accmediadownloader" />
         <package android:name="com.accbuilder.aimashupbootlegstudio" />
         <package android:name="com.acc.contenthub" />
+        <package android:name="com.baliweddingdj.app" />
     </queries>
 
     <application
