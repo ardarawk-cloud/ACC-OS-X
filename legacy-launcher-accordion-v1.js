@@ -1,12 +1,12 @@
-// KAI ONE — Legacy launcher accordion v1
-// Makes MY APPS / MY MAPS / MY PROJECTS use the same compact expand-collapse behavior as Build 9 owner sections.
+// KAI ONE — Legacy launcher accordion v2
+// Makes MY APPS / MY MAPS / MY PROJECTS truly expand-collapse, even against older !important grid rules.
 (() => {
   "use strict";
-  if (window.__ACC_LEGACY_LAUNCHER_ACCORDION_V1__) return;
-  window.__ACC_LEGACY_LAUNCHER_ACCORDION_V1__ = true;
+  if (window.__ACC_LEGACY_LAUNCHER_ACCORDION_V2__) return;
+  window.__ACC_LEGACY_LAUNCHER_ACCORDION_V2__ = true;
 
-  const REVISION = "KAI_ONE_LEGACY_LAUNCHER_ACCORDION_V1";
-  const STYLE_ID = "acc-legacy-launcher-accordion-v1-style";
+  const REVISION = "KAI_ONE_LEGACY_LAUNCHER_ACCORDION_V2_FORCE_DISPLAY";
+  const STYLE_ID = "acc-legacy-launcher-accordion-v2-style";
   const STATE_KEY = "acc_legacy_launcher_accordion_v1";
   const TARGETS = [
     { root:"acc-home-launchpad", head:".acc-launch-head", body:".acc-launch-grid", key:"apps" },
@@ -22,9 +22,8 @@
   const state=readState();
 
   function ensureStyle(){
-    if(document.getElementById(STYLE_ID)) return;
-    const style=document.createElement("style");
-    style.id=STYLE_ID;
+    let style=document.getElementById(STYLE_ID);
+    if(!style){ style=document.createElement("style"); style.id=STYLE_ID; document.head.appendChild(style); }
     style.textContent=`
       #acc-home-launchpad[data-legacy-accordion="1"],
       #acc-my-maps[data-legacy-accordion="1"],
@@ -64,15 +63,23 @@
       }
       [data-legacy-accordion="1"] [data-legacy-accordion-head="1"] > .badge{margin-left:auto!important}
       [data-legacy-accordion="1"] [data-legacy-accordion-body="1"]{padding:2px 10px 17px!important}
-      [data-legacy-accordion="1"][data-expanded="0"] [data-legacy-accordion-body="1"]{display:none!important}
+      #acc-home-launchpad[data-expanded="0"] .acc-launch-grid,
+      #acc-my-maps[data-expanded="0"] .acc-map-grid,
+      #acc-my-projects[data-expanded="0"] .acc-project-grid{display:none!important}
     `;
-    document.head.appendChild(style);
   }
 
-  function setExpanded(root, target, expanded){
+  function applyBodyDisplay(root,target,expanded){
+    const body=root.querySelector(target.body);
+    if(!body) return;
+    body.style.setProperty("display",expanded?"grid":"none","important");
+  }
+
+  function setExpanded(root,target,expanded){
     root.dataset.expanded=expanded?"1":"0";
     const head=root.querySelector(target.head);
     if(head) head.setAttribute("aria-expanded",expanded?"true":"false");
+    applyBodyDisplay(root,target,expanded);
     state[target.key]=expanded;
     writeState(state);
   }
@@ -91,19 +98,20 @@
     head.setAttribute("role","button");
     head.setAttribute("tabindex","0");
 
-    if(root.dataset.accordionInitialized!=="1"){
-      root.dataset.accordionInitialized="1";
+    if(root.dataset.accordionInitialized!=="2"){
+      root.dataset.accordionInitialized="2";
       const initial=state[target.key]===true;
       setExpanded(root,target,initial);
+    } else {
+      applyBodyDisplay(root,target,root.dataset.expanded==="1");
     }
 
-    if(head.dataset.accordionBound!=="1"){
-      head.dataset.accordionBound="1";
+    if(head.dataset.accordionBound!=="2"){
+      head.dataset.accordionBound="2";
       const toggle=event=>{
         if(event.type==="keydown" && !["Enter"," "].includes(event.key)) return;
         if(event.type==="keydown") event.preventDefault();
-        const expanded=root.dataset.expanded==="1";
-        setExpanded(root,target,!expanded);
+        setExpanded(root,target,root.dataset.expanded!=="1");
       };
       head.addEventListener("click",toggle);
       head.addEventListener("keydown",toggle);
