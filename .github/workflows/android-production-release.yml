@@ -3,6 +3,8 @@ name: ACC OS X Android Production Release
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 'kai-one/build8-production-release'
     tags:
       - 'acc-os-x-android-v*'
 
