@@ -10,5 +10,5 @@
   },
   "ai": {"binding":"AI"},
   "browser": {"binding":"BROWSER"},
-  "vars": {"ACC_AI_MODEL":"@cf/meta/llama-3.1-8b-instruct-fast","ACC_DEPLOY_REVISION":"V11_OWNER_PHONE_SECTIONS_BUILD9"}
+  "vars": {"ACC_AI_MODEL":"@cf/meta/llama-3.1-8b-instruct-fast","ACC_DEPLOY_REVISION":"V12_LEGACY_LAUNCHER_ACCORDION"}
 }
