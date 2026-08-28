@@ -65,6 +65,16 @@
   document.head.appendChild(script);
 })();
 
+// KAI ONE — owner phone categories. Uses native installed-app icon bridge on Build 9+.
+(() => {
+  if (document.querySelector('script[data-acc-owner-phone-launcher="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./owner-phone-launcher-v1.js?rev=KAI_ONE_OWNER_PHONE_LAUNCHER_V1_BUILD9";
+  script.dataset.accOwnerPhoneLauncher = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 // KAI ONE — Bali Wedding DJ native APK tile.
 (() => {
   if (document.querySelector('script[data-acc-bali-wedding-dj-launcher="v1"]')) return;
