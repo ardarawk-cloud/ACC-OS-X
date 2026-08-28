@@ -144,3 +144,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — compact accordion for legacy launcher sections.
+(() => {
+  if (document.querySelector('script[data-acc-legacy-launcher-accordion="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./legacy-launcher-accordion-v1.js?rev=KAI_ONE_LEGACY_LAUNCHER_ACCORDION_V1";
+  script.dataset.accLegacyLauncherAccordion = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
