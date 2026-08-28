@@ -1,11 +1,12 @@
-// KAI ONE — Legacy launcher accordion v2
-// Makes MY APPS / MY MAPS / MY PROJECTS truly expand-collapse, even against older !important grid rules.
+// KAI ONE — Legacy launcher accordion v3
+// Keeps MY APPS / MY MAPS / MY PROJECTS fully tappable while removing the legacy chevron button UI.
 (() => {
   "use strict";
-  if (window.__ACC_LEGACY_LAUNCHER_ACCORDION_V2__) return;
-  window.__ACC_LEGACY_LAUNCHER_ACCORDION_V2__ = true;
+  if (window.__ACC_LEGACY_LAUNCHER_ACCORDION_V3__) return;
+  window.__ACC_LEGACY_LAUNCHER_ACCORDION_V3__ = true;
 
-  const REVISION = "KAI_ONE_LEGACY_LAUNCHER_ACCORDION_V2_FORCE_DISPLAY";
+  const REVISION = "KAI_ONE_LEGACY_LAUNCHER_ACCORDION_V3_CLEAN_HEADER";
+  // Keep the existing style node id so a hot reload overwrites the older chevron CSS instead of leaving it behind.
   const STYLE_ID = "acc-legacy-launcher-accordion-v2-style";
   const STATE_KEY = "acc_legacy_launcher_accordion_v1";
   const TARGETS = [
@@ -44,24 +45,12 @@
         -webkit-tap-highlight-color:transparent!important;
       }
       [data-legacy-accordion="1"] [data-legacy-accordion-head="1"]::after{
-        content:"⌄";
-        flex:0 0 auto;
-        display:grid;
-        place-items:center;
-        width:28px;height:28px;
-        margin-left:2px;
-        border:1px solid rgba(148,163,184,.24);
-        border-radius:999px;
-        color:#94a3b8;
-        font-size:.9rem;
-        transition:transform .15s ease,color .15s ease,border-color .15s ease;
+        content:none!important;
+        display:none!important;
       }
-      [data-legacy-accordion="1"][data-expanded="1"] [data-legacy-accordion-head="1"]::after{
-        transform:rotate(180deg);
-        color:#e2e8f0;
-        border-color:rgba(226,232,240,.35);
+      [data-legacy-accordion="1"] [data-legacy-accordion-head="1"] > .badge{
+        margin-left:auto!important;
       }
-      [data-legacy-accordion="1"] [data-legacy-accordion-head="1"] > .badge{margin-left:auto!important}
       [data-legacy-accordion="1"] [data-legacy-accordion-body="1"]{padding:2px 10px 17px!important}
       #acc-home-launchpad[data-expanded="0"] .acc-launch-grid,
       #acc-my-maps[data-expanded="0"] .acc-map-grid,
