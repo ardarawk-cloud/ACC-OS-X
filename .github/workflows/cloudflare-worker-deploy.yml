@@ -9,6 +9,14 @@ on:
       - 'produce-copilot-publish-queue-v1.js'
       - 'production-contracts-v1.js'
       - 'division-passports-v1.js'
+      - 'owner-*.js'
+      - 'my-*.js'
+      - 'legacy-launcher-accordion-v1.js'
+      - 'bali-wedding-dj-launcher-v1.js'
+      - 'sync-cctv-launcher-v1.js'
+      - 'publishing-page-aliases-v1.js'
+      - 'assets/app-icons/**'
+      - 'assets/app-launcher/**'
       - 'wrangler.jsonc'
       - 'package.json'
       - 'package-lock.json'
@@ -29,6 +37,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Materialize local launcher images
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode assets/app-icons/my-maps-icons-sprite.jpg.b64 > assets/app-icons/my-maps-icons-sprite.jpg
+          base64 --decode assets/app-launcher/bali-wedding-dj.jpg.b64 > assets/app-launcher/bali-wedding-dj.jpg
+          test -s assets/app-icons/my-maps-icons-sprite.jpg
+          test -s assets/app-launcher/bali-wedding-dj.jpg
+          echo "Local launcher JPG assets materialized."
 
       - name: Deploy production Worker
         id: deploy

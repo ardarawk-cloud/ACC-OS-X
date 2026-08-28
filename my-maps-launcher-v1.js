@@ -1,11 +1,11 @@
-// KAI ONE — ACC OS X MY MAPS launcher v3
-// Local sprite icons for Android/WebView reliability. No external thumbnail dependency.
+// KAI ONE — ACC OS X MY MAPS launcher v5
+// Uses a real same-origin JPG sprite materialized during Cloudflare deploy. No runtime Base64 fetch.
 (() => {
   "use strict";
-  const REVISION="KAI_ONE_MY_MAPS_V3_LOCAL_SPRITE";
+  const REVISION="KAI_ONE_MY_MAPS_V5_DIRECT_LOCAL_JPG";
   const ROOT_ID="acc-my-maps";
-  const STYLE_ID="acc-my-maps-v3-style";
-  const SPRITE_B64_URL="./assets/app-icons/my-maps-icons-sprite.jpg.b64?rev=KAI_ONE_MY_MAPS_V3_LOCAL_SPRITE";
+  const STYLE_ID="acc-my-maps-v5-style";
+  const SPRITE_URL="./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V5_DIRECT_LOCAL_JPG";
 
   const MAPS=[
     {key:"bbya-social-hub",title:"BBYA Social Hub",placeId:"131894120482837",accent:"#d946ef",fallback:"BBYA",bx:"0%",by:"0%"},
@@ -19,9 +19,8 @@
   ];
 
   function ensureStyle(){
-    if(document.getElementById(STYLE_ID)) return;
-    const style=document.createElement("style");
-    style.id=STYLE_ID;
+    let style=document.getElementById(STYLE_ID);
+    if(!style){style=document.createElement("style");style.id=STYLE_ID;document.head.appendChild(style);}
     style.textContent=`
       #${ROOT_ID}{margin:18px 0 8px;padding:12px 4px 10px;border:0;background:transparent;box-shadow:none}
       #${ROOT_ID} .acc-map-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:0 4px 13px}
@@ -31,14 +30,12 @@
       #${ROOT_ID} .acc-map-card:active{transform:scale(.94);background:color-mix(in srgb,var(--map-accent) 7%,transparent)!important}
       #${ROOT_ID} .acc-map-icon{width:min(16.5vw,68px)!important;height:min(16.5vw,68px)!important;min-width:55px!important;min-height:55px!important;margin:0 auto!important;display:grid!important;place-items:center!important;overflow:hidden!important;border-radius:20px!important;border:1px solid color-mix(in srgb,var(--map-accent) 38%,#25324a)!important;background:linear-gradient(145deg,color-mix(in srgb,var(--map-accent) 18%,#071023),#050b16)!important;box-shadow:0 9px 22px rgba(0,0,0,.28)!important;position:relative!important}
       #${ROOT_ID} .acc-map-fallback{position:absolute;inset:0;display:grid;place-items:center;color:var(--map-accent);font-size:.92rem;font-weight:950;letter-spacing:-.04em;z-index:0}
-      #${ROOT_ID} .acc-map-sprite{position:absolute;inset:0;z-index:1;opacity:0;background-image:var(--map-sprite);background-repeat:no-repeat;background-size:400% 200%;background-position:var(--sprite-x) var(--sprite-y);transition:opacity .12s ease}
-      #${ROOT_ID}.acc-map-sprite-ready .acc-map-sprite{opacity:1}
+      #${ROOT_ID} .acc-map-sprite{position:absolute;inset:0;z-index:1;background-image:url("${SPRITE_URL}");background-repeat:no-repeat;background-size:400% 200%;background-position:var(--sprite-x) var(--sprite-y)}
       #${ROOT_ID} .acc-map-title{margin-top:8px!important;font-size:.67rem!important;font-weight:900!important;line-height:1.15!important;min-height:1.6em!important;overflow:hidden!important;text-overflow:ellipsis!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important}
       #${ROOT_ID} .acc-map-status{margin-top:4px!important;color:var(--muted,#8390aa)!important;font-size:.5rem!important;font-weight:800!important;letter-spacing:.07em!important}
       @media(max-width:345px){#${ROOT_ID} .acc-map-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
       @media(min-width:700px){#${ROOT_ID} .acc-map-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:18px 12px!important}#${ROOT_ID} .acc-map-icon{width:74px!important;height:74px!important}#${ROOT_ID} .acc-map-title{font-size:.75rem!important}}
     `;
-    document.head.appendChild(style);
   }
 
   const robloxUrl=map=>`https://www.roblox.com/games/${encodeURIComponent(map.placeId)}`;
@@ -62,19 +59,6 @@
     return button;
   }
 
-  async function hydrateLocalSprite(root){
-    if(root.dataset.spriteHydrated==="1") return;
-    try{
-      const response=await fetch(SPRITE_B64_URL,{cache:"force-cache"});
-      if(!response.ok) return;
-      const b64=(await response.text()).trim();
-      if(!b64) return;
-      root.style.setProperty("--map-sprite",`url("data:image/jpeg;base64,${b64}")`);
-      root.dataset.spriteHydrated="1";
-      root.classList.add("acc-map-sprite-ready");
-    }catch{}
-  }
-
   function render(){
     ensureStyle();
     const apps=document.getElementById("acc-home-launchpad");
@@ -87,7 +71,6 @@
       const grid=root.querySelector(".acc-map-grid");
       MAPS.forEach(map=>grid.appendChild(tile(map)));
     }
-    hydrateLocalSprite(root);
     return true;
   }
 

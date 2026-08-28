@@ -79,7 +79,7 @@
 (() => {
   if (document.querySelector('script[data-acc-bali-wedding-dj-launcher="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V2_BUILD8";
+  script.src = "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V3_DIRECT_JPG";
   script.dataset.accBaliWeddingDjLauncher = "v1";
   script.async = false;
   document.head.appendChild(script);
@@ -125,11 +125,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS Roblox launcher using validated local sprite.
+// KAI ONE — MY MAPS Roblox launcher using real local JPG sprite.
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V4_VALID_SPRITE_BUILD8";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V5_DIRECT_LOCAL_JPG";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);
@@ -149,7 +149,7 @@
 (() => {
   if (document.querySelector('script[data-acc-legacy-launcher-accordion="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./legacy-launcher-accordion-v1.js?rev=KAI_ONE_LEGACY_LAUNCHER_ACCORDION_V1";
+  script.src = "./legacy-launcher-accordion-v1.js?rev=KAI_ONE_LEGACY_LAUNCHER_ACCORDION_V2_FORCE_DISPLAY";
   script.dataset.accLegacyLauncherAccordion = "v1";
   script.async = false;
   document.head.appendChild(script);
