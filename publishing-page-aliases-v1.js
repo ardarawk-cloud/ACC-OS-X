@@ -1,8 +1,8 @@
-// KAI ONE — Owner-confirmed Facebook Page alias mapping v2 / Build 8
+// KAI ONE — Owner-confirmed Facebook Page alias mapping v3 / Maps V8 cache reset
 (() => {
   "use strict";
   const STATE_KEY = "acc_os_x_ecosystem_v214";
-  const REVISION = "KAI_ONE_OWNER_PAGE_ALIASES_V2_BUILD8";
+  const REVISION = "KAI_ONE_OWNER_PAGE_ALIASES_V3_MAPS_V8";
   const ALIASES = {
     "ch-arda-gaming": { id:"1296361826889422", name:"Arda Gaming" },
     "ch-mr-laziz": { id:"102412098142218", name:"Mister Laziz" }
@@ -125,11 +125,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS Roblox launcher using deploy-generated inline sprite data bridge.
+// KAI ONE — MY MAPS Roblox launcher. V8 forces a fresh V7 img-sprite implementation on Android.
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V6_INLINE_DATA_BRIDGE";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);
