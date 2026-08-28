@@ -1,13 +1,13 @@
-// KAI ONE — Bali Wedding DJ launcher add-on v1
+// KAI ONE — Bali Wedding DJ launcher add-on v2 / Build 8
 // Adds the owner's native Bali Wedding DJ APK to MY APPS without touching ACC publishing state.
 (() => {
   "use strict";
 
-  const REVISION = "KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V1";
+  const REVISION = "KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V2_BUILD8";
   const ROOT_ID = "acc-home-launchpad";
   const APP_KEY = "bali-wedding-dj";
   const PACKAGE = "com.baliweddingdj.app";
-  const ICON_B64 = "./assets/app-launcher/bali-wedding-dj.jpg.b64?rev=BWD_ICON_V1";
+  const ICON_B64 = "./assets/app-launcher/bali-wedding-dj.jpg.b64?rev=BWD_ICON_V2_BUILD8";
   const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
 
   function toast(message){
@@ -20,11 +20,17 @@
   }
 
   async function hydrateIcon(img){
+    if(!img) return;
     try{
-      const response=await fetch(ICON_B64,{cache:"force-cache"});
+      const response=await fetch(ICON_B64,{cache:"no-cache"});
       if(!response.ok) throw new Error("ICON_FETCH_FAILED");
       const b64=(await response.text()).trim();
-      if(!b64) throw new Error("ICON_EMPTY");
+      if(!b64 || !/^\/9j\//.test(b64)) throw new Error("ICON_INVALID_JPEG");
+      img.onload=()=>{ img.style.display="block"; };
+      img.onerror=()=>{
+        img.style.display="none";
+        img.parentElement?.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index","1");
+      };
       img.src=`data:image/jpeg;base64,${b64}`;
     }catch{
       img.style.display="none";
@@ -41,17 +47,13 @@
     button.setAttribute("aria-label","Open Bali Wedding DJ");
     button.innerHTML=`
       <div class="acc-launch-icon">
-        <img alt="" loading="lazy">
+        <img alt="" loading="lazy" style="display:none">
         <span class="acc-launch-icon-fallback">BWD</span>
       </div>
       <div class="acc-launch-title">Bali Wedding DJ</div>
       <div class="acc-launch-status">APK</div>
     `;
     const img=button.querySelector("img");
-    img?.addEventListener("error",()=>{
-      img.style.display="none";
-      button.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index","1");
-    },{once:true});
     if(img) hydrateIcon(img);
     button.addEventListener("click",event=>{
       event.preventDefault();
