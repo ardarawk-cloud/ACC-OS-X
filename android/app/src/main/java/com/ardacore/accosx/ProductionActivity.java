@@ -105,13 +105,14 @@ public class ProductionActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setSafeBrowsingEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.0 ACCOSXAndroid/1.1");
+        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.0 ACCOSXAndroid/1.2");
 
         boolean debuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         WebView.setWebContentsDebuggingEnabled(debuggable);
         webView.setWebViewClient(new ProductionWebViewClient());
         webView.setWebChromeClient(new ProductionChromeClient());
         webView.setDownloadListener(new AccDownloadBridge(this, settings.getUserAgentString()));
+        webView.addJavascriptInterface(new AccAppBridge(this), "ACCAndroid");
     }
 
     private void retryLastPage() {
