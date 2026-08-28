@@ -1,13 +1,12 @@
-// KAI ONE — Bali Wedding DJ launcher add-on v2 / Build 8
-// Adds the owner's native Bali Wedding DJ APK to MY APPS without touching ACC publishing state.
+// KAI ONE — SYNC by Krisbow CCTV launcher add-on v1
+// Adds the owner's installed SYNC by Krisbow app to MY APPS without touching publishing state.
 (() => {
   "use strict";
 
-  const REVISION = "KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V2_BUILD8";
+  const REVISION = "KAI_ONE_SYNC_CCTV_LAUNCHER_V1";
   const ROOT_ID = "acc-home-launchpad";
-  const APP_KEY = "bali-wedding-dj";
-  const PACKAGE = "com.baliweddingdj.app";
-  const ICON_B64 = "./assets/app-launcher/bali-wedding-dj.jpg.b64?rev=BWD_ICON_V2_BUILD8";
+  const APP_KEY = "sync-cctv";
+  const PACKAGE = "com.kawanlama.smartklic";
   const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
 
   function toast(message){
@@ -19,46 +18,36 @@
     setTimeout(()=>node.remove(),2400);
   }
 
-  async function hydrateIcon(img){
-    if(!img) return;
-    try{
-      const response=await fetch(ICON_B64,{cache:"no-cache"});
-      if(!response.ok) throw new Error("ICON_FETCH_FAILED");
-      const b64=(await response.text()).trim();
-      if(!b64 || !/^\/9j\//.test(b64)) throw new Error("ICON_INVALID_JPEG");
-      img.onload=()=>{ img.style.display="block"; };
-      img.onerror=()=>{
-        img.style.display="none";
-        img.parentElement?.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index","1");
-      };
-      img.src=`data:image/jpeg;base64,${b64}`;
-    }catch{
-      img.style.display="none";
-      img.parentElement?.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index","1");
-    }
-  }
-
   function createTile(){
     const button=document.createElement("button");
     button.type="button";
     button.className="acc-launch-card mono";
     button.dataset.ownerApp=APP_KEY;
-    button.style.setProperty("--launch-accent","#e6b85c");
-    button.setAttribute("aria-label","Open Bali Wedding DJ");
+    button.style.setProperty("--launch-accent","#ff7a18");
+    button.setAttribute("aria-label","Open SYNC CCTV");
     button.innerHTML=`
       <div class="acc-launch-icon">
-        <img alt="" loading="lazy" style="display:none">
-        <span class="acc-launch-icon-fallback">BWD</span>
+        <svg viewBox="0 0 100 100" aria-hidden="true" style="width:100%;height:100%;display:block">
+          <defs>
+            <linearGradient id="accSyncCctvGradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ff2638"/>
+              <stop offset="1" stop-color="#ffad12"/>
+            </linearGradient>
+          </defs>
+          <rect x="4" y="4" width="92" height="92" rx="24" fill="url(#accSyncCctvGradient)"/>
+          <path d="M24 39h52a7 7 0 0 1 7 7v21a7 7 0 0 1-7 7H24a7 7 0 0 1-7-7V46a7 7 0 0 1 7-7Z" fill="rgba(0,0,0,.16)"/>
+          <circle cx="50" cy="56" r="13" fill="none" stroke="#fff" stroke-width="6"/>
+          <circle cx="50" cy="56" r="4" fill="#fff"/>
+          <path d="M31 39l7-10h24l7 10" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <div class="acc-launch-title">Bali Wedding DJ</div>
+      <div class="acc-launch-title">SYNC CCTV</div>
       <div class="acc-launch-status">APK</div>
     `;
-    const img=button.querySelector("img");
-    if(img) hydrateIcon(img);
     button.addEventListener("click",event=>{
       event.preventDefault();
       if(!IS_NATIVE_SHELL){
-        toast("Buka dari APK ACC OS X untuk menjalankan Bali Wedding DJ.");
+        toast("Buka dari APK ACC OS X untuk menjalankan SYNC CCTV.");
         return;
       }
       location.href=`accapp://launch?packages=${encodeURIComponent(PACKAGE)}`;
@@ -80,7 +69,7 @@
     const badge=root.querySelector(".acc-launch-head .badge");
     const count=grid.querySelectorAll(".acc-launch-card").length;
     if(badge) badge.textContent=`${count} APPS`;
-    root.dataset.baliWeddingDjRevision=REVISION;
+    root.dataset.syncCctvRevision=REVISION;
     return true;
   }
 
@@ -100,6 +89,6 @@
 
   window.addEventListener("pageshow",schedule);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedule();});
-  window.ACCBaliWeddingDJLauncher={revision:REVISION,packageName:PACKAGE,render:schedule};
+  window.ACCSyncCctvLauncher={revision:REVISION,packageName:PACKAGE,render:schedule};
   schedule();
 })();
