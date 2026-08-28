@@ -21,7 +21,8 @@ final class AccNavigationPolicy {
             "com.accbuilder.accmediadownloader",
             "com.accbuilder.aimashupbootlegstudio",
             "com.acc.contenthub",
-            "com.baliweddingdj.app"
+            "com.baliweddingdj.app",
+            "com.kawanlama.smartklic"
     ));
 
     private AccNavigationPolicy() {}
