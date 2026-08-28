@@ -15,6 +15,7 @@ on:
       - 'bali-wedding-dj-launcher-v1.js'
       - 'sync-cctv-launcher-v1.js'
       - 'publishing-page-aliases-v1.js'
+      - 'publishing-mobile-page-picker-v1.js'
       - 'assets/app-icons/**'
       - 'assets/app-launcher/**'
       - 'wrangler.jsonc'
