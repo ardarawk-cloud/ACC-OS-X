@@ -11,6 +11,7 @@ on:
       - 'division-passports-v1.js'
       - 'owner-*.js'
       - 'my-*.js'
+      - 'service-worker.js'
       - 'legacy-launcher-accordion-v1.js'
       - 'bali-wedding-dj-launcher-v1.js'
       - 'sync-cctv-launcher-v1.js'
@@ -66,7 +67,7 @@ jobs:
 
           sprite_b64 = clean_by_src["assets/app-icons/my-maps-icons-sprite.jpg.b64"]
           sprite_js = (
-              "// Generated during Cloudflare deploy — KAI ONE MY MAPS V6\n"
+              "// Generated during Cloudflare deploy — KAI ONE MY MAPS V8\n"
               "window.ACCMyMapsSpriteDataUrl = \"data:image/jpeg;base64," + sprite_b64 + "\";\n"
           )
           pathlib.Path("my-maps-sprite-data-v1.js").write_text(sprite_js, encoding="utf-8")
@@ -75,6 +76,9 @@ jobs:
           test -s assets/app-icons/my-maps-icons-sprite.jpg
           test -s assets/app-launcher/bali-wedding-dj.jpg
           test -s my-maps-sprite-data-v1.js
+          grep -q 'KAI_ONE_MY_MAPS_V7_IMG_DATA_SPRITE' my-maps-launcher-v1.js
+          grep -q 'KAI_ONE_MY_MAPS_V8_CACHE_RESET' publishing-page-aliases-v1.js
+          grep -q 'acc-os-x-build9-maps-v8-cache-reset' service-worker.js
 
       - name: Deploy production Worker
         id: deploy
