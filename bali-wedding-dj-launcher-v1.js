@@ -1,13 +1,13 @@
-// KAI ONE — Bali Wedding DJ launcher add-on v2 / Build 8
-// Adds the owner's native Bali Wedding DJ APK to MY APPS without touching ACC publishing state.
+// KAI ONE — Bali Wedding DJ launcher add-on v3
+// Uses a real same-origin JPG materialized during Cloudflare deploy.
 (() => {
   "use strict";
 
-  const REVISION = "KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V2_BUILD8";
+  const REVISION = "KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V3_DIRECT_JPG";
   const ROOT_ID = "acc-home-launchpad";
   const APP_KEY = "bali-wedding-dj";
   const PACKAGE = "com.baliweddingdj.app";
-  const ICON_B64 = "./assets/app-launcher/bali-wedding-dj.jpg.b64?rev=BWD_ICON_V2_BUILD8";
+  const ICON_URL = "./assets/app-launcher/bali-wedding-dj.jpg?rev=BWD_ICON_V3_DIRECT_JPG";
   const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
 
   function toast(message){
@@ -19,25 +19,6 @@
     setTimeout(()=>node.remove(),2400);
   }
 
-  async function hydrateIcon(img){
-    if(!img) return;
-    try{
-      const response=await fetch(ICON_B64,{cache:"no-cache"});
-      if(!response.ok) throw new Error("ICON_FETCH_FAILED");
-      const b64=(await response.text()).trim();
-      if(!b64 || !/^\/9j\//.test(b64)) throw new Error("ICON_INVALID_JPEG");
-      img.onload=()=>{ img.style.display="block"; };
-      img.onerror=()=>{
-        img.style.display="none";
-        img.parentElement?.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index","1");
-      };
-      img.src=`data:image/jpeg;base64,${b64}`;
-    }catch{
-      img.style.display="none";
-      img.parentElement?.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index","1");
-    }
-  }
-
   function createTile(){
     const button=document.createElement("button");
     button.type="button";
@@ -47,14 +28,17 @@
     button.setAttribute("aria-label","Open Bali Wedding DJ");
     button.innerHTML=`
       <div class="acc-launch-icon">
-        <img alt="" loading="lazy" style="display:none">
+        <img src="${ICON_URL}" alt="" loading="lazy">
         <span class="acc-launch-icon-fallback">BWD</span>
       </div>
       <div class="acc-launch-title">Bali Wedding DJ</div>
       <div class="acc-launch-status">APK</div>
     `;
     const img=button.querySelector("img");
-    if(img) hydrateIcon(img);
+    if(img) img.addEventListener("error",()=>{
+      img.style.display="none";
+      img.parentElement?.querySelector(".acc-launch-icon-fallback")?.style.setProperty("z-index","1");
+    },{once:true});
     button.addEventListener("click",event=>{
       event.preventDefault();
       if(!IS_NATIVE_SHELL){
@@ -72,8 +56,10 @@
     if(!root || !grid) return false;
 
     let tile=grid.querySelector(`[data-owner-app="${APP_KEY}"]`);
+    if(tile && tile.dataset.bwdRevision!==REVISION){ tile.remove(); tile=null; }
     if(!tile){
       tile=createTile();
+      tile.dataset.bwdRevision=REVISION;
       grid.appendChild(tile);
     }
 
@@ -95,7 +81,7 @@
 
   new MutationObserver(()=>{
     const root=document.getElementById(ROOT_ID);
-    if(!root?.querySelector(`[data-owner-app="${APP_KEY}"]`)) schedule();
+    if(!root?.querySelector(`[data-owner-app="${APP_KEY}"][data-bwd-revision="${REVISION}"]`)) schedule();
   }).observe(document.documentElement,{childList:true,subtree:true});
 
   window.addEventListener("pageshow",schedule);
