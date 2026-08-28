@@ -74,6 +74,16 @@
   document.head.appendChild(script);
 })();
 
+// KAI ONE — SYNC by Krisbow CCTV native APK tile. Staged for Build 8 stabilization.
+(() => {
+  if (document.querySelector('script[data-acc-sync-cctv-launcher="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./sync-cctv-launcher-v1.js?rev=KAI_ONE_SYNC_CCTV_LAUNCHER_V1";
+  script.dataset.accSyncCctvLauncher = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 // KAI ONE — local AI Mashup icon hotfix. Avoids raw GitHub image loading issues in Android WebView.
 (() => {
   if (document.querySelector('script[data-acc-ai-mashup-icon-fix="v1"]')) return;
