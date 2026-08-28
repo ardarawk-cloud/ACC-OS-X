@@ -64,6 +64,16 @@
   document.head.appendChild(script);
 })();
 
+// KAI ONE — Bali Wedding DJ native APK tile. Loaded after MY APPS and isolated from publishing state.
+(() => {
+  if (document.querySelector('script[data-acc-bali-wedding-dj-launcher="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V1";
+  script.dataset.accBaliWeddingDjLauncher = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 // KAI ONE — local AI Mashup icon hotfix. Avoids raw GitHub image loading issues in Android WebView.
 (() => {
   if (document.querySelector('script[data-acc-ai-mashup-icon-fix="v1"]')) return;
