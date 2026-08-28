@@ -42,11 +42,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode assets/app-icons/my-maps-icons-sprite.jpg.b64 > assets/app-icons/my-maps-icons-sprite.jpg
-          base64 --decode assets/app-launcher/bali-wedding-dj.jpg.b64 > assets/app-launcher/bali-wedding-dj.jpg
+          python - <<'PY'
+          import base64
+          import pathlib
+          import re
+
+          pairs = [
+              ("assets/app-icons/my-maps-icons-sprite.jpg.b64", "assets/app-icons/my-maps-icons-sprite.jpg"),
+              ("assets/app-launcher/bali-wedding-dj.jpg.b64", "assets/app-launcher/bali-wedding-dj.jpg"),
+          ]
+          for src, dst in pairs:
+              raw = pathlib.Path(src).read_text(encoding="utf-8", errors="ignore")
+              clean = "".join(re.findall(r"[A-Za-z0-9+/=]", raw))
+              clean += "=" * ((-len(clean)) % 4)
+              data = base64.b64decode(clean, validate=False)
+              if not data.startswith(b"\xff\xd8\xff"):
+                  raise SystemExit(f"Decoded asset is not JPEG: {src}")
+              pathlib.Path(dst).write_bytes(data)
+              print(f"Materialized {dst}: {len(data)} bytes")
+          PY
           test -s assets/app-icons/my-maps-icons-sprite.jpg
           test -s assets/app-launcher/bali-wedding-dj.jpg
-          echo "Local launcher JPG assets materialized."
 
       - name: Deploy production Worker
         id: deploy
