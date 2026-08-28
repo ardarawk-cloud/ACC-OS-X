@@ -1,10 +1,11 @@
-// KAI ONE — Owner-confirmed Facebook Page alias mapping v1
+// KAI ONE — Owner-confirmed Facebook Page alias mapping v2 / Build 8
 (() => {
   "use strict";
   const STATE_KEY = "acc_os_x_ecosystem_v214";
-  const REVISION = "KAI_ONE_OWNER_PAGE_ALIASES_V1";
+  const REVISION = "KAI_ONE_OWNER_PAGE_ALIASES_V2_BUILD8";
   const ALIASES = {
-    "ch-arda-gaming": { id:"1296361826889422", name:"Arda Gaming" }
+    "ch-arda-gaming": { id:"1296361826889422", name:"Arda Gaming" },
+    "ch-mr-laziz": { id:"102412098142218", name:"Mister Laziz" }
   };
 
   function readState(){
@@ -58,57 +59,77 @@
 (() => {
   if (document.querySelector('script[data-acc-owner-app-launcher="v2"]')) return;
   const script = document.createElement("script");
-  script.src = "./owner-app-launcher-v2.js?rev=KAI_ONE_OWNER_APP_LAUNCHER_V3_OFFICIAL_ICONS";
+  script.src = "./owner-app-launcher-v2.js?rev=KAI_ONE_OWNER_APP_LAUNCHER_V3_OFFICIAL_ICONS_BUILD8";
   script.dataset.accOwnerAppLauncher = "v2";
   script.async = false;
   document.head.appendChild(script);
 })();
 
-// KAI ONE — Bali Wedding DJ native APK tile. Loaded after MY APPS and isolated from publishing state.
+// KAI ONE — Bali Wedding DJ native APK tile.
 (() => {
   if (document.querySelector('script[data-acc-bali-wedding-dj-launcher="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V1";
+  script.src = "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V2_BUILD8";
   script.dataset.accBaliWeddingDjLauncher = "v1";
   script.async = false;
   document.head.appendChild(script);
 })();
 
-// KAI ONE — SYNC by Krisbow CCTV native APK tile. Staged for Build 8 stabilization.
+// KAI ONE — SYNC by Krisbow CCTV native APK tile.
 (() => {
   if (document.querySelector('script[data-acc-sync-cctv-launcher="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./sync-cctv-launcher-v1.js?rev=KAI_ONE_SYNC_CCTV_LAUNCHER_V1";
+  script.src = "./sync-cctv-launcher-v1.js?rev=KAI_ONE_SYNC_CCTV_LAUNCHER_V1_BUILD8";
   script.dataset.accSyncCctvLauncher = "v1";
   script.async = false;
   document.head.appendChild(script);
 })();
 
-// KAI ONE — local AI Mashup icon hotfix. Avoids raw GitHub image loading issues in Android WebView.
+// Build 8 — mobile publish result stabilization.
+(() => {
+  if (document.querySelector('script[data-acc-build8-ui="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./build8-ui-stabilization-v1.js?rev=KAI_ONE_BUILD8_UI_V1";
+  script.dataset.accBuild8Ui = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
+// Build 8 — exact-safe Meta Page reconciliation after sync.
+(() => {
+  if (document.querySelector('script[data-acc-publish-sync-reconcile="v2"]')) return;
+  const script = document.createElement("script");
+  script.src = "./publishing-sync-reconcile-v2.js?rev=KAI_ONE_PUBLISH_SYNC_RECONCILE_V2_BUILD8";
+  script.dataset.accPublishSyncReconcile = "v2";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
+// KAI ONE — local AI Mashup icon hotfix.
 (() => {
   if (document.querySelector('script[data-acc-ai-mashup-icon-fix="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./ai-mashup-icon-fix-v1.js?rev=KAI_ONE_AI_MASHUP_LOCAL_ICON_V1";
+  script.src = "./ai-mashup-icon-fix-v1.js?rev=KAI_ONE_AI_MASHUP_LOCAL_ICON_V1_BUILD8";
   script.dataset.accAiMashupIconFix = "v1";
   script.async = false;
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS Roblox launcher. Loaded after MY APPS and kept isolated from publishing/channel state.
+// KAI ONE — MY MAPS Roblox launcher using validated local sprite.
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V3_LOCAL_SPRITE";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V4_VALID_SPRITE_BUILD8";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY PROJECTS ChatGPT launcher. Owner-provided direct project URLs only.
+// KAI ONE — MY PROJECTS ChatGPT launcher.
 (() => {
   if (document.querySelector('script[data-acc-my-projects="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V2_VECTOR_ICONS";
+  script.src = "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V2_VECTOR_ICONS_BUILD8";
   script.dataset.accMyProjects = "v1";
   script.async = false;
   document.head.appendChild(script);
