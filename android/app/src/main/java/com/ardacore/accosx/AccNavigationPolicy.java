@@ -75,10 +75,18 @@ final class AccNavigationPolicy {
 
     private static boolean launchAllowedPackage(Context context, String packageName) {
         if (!ALLOWED_PACKAGES.contains(packageName)) return false;
-        Intent launch = context.getPackageManager().getLaunchIntentForPackage(packageName);
-        if (launch == null) return false;
-        launch.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-        context.startActivity(launch);
-        return true;
+        try {
+            Intent launch = context.getPackageManager().getLaunchIntentForPackage(packageName);
+            if (launch == null) {
+                launch = new Intent(Intent.ACTION_MAIN);
+                launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                launch.setPackage(packageName);
+            }
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+            context.startActivity(launch);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 }
