@@ -78,7 +78,7 @@
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V2_DIRECT_ICONS";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V3_LOCAL_SPRITE";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);
