@@ -125,11 +125,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS Roblox launcher using real local JPG sprite.
+// KAI ONE — MY MAPS Roblox launcher using deploy-generated inline sprite data bridge.
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V5_DIRECT_LOCAL_JPG";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V6_INLINE_DATA_BRIDGE";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);

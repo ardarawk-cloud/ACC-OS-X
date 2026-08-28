@@ -52,6 +52,7 @@ jobs:
               ("assets/app-icons/my-maps-icons-sprite.jpg.b64", "assets/app-icons/my-maps-icons-sprite.jpg"),
               ("assets/app-launcher/bali-wedding-dj.jpg.b64", "assets/app-launcher/bali-wedding-dj.jpg"),
           ]
+          clean_by_src = {}
           for src, dst in pairs:
               raw = pathlib.Path(src).read_text(encoding="utf-8", errors="ignore")
               clean = "".join(re.findall(r"[A-Za-z0-9+/=]", raw))
@@ -60,10 +61,20 @@ jobs:
               if not data.startswith(b"\xff\xd8\xff"):
                   raise SystemExit(f"Decoded asset is not JPEG: {src}")
               pathlib.Path(dst).write_bytes(data)
+              clean_by_src[src] = clean
               print(f"Materialized {dst}: {len(data)} bytes")
+
+          sprite_b64 = clean_by_src["assets/app-icons/my-maps-icons-sprite.jpg.b64"]
+          sprite_js = (
+              "// Generated during Cloudflare deploy — KAI ONE MY MAPS V6\n"
+              "window.ACCMyMapsSpriteDataUrl = \"data:image/jpeg;base64," + sprite_b64 + "\";\n"
+          )
+          pathlib.Path("my-maps-sprite-data-v1.js").write_text(sprite_js, encoding="utf-8")
+          print(f"Materialized my-maps-sprite-data-v1.js: {len(sprite_js)} chars")
           PY
           test -s assets/app-icons/my-maps-icons-sprite.jpg
           test -s assets/app-launcher/bali-wedding-dj.jpg
+          test -s my-maps-sprite-data-v1.js
 
       - name: Deploy production Worker
         id: deploy
