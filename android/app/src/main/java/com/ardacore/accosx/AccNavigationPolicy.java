@@ -20,7 +20,8 @@ final class AccNavigationPolicy {
             "com.kai.casinox",
             "com.accbuilder.accmediadownloader",
             "com.accbuilder.aimashupbootlegstudio",
-            "com.acc.contenthub"
+            "com.acc.contenthub",
+            "com.baliweddingdj.app"
     ));
 
     private AccNavigationPolicy() {}
