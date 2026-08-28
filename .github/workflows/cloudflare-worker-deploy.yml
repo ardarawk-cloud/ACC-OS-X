@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'kai-one/build9-cloudflare-deploy'
     paths:
       - 'worker-*.js'
       - 'produce-copilot-publish-queue-v1.js'
