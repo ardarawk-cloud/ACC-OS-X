@@ -1,4 +1,4 @@
-const CACHE="acc-os-x-build8-stabilization-v1";
+const CACHE="acc-os-x-build9-maps-v8-cache-reset";
 const CORE=[
   "./",
   "./index.html",
@@ -12,13 +12,14 @@ const CORE=[
   "./pwa-owner-safety-v1.js?rev=PWA_OWNER_SAFETY_V1",
   "./publishing-unmatched-meta-diagnostic-v1.js?rev=KAI_ONE_META_DIAGNOSTIC_V1",
   "./publishing-mobile-page-picker-v1.js?rev=KAI_ONE_MOBILE_PAGE_PICKER_V1",
-  "./publishing-page-aliases-v1.js?rev=KAI_ONE_OWNER_PAGE_ALIASES_V2_BUILD8",
+  "./publishing-page-aliases-v1.js?rev=KAI_ONE_OWNER_PAGE_ALIASES_V3_MAPS_V8",
   "./publishing-sync-reconcile-v2.js?rev=KAI_ONE_PUBLISH_SYNC_RECONCILE_V2_BUILD8",
   "./build8-ui-stabilization-v1.js?rev=KAI_ONE_BUILD8_UI_V1",
-  "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V2_BUILD8",
+  "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V3_DIRECT_JPG",
   "./sync-cctv-launcher-v1.js?rev=KAI_ONE_SYNC_CCTV_LAUNCHER_V1_BUILD8",
-  "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V4_VALID_SPRITE_BUILD8",
-  "./assets/app-icons/my-maps-icons-sprite.jpg.b64?rev=KAI_ONE_MY_MAPS_V4_VALID_SPRITE_BUILD8",
+  "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET",
+  "./my-maps-sprite-data-v1.js?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET",
+  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET",
   "./manifest.webmanifest",
   "./acc-os-x-192-build250.png",
   "./acc-os-x-512-build250.png",
@@ -41,6 +42,8 @@ const FORCE_FRESH=new Set([
   "/bali-wedding-dj-launcher-v1.js",
   "/sync-cctv-launcher-v1.js",
   "/my-maps-launcher-v1.js",
+  "/my-maps-sprite-data-v1.js",
+  "/assets/app-icons/my-maps-icons-sprite.jpg",
   "/assets/app-icons/my-maps-icons-sprite.jpg.b64"
 ]);
 self.addEventListener("install",event=>event.waitUntil(
