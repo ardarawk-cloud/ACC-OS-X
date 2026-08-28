@@ -2,6 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <queries>
+        <!-- ACC / owner apps -->
         <package android:name="com.acc.cleaner" />
         <package android:name="com.kaitradex.app.dev" />
         <package android:name="com.kaitradex.app" />
@@ -12,6 +13,61 @@
         <package android:name="com.acc.contenthub" />
         <package android:name="com.baliweddingdj.app" />
         <package android:name="com.kawanlama.smartklic" />
+
+        <!-- Finance -->
+        <package android:name="com.bca.mybca.omni.android" />
+        <package android:name="com.bcadigital.blu" />
+        <package android:name="com.gojek.gopay" />
+        <package android:name="id.dana" />
+        <package android:name="com.shopeepay.id" />
+        <package android:name="ovo.id" />
+        <package android:name="com.honestbank.android" />
+        <package android:name="com.dokuwallet.android" />
+        <package android:name="com.bnc.finance" />
+        <package android:name="id.co.bankbkemobile.digitalbank" />
+        <package android:name="com.jago.digitalBanking" />
+        <package android:name="com.alloapp.yump" />
+        <package android:name="com.treasury.apps" />
+        <package android:name="com.binance.cloud.tokocrypto" />
+        <package android:name="id.co.bitcoin" />
+        <package android:name="com.bibit.bibitid" />
+        <package android:name="io.metamask" />
+        <package android:name="id.co.bankfama.android" />
+        <package android:name="com.paypal.android.p2pmobile" />
+
+        <!-- Social -->
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.google.android.apps.youtube.music" />
+        <package android:name="com.google.android.apps.youtube.creator" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.instagram.barcelona" />
+        <package android:name="com.twitter.android" />
+
+        <!-- Communication -->
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.facebook.orca" />
+        <package android:name="com.bitchat.droid" />
+        <package android:name="com.discord" />
+        <package android:name="us.zoom.videomeetings" />
+
+        <!-- Commercial -->
+        <package android:name="com.gojek.app" />
+        <package android:name="com.grabtaxi.passenger" />
+        <package android:name="com.taxsee.taxsee" />
+        <package android:name="com.shopee.id" />
+        <package android:name="com.shopee.shopeeseller" />
+        <package android:name="com.icon.pln123" />
+        <package android:name="com.dafturn.mypertamina" />
+        <package android:name="com.tokopedia.tkpd" />
+
+        <!-- Health -->
+        <package android:name="app.bpjs.mobile" />
+        <package android:name="com.bpjstku" />
+        <package android:name="com.linkdokter.halodoc.android" />
     </queries>
 
     <application

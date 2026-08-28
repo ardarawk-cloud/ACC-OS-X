@@ -13,6 +13,7 @@ final class AccNavigationPolicy {
     static final String FRONTEND_HOST = "acc-os-x-baxkup.ardarawk.workers.dev";
 
     private static final Set<String> ALLOWED_PACKAGES = new HashSet<>(Arrays.asList(
+            // ACC / owner apps
             "com.acc.cleaner",
             "com.kaitradex.app.dev",
             "com.kaitradex.app",
@@ -22,10 +23,79 @@ final class AccNavigationPolicy {
             "com.accbuilder.aimashupbootlegstudio",
             "com.acc.contenthub",
             "com.baliweddingdj.app",
-            "com.kawanlama.smartklic"
+            "com.kawanlama.smartklic",
+
+            // Finance
+            "com.bca.mybca.omni.android",
+            "com.bcadigital.blu",
+            "com.gojek.gopay",
+            "id.dana",
+            "com.shopeepay.id",
+            "ovo.id",
+            "com.honestbank.android",
+            "com.dokuwallet.android",
+            "com.bnc.finance",
+            "id.co.bankbkemobile.digitalbank",
+            "com.jago.digitalBanking",
+            "com.alloapp.yump",
+            "com.treasury.apps",
+            "com.binance.cloud.tokocrypto",
+            "id.co.bitcoin",
+            "com.bibit.bibitid",
+            "io.metamask",
+            "id.co.bankfama.android",
+            "com.paypal.android.p2pmobile",
+
+            // Social
+            "com.facebook.katana",
+            "com.google.android.youtube",
+            "com.google.android.apps.youtube.music",
+            "com.google.android.apps.youtube.creator",
+            "com.instagram.android",
+            "com.zhiliaoapp.musically",
+            "com.instagram.barcelona",
+            "com.twitter.android",
+
+            // Communication
+            "com.whatsapp",
+            "com.whatsapp.w4b",
+            "org.telegram.messenger",
+            "com.facebook.orca",
+            "com.bitchat.droid",
+            "com.discord",
+            "us.zoom.videomeetings",
+
+            // Commercial
+            "com.gojek.app",
+            "com.grabtaxi.passenger",
+            "com.taxsee.taxsee",
+            "com.shopee.id",
+            "com.shopee.shopeeseller",
+            "com.icon.pln123",
+            "com.dafturn.mypertamina",
+            "com.tokopedia.tkpd",
+
+            // Health
+            "app.bpjs.mobile",
+            "com.bpjstku",
+            "com.linkdokter.halodoc.android"
     ));
 
     private AccNavigationPolicy() {}
+
+    static boolean isPackageAllowed(String packageName) {
+        return packageName != null && ALLOWED_PACKAGES.contains(packageName);
+    }
+
+    static boolean isInstalled(Context context, String packageName) {
+        if (!isPackageAllowed(packageName)) return false;
+        try {
+            context.getPackageManager().getApplicationInfo(packageName, 0);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
 
     static boolean isInternal(Uri uri) {
         if (uri == null) return false;
@@ -75,7 +145,7 @@ final class AccNavigationPolicy {
     }
 
     private static boolean launchAllowedPackage(Context context, String packageName) {
-        if (!ALLOWED_PACKAGES.contains(packageName)) return false;
+        if (!isPackageAllowed(packageName)) return false;
         try {
             Intent launch = context.getPackageManager().getLaunchIntentForPackage(packageName);
             if (launch == null) {
