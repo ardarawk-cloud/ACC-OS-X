@@ -76,7 +76,7 @@ jobs:
           test -s assets/app-icons/my-maps-icons-sprite.jpg
           test -s assets/app-launcher/bali-wedding-dj.jpg
           test -s my-maps-sprite-data-v1.js
-          grep -q 'KAI_ONE_MY_MAPS_V7_IMG_DATA_SPRITE' my-maps-launcher-v1.js
+          grep -q 'KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG' my-maps-launcher-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V8_CACHE_RESET' publishing-page-aliases-v1.js
           grep -q 'acc-os-x-build9-maps-v8-cache-reset' service-worker.js
 
