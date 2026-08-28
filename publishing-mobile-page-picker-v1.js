@@ -1,13 +1,13 @@
-// KAI ONE — Publishing Hub Mobile Page Picker v2
-// Android-safe direct owner mapping. Does not depend on native <select> or the legacy click handler.
+// KAI ONE — Publishing Hub Mobile Page Picker v3
+// Android-safe direct owner mapping. Does not depend on native <select>, <details>, or the legacy click handler.
 (() => {
   "use strict";
 
-  const REVISION = "KAI_ONE_DIRECT_OWNER_PAGE_MAP_V2";
+  const REVISION = "KAI_ONE_DIRECT_OWNER_PAGE_MAP_V3_ANDROID_TOGGLE";
   const STATE_KEY = "acc_os_x_ecosystem_v214";
   const SAFE_CARD_ID = "acc-safe-publish-admin";
   const PICKER_ID = "acc-mobile-page-picker-v1";
-  const STYLE_ID = "acc-mobile-page-picker-style-v2";
+  const STYLE_ID = "acc-mobile-page-picker-style-v3";
 
   const CONFIRMED_PAGE_BY_CHANNEL = {
     "ch-arda-gaming": { id:"1296361826889422", name:"Arda Gaming" },
@@ -63,8 +63,7 @@
       #${PICKER_ID} .acc-mobile-page-btn.recommended{border-color:#55e6a5;background:rgba(10,161,116,.15)}
       #${PICKER_ID} .acc-mobile-page-btn.current{border-color:#3b82f6;background:rgba(59,130,246,.12)}
       #${PICKER_ID} .acc-mobile-page-btn:disabled{opacity:.72}
-      #${PICKER_ID} details{margin-top:10px}
-      #${PICKER_ID} summary{cursor:pointer;color:var(--muted,#8390aa);font-size:.72rem;font-weight:900;letter-spacing:.05em;touch-action:manipulation}
+      #${PICKER_ID} .acc-mobile-pages-toggle{width:100%;min-height:48px;margin-top:10px;padding:10px 12px;text-align:left;border:1px solid var(--line,#25324a);border-radius:12px;background:transparent;color:var(--muted,#8390aa);font-size:.72rem;font-weight:900;letter-spacing:.05em;touch-action:manipulation;pointer-events:auto;-webkit-tap-highlight-color:transparent}
       #${PICKER_ID} .acc-direct-status{margin-top:8px;font-size:.7rem;color:var(--muted,#8390aa)}
     `;
     document.head.appendChild(style);
@@ -157,8 +156,6 @@
       setTimeout(() => location.reload(), 120);
     };
 
-    // pointerdown is intentional: the older safety layer rebuilds the card on click.
-    // Saving before click avoids Android/WebView losing the target during that rebuild.
     button.addEventListener("pointerdown", apply, { passive:false });
     button.addEventListener("touchstart", apply, { passive:false });
     button.addEventListener("mousedown", apply, { passive:false });
@@ -167,6 +164,37 @@
       event.stopPropagation();
       if (!handled) apply(event);
     });
+    return button;
+  }
+
+  function makeListToggle(list, count) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "acc-mobile-pages-toggle mono";
+    let expanded = false;
+    let lastToggleAt = 0;
+
+    const render = () => {
+      button.textContent = `${expanded ? "HIDE" : "SHOW ALL"} FACEBOOK PAGES (${count})`;
+      button.setAttribute("aria-expanded", expanded ? "true" : "false");
+      list.style.setProperty("display", expanded ? "grid" : "none", "important");
+    };
+
+    const toggle = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const now = Date.now();
+      if (now - lastToggleAt < 320) return;
+      lastToggleAt = now;
+      expanded = !expanded;
+      render();
+    };
+
+    button.addEventListener("pointerdown", toggle, { passive:false });
+    button.addEventListener("touchstart", toggle, { passive:false });
+    button.addEventListener("mousedown", toggle, { passive:false });
+    button.addEventListener("click", toggle, { passive:false });
+    render();
     return button;
   }
 
@@ -228,14 +256,10 @@
     });
 
     if (!target?.pageId && remaining.length) {
-      const details = document.createElement("details");
-      const summary = document.createElement("summary");
-      summary.textContent = `SHOW ALL FACEBOOK PAGES (${remaining.length})`;
       const all = document.createElement("div");
       all.className = "acc-mobile-page-list";
       remaining.forEach(page => all.appendChild(makePageButton(channelId, page)));
-      details.append(summary, all);
-      picker.appendChild(details);
+      picker.append(makeListToggle(all, remaining.length), all);
     }
 
     const status = document.createElement("div");
