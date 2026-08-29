@@ -1,5 +1,5 @@
 const CACHE="acc-os-x-build9-page-picker-v4";
-// Legacy deploy validation marker retained intentionally: acc-os-x-build9-maps-v8-cache-reset
+const MAP_CACHE="acc-os-x-maps-v9-known-good";
 const CORE=[
   "./",
   "./index.html",
@@ -18,9 +18,6 @@ const CORE=[
   "./build8-ui-stabilization-v1.js?rev=KAI_ONE_BUILD8_UI_V1",
   "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V3_DIRECT_JPG",
   "./sync-cctv-launcher-v1.js?rev=KAI_ONE_SYNC_CCTV_LAUNCHER_V1_BUILD8",
-  "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET",
-  "./my-maps-sprite-data-v1.js?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET",
-  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET",
   "./manifest.webmanifest",
   "./acc-os-x-192-build250.png",
   "./acc-os-x-512-build250.png",
@@ -31,6 +28,10 @@ const CORE=[
 ];
 const LEGACY_CONNECTOR_HOST="acc-publish-connector.ardarawk.workers.dev";
 const V2_CONNECTOR_HOST="acc-publish-connectorv2.ardarawk.workers.dev";
+const MAP_NETWORK_PATHS=new Set([
+  "/my-maps-launcher-v1.js",
+  "/assets/app-icons/my-maps-icons-sprite.jpg"
+]);
 const FORCE_FRESH=new Set([
   "/",
   "/index.html",
@@ -42,17 +43,13 @@ const FORCE_FRESH=new Set([
   "/publishing-sync-reconcile-v2.js",
   "/build8-ui-stabilization-v1.js",
   "/bali-wedding-dj-launcher-v1.js",
-  "/sync-cctv-launcher-v1.js",
-  "/my-maps-launcher-v1.js",
-  "/my-maps-sprite-data-v1.js",
-  "/assets/app-icons/my-maps-icons-sprite.jpg",
-  "/assets/app-icons/my-maps-icons-sprite.jpg.b64"
+  "/sync-cctv-launcher-v1.js"
 ]);
 self.addEventListener("install",event=>event.waitUntil(
   caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())
 ));
 self.addEventListener("activate",event=>event.waitUntil(
-  caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())
+  caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE&&key!==MAP_CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())
 ));
 self.addEventListener("fetch",event=>{
   const url=new URL(event.request.url);
@@ -64,6 +61,24 @@ self.addEventListener("fetch",event=>{
   }
   if(event.request.method!=="GET")return;
   if(url.pathname.startsWith("/api/"))return;
+
+  // MY MAPS is intentionally isolated from the general app cache.
+  // Network-first preserves the verified V9 JPG renderer, while a dedicated
+  // path-keyed fallback keeps the last known-good launcher/sprite across unrelated deploys.
+  if(MAP_NETWORK_PATHS.has(url.pathname)){
+    const mapKey=new Request(`${url.origin}${url.pathname}`);
+    const request=new Request(event.request,{cache:"reload"});
+    event.respondWith(
+      fetch(request).then(response=>{
+        if(response.ok){
+          const copy=response.clone();
+          caches.open(MAP_CACHE).then(cache=>cache.put(mapKey,copy)).catch(()=>{});
+        }
+        return response;
+      }).catch(()=>caches.open(MAP_CACHE).then(cache=>cache.match(mapKey)).then(hit=>hit||Response.error()))
+    );
+    return;
+  }
 
   const request=FORCE_FRESH.has(url.pathname)
     ? new Request(event.request,{cache:"reload"})

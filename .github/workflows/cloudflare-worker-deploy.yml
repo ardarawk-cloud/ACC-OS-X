@@ -78,7 +78,7 @@ jobs:
           test -s my-maps-sprite-data-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG' my-maps-launcher-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V8_CACHE_RESET' publishing-page-aliases-v1.js
-          grep -q 'acc-os-x-build9-maps-v8-cache-reset' service-worker.js
+          grep -q 'acc-os-x-maps-v9-known-good' service-worker.js
 
       - name: Deploy production Worker
         id: deploy
