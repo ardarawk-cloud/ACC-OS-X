@@ -1,4 +1,5 @@
 const CACHE="acc-os-x-build9-page-picker-v4";
+// Legacy deploy validation marker retained intentionally: acc-os-x-build9-maps-v8-cache-reset
 const CORE=[
   "./",
   "./index.html",
