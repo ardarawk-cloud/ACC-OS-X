@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ServiceWorkerClient;
+import android.webkit.ServiceWorkerController;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -32,6 +34,7 @@ public class ProductionActivity extends Activity {
     private ValueCallback<Uri[]> filePathCallback;
     private String lastInternalUrl = HOME_URL;
     private boolean loadFailed;
+    private AccNativeAssets nativeAssets;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -105,7 +108,9 @@ public class ProductionActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setSafeBrowsingEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.0 ACCOSXAndroid/1.2");
+        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.1 ACCOSXAndroid/1.2.1 Build10");
+
+        nativeAssets = new AccNativeAssets(this);
 
         boolean debuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         WebView.setWebContentsDebuggingEnabled(debuggable);
@@ -113,6 +118,18 @@ public class ProductionActivity extends Activity {
         webView.setWebChromeClient(new ProductionChromeClient());
         webView.setDownloadListener(new AccDownloadBridge(this, settings.getUserAgentString()));
         webView.addJavascriptInterface(new AccAppBridge(this), "ACCAndroid");
+        webView.addJavascriptInterface(nativeAssets, "ACCNativeAssets");
+
+        ServiceWorkerController.getInstance().setServiceWorkerClient(new ServiceWorkerClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
+                if (nativeAssets != null && AccNativeAssets.isMapSpriteRequest(request.getUrl())) {
+                    WebResourceResponse response = nativeAssets.openMapSpriteResponse();
+                    if (response != null) return response;
+                }
+                return null;
+            }
+        });
     }
 
     private void retryLastPage() {
@@ -147,6 +164,15 @@ public class ProductionActivity extends Activity {
             Uri uri = Uri.parse(url);
             if (AccNavigationPolicy.isInternal(uri)) return false;
             return AccNavigationPolicy.openExternal(ProductionActivity.this, uri);
+        }
+
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            if (nativeAssets != null && AccNativeAssets.isMapSpriteRequest(request.getUrl())) {
+                WebResourceResponse response = nativeAssets.openMapSpriteResponse();
+                if (response != null) return response;
+            }
+            return super.shouldInterceptRequest(view, request);
         }
 
         @Override
