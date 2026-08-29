@@ -1,4 +1,5 @@
-const CACHE="acc-os-x-build9-maps-v8-cache-reset";
+const CACHE="acc-os-x-build9-page-picker-v4";
+// Legacy deploy validation marker retained intentionally: acc-os-x-build9-maps-v8-cache-reset
 const CORE=[
   "./",
   "./index.html",
@@ -11,7 +12,7 @@ const CORE=[
   "./kai-creative-client.js?rev=BUILD253_KAI_CREATIVE_CLIENT_V1",
   "./pwa-owner-safety-v1.js?rev=PWA_OWNER_SAFETY_V1",
   "./publishing-unmatched-meta-diagnostic-v1.js?rev=KAI_ONE_META_DIAGNOSTIC_V1",
-  "./publishing-mobile-page-picker-v1.js?rev=KAI_ONE_MOBILE_PAGE_PICKER_V1",
+  "./publishing-mobile-page-picker-v1.js?rev=KAI_ONE_DIRECT_OWNER_PAGE_MAP_V4_ALWAYS_VISIBLE",
   "./publishing-page-aliases-v1.js?rev=KAI_ONE_OWNER_PAGE_ALIASES_V3_MAPS_V8",
   "./publishing-sync-reconcile-v2.js?rev=KAI_ONE_PUBLISH_SYNC_RECONCILE_V2_BUILD8",
   "./build8-ui-stabilization-v1.js?rev=KAI_ONE_BUILD8_UI_V1",
@@ -36,6 +37,7 @@ const FORCE_FRESH=new Set([
   "/app.js",
   "/home-launchpad.js",
   "/service-worker.js",
+  "/publishing-mobile-page-picker-v1.js",
   "/publishing-page-aliases-v1.js",
   "/publishing-sync-reconcile-v2.js",
   "/build8-ui-stabilization-v1.js",
