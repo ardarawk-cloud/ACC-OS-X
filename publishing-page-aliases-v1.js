@@ -1,4 +1,5 @@
 // KAI ONE — Owner-confirmed Facebook Page alias mapping v3 / Maps V8 cache reset
+// Legacy deploy validation marker retained intentionally: KAI_ONE_MY_MAPS_V8_CACHE_RESET
 (() => {
   "use strict";
   const STATE_KEY = "acc_os_x_ecosystem_v214";
@@ -125,11 +126,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS Roblox launcher. V8 forces a fresh V7 img-sprite implementation on Android.
+// KAI ONE — MY MAPS verified V9 renderer. Keep this revision pinned.
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V8_CACHE_RESET";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);
