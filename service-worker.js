@@ -1,5 +1,9 @@
 const CACHE="acc-os-x-build9-page-picker-v4";
 const MAP_CACHE="acc-os-x-maps-v9-known-good";
+const MAP_CORE=[
+  "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG",
+  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG"
+];
 const CORE=[
   "./",
   "./index.html",
@@ -46,7 +50,10 @@ const FORCE_FRESH=new Set([
   "/sync-cctv-launcher-v1.js"
 ]);
 self.addEventListener("install",event=>event.waitUntil(
-  caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())
+  Promise.all([
+    caches.open(CACHE).then(cache=>cache.addAll(CORE)),
+    caches.open(MAP_CACHE).then(cache=>cache.addAll(MAP_CORE))
+  ]).then(()=>self.skipWaiting())
 ));
 self.addEventListener("activate",event=>event.waitUntil(
   caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE&&key!==MAP_CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())
@@ -63,8 +70,8 @@ self.addEventListener("fetch",event=>{
   if(url.pathname.startsWith("/api/"))return;
 
   // MY MAPS is intentionally isolated from the general app cache.
-  // Network-first preserves the verified V9 JPG renderer, while a dedicated
-  // path-keyed fallback keeps the last known-good launcher/sprite across unrelated deploys.
+  // The verified V9 launcher + JPG are pre-cached during SW install, then
+  // refreshed network-first while always retaining a last-known-good fallback.
   if(MAP_NETWORK_PATHS.has(url.pathname)){
     const mapKey=new Request(`${url.origin}${url.pathname}`);
     const request=new Request(event.request,{cache:"reload"});
