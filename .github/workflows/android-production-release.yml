@@ -3,8 +3,12 @@ name: ACC OS X Android Production Release
 on:
   workflow_dispatch:
   push:
-    tags:
-      - 'acc-os-x-android-v*'
+    branches:
+      - main
+    paths:
+      - 'android/**'
+      - 'assets/app-icons/my-maps-icons-sprite.jpg.b64'
+      - '.github/workflows/android-production-release.yml'
 
 permissions:
   contents: write
@@ -15,13 +19,29 @@ jobs:
     timeout-minutes: 30
     env:
       ACC_OS_X_ANDROID_KEYSTORE_B64: ${{ secrets.ACC_OS_X_ANDROID_KEYSTORE_B64 }}
-      ACC_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ACC_OS_X_ANDROID_KEYSTORE_PASSWORD }}
-      ACC_ANDROID_KEY_ALIAS: ${{ secrets.ACC_OS_X_ANDROID_KEY_ALIAS }}
-      ACC_ANDROID_KEY_PASSWORD: ${{ secrets.ACC_OS_X_ANDROID_KEY_PASSWORD }}
+      ACC_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ACC_ANDROID_KEYSTORE_PASSWORD }}
+      ACC_ANDROID_KEY_ALIAS: ${{ secrets.ACC_ANDROID_KEY_ALIAS }}
+      ACC_ANDROID_KEY_PASSWORD: ${{ secrets.ACC_ANDROID_KEY_PASSWORD }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Resolve Android release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION_NAME="$(sed -n "s/^[[:space:]]*versionName '\([^']*\)'.*/\1/p" android/app/build.gradle | head -n1)"
+          VERSION_CODE="$(sed -n 's/^[[:space:]]*versionCode \([0-9][0-9]*\).*/\1/p' android/app/build.gradle | head -n1)"
+          if [ -z "$VERSION_NAME" ] || [ -z "$VERSION_CODE" ]; then
+            echo "::error::Unable to resolve Android versionName/versionCode"
+            exit 1
+          fi
+          RELEASE_TAG="acc-os-x-android-v${VERSION_NAME}-build${VERSION_CODE}"
+          echo "ACC_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "ACC_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "ACC_RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          echo "Release: $RELEASE_TAG"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -121,13 +141,12 @@ jobs:
           retention-days: 30
 
       - name: Publish GitHub Release for direct download
-        if: startsWith(github.ref, 'refs/tags/acc-os-x-android-v')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="$GITHUB_REF_NAME"
+          TAG="$ACC_RELEASE_TAG"
           APK="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X.apk"
           AAB="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-Play.aab"
           CERT="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-upload-certificate.txt"
@@ -135,6 +154,7 @@ jobs:
             gh release upload "$TAG" "$APK" "$AAB" "$CERT" --clobber
           else
             gh release create "$TAG" "$APK" "$AAB" "$CERT" \
-              --title "ACC OS X Android ${TAG#acc-os-x-android-v}" \
-              --generate-notes
+              --target "$GITHUB_SHA" \
+              --title "ACC OS X Android v${ACC_VERSION_NAME} / Build ${ACC_VERSION_CODE}" \
+              --notes "Production-signed ACC OS X Android v${ACC_VERSION_NAME} / Build ${ACC_VERSION_CODE}."
           fi
