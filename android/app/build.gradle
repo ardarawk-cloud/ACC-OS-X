@@ -15,8 +15,16 @@ android {
         applicationId 'com.ardacore.accosx'
         minSdk 26
         targetSdk 36
-        versionCode 9
-        versionName '1.2.0'
+        versionCode 10
+        versionName '1.2.1'
+    }
+
+    sourceSets {
+        main {
+            // Bundle the verified MY MAPS Base64 sprite source inside the APK.
+            // ProductionActivity serves it through a same-origin native WebView bridge.
+            assets.srcDir '../../assets/app-icons'
+        }
     }
 
     signingConfigs {

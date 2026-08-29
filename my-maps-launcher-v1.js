@@ -1,11 +1,25 @@
-// KAI ONE — ACC OS X MY MAPS launcher v9
-// Restores the previously working same-origin JPG sprite renderer. No runtime Base64/data-URL image path.
+// KAI ONE — ACC OS X MY MAPS launcher v10
+// Build 10 uses an APK-bundled same-origin virtual JPEG when the native bridge is available.
+// Browser/PWA retains the verified direct local JPG as fallback.
 (() => {
   "use strict";
-  const REVISION="KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG";
+  const REVISION="KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
   const ROOT_ID="acc-my-maps";
-  const STYLE_ID="acc-my-maps-v9-style";
-  const SPRITE_URL="./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG";
+  const STYLE_ID="acc-my-maps-v10-style";
+  const WEB_SPRITE_URL="./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
+  const NATIVE_SPRITE_URL="/__acc_native/maps-sprite.jpg?rev=ACC_OS_X_ANDROID_BUILD10_NATIVE_MAP_ASSETS_V1";
+
+  function resolveSpriteUrl(){
+    try{
+      if(window.ACCNativeAssets && typeof window.ACCNativeAssets.hasMapSprite==="function" && window.ACCNativeAssets.hasMapSprite()){
+        return NATIVE_SPRITE_URL;
+      }
+    }catch{}
+    return WEB_SPRITE_URL;
+  }
+
+  const SPRITE_URL=resolveSpriteUrl();
+  const USING_NATIVE_SPRITE=SPRITE_URL===NATIVE_SPRITE_URL;
 
   const MAPS=[
     {key:"bbya-social-hub",title:"BBYA Social Hub",placeId:"131894120482837",accent:"#d946ef",fallback:"BBYA",bx:"0%",by:"0%"},
@@ -67,6 +81,7 @@
     if(!root){root=document.createElement("section");root.id=ROOT_ID;root.className="card";apps.insertAdjacentElement("afterend",root);}
     if(root.dataset.mapsRevision!==REVISION){
       root.dataset.mapsRevision=REVISION;
+      root.dataset.spriteSource=USING_NATIVE_SPRITE?"ANDROID_NATIVE_BUILD10":"WEB_JPG_FALLBACK";
       root.innerHTML=`<div class="acc-map-head"><div><div class="eyebrow">ACC ROBLOX COMMAND</div><h2 class="card-title" style="margin:3px 0 0">MY MAPS</h2></div><span class="badge">${MAPS.length} MAPS</span></div><div class="acc-map-grid"></div>`;
       const grid=root.querySelector(".acc-map-grid");
       MAPS.forEach(map=>grid.appendChild(tile(map)));
@@ -79,6 +94,6 @@
   new MutationObserver(()=>{const root=document.getElementById(ROOT_ID);if(!root||root.dataset.mapsRevision!==REVISION)schedule();}).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener("pageshow",schedule);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedule();});
-  window.ACCMyMaps={revision:REVISION,maps:MAPS.map(({key,title,placeId})=>({key,title,placeId})),render:schedule};
+  window.ACCMyMaps={revision:REVISION,spriteSource:USING_NATIVE_SPRITE?"ANDROID_NATIVE_BUILD10":"WEB_JPG_FALLBACK",maps:MAPS.map(({key,title,placeId})=>({key,title,placeId})),render:schedule};
   schedule();
 })();

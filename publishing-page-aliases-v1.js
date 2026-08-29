@@ -126,11 +126,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS verified V9 renderer. Keep this revision pinned.
+// KAI ONE — MY MAPS Build 10 native Android asset renderer with web JPG fallback.
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);

@@ -67,7 +67,7 @@ jobs:
 
           sprite_b64 = clean_by_src["assets/app-icons/my-maps-icons-sprite.jpg.b64"]
           sprite_js = (
-              "// Generated during Cloudflare deploy — KAI ONE MY MAPS V8\n"
+              "// Generated during Cloudflare deploy — KAI ONE MY MAPS V8 legacy fallback\n"
               "window.ACCMyMapsSpriteDataUrl = \"data:image/jpeg;base64," + sprite_b64 + "\";\n"
           )
           pathlib.Path("my-maps-sprite-data-v1.js").write_text(sprite_js, encoding="utf-8")
@@ -76,9 +76,10 @@ jobs:
           test -s assets/app-icons/my-maps-icons-sprite.jpg
           test -s assets/app-launcher/bali-wedding-dj.jpg
           test -s my-maps-sprite-data-v1.js
-          grep -q 'KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG' my-maps-launcher-v1.js
-          grep -q 'KAI_ONE_MY_MAPS_V8_CACHE_RESET' publishing-page-aliases-v1.js
-          grep -q 'acc-os-x-maps-v9-known-good' service-worker.js
+          grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' my-maps-launcher-v1.js
+          grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' publishing-page-aliases-v1.js
+          grep -q 'acc-os-x-maps-v10-native-build10' service-worker.js
+          grep -q '/__acc_native/' service-worker.js
 
       - name: Deploy production Worker
         id: deploy
