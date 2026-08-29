@@ -1,8 +1,8 @@
-const CACHE="acc-os-x-build9-page-picker-v4";
-const MAP_CACHE="acc-os-x-maps-v9-known-good";
+const CACHE="acc-os-x-build10-page-picker-v4";
+const MAP_CACHE="acc-os-x-maps-v10-native-build10";
 const MAP_CORE=[
-  "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG",
-  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V9_RESTORE_DIRECT_LOCAL_JPG"
+  "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET",
+  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET"
 ];
 const CORE=[
   "./",
@@ -69,9 +69,10 @@ self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET")return;
   if(url.pathname.startsWith("/api/"))return;
 
-  // MY MAPS is intentionally isolated from the general app cache.
-  // The verified V9 launcher + JPG are pre-cached during SW install, then
-  // refreshed network-first while always retaining a last-known-good fallback.
+  // Build 10 virtual assets are served by the Android WebView/ServiceWorker client.
+  // Do not let the PWA service worker replace them with Cloudflare SPA responses.
+  if(url.pathname.startsWith("/__acc_native/")) return;
+
   if(MAP_NETWORK_PATHS.has(url.pathname)){
     const mapKey=new Request(`${url.origin}${url.pathname}`);
     const request=new Request(event.request,{cache:"reload"});
