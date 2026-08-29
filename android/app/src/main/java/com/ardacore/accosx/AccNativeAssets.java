@@ -10,6 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Build 10 native asset bridge.
@@ -49,9 +51,10 @@ public final class AccNativeAssets {
                 null,
                 new ByteArrayInputStream(mapSpriteBytes));
         response.setStatusCodeAndReasonPhrase(200, "OK");
-        response.setResponseHeaders(java.util.Map.of(
-                "Cache-Control", "no-store",
-                "X-ACC-Native-Asset", "Build10"));
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Cache-Control", "no-store");
+        headers.put("X-ACC-Native-Asset", "Build10");
+        response.setResponseHeaders(headers);
         return response;
     }
 
