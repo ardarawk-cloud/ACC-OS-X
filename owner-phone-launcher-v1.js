@@ -1,11 +1,11 @@
-// KAI ONE — Owner Phone Launcher v1 / Build 9
-// Finance, Social, Communication, Commercial, Health. No system apps, no cloned duplicates.
+// KAI ONE — Owner Phone Launcher v2 / Build 10
+// Finance, Social, Communication, Commercial, Health. Android shows installed apps only.
 (() => {
   "use strict";
   if (window.__ACC_OWNER_PHONE_LAUNCHER_V1__) return;
   window.__ACC_OWNER_PHONE_LAUNCHER_V1__ = true;
 
-  const REVISION = "KAI_ONE_OWNER_PHONE_LAUNCHER_V1_BUILD9";
+  const REVISION = "KAI_ONE_OWNER_PHONE_LAUNCHER_V2_INSTALLED_ONLY_BUILD10";
   const ROOT_ID = "acc-owner-phone-sections";
   const STYLE_ID = "acc-owner-phone-sections-style";
   const STATE_KEY = "acc_owner_phone_sections_v1";
@@ -74,15 +74,6 @@
   function saveState(state){ try { localStorage.setItem(STATE_KEY,JSON.stringify(state)); } catch {} }
   const uiState = readState();
 
-  function toast(message){
-    document.querySelector(".acc-owner-launch-toast")?.remove();
-    const node=document.createElement("div");
-    node.className="acc-owner-launch-toast";
-    node.textContent=message;
-    document.body.appendChild(node);
-    setTimeout(()=>node.remove(),2400);
-  }
-
   function nativeBridge(){
     const bridge=window.ACCAndroid;
     return bridge && typeof bridge.isInstalled==="function" && typeof bridge.appIcon==="function" ? bridge : null;
@@ -96,6 +87,14 @@
       const icon=installed ? String(bridge.appIcon(app.pkg)||"") : "";
       return {installed,icon};
     } catch { return {installed:false,icon:""}; }
+  }
+
+  function visibleGroups(){
+    const bridge=nativeBridge();
+    if(!bridge) return GROUPS;
+    return GROUPS
+      .map(group => ({...group, apps:group.apps.filter(app=>inspect(app).installed===true)}))
+      .filter(group => group.apps.length > 0);
   }
 
   function ensureStyle(){
@@ -120,8 +119,6 @@
       #${ROOT_ID} .acc-phone-name{margin-top:7px;font-size:.66rem;font-weight:900;line-height:1.12;min-height:1.55em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
       #${ROOT_ID} .acc-phone-status{margin-top:4px;font-size:.48rem;font-weight:850;letter-spacing:.06em;color:#73829a}
       #${ROOT_ID} .acc-phone-app.ready .acc-phone-status{color:#5ee7ad}
-      #${ROOT_ID} .acc-phone-app.missing{opacity:.5}
-      #${ROOT_ID} .acc-phone-app.missing .acc-phone-status{color:#f59e0b}
       @media(max-width:345px){#${ROOT_ID} .acc-phone-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(min-width:700px){#${ROOT_ID} .acc-phone-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 12px}#${ROOT_ID} .acc-phone-icon{width:72px;height:72px}}
     `;
@@ -132,10 +129,10 @@
     const state=inspect(app);
     const button=document.createElement("button");
     button.type="button";
-    button.className=`acc-phone-app mono ${state.installed===true?"ready":state.installed===false?"missing":""}`;
+    button.className=`acc-phone-app mono ${state.installed===true?"ready":""}`;
     button.dataset.ownerPhonePackage=app.pkg;
     button.style.setProperty("--app-accent",app.accent);
-    button.innerHTML=`<div class="acc-phone-icon"><span class="acc-phone-fallback">${app.fallback}</span><img alt=""></div><div class="acc-phone-name">${app.name}</div><div class="acc-phone-status">${state.installed===true?"INSTALLED":state.installed===false?"NOT FOUND":"APK"}</div>`;
+    button.innerHTML=`<div class="acc-phone-icon"><span class="acc-phone-fallback">${app.fallback}</span><img alt=""></div><div class="acc-phone-name">${app.name}</div><div class="acc-phone-status">${state.installed===true?"INSTALLED":"APK"}</div>`;
     if(state.icon){
       const img=button.querySelector("img");
       img.onload=()=>{img.style.display="block";};
@@ -144,8 +141,6 @@
     }
     button.addEventListener("click",event=>{
       event.preventDefault();
-      const current=inspect(app);
-      if(current.installed===false){toast(`${app.name} tidak ditemukan di HP.`);return;}
       location.href=`accapp://launch?packages=${encodeURIComponent(app.pkg)}`;
     });
     return button;
@@ -174,9 +169,12 @@
       root.id=ROOT_ID;
       root.className="mono";
     }
-    if(root.dataset.revision!==REVISION){
+    const groups=visibleGroups();
+    const signature=groups.map(group=>`${group.key}:${group.apps.map(app=>app.pkg).join(",")}`).join("|");
+    if(root.dataset.revision!==REVISION || root.dataset.appSignature!==signature){
       root.dataset.revision=REVISION;
-      root.replaceChildren(...GROUPS.map(groupNode));
+      root.dataset.appSignature=signature;
+      root.replaceChildren(...groups.map(groupNode));
     }
     if(apps.nextElementSibling!==root) apps.insertAdjacentElement("afterend",root);
     return true;
@@ -192,6 +190,7 @@
   }
   new MutationObserver(()=>schedule()).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener("pageshow",schedule);
+  window.addEventListener("focus",schedule);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedule();});
   window.ACCOwnerPhoneLauncher={revision:REVISION,groups:GROUPS.map(g=>({key:g.key,title:g.title,count:g.apps.length})),render:schedule};
   schedule();
