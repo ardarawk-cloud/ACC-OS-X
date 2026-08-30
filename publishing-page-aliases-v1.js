@@ -66,11 +66,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — owner phone categories. Uses native installed-app icon bridge on Build 9+.
+// KAI ONE — owner phone categories. Build 10 shows installed Android apps only.
 (() => {
   if (document.querySelector('script[data-acc-owner-phone-launcher="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./owner-phone-launcher-v1.js?rev=KAI_ONE_OWNER_PHONE_LAUNCHER_V1_BUILD9";
+  script.src = "./owner-phone-launcher-v1.js?rev=KAI_ONE_OWNER_PHONE_LAUNCHER_V2_INSTALLED_ONLY_BUILD10";
   script.dataset.accOwnerPhoneLauncher = "v1";
   script.async = false;
   document.head.appendChild(script);
