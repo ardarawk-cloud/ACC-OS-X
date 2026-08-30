@@ -1,14 +1,15 @@
-// KAI ONE — Owner Phone Launcher v2 / Build 10
-// Finance, Social, Communication, Commercial, Health. Android shows installed apps only.
+// KAI ONE — Owner Phone Launcher v3 / Build 10
+// Installed-only launcher with one-shot native inspection + lazy cached icons for low tap latency.
 (() => {
   "use strict";
   if (window.__ACC_OWNER_PHONE_LAUNCHER_V1__) return;
   window.__ACC_OWNER_PHONE_LAUNCHER_V1__ = true;
 
-  const REVISION = "KAI_ONE_OWNER_PHONE_LAUNCHER_V2_INSTALLED_ONLY_BUILD10";
+  const REVISION = "KAI_ONE_OWNER_PHONE_LAUNCHER_V3_FAST_TAP_BUILD10";
   const ROOT_ID = "acc-owner-phone-sections";
   const STYLE_ID = "acc-owner-phone-sections-style";
   const STATE_KEY = "acc_owner_phone_sections_v1";
+  const ICON_CACHE_KEY = "acc_owner_phone_icon_cache_v1";
 
   const GROUPS = [
     { key:"finance", eyebrow:"ACC MONEY COMMAND", title:"MY FINANCE", accent:"#2dd4bf", apps:[
@@ -68,43 +69,48 @@
     ]}
   ].map(group => ({...group, apps:group.apps.map(([name,pkg,fallback,accent])=>({name,pkg,fallback,accent}))}));
 
-  function readState(){
-    try { return JSON.parse(localStorage.getItem(STATE_KEY)||"{}"); } catch { return {}; }
+  function readJson(key){
+    try { const value=JSON.parse(localStorage.getItem(key)||"{}"); return value&&typeof value==="object"?value:{}; }
+    catch { return {}; }
   }
-  function saveState(state){ try { localStorage.setItem(STATE_KEY,JSON.stringify(state)); } catch {} }
-  const uiState = readState();
+  function writeJson(key,value){ try { localStorage.setItem(key,JSON.stringify(value)); } catch {} }
+
+  const uiState=readJson(STATE_KEY);
+  const iconCache=readJson(ICON_CACHE_KEY);
+  const installedCache=new Map();
 
   function nativeBridge(){
     const bridge=window.ACCAndroid;
-    return bridge && typeof bridge.isInstalled==="function" && typeof bridge.appIcon==="function" ? bridge : null;
+    return bridge && typeof bridge.isInstalled==="function" ? bridge : null;
   }
 
-  function inspect(app){
+  // Native package lookup happens at most once per package per page lifetime.
+  // Crucially, no appIcon() work is performed during render/signature checks.
+  function isInstalled(app){
+    if(installedCache.has(app.pkg)) return installedCache.get(app.pkg);
     const bridge=nativeBridge();
-    if(!bridge) return {installed:null,icon:""};
-    try {
-      const installed=Boolean(bridge.isInstalled(app.pkg));
-      const icon=installed ? String(bridge.appIcon(app.pkg)||"") : "";
-      return {installed,icon};
-    } catch { return {installed:false,icon:""}; }
+    if(!bridge){ installedCache.set(app.pkg,null); return null; }
+    let installed=false;
+    try { installed=Boolean(bridge.isInstalled(app.pkg)); } catch {}
+    installedCache.set(app.pkg,installed);
+    return installed;
   }
 
   function visibleGroups(){
     const bridge=nativeBridge();
     if(!bridge) return GROUPS;
     return GROUPS
-      .map(group => ({...group, apps:group.apps.filter(app=>inspect(app).installed===true)}))
-      .filter(group => group.apps.length > 0);
+      .map(group=>({...group,apps:group.apps.filter(app=>isInstalled(app)===true)}))
+      .filter(group=>group.apps.length>0);
   }
 
   function ensureStyle(){
-    if(document.getElementById(STYLE_ID)) return;
-    const style=document.createElement("style");
-    style.id=STYLE_ID;
+    let style=document.getElementById(STYLE_ID);
+    if(!style){ style=document.createElement("style"); style.id=STYLE_ID; document.head.appendChild(style); }
     style.textContent=`
       #${ROOT_ID}{display:grid;gap:12px;margin:14px 0 8px}
       #${ROOT_ID} .acc-phone-group{margin:0;padding:0;overflow:hidden;background:linear-gradient(180deg,rgba(10,18,34,.98),rgba(5,11,24,.98));border:1px solid rgba(148,163,184,.16);border-radius:22px}
-      #${ROOT_ID} summary{list-style:none;cursor:pointer;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;-webkit-tap-highlight-color:transparent}
+      #${ROOT_ID} summary{list-style:none;cursor:pointer;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
       #${ROOT_ID} summary::-webkit-details-marker{display:none}
       #${ROOT_ID} .acc-phone-headcopy{min-width:0}
       #${ROOT_ID} .acc-phone-title{font-size:1rem;font-weight:950;letter-spacing:.06em;margin-top:3px}
@@ -117,33 +123,59 @@
       #${ROOT_ID} .acc-phone-icon img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:2}
       #${ROOT_ID} .acc-phone-fallback{font-size:.82rem;font-weight:950;color:var(--app-accent);letter-spacing:-.04em;z-index:1}
       #${ROOT_ID} .acc-phone-name{margin-top:7px;font-size:.66rem;font-weight:900;line-height:1.12;min-height:1.55em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-      #${ROOT_ID} .acc-phone-status{margin-top:4px;font-size:.48rem;font-weight:850;letter-spacing:.06em;color:#73829a}
-      #${ROOT_ID} .acc-phone-app.ready .acc-phone-status{color:#5ee7ad}
+      #${ROOT_ID} .acc-phone-status{margin-top:4px;font-size:.48rem;font-weight:850;letter-spacing:.06em;color:#5ee7ad}
       @media(max-width:345px){#${ROOT_ID} .acc-phone-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(min-width:700px){#${ROOT_ID} .acc-phone-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 12px}#${ROOT_ID} .acc-phone-icon{width:72px;height:72px}}
     `;
-    document.head.appendChild(style);
+  }
+
+  function applyIcon(button,data){
+    if(!data) return;
+    const img=button.querySelector("img");
+    if(!img) return;
+    img.onload=()=>{img.style.display="block";};
+    img.onerror=()=>{img.style.display="none";};
+    img.src=data;
+  }
+
+  function hydrateButtonIcon(button,app,delay=0){
+    if(!button || button.dataset.iconHydrated==="1") return;
+    button.dataset.iconHydrated="1";
+    const cached=String(iconCache[app.pkg]||"");
+    if(cached){ applyIcon(button,cached); return; }
+    const bridge=nativeBridge();
+    if(!bridge || typeof bridge.appIcon!=="function") return;
+    setTimeout(()=>{
+      try{
+        const data=String(bridge.appIcon(app.pkg)||"");
+        if(!data) return;
+        iconCache[app.pkg]=data;
+        writeJson(ICON_CACHE_KEY,iconCache);
+        applyIcon(button,data);
+      }catch{}
+    },delay);
   }
 
   function appTile(app){
-    const state=inspect(app);
     const button=document.createElement("button");
     button.type="button";
-    button.className=`acc-phone-app mono ${state.installed===true?"ready":""}`;
+    button.className="acc-phone-app mono ready";
     button.dataset.ownerPhonePackage=app.pkg;
     button.style.setProperty("--app-accent",app.accent);
-    button.innerHTML=`<div class="acc-phone-icon"><span class="acc-phone-fallback">${app.fallback}</span><img alt=""></div><div class="acc-phone-name">${app.name}</div><div class="acc-phone-status">${state.installed===true?"INSTALLED":"APK"}</div>`;
-    if(state.icon){
-      const img=button.querySelector("img");
-      img.onload=()=>{img.style.display="block";};
-      img.onerror=()=>{img.style.display="none";};
-      img.src=state.icon;
-    }
+    button.innerHTML=`<div class="acc-phone-icon"><span class="acc-phone-fallback">${app.fallback}</span><img alt=""></div><div class="acc-phone-name">${app.name}</div><div class="acc-phone-status">INSTALLED</div>`;
     button.addEventListener("click",event=>{
       event.preventDefault();
+      // No re-scan, icon extraction, or timer on tap: launch immediately.
       location.href=`accapp://launch?packages=${encodeURIComponent(app.pkg)}`;
     });
     return button;
+  }
+
+  function hydrateGroup(details,group){
+    if(!details.open || details.dataset.iconsStarted==="1") return;
+    details.dataset.iconsStarted="1";
+    const buttons=[...details.querySelectorAll(".acc-phone-app")];
+    buttons.forEach((button,index)=>hydrateButtonIcon(button,group.apps[index],index*20));
   }
 
   function groupNode(group){
@@ -155,25 +187,27 @@
     details.innerHTML=`<summary><div class="acc-phone-headcopy"><div class="eyebrow">${group.eyebrow}</div><div class="acc-phone-title">${group.title}</div></div><span class="acc-phone-count">${group.apps.length} APPS</span></summary><div class="acc-phone-grid"></div>`;
     const grid=details.querySelector(".acc-phone-grid");
     group.apps.forEach(app=>grid.appendChild(appTile(app)));
-    details.addEventListener("toggle",()=>{uiState[group.key]=details.open;saveState(uiState);});
+    details.addEventListener("toggle",()=>{
+      uiState[group.key]=details.open;
+      writeJson(STATE_KEY,uiState);
+      if(details.open) hydrateGroup(details,group);
+    });
+    if(details.open) setTimeout(()=>hydrateGroup(details,group),0);
     return details;
   }
+
+  let snapshot=null;
+  function getSnapshot(){ return snapshot || (snapshot=visibleGroups()); }
 
   function render(){
     ensureStyle();
     const apps=document.getElementById("acc-home-launchpad");
     if(!apps) return false;
     let root=document.getElementById(ROOT_ID);
-    if(!root){
-      root=document.createElement("section");
-      root.id=ROOT_ID;
-      root.className="mono";
-    }
-    const groups=visibleGroups();
-    const signature=groups.map(group=>`${group.key}:${group.apps.map(app=>app.pkg).join(",")}`).join("|");
-    if(root.dataset.revision!==REVISION || root.dataset.appSignature!==signature){
+    if(!root){ root=document.createElement("section"); root.id=ROOT_ID; root.className="mono"; }
+    const groups=getSnapshot();
+    if(root.dataset.revision!==REVISION){
       root.dataset.revision=REVISION;
-      root.dataset.appSignature=signature;
       root.replaceChildren(...groups.map(groupNode));
     }
     if(apps.nextElementSibling!==root) apps.insertAdjacentElement("afterend",root);
@@ -185,13 +219,13 @@
     if(queued)return;
     queued=true;
     requestAnimationFrame(()=>{queued=false;render();});
-    setTimeout(render,150);
-    setTimeout(render,650);
   }
-  new MutationObserver(()=>schedule()).observe(document.documentElement,{childList:true,subtree:true});
+  new MutationObserver(()=>{
+    const root=document.getElementById(ROOT_ID);
+    if(!root || root.dataset.revision!==REVISION) schedule();
+  }).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener("pageshow",schedule);
-  window.addEventListener("focus",schedule);
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedule();});
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden && !document.getElementById(ROOT_ID)) schedule();});
   window.ACCOwnerPhoneLauncher={revision:REVISION,groups:GROUPS.map(g=>({key:g.key,title:g.title,count:g.apps.length})),render:schedule};
   schedule();
 })();
