@@ -1,11 +1,11 @@
-// KAI ONE — ACC OS X MY MAPS launcher v11
-// Build 11 fixes Gunung BBYA to the canonical ACC Mountain Master place target.
+// KAI ONE — ACC OS X MY MAPS launcher v10
+// Build 10 launcher marker retained; Gunung BBYA now targets the canonical ACC Mountain Master place.
 (() => {
   "use strict";
-  const REVISION="KAI_ONE_MY_MAPS_V11_MOUNTAIN_TARGET_FIX";
+  const REVISION="KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
   const ROOT_ID="acc-my-maps";
-  const STYLE_ID="acc-my-maps-v11-style";
-  const WEB_SPRITE_URL="./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V11_MOUNTAIN_TARGET_FIX";
+  const STYLE_ID="acc-my-maps-v10-style";
+  const WEB_SPRITE_URL="./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
   const NATIVE_SPRITE_URL="/__acc_native/maps-sprite.jpg?rev=ACC_OS_X_ANDROID_BUILD10_NATIVE_MAP_ASSETS_V1";
 
   function resolveSpriteUrl(){
