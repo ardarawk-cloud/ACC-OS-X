@@ -166,6 +166,16 @@
   document.head.appendChild(script);
 })();
 
+// KAI ONE — guard the IG bridge observer from reacting to its own panel writes.
+(() => {
+  if (document.querySelector('script[data-acc-instagram-observer-guard="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./publishing-instagram-observer-guard-v1.js?rev=KAI_ONE_INSTAGRAM_OBSERVER_GUARD_V1";
+  script.dataset.accInstagramObserverGuard = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 // KAI ONE — Instagram Business/Creator sync + owner-controlled mapping.
 (() => {
   if (document.querySelector('script[data-acc-instagram-bridge="v1"]')) return;
