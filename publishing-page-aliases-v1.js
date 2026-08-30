@@ -155,3 +155,13 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — Android-safe Page search + quick diagnostic filter.
+(() => {
+  if (document.querySelector('script[data-acc-page-search-touch="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./publishing-page-search-hotfix-v1.js?rev=KAI_ONE_PAGE_SEARCH_TOUCH_V1";
+  script.dataset.accPageSearchTouch = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
