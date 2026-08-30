@@ -170,7 +170,7 @@
 (() => {
   if (document.querySelector('script[data-acc-instagram-bridge="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./publishing-instagram-bridge-v1.js?rev=KAI_ONE_INSTAGRAM_BRIDGE_V1";
+  script.src = "./publishing-instagram-bridge-v1.js?rev=KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK";
   script.dataset.accInstagramBridge = "v1";
   script.async = false;
   document.head.appendChild(script);
