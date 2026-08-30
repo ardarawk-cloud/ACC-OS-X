@@ -1,12 +1,11 @@
-// KAI ONE — ACC OS X MY MAPS launcher v10
-// Build 10 uses an APK-bundled same-origin virtual JPEG when the native bridge is available.
-// Browser/PWA retains the verified direct local JPG as fallback.
+// KAI ONE — ACC OS X MY MAPS launcher v11
+// Build 11 fixes Gunung BBYA to the canonical ACC Mountain Master place target.
 (() => {
   "use strict";
-  const REVISION="KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
+  const REVISION="KAI_ONE_MY_MAPS_V11_MOUNTAIN_TARGET_FIX";
   const ROOT_ID="acc-my-maps";
-  const STYLE_ID="acc-my-maps-v10-style";
-  const WEB_SPRITE_URL="./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
+  const STYLE_ID="acc-my-maps-v11-style";
+  const WEB_SPRITE_URL="./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V11_MOUNTAIN_TARGET_FIX";
   const NATIVE_SPRITE_URL="/__acc_native/maps-sprite.jpg?rev=ACC_OS_X_ANDROID_BUILD10_NATIVE_MAP_ASSETS_V1";
 
   function resolveSpriteUrl(){
@@ -28,7 +27,7 @@
     {key:"becak-e-bike",title:"Becak E-bike",placeId:"80994730522893",accent:"#f59e0b",fallback:"BE",bx:"100%",by:"0%"},
     {key:"wonderpocket",title:"WONDERPOCKET",placeId:"124843214013484",accent:"#a78bfa",fallback:"WP",bx:"0%",by:"100%"},
     {key:"track-01",title:"Track 01",placeId:"79748872921213",accent:"#dc2626",fallback:"T01",bx:"33.333%",by:"100%"},
-    {key:"gunung-bbya",title:"Gunung BBYA",placeId:"82661754996018",accent:"#22c55e",fallback:"GB",bx:"66.667%",by:"100%"},
+    {key:"gunung-bbya",title:"Gunung BBYA",placeId:"11832985967",accent:"#22c55e",fallback:"GB",bx:"66.667%",by:"100%"},
     {key:"lost-found-night-shift",title:"Lost & Found: Night Shift",placeId:"93699016600671",accent:"#f97316",fallback:"LF",bx:"100%",by:"100%"}
   ];
 
