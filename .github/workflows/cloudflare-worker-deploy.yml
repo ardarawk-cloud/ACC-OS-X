@@ -79,8 +79,8 @@ jobs:
           test -s my-maps-sprite-data-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' my-maps-launcher-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' publishing-page-aliases-v1.js
-          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V1' publishing-instagram-bridge-v1.js
-          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V1' publishing-page-aliases-v1.js
+          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-instagram-bridge-v1.js
+          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-page-aliases-v1.js
           grep -q 'acc-os-x-maps-v10-native-build10' service-worker.js
           grep -q '/__acc_native/' service-worker.js
 
