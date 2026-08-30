@@ -17,6 +17,7 @@ on:
       - 'sync-cctv-launcher-v1.js'
       - 'publishing-page-aliases-v1.js'
       - 'publishing-mobile-page-picker-v1.js'
+      - 'publishing-instagram-bridge-v1.js'
       - 'assets/app-icons/**'
       - 'assets/app-launcher/**'
       - 'wrangler.jsonc'
@@ -78,6 +79,8 @@ jobs:
           test -s my-maps-sprite-data-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' my-maps-launcher-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' publishing-page-aliases-v1.js
+          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-instagram-bridge-v1.js
+          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-page-aliases-v1.js
           grep -q 'acc-os-x-maps-v10-native-build10' service-worker.js
           grep -q '/__acc_native/' service-worker.js
 
