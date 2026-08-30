@@ -80,7 +80,7 @@
 (() => {
   if (document.querySelector('script[data-acc-bali-wedding-dj-launcher="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V3_DIRECT_JPG";
+  script.src = "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V4_NATIVE_ICON";
   script.dataset.accBaliWeddingDjLauncher = "v1";
   script.async = false;
   document.head.appendChild(script);
@@ -116,11 +116,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — local AI Mashup icon hotfix.
+// KAI ONE — AI Mashup native APK icon hotfix.
 (() => {
   if (document.querySelector('script[data-acc-ai-mashup-icon-fix="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./ai-mashup-icon-fix-v1.js?rev=KAI_ONE_AI_MASHUP_LOCAL_ICON_V1_BUILD8";
+  script.src = "./ai-mashup-icon-fix-v1.js?rev=KAI_ONE_AI_MASHUP_NATIVE_ICON_V2";
   script.dataset.accAiMashupIconFix = "v1";
   script.async = false;
   document.head.appendChild(script);
