@@ -1,12 +1,15 @@
-// KAI ONE — Owner-confirmed Facebook Page alias mapping v3 / Maps V8 cache reset
+// KAI ONE — Owner-confirmed Facebook Page alias mapping v4 / Maps V8 cache reset
 // Legacy deploy validation marker retained intentionally: KAI_ONE_MY_MAPS_V8_CACHE_RESET
 (() => {
   "use strict";
   const STATE_KEY = "acc_os_x_ecosystem_v214";
-  const REVISION = "KAI_ONE_OWNER_PAGE_ALIASES_V3_MAPS_V8";
+  const REVISION = "KAI_ONE_OWNER_PAGE_ALIASES_V4_SOCIAL_PAGE_GATEWAY";
   const ALIASES = {
     "ch-arda-gaming": { id:"1296361826889422", name:"Arda Gaming" },
-    "ch-mr-laziz": { id:"102412098142218", name:"Mister Laziz" }
+    "ch-mr-laziz": { id:"102412098142218", name:"Mister Laziz" },
+    "ch-balinightlife": { id:"100218739134875", name:"Bali Night Life" },
+    "ch-bali-wedding-dj": { id:"531554537184461", name:"Bali Wedding Dj" },
+    "ch-aku-cinta-malam": { id:"247103353870163", name:"Aku Cinta Malam" }
   };
 
   function readState(){
@@ -26,7 +29,7 @@
     let changed = false;
     for (const [channelId, alias] of Object.entries(ALIASES)) {
       const existing = state.settings.publishMappings[channelId];
-      if (existing?.pageId) continue;
+      if (String(existing?.pageId || "") === alias.id) continue;
       const page = pages.find(item => String(item?.id || "") === alias.id);
       if (!page) continue;
       state.settings.publishMappings[channelId] = {
