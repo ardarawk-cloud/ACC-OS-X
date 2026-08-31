@@ -17,6 +17,8 @@
       style.id = STYLE_ID;
       document.head.appendChild(style);
     }
+    if (style.dataset.revision === REVISION) return;
+    style.dataset.revision = REVISION;
     style.textContent = `
       #acc-my-maps .acc-map-sprite{
         background-image:url("${NATIVE_SPRITE}"),url("${WEB_SPRITE}")!important;
