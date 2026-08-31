@@ -149,6 +149,16 @@
   document.head.appendChild(script);
 })();
 
+// KAI ONE — deterministic launcher order + native-first MY MAPS icon fallback.
+(() => {
+  if (document.querySelector('script[data-acc-launcher-layout-stability="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V1_NATIVE_FIRST";
+  script.dataset.accLauncherLayoutStability = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 // KAI ONE — compact accordion for legacy launcher sections.
 (() => {
   if (document.querySelector('script[data-acc-legacy-launcher-accordion="v1"]')) return;
