@@ -1,11 +1,20 @@
-const CACHE="acc-os-x-build10-page-picker-v6";
-const MAP_CACHE="acc-os-x-maps-v13-direct-b64";
-// Legacy deploy validation marker retained intentionally: acc-os-x-maps-v10-native-build10
+const CACHE="acc-os-x-build10-page-picker-v7";
+const MAP_CACHE="acc-os-x-maps-v16-individual-files";
+const MAP_ICON_REV="KAI_ONE_MY_MAPS_V16_INDIVIDUAL_FILES";
+const MAP_ICON_PATHS=[
+  "/assets/app-icons/my-maps/bbya-social-hub.jpg",
+  "/assets/app-icons/my-maps/zona-perang.jpg",
+  "/assets/app-icons/my-maps/after-school-city.jpg",
+  "/assets/app-icons/my-maps/becak-e-bike.jpg",
+  "/assets/app-icons/my-maps/wonderpocket.jpg",
+  "/assets/app-icons/my-maps/track-01.jpg",
+  "/assets/app-icons/my-maps/gunung-bbya.jpg",
+  "/assets/app-icons/my-maps/lost-found-night-shift.jpg"
+];
 const MAP_CORE=[
-  "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET",
-  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET",
-  "./assets/app-icons/my-maps-icons-sprite.jpg.b64?rev=KAI_ONE_MAPS_B64_V13",
-  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V3_DIRECT_B64"
+  `./my-maps-launcher-v1.js?rev=${MAP_ICON_REV}`,
+  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V4_ORDER_ONLY",
+  ...MAP_ICON_PATHS.map(path=>`.${path}?rev=${MAP_ICON_REV}`)
 ];
 const CORE=[
   "./",
@@ -37,9 +46,8 @@ const LEGACY_CONNECTOR_HOST="acc-publish-connector.ardarawk.workers.dev";
 const V2_CONNECTOR_HOST="acc-publish-connectorv2.ardarawk.workers.dev";
 const MAP_NETWORK_PATHS=new Set([
   "/my-maps-launcher-v1.js",
-  "/assets/app-icons/my-maps-icons-sprite.jpg",
-  "/assets/app-icons/my-maps-icons-sprite.jpg.b64",
-  "/launcher-layout-stability-v1.js"
+  "/launcher-layout-stability-v1.js",
+  ...MAP_ICON_PATHS
 ]);
 const FORCE_FRESH=new Set([
   "/",
@@ -52,9 +60,7 @@ const FORCE_FRESH=new Set([
   "/publishing-sync-reconcile-v2.js",
   "/build8-ui-stabilization-v1.js",
   "/bali-wedding-dj-launcher-v1.js",
-  "/sync-cctv-launcher-v1.js",
-  "/launcher-layout-stability-v1.js",
-  "/assets/app-icons/my-maps-icons-sprite.jpg.b64"
+  "/sync-cctv-launcher-v1.js"
 ]);
 self.addEventListener("install",event=>event.waitUntil(
   Promise.all([
@@ -76,8 +82,7 @@ self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET")return;
   if(url.pathname.startsWith("/api/"))return;
 
-  // Build 10 virtual assets are served by the Android WebView/ServiceWorker client.
-  // Do not let the PWA service worker replace them with Cloudflare SPA responses.
+  // Native APK-only virtual assets remain outside PWA interception.
   if(url.pathname.startsWith("/__acc_native/")) return;
 
   if(MAP_NETWORK_PATHS.has(url.pathname)){

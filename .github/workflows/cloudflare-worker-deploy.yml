@@ -46,16 +46,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python -m pip install --quiet Pillow
           python - <<'PY'
           import base64
+          import io
           import pathlib
           import re
+          from PIL import Image
 
           pairs = [
               ("assets/app-icons/my-maps-icons-sprite.jpg.b64", "assets/app-icons/my-maps-icons-sprite.jpg"),
               ("assets/app-launcher/bali-wedding-dj.jpg.b64", "assets/app-launcher/bali-wedding-dj.jpg"),
           ]
           clean_by_src = {}
+          data_by_src = {}
           for src, dst in pairs:
               raw = pathlib.Path(src).read_text(encoding="utf-8", errors="ignore")
               clean = "".join(re.findall(r"[A-Za-z0-9+/=]", raw))
@@ -65,7 +69,34 @@ jobs:
                   raise SystemExit(f"Decoded asset is not JPEG: {src}")
               pathlib.Path(dst).write_bytes(data)
               clean_by_src[src] = clean
+              data_by_src[src] = data
               print(f"Materialized {dst}: {len(data)} bytes")
+
+          sprite_data = data_by_src["assets/app-icons/my-maps-icons-sprite.jpg.b64"]
+          with Image.open(io.BytesIO(sprite_data)) as sprite:
+              sprite = sprite.convert("RGB")
+              width, height = sprite.size
+              if width % 4 or height % 2:
+                  raise SystemExit(f"Unexpected MY MAPS sprite dimensions: {width}x{height}")
+              tile_w, tile_h = width // 4, height // 2
+              names = [
+                  "bbya-social-hub.jpg",
+                  "zona-perang.jpg",
+                  "after-school-city.jpg",
+                  "becak-e-bike.jpg",
+                  "wonderpocket.jpg",
+                  "track-01.jpg",
+                  "gunung-bbya.jpg",
+                  "lost-found-night-shift.jpg",
+              ]
+              out_dir = pathlib.Path("assets/app-icons/my-maps")
+              out_dir.mkdir(parents=True, exist_ok=True)
+              for index, name in enumerate(names):
+                  col, row = index % 4, index // 4
+                  crop = sprite.crop((col * tile_w, row * tile_h, (col + 1) * tile_w, (row + 1) * tile_h))
+                  out = out_dir / name
+                  crop.save(out, format="JPEG", quality=95, optimize=True)
+                  print(f"Materialized {out}: {crop.size[0]}x{crop.size[1]}")
 
           sprite_b64 = clean_by_src["assets/app-icons/my-maps-icons-sprite.jpg.b64"]
           sprite_js = (
@@ -78,14 +109,14 @@ jobs:
           test -s assets/app-icons/my-maps-icons-sprite.jpg
           test -s assets/app-launcher/bali-wedding-dj.jpg
           test -s my-maps-sprite-data-v1.js
-          grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' my-maps-launcher-v1.js
-          grep -q 'KAI_ONE_MY_MAPS_V13_DIRECT_B64' publishing-page-aliases-v1.js
-          grep -q 'KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V3_DIRECT_B64' publishing-page-aliases-v1.js
+          for logo in bbya-social-hub zona-perang after-school-city becak-e-bike wonderpocket track-01 gunung-bbya lost-found-night-shift; do
+            test -s "assets/app-icons/my-maps/${logo}.jpg"
+          done
+          grep -q 'KAI_ONE_MY_MAPS_V16_INDIVIDUAL_FILES' my-maps-launcher-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-instagram-bridge-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-page-aliases-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_DIRECT_TOUCH_V3' publishing-instagram-observer-guard-v1.js
-          grep -q 'acc-os-x-maps-v10-native-build10' service-worker.js
-          grep -q '/__acc_native/' service-worker.js
+          grep -q 'acc-os-x-maps-v16-individual-files' service-worker.js
 
       - name: Deploy production Worker
         id: deploy
