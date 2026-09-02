@@ -1,11 +1,11 @@
-const CACHE="acc-os-x-build10-page-picker-v5";
-const MAP_CACHE="acc-os-x-maps-v12-inline-sprite";
+const CACHE="acc-os-x-build10-page-picker-v6";
+const MAP_CACHE="acc-os-x-maps-v13-direct-b64";
 // Legacy deploy validation marker retained intentionally: acc-os-x-maps-v10-native-build10
 const MAP_CORE=[
   "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET",
   "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET",
-  "./my-maps-sprite-data-v1.js?rev=KAI_ONE_MAPS_INLINE_DATA_V12",
-  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V2_INLINE_SPRITE"
+  "./assets/app-icons/my-maps-icons-sprite.jpg.b64?rev=KAI_ONE_MAPS_B64_V13",
+  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V3_DIRECT_B64"
 ];
 const CORE=[
   "./",
@@ -20,7 +20,7 @@ const CORE=[
   "./pwa-owner-safety-v1.js?rev=PWA_OWNER_SAFETY_V1",
   "./publishing-unmatched-meta-diagnostic-v1.js?rev=KAI_ONE_META_DIAGNOSTIC_V1",
   "./publishing-mobile-page-picker-v1.js?rev=KAI_ONE_DIRECT_OWNER_PAGE_MAP_V4_ALWAYS_VISIBLE",
-  "./publishing-page-aliases-v1.js?rev=KAI_ONE_OWNER_PAGE_ALIASES_V3_MAPS_V8",
+  "./publishing-page-aliases-v1.js?rev=KAI_ONE_OWNER_PAGE_ALIASES_V4_SOCIAL_PAGE_GATEWAY",
   "./publishing-sync-reconcile-v2.js?rev=KAI_ONE_PUBLISH_SYNC_RECONCILE_V2_BUILD8",
   "./build8-ui-stabilization-v1.js?rev=KAI_ONE_BUILD8_UI_V1",
   "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V3_DIRECT_JPG",
@@ -38,7 +38,7 @@ const V2_CONNECTOR_HOST="acc-publish-connectorv2.ardarawk.workers.dev";
 const MAP_NETWORK_PATHS=new Set([
   "/my-maps-launcher-v1.js",
   "/assets/app-icons/my-maps-icons-sprite.jpg",
-  "/my-maps-sprite-data-v1.js",
+  "/assets/app-icons/my-maps-icons-sprite.jpg.b64",
   "/launcher-layout-stability-v1.js"
 ]);
 const FORCE_FRESH=new Set([
@@ -54,7 +54,7 @@ const FORCE_FRESH=new Set([
   "/bali-wedding-dj-launcher-v1.js",
   "/sync-cctv-launcher-v1.js",
   "/launcher-layout-stability-v1.js",
-  "/my-maps-sprite-data-v1.js"
+  "/assets/app-icons/my-maps-icons-sprite.jpg.b64"
 ]);
 self.addEventListener("install",event=>event.waitUntil(
   Promise.all([
