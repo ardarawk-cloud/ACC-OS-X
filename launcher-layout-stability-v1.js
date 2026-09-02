@@ -1,21 +1,29 @@
-// KAI ONE — Launcher layout + MY MAPS icon stability v2
+// KAI ONE — Launcher layout + MY MAPS icon stability v3
 // Canonical home order: MY APPS -> MY MAPS -> MY PROJECTS -> phone categories.
-// Map logos prefer the generated inline data URI so they do not depend on WebView/native/network image timing.
+// Map logos load from the committed base64 source, then stay as an in-memory data URI.
 (() => {
   "use strict";
-  if (window.__ACC_LAUNCHER_LAYOUT_STABILITY_V1__) return;
-  window.__ACC_LAUNCHER_LAYOUT_STABILITY_V1__ = true;
+  if (window.__ACC_LAUNCHER_LAYOUT_STABILITY_V3__) return;
+  window.__ACC_LAUNCHER_LAYOUT_STABILITY_V3__ = true;
 
-  const REVISION = "KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V2_INLINE_SPRITE";
+  const REVISION = "KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V3_DIRECT_B64";
   const STYLE_ID = "acc-launcher-layout-stability-v1-style";
-  const DATA_SCRIPT_ID = "acc-my-maps-sprite-data-v12";
-  const DATA_SCRIPT = "./my-maps-sprite-data-v1.js?rev=KAI_ONE_MAPS_INLINE_DATA_V12";
-  const NATIVE_SPRITE = "/__acc_native/maps-sprite.jpg?rev=KAI_ONE_MAPS_NATIVE_STABLE_V12";
-  const WEB_SPRITE = "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MAPS_WEB_STABLE_V12";
+  const B64_URL = "./assets/app-icons/my-maps-icons-sprite.jpg.b64?rev=KAI_ONE_MAPS_B64_V13";
+  const NATIVE_SPRITE = "/__acc_native/maps-sprite.jpg?rev=KAI_ONE_MAPS_NATIVE_STABLE_V13";
+  const WEB_SPRITE = "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MAPS_WEB_STABLE_V13";
+
+  let spritePromise = null;
 
   function spriteDataUrl() {
     const value = String(window.ACCMyMapsSpriteDataUrl || "");
     return value.startsWith("data:image/") ? value : "";
+  }
+
+  function acceptBase64(raw) {
+    const clean = String(raw || "").replace(/[^A-Za-z0-9+/=]/g, "");
+    if (clean.length < 1024 || !clean.startsWith("/9j/")) return false;
+    window.ACCMyMapsSpriteDataUrl = `data:image/jpeg;base64,${clean}`;
+    return true;
   }
 
   function ensureStyle() {
@@ -27,7 +35,7 @@
     }
 
     const inline = spriteDataUrl();
-    const mode = inline ? "INLINE_DATA_URI_V12" : "NATIVE_THEN_WEB_V12";
+    const mode = inline ? "DIRECT_B64_DATA_URI_V13" : "NATIVE_THEN_WEB_V13";
     if (style.dataset.revision === REVISION && style.dataset.spriteMode === mode) return;
 
     style.dataset.revision = REVISION;
@@ -39,6 +47,7 @@
           background-repeat:no-repeat!important;
           background-size:400% 200%!important;
           background-position:var(--sprite-x) var(--sprite-y)!important;
+          opacity:1!important;
         }
       `
       : `
@@ -57,23 +66,28 @@
   function loadInlineSprite() {
     if (spriteDataUrl()) {
       ensureStyle();
-      return;
+      return Promise.resolve(true);
     }
+    if (spritePromise) return spritePromise;
 
-    const existing = document.getElementById(DATA_SCRIPT_ID);
-    if (existing) return;
+    spritePromise = fetch(B64_URL, { cache:"no-store", credentials:"same-origin" })
+      .then(response => {
+        if (!response.ok) throw new Error(`sprite b64 ${response.status}`);
+        return response.text();
+      })
+      .then(text => {
+        if (!acceptBase64(text)) throw new Error("invalid sprite b64");
+        ensureStyle();
+        schedule(0);
+        schedule(80);
+        return true;
+      })
+      .catch(() => {
+        ensureStyle();
+        return false;
+      });
 
-    const script = document.createElement("script");
-    script.id = DATA_SCRIPT_ID;
-    script.src = DATA_SCRIPT;
-    script.async = false;
-    script.onload = () => {
-      ensureStyle();
-      schedule(0);
-      schedule(80);
-    };
-    script.onerror = () => ensureStyle();
-    document.head.appendChild(script);
+    return spritePromise;
   }
 
   function placeAfter(node, anchor) {
@@ -109,7 +123,7 @@
 
       document.documentElement.dataset.accLauncherOrder = REVISION;
       const mapRoot = document.getElementById("acc-my-maps");
-      if (mapRoot) mapRoot.dataset.spriteSource = spriteDataUrl() ? "INLINE_DATA_URI_V12" : "NATIVE_THEN_WEB_V12";
+      if (mapRoot) mapRoot.dataset.spriteSource = spriteDataUrl() ? "DIRECT_B64_DATA_URI_V13" : "NATIVE_THEN_WEB_V13";
       return changed;
     } finally {
       arranging = false;
