@@ -1,5 +1,5 @@
 // KAI ONE — ACC OS X MY MAPS launcher v17
-// Stable source: same-origin Cloudflare proxy -> Roblox official game icon API.
+// Stable source: same-origin Cloudflare proxy -> Roblox official experience icon.
 // No sprite, generated local crop, data URI, Blob URL, or Android native logo dependency.
 (() => {
   "use strict";
@@ -7,7 +7,7 @@
   const REVISION = "KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY";
   const ROOT_ID = "acc-my-maps";
   const STYLE_ID = "acc-my-maps-v17-style";
-  const ICON_REV = "KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY";
+  const ICON_REV = "KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY_UNIVERSE_V2";
 
   const MAPS = [
     {key:"bbya-social-hub",title:"BBYA Social Hub",placeId:"131894120482837",accent:"#d946ef",fallback:"BBYA"},
@@ -22,7 +22,7 @@
 
   function iconUrl(map, retry = 0){
     const extra = retry ? `&retry=${retry}` : "";
-    return `/api/roblox-map-icon?placeId=${encodeURIComponent(map.placeId)}&rev=${ICON_REV}${extra}`;
+    return `/api/roblox-map-icon?placeId=${encodeURIComponent(map.placeId)}&rev=${ICON_REV}&source=universe-v2${extra}`;
   }
 
   function ensureStyle(){
@@ -75,7 +75,7 @@
     img.addEventListener("load", () => {
       if(img.naturalWidth > 0 && img.naturalHeight > 0){
         icon.dataset.imageReady = "1";
-        icon.dataset.imageSource = "ROBLOX_PROXY_V17";
+        icon.dataset.imageSource = "ROBLOX_UNIVERSE_PROXY_V2";
       }
     });
     img.addEventListener("error", () => {
@@ -109,7 +109,7 @@
 
     if(root.dataset.mapsRevision !== REVISION){
       root.dataset.mapsRevision = REVISION;
-      root.dataset.logoMode = "ROBLOX_PROXY_V17";
+      root.dataset.logoMode = "ROBLOX_UNIVERSE_PROXY_V2";
       root.innerHTML = `<div class="acc-map-head"><div><div class="eyebrow">ACC ROBLOX COMMAND</div><h2 class="card-title" style="margin:3px 0 0">MY MAPS</h2></div><span class="badge">${MAPS.length} MAPS</span></div><div class="acc-map-grid"></div>`;
       const grid = root.querySelector(".acc-map-grid");
       MAPS.forEach(map => grid.appendChild(tile(map)));
@@ -129,17 +129,17 @@
   new MutationObserver(() => {
     const root = document.getElementById(ROOT_ID);
     if(!root || root.dataset.mapsRevision !== REVISION) schedule();
-  }).observe(document.documentElement, {childList:true, subtree:true});
+  }).observe(document.documentElement,{childList:true,subtree:true});
 
-  window.addEventListener("pageshow", schedule);
-  window.addEventListener("focus", schedule);
-  document.addEventListener("visibilitychange", () => { if(!document.hidden) schedule(); });
+  window.addEventListener("pageshow",schedule);
+  window.addEventListener("focus",schedule);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedule();});
 
   window.ACCMyMaps = Object.freeze({
-    revision: REVISION,
-    spriteSource: "NONE_V17_ROBLOX_PROXY",
-    maps: MAPS.map(({key,title,placeId}) => ({key,title,placeId})),
-    render: schedule
+    revision:REVISION,
+    spriteSource:"NONE_V17_ROBLOX_UNIVERSE_PROXY_V2",
+    maps:MAPS.map(({key,title,placeId})=>({key,title,placeId})),
+    render:schedule
   });
 
   schedule();
