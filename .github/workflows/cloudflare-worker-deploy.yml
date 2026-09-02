@@ -79,7 +79,8 @@ jobs:
           test -s assets/app-launcher/bali-wedding-dj.jpg
           test -s my-maps-sprite-data-v1.js
           grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' my-maps-launcher-v1.js
-          grep -q 'KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET' publishing-page-aliases-v1.js
+          grep -q 'KAI_ONE_MY_MAPS_V13_DIRECT_B64' publishing-page-aliases-v1.js
+          grep -q 'KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V3_DIRECT_B64' publishing-page-aliases-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-instagram-bridge-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-page-aliases-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_DIRECT_TOUCH_V3' publishing-instagram-observer-guard-v1.js
