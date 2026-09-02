@@ -1,4 +1,4 @@
-// KAI ONE — Owner-confirmed Facebook Page alias mapping v4 / Maps V8 cache reset
+// KAI ONE — Owner-confirmed Facebook Page alias mapping v4 / Maps V17 loader
 // Legacy deploy validation marker retained intentionally: KAI_ONE_MY_MAPS_V8_CACHE_RESET
 (() => {
   "use strict";
@@ -59,7 +59,6 @@
   schedule();
 })();
 
-// KAI ONE — full owner app launcher loader. Kept separate from ACC Core registry/publishing logic.
 (() => {
   if (document.querySelector('script[data-acc-owner-app-launcher="v2"]')) return;
   const script = document.createElement("script");
@@ -69,7 +68,6 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — owner phone categories. Build 10 shows installed Android apps only.
 (() => {
   if (document.querySelector('script[data-acc-owner-phone-launcher="v1"]')) return;
   const script = document.createElement("script");
@@ -79,7 +77,6 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — Bali Wedding DJ native APK tile.
 (() => {
   if (document.querySelector('script[data-acc-bali-wedding-dj-launcher="v1"]')) return;
   const script = document.createElement("script");
@@ -89,7 +86,6 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — SYNC by Krisbow CCTV native APK tile.
 (() => {
   if (document.querySelector('script[data-acc-sync-cctv-launcher="v1"]')) return;
   const script = document.createElement("script");
@@ -99,7 +95,6 @@
   document.head.appendChild(script);
 })();
 
-// Build 8 — mobile publish result stabilization.
 (() => {
   if (document.querySelector('script[data-acc-build8-ui="v1"]')) return;
   const script = document.createElement("script");
@@ -109,7 +104,6 @@
   document.head.appendChild(script);
 })();
 
-// Build 8 — exact-safe Meta Page reconciliation after sync.
 (() => {
   if (document.querySelector('script[data-acc-publish-sync-reconcile="v2"]')) return;
   const script = document.createElement("script");
@@ -119,7 +113,6 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — AI Mashup native APK icon hotfix.
 (() => {
   if (document.querySelector('script[data-acc-ai-mashup-icon-fix="v1"]')) return;
   const script = document.createElement("script");
@@ -129,17 +122,18 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS Build 10 renderer.
+// KAI ONE — MY MAPS V17 authoritative loader.
 (() => {
-  if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
+  if (document.querySelector('script[data-acc-my-maps="v17"]')) return;
+  const old = document.querySelector('script[data-acc-my-maps]');
+  if (old) old.remove();
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V13_DIRECT_B64";
-  script.dataset.accMyMaps = "v1";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY";
+  script.dataset.accMyMaps = "v17";
   script.async = false;
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY PROJECTS ChatGPT launcher.
 (() => {
   if (document.querySelector('script[data-acc-my-projects="v1"]')) return;
   const script = document.createElement("script");
@@ -149,17 +143,17 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — deterministic launcher order + committed-base64 MY MAPS logos.
 (() => {
-  if (document.querySelector('script[data-acc-launcher-layout-stability="v1"]')) return;
+  if (document.querySelector('script[data-acc-launcher-layout-stability="v4"]')) return;
+  const old = document.querySelector('script[data-acc-launcher-layout-stability]');
+  if (old) old.remove();
   const script = document.createElement("script");
-  script.src = "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V3_DIRECT_B64";
-  script.dataset.accLauncherLayoutStability = "v1";
+  script.src = "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V4_ORDER_ONLY";
+  script.dataset.accLauncherLayoutStability = "v4";
   script.async = false;
   document.head.appendChild(script);
 })();
 
-// KAI ONE — compact accordion for legacy launcher sections.
 (() => {
   if (document.querySelector('script[data-acc-legacy-launcher-accordion="v1"]')) return;
   const script = document.createElement("script");
@@ -169,7 +163,6 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — Android-safe Page search + quick diagnostic filter.
 (() => {
   if (document.querySelector('script[data-acc-page-search-touch="v1"]')) return;
   const script = document.createElement("script");
@@ -179,7 +172,6 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — guard the IG bridge observer from reacting to its own panel writes.
 (() => {
   if (document.querySelector('script[data-acc-instagram-observer-guard="v1"]')) return;
   const script = document.createElement("script");
@@ -189,7 +181,6 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — Instagram Business/Creator sync + owner-controlled mapping.
 (() => {
   if (document.querySelector('script[data-acc-instagram-bridge="v1"]')) return;
   const script = document.createElement("script");
