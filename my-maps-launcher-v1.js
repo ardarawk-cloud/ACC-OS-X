@@ -1,5 +1,5 @@
 // KAI ONE — ACC OS X MY MAPS launcher v10
-// Build 10 launcher marker retained; Gunung BBYA now targets the canonical ACC Mountain Master place.
+// Build 10 launcher marker retained; Gunung BBYA targets the dedicated Mount BBYA place.
 (() => {
   "use strict";
   const REVISION="KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
@@ -27,7 +27,7 @@
     {key:"becak-e-bike",title:"Becak E-bike",placeId:"80994730522893",accent:"#f59e0b",fallback:"BE",bx:"100%",by:"0%"},
     {key:"wonderpocket",title:"WONDERPOCKET",placeId:"124843214013484",accent:"#a78bfa",fallback:"WP",bx:"0%",by:"100%"},
     {key:"track-01",title:"Track 01",placeId:"79748872921213",accent:"#dc2626",fallback:"T01",bx:"33.333%",by:"100%"},
-    {key:"gunung-bbya",title:"Gunung BBYA",placeId:"11832985967",accent:"#22c55e",fallback:"GB",bx:"66.667%",by:"100%"},
+    {key:"gunung-bbya",title:"Gunung BBYA",placeId:"82661754996018",accent:"#22c55e",fallback:"GB",bx:"66.667%",by:"100%"},
     {key:"lost-found-night-shift",title:"Lost & Found: Night Shift",placeId:"93699016600671",accent:"#f97316",fallback:"LF",bx:"100%",by:"100%"}
   ];
 
