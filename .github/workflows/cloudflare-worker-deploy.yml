@@ -52,7 +52,9 @@ jobs:
           import io
           import pathlib
           import re
-          from PIL import Image
+          from PIL import Image, ImageFile
+
+          ImageFile.LOAD_TRUNCATED_IMAGES = True
 
           pairs = [
               ("assets/app-icons/my-maps-icons-sprite.jpg.b64", "assets/app-icons/my-maps-icons-sprite.jpg"),
