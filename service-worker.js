@@ -1,8 +1,11 @@
-const CACHE="acc-os-x-build10-page-picker-v4";
-const MAP_CACHE="acc-os-x-maps-v10-native-build10";
+const CACHE="acc-os-x-build10-page-picker-v5";
+const MAP_CACHE="acc-os-x-maps-v12-inline-sprite";
+// Legacy deploy validation marker retained intentionally: acc-os-x-maps-v10-native-build10
 const MAP_CORE=[
   "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET",
-  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET"
+  "./assets/app-icons/my-maps-icons-sprite.jpg?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET",
+  "./my-maps-sprite-data-v1.js?rev=KAI_ONE_MAPS_INLINE_DATA_V12",
+  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V2_INLINE_SPRITE"
 ];
 const CORE=[
   "./",
@@ -34,7 +37,9 @@ const LEGACY_CONNECTOR_HOST="acc-publish-connector.ardarawk.workers.dev";
 const V2_CONNECTOR_HOST="acc-publish-connectorv2.ardarawk.workers.dev";
 const MAP_NETWORK_PATHS=new Set([
   "/my-maps-launcher-v1.js",
-  "/assets/app-icons/my-maps-icons-sprite.jpg"
+  "/assets/app-icons/my-maps-icons-sprite.jpg",
+  "/my-maps-sprite-data-v1.js",
+  "/launcher-layout-stability-v1.js"
 ]);
 const FORCE_FRESH=new Set([
   "/",
@@ -47,7 +52,9 @@ const FORCE_FRESH=new Set([
   "/publishing-sync-reconcile-v2.js",
   "/build8-ui-stabilization-v1.js",
   "/bali-wedding-dj-launcher-v1.js",
-  "/sync-cctv-launcher-v1.js"
+  "/sync-cctv-launcher-v1.js",
+  "/launcher-layout-stability-v1.js",
+  "/my-maps-sprite-data-v1.js"
 ]);
 self.addEventListener("install",event=>event.waitUntil(
   Promise.all([
@@ -83,7 +90,7 @@ self.addEventListener("fetch",event=>{
           caches.open(MAP_CACHE).then(cache=>cache.put(mapKey,copy)).catch(()=>{});
         }
         return response;
-      }).catch(()=>caches.open(MAP_CACHE).then(cache=>cache.match(mapKey)).then(hit=>hit||Response.error()))
+      }).catch(()=>caches.open(MAP_CACHE).then(cache=>cache.match(mapKey)).then(hit=>hit||caches.match(event.request)).then(hit=>hit||Response.error()))
     );
     return;
   }
