@@ -1,20 +1,9 @@
-const CACHE="acc-os-x-build10-page-picker-v7";
-const MAP_CACHE="acc-os-x-maps-v16-individual-files";
-const MAP_ICON_REV="KAI_ONE_MY_MAPS_V16_INDIVIDUAL_FILES";
-const MAP_ICON_PATHS=[
-  "/assets/app-icons/my-maps/bbya-social-hub.jpg",
-  "/assets/app-icons/my-maps/zona-perang.jpg",
-  "/assets/app-icons/my-maps/after-school-city.jpg",
-  "/assets/app-icons/my-maps/becak-e-bike.jpg",
-  "/assets/app-icons/my-maps/wonderpocket.jpg",
-  "/assets/app-icons/my-maps/track-01.jpg",
-  "/assets/app-icons/my-maps/gunung-bbya.jpg",
-  "/assets/app-icons/my-maps/lost-found-night-shift.jpg"
-];
+const CACHE="acc-os-x-build10-page-picker-v8";
+const MAP_CACHE="acc-os-x-maps-v17-roblox-icon-proxy";
+const MAP_ICON_REV="KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY";
 const MAP_CORE=[
   `./my-maps-launcher-v1.js?rev=${MAP_ICON_REV}`,
-  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V4_ORDER_ONLY",
-  ...MAP_ICON_PATHS.map(path=>`.${path}?rev=${MAP_ICON_REV}`)
+  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V4_ORDER_ONLY"
 ];
 const CORE=[
   "./",
@@ -46,8 +35,7 @@ const LEGACY_CONNECTOR_HOST="acc-publish-connector.ardarawk.workers.dev";
 const V2_CONNECTOR_HOST="acc-publish-connectorv2.ardarawk.workers.dev";
 const MAP_NETWORK_PATHS=new Set([
   "/my-maps-launcher-v1.js",
-  "/launcher-layout-stability-v1.js",
-  ...MAP_ICON_PATHS
+  "/launcher-layout-stability-v1.js"
 ]);
 const FORCE_FRESH=new Set([
   "/",
@@ -82,7 +70,6 @@ self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET")return;
   if(url.pathname.startsWith("/api/"))return;
 
-  // Native APK-only virtual assets remain outside PWA interception.
   if(url.pathname.startsWith("/__acc_native/")) return;
 
   if(MAP_NETWORK_PATHS.has(url.pathname)){
