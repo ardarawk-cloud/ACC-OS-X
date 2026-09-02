@@ -129,11 +129,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — MY MAPS Build 10 native Android asset renderer with web JPG fallback.
+// KAI ONE — MY MAPS Build 10 renderer.
 (() => {
   if (document.querySelector('script[data-acc-my-maps="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V10_NATIVE_ANDROID_ASSET";
+  script.src = "./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V13_DIRECT_B64";
   script.dataset.accMyMaps = "v1";
   script.async = false;
   document.head.appendChild(script);
@@ -149,11 +149,11 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — deterministic launcher order + native-first MY MAPS icon fallback.
+// KAI ONE — deterministic launcher order + committed-base64 MY MAPS logos.
 (() => {
   if (document.querySelector('script[data-acc-launcher-layout-stability="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V1_NATIVE_FIRST";
+  script.src = "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V3_DIRECT_B64";
   script.dataset.accLauncherLayoutStability = "v1";
   script.async = false;
   document.head.appendChild(script);
