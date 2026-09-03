@@ -1,9 +1,10 @@
-// KAI ONE — ACC OS X ROBLOX MAP ICON PROXY v2
+// KAI ONE — ACC OS X ROBLOX MAP ICON PROXY v3
 // Resolve Place -> Universe first, then read the official experience icon shown by Roblox clients.
+// Mount BBYA place mapping corrected; Mountain Social is a separate project.
 // Legacy deploy marker retained intentionally: KAI_ONE_ROBLOX_MAP_ICON_PROXY_V1
 import baseWorker from "./worker-brain-runtime-rescue-v9.js";
 
-const REVISION = "KAI_ONE_ROBLOX_MAP_ICON_PROXY_V2_UNIVERSE_ICON";
+const REVISION = "KAI_ONE_ROBLOX_MAP_ICON_PROXY_V3_MOUNT_BBYA_CORRECT_PLACE";
 const ALLOWED_PLACE_IDS = new Set([
   "131894120482837",
   "85866320744490",
@@ -11,7 +12,7 @@ const ALLOWED_PLACE_IDS = new Set([
   "80994730522893",
   "124843214013484",
   "79748872921213",
-  "82661754996018",
+  "11832985967",
   "93699016600671"
 ]);
 
