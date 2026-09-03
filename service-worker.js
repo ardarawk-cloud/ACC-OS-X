@@ -1,6 +1,7 @@
+// Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
 const CACHE="acc-os-x-build10-page-picker-v8";
-const MAP_CACHE="acc-os-x-maps-v17-roblox-icon-proxy";
-const MAP_ICON_REV="KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY";
+const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
+const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
   `./my-maps-launcher-v1.js?rev=${MAP_ICON_REV}`,
   "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V4_ORDER_ONLY"
