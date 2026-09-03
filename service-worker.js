@@ -1,3 +1,4 @@
+// Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
 const CACHE="acc-os-x-build10-page-picker-v8";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
