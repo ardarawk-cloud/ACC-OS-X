@@ -1,4 +1,4 @@
-// KAI ONE — Owner-confirmed Facebook Page alias mapping v4 / Maps V17 loader
+// KAI ONE — Owner-confirmed Facebook Page alias mapping v4 / Maps V17 loader / Projects V3 loader
 // Legacy deploy validation marker retained intentionally: KAI_ONE_MY_MAPS_V8_CACHE_RESET
 (() => {
   "use strict";
@@ -134,11 +134,14 @@
   document.head.appendChild(script);
 })();
 
+// KAI ONE — MY PROJECTS V3 authoritative loader.
 (() => {
-  if (document.querySelector('script[data-acc-my-projects="v1"]')) return;
+  if (document.querySelector('script[data-acc-my-projects="v3"]')) return;
+  const old = document.querySelector('script[data-acc-my-projects]');
+  if (old) old.remove();
   const script = document.createElement("script");
-  script.src = "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V2_VECTOR_ICONS_BUILD8";
-  script.dataset.accMyProjects = "v1";
+  script.src = "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V3_MAP_ORDER";
+  script.dataset.accMyProjects = "v3";
   script.async = false;
   document.head.appendChild(script);
 })();
