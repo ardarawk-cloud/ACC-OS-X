@@ -1,6 +1,7 @@
 // KAI ONE — ACC OS X MY MAPS launcher v18
 // Stable source: same-origin Cloudflare proxy -> Roblox official experience icon.
 // Gunung BBYA corrected to the real Mount BBYA place, not Mountain Social.
+// Legacy deploy validation marker: KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY
 (() => {
   "use strict";
 
