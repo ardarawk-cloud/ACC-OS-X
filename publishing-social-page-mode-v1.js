@@ -26,6 +26,15 @@
     catch { return false; }
   };
 
+  const setText = (node, value) => {
+    const next = String(value ?? "");
+    if (node && node.textContent !== next) node.textContent = next;
+  };
+
+  const setClass = (node, value) => {
+    if (node && node.className !== value) node.className = value;
+  };
+
   function ensureFacebookMappings() {
     const state = readState();
     state.settings = state.settings || {};
@@ -67,8 +76,7 @@
     for (const stat of card.querySelectorAll(".stat")) {
       const name = stat.querySelector("span")?.textContent?.trim();
       if (name !== label) continue;
-      const strong = stat.querySelector("strong");
-      if (strong) strong.textContent = String(value);
+      setText(stat.querySelector("strong"), value);
     }
   }
 
@@ -94,12 +102,12 @@
 
       let platform = "facebook";
       if (target) {
-        if (eyebrow) eyebrow.textContent = `${target.code} • Facebook`;
+        setText(eyebrow, `${target.code} • Facebook`);
         const ready = String(mapping?.pageId || "") === target.pageId;
-        if (meta) meta.textContent = ready ? `→ ${target.pageName} • ${target.pageId}` : "Facebook Page link required";
+        setText(meta, ready ? `→ ${target.pageName} • ${target.pageId}` : "Facebook Page link required");
         if (status) {
-          status.textContent = ready ? "READY" : "UNLINKED";
-          status.className = ready ? "status completed" : "status ready";
+          setText(status, ready ? "READY" : "UNLINKED");
+          setClass(status, ready ? "status completed" : "status ready");
         }
         button.dataset.accSocialPageMode = REVISION;
         platform = "facebook";
@@ -127,26 +135,24 @@
       setStat(hubCard, "TOTAL CHANNELS", total);
       setStat(hubCard, "TARGETS READY", mapped);
       setStat(hubCard, "ACTION NEEDED", Math.max(0, total - mapped));
-      const badge = hubCard.querySelector(".badge");
-      if (badge) badge.textContent = `${mapped}/${total} TARGETS READY`;
-      const description = hubCard.querySelector("p.muted.small");
-      if (description) description.textContent = "Current ACC social publishing channels use isolated Facebook Page mappings through the external Meta connector.";
+      setText(hubCard.querySelector(".badge"), `${mapped}/${total} TARGETS READY`);
+      setText(hubCard.querySelector("p.muted.small"), "Current ACC social publishing channels use isolated Facebook Page mappings through the external Meta connector.");
     }
 
     const igSync = document.querySelector("[data-acc-ig-sync]");
     const igPanel = document.getElementById("acc-instagram-bridge-panel");
     if (igChannels === 0) {
-      if (igSync) igSync.style.display = "none";
-      if (igPanel) igPanel.style.display = "none";
+      if (igSync && igSync.style.display !== "none") igSync.style.display = "none";
+      if (igPanel && igPanel.style.display !== "none") igPanel.style.display = "none";
     } else {
-      if (igSync) igSync.style.display = "";
-      if (igPanel) igPanel.style.display = "";
+      if (igSync && igSync.style.display === "none") igSync.style.display = "";
+      if (igPanel && igPanel.style.display === "none") igPanel.style.display = "";
     }
   }
 
   function activeTarget() {
     const state = readState();
-    const id = String(state?.activeChannelId || state?.activeProfileId || document.documentElement.dataset.accSocialPageActive || "");
+    const id = String(document.documentElement.dataset.accSocialPageActive || state?.activeChannelId || state?.activeProfileId || "");
     return TARGETS[id] ? { id, ...TARGETS[id] } : null;
   }
 
@@ -158,8 +164,8 @@
 
     for (const eyebrow of document.querySelectorAll(".eyebrow")) {
       const text = eyebrow.textContent?.trim() || "";
-      if (text === `${active.code} • Instagram`) eyebrow.textContent = `${active.code} • Facebook`;
-      if (text === "PUBLISH TARGET • INSTAGRAM") eyebrow.textContent = "PUBLISH TARGET • FACEBOOK";
+      if (text === `${active.code} • Instagram`) setText(eyebrow, `${active.code} • Facebook`);
+      if (text === "PUBLISH TARGET • INSTAGRAM") setText(eyebrow, "PUBLISH TARGET • FACEBOOK");
     }
 
     for (const card of document.querySelectorAll(".card")) {
@@ -168,11 +174,11 @@
       const title = card.querySelector(".item-title");
       const meta = card.querySelector(".meta");
       const status = card.querySelector(".status");
-      if (title) title.textContent = ready ? active.pageName : "Facebook Page belum linked";
-      if (meta) meta.textContent = ready ? `Page ID ${active.pageId} • OWNER_SOCIAL_PAGE_MODE` : "Sync Page dari Publishing Hub.";
+      setText(title, ready ? active.pageName : "Facebook Page belum linked");
+      setText(meta, ready ? `Page ID ${active.pageId} • OWNER_SOCIAL_PAGE_MODE` : "Sync Page dari Publishing Hub.");
       if (status) {
-        status.textContent = ready ? "READY" : "LINK REQUIRED";
-        status.className = ready ? "status completed" : "status ready";
+        setText(status, ready ? "READY" : "LINK REQUIRED");
+        setClass(status, ready ? "status completed" : "status ready");
       }
     }
   }
