@@ -65,8 +65,10 @@ jobs:
           test -s assets/app-launcher/bali-wedding-dj.jpg
           grep -q 'KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY' my-maps-launcher-v1.js
           grep -q 'KAI_ONE_ROBLOX_MAP_ICON_PROXY_V1' worker-map-icon-proxy-v1.js
+          grep -q 'KAI_ONE_ROBLOX_PUBLISH_PROBE_V1' worker-roblox-publish-probe-v1.js
+          grep -q 'worker-map-icon-proxy-v1.js' worker-roblox-publish-probe-v1.js
           grep -q 'acc-os-x-maps-v17-roblox-icon-proxy' service-worker.js
-          grep -q 'worker-map-icon-proxy-v1.js' wrangler.jsonc
+          grep -q 'worker-roblox-publish-probe-v1.js' wrangler.jsonc
           grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-instagram-bridge-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-page-aliases-v1.js
           grep -q 'KAI_ONE_INSTAGRAM_DIRECT_TOUCH_V3' publishing-instagram-observer-guard-v1.js
