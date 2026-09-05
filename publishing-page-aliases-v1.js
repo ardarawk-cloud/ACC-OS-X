@@ -192,3 +192,15 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — direct Facebook Page mode for CH-102/103/104.
+// Loaded after the Instagram safety wrapper so these owner-converted channels
+// are rewritten to META_FACEBOOK without weakening safety for any real IG target.
+(() => {
+  if (document.querySelector('script[data-acc-social-page-mode="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./publishing-social-page-mode-v1.js?rev=KAI_ONE_SOCIAL_PAGE_MODE_V1_DIRECT_FACEBOOK";
+  script.dataset.accSocialPageMode = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
