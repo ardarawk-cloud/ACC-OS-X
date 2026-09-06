@@ -204,3 +204,79 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+// KAI ONE — Publishing Hub stat repaint fix v1.
+// Runtime evidence showed the direct Page conversion and top badge were correct,
+// while legacy stat cards retained pre-conversion values because their labels are
+// not guaranteed to be <span> nodes. Repaint by card order with live DOM/state data.
+(() => {
+  "use strict";
+  if (window.__ACC_SOCIAL_PAGE_STAT_REPAINT_V1__) return;
+  window.__ACC_SOCIAL_PAGE_STAT_REPAINT_V1__ = true;
+  const STATE_KEY = "acc_os_x_ecosystem_v214";
+  const REVISION = "KAI_ONE_SOCIAL_PAGE_STAT_REPAINT_V1";
+
+  const readState = () => {
+    try { const v = JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); return v && typeof v === "object" ? v : {}; }
+    catch { return {}; }
+  };
+
+  const setText = (node, value) => {
+    const next = String(value ?? "");
+    if (node && node.textContent !== next) node.textContent = next;
+  };
+
+  function repaint() {
+    const heading = [...document.querySelectorAll("h1,h2,h3")].find(node => node.textContent?.trim() === "PUBLISHING HUB");
+    const hubCard = heading?.closest?.(".card");
+    const buttons = [...document.querySelectorAll('[data-action="open-channel"][data-channel]')];
+    if (!hubCard || !buttons.length) return false;
+
+    const state = readState();
+    const mappings = state?.settings?.publishMappings && typeof state.settings.publishMappings === "object" ? state.settings.publishMappings : {};
+    const pages = Array.isArray(state?.settings?.metaPages) ? state.settings.metaPages : [];
+    let fbChannels = 0, igChannels = 0, fbMapped = 0, igMapped = 0;
+
+    for (const button of buttons) {
+      const id = String(button.dataset.channel || "");
+      const platformText = String(button.querySelector(".eyebrow")?.textContent || "").toLowerCase();
+      const isIg = platformText.includes("instagram");
+      const mapping = mappings[id] || null;
+      if (isIg) {
+        igChannels += 1;
+        if (mapping?.instagramAccountId) igMapped += 1;
+      } else {
+        fbChannels += 1;
+        if (mapping?.pageId) fbMapped += 1;
+      }
+    }
+
+    const total = buttons.length;
+    const mapped = fbMapped + igMapped;
+    const values = [fbChannels, fbMapped, igChannels, igMapped, pages.length, total, mapped, Math.max(0, total - mapped)];
+    const stats = [...hubCard.querySelectorAll(".stat")];
+    values.forEach((value, index) => setText(stats[index]?.querySelector("strong"), value));
+    setText(hubCard.querySelector(".badge"), `${mapped}/${total} TARGETS READY`);
+    document.documentElement.dataset.accSocialPageStats = REVISION;
+    return true;
+  }
+
+  let queued = false;
+  function schedule() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; repaint(); });
+    setTimeout(repaint, 180);
+    setTimeout(repaint, 700);
+  }
+
+  new MutationObserver(schedule).observe(document.documentElement, {childList:true,subtree:true});
+  window.addEventListener("pageshow", schedule);
+  window.addEventListener("focus", schedule);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) schedule(); });
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.('[data-action="sync-meta-pages"], [data-action="module-tab-system"], [data-action="open-channel"]')) schedule();
+  }, true);
+  window.ACCSocialPageStatRepaint = Object.freeze({revision:REVISION,repaint:schedule});
+  schedule();
+})();
