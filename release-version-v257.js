@@ -109,6 +109,16 @@
   document.head.appendChild(script);
 })();
 
+// HOME-only Quick Access. Replaces the HOME selector block with recent/frequent launcher shortcuts.
+(() => {
+  if (document.querySelector('script[data-acc-home-quick-access="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./home-quick-access-v1.js?rev=KAI_ONE_HOME_QUICK_ACCESS_V1";
+  script.dataset.accHomeQuickAccess = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 (() => {
   if (document.querySelector('script[data-acc-copilot-preview-fix="v25762"]')) return;
   const script = document.createElement("script");
