@@ -87,6 +87,17 @@
   document.head.appendChild(script);
 })();
 
+// KAI ONE — standalone global Media Drop + channel router.
+// This is intentionally independent from the active channel selector.
+(() => {
+  if (document.querySelector('script[data-acc-kai-autopilot="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V1";
+  script.dataset.accKaiAutopilot = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 (() => {
   if (document.querySelector('script[data-acc-copilot-preview-fix="v25762"]')) return;
   const script = document.createElement("script");
