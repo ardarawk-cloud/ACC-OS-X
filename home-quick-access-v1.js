@@ -199,3 +199,111 @@
   window.ACCQuickAccess = Object.freeze({revision:REVISION,clear:()=>{localStorage.removeItem(STORE_KEY);schedule();},render:schedule});
   schedule();
 })();
+
+// KAI ONE — CHANNEL INFO COMPACT v1
+// CHANNEL stays fully functional, but no longer occupies a primary navigation slot.
+// Access moves into PRODUCE as a compact CHANNEL INFO shortcut; CHANNEL view gets a back-to-PRODUCE control.
+(() => {
+  "use strict";
+  if (window.__ACC_CHANNEL_INFO_COMPACT_V1__) return;
+  window.__ACC_CHANNEL_INFO_COMPACT_V1__ = true;
+
+  const REVISION = "KAI_ONE_CHANNEL_INFO_COMPACT_V1";
+  const HELPER_ID = "acc-channel-info-helper";
+  const STYLE_ID = "acc-channel-info-compact-style";
+  const norm = value => String(value ?? "").replace(/\s+/g," ").trim().toUpperCase();
+
+  function navContext(){
+    const groups = [...document.querySelectorAll(".tabs")];
+    for (const group of groups) {
+      const buttons = [...group.querySelectorAll(".tab,button")];
+      const home = buttons.find(button => /\bHOME\b/.test(norm(button.textContent)));
+      const channel = buttons.find(button => /\bCHANNEL\b/.test(norm(button.textContent)));
+      const produce = buttons.find(button => /\bPRODUCE\b/.test(norm(button.textContent)));
+      if (home && channel && produce) return {group,home,channel,produce};
+    }
+    return null;
+  }
+
+  function ensureStyle(){
+    if(document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+      #${HELPER_ID}{margin:12px 0 4px;display:flex;justify-content:flex-end}
+      #${HELPER_ID} .acc-channel-info-btn{appearance:none;min-height:38px;padding:8px 12px;border:1px solid var(--line2,#40506a);border-radius:12px;background:var(--panel2,#071023);color:var(--text,#f8fafc);font:inherit;font-size:.72rem;font-weight:900;letter-spacing:.04em;touch-action:manipulation}
+      #${HELPER_ID} .acc-channel-info-btn:active{transform:scale(.98)}
+      @media(max-width:430px){#${HELPER_ID}{justify-content:stretch}#${HELPER_ID} .acc-channel-info-btn{width:100%}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function contentSection(group){
+    let node = group.nextElementSibling;
+    while(node && !node.matches?.("section.section,.section")) node = node.nextElementSibling;
+    return node || document.querySelector("main.main section.section") || document.querySelector("main .section");
+  }
+
+  function helper(section,mode,channelButton,produceButton){
+    let box = document.getElementById(HELPER_ID);
+    if(!box){
+      box = document.createElement("div");
+      box.id = HELPER_ID;
+      box.dataset.revision = REVISION;
+    }
+    const label = mode === "CHANNEL" ? "← BACK TO PRODUCE" : "CHANNEL INFO";
+    const action = mode === "CHANNEL" ? "produce" : "channel";
+    if(box.dataset.mode !== mode){
+      box.dataset.mode = mode;
+      box.innerHTML = `<button type="button" class="acc-channel-info-btn" data-channel-info-action="${action}">${label}</button>`;
+    }
+    if(box.parentElement !== section) section.insertAdjacentElement("afterbegin",box);
+    const button = box.querySelector("[data-channel-info-action]");
+    if(button && !button.dataset.bound){
+      button.dataset.bound = "1";
+      button.addEventListener("click",()=>{
+        if(button.dataset.channelInfoAction === "channel") channelButton.click();
+        else produceButton.click();
+        queuePatch();
+      });
+    }
+  }
+
+  function patchChannelNav(){
+    ensureStyle();
+    const ctx = navContext();
+    const existing = document.getElementById(HELPER_ID);
+    if(!ctx){ existing?.remove(); return; }
+
+    ctx.channel.style.setProperty("display","none","important");
+    ctx.channel.setAttribute("aria-hidden","true");
+    ctx.channel.dataset.accCompactChannel = REVISION;
+
+    const section = contentSection(ctx.group);
+    if(!section){ existing?.remove(); return; }
+
+    if(ctx.produce.classList.contains("active")){
+      helper(section,"PRODUCE",ctx.channel,ctx.produce);
+    }else if(ctx.channel.classList.contains("active")){
+      helper(section,"CHANNEL",ctx.channel,ctx.produce);
+    }else{
+      existing?.remove();
+    }
+  }
+
+  let queued = false;
+  function queuePatch(){
+    if(queued) return;
+    queued = true;
+    requestAnimationFrame(()=>{queued=false;patchChannelNav();});
+  }
+
+  new MutationObserver(queuePatch).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
+  window.addEventListener("pageshow",queuePatch);
+  window.addEventListener("focus",queuePatch);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)queuePatch();});
+  document.addEventListener("click",event=>{if(event.target.closest?.(".tab"))setTimeout(queuePatch,0);},true);
+
+  window.ACCChannelInfoCompact = Object.freeze({revision:REVISION,render:queuePatch});
+  queuePatch();
+})();
