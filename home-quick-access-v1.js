@@ -68,6 +68,10 @@
     }).sort((a,b) => b._score-a._score || Number(b.lastUsed||0)-Number(a.lastUsed||0)).slice(0,LIMIT);
   }
 
+  function signatureFor(items){
+    return items.map(item=>`${item.type}:${item.key}:${item.count}:${item.lastUsed}`).join("|") || "EMPTY";
+  }
+
   function sourceButton(item){
     const nodes = item.type === "APP" ? document.querySelectorAll("[data-owner-app]") : item.type === "MAP" ? document.querySelectorAll("[data-owner-map]") : document.querySelectorAll("[data-owner-project]");
     return [...nodes].find(node => keyFrom(node,item.type) === item.key) || null;
@@ -118,11 +122,11 @@
     return `<button type="button" class="acc-quick-item mono" data-quick-type="${esc(item.type)}" data-quick-key="${esc(item.key)}" style="--quick-accent:${esc(item.accent||"#a855f7")}">${cloneVisual(item)}<div class="acc-quick-name">${esc(item.title)}</div><div class="acc-quick-kind">${esc(item.type)}</div></button>`;
   }
 
-  function buildPanel(){
+  function buildPanel(items){
     const panel = document.createElement("div");
     panel.id = PANEL_ID;
     panel.dataset.revision = REVISION;
-    const items = ranked();
+    panel.dataset.signature = signatureFor(items);
     panel.innerHTML = `<div class="acc-quick-head"><div><div class="acc-quick-title">QUICK ACCESS</div><div class="acc-quick-sub">RECENT + FREQUENT</div></div><span class="badge">${items.length}/${LIMIT}</span></div><div class="acc-quick-grid">${items.length?items.map(itemHtml).join(""):`<div class="acc-quick-empty">Belum ada history. Buka APP, MAP, atau PROJECT dari launcher di bawah — shortcut yang paling baru/sering dipakai akan muncul otomatis di sini.</div>`}</div>`;
     panel.addEventListener("click",event => {
       const button = event.target.closest?.("[data-quick-type][data-quick-key]");
@@ -156,11 +160,18 @@
     const hero = document.querySelector("main.main > .tabs + section.section .acc250-hero") || document.querySelector("main .section .acc250-hero");
     if(hero) hero.style.setProperty("display","none","important");
 
-    if(header){
-      existing?.remove();
-      const panel = buildPanel();
-      (selects || header.lastElementChild)?.insertAdjacentElement(selects?"beforebegin":"afterend",panel);
-      if(!panel.isConnected) header.appendChild(panel);
+    if(!header) return;
+    const items = ranked();
+    const signature = signatureFor(items);
+    if(existing?.dataset.signature === signature && existing.parentElement === header) return;
+
+    const panel = buildPanel(items);
+    if(existing?.parentElement === header){
+      existing.replaceWith(panel);
+    }else if(selects){
+      selects.insertAdjacentElement("beforebegin",panel);
+    }else{
+      header.appendChild(panel);
     }
   }
 
