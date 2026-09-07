@@ -7,18 +7,19 @@
   window.__ACC_KAI_AUTOPILOT_FOLDER_FALLBACK_V1__ = true;
 
   const REVISION = "KAI_AUTOPILOT_FOLDER_FALLBACK_V1_ANDROID";
+  const BUTTON_LABEL = "PICK FOLDER MEDIA";
 
   function patchButton(){
     const button=document.getElementById("acc-autopilot-folder");
     if(!button)return;
-    button.textContent="PICK FOLDER MEDIA";
-    button.dataset.accFolderFallback=REVISION;
+    if(String(button.textContent||"").trim()!==BUTTON_LABEL) button.textContent=BUTTON_LABEL;
+    if(button.dataset.accFolderFallback!==REVISION) button.dataset.accFolderFallback=REVISION;
   }
 
   function setStatus(message){
     const node=document.getElementById("acc-autopilot-status");
     if(node){
-      node.textContent=message;
+      if(node.textContent!==message) node.textContent=message;
       node.style.color="#8796ad";
     }
   }
