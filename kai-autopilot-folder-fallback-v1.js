@@ -1,51 +1,45 @@
-// ACC OS X — KAI AUTOPILOT ANDROID FOLDER FALLBACK v1
-// Runtime evidence: Android WebView can open the normal multi-file picker but does not expose a usable directory picker.
-// This adapter keeps the standalone Autopilot panel usable by routing the folder action into the proven multi-file picker.
+// ACC OS X — KAI AUTOPILOT MEDIA UI CLEANUP v1
+// Android runtime proved the normal media picker already supports multi-select.
+// Remove the redundant folder action until a real native watched-folder bridge exists.
 (() => {
   "use strict";
-  if (window.__ACC_KAI_AUTOPILOT_FOLDER_FALLBACK_V1__) return;
-  window.__ACC_KAI_AUTOPILOT_FOLDER_FALLBACK_V1__ = true;
+  if (window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V1__) return;
+  window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V1__ = true;
 
-  const REVISION = "KAI_AUTOPILOT_FOLDER_FALLBACK_V1_ANDROID";
-  const BUTTON_LABEL = "PICK FOLDER MEDIA";
+  const REVISION = "KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V1";
 
-  function patchButton(){
-    const button=document.getElementById("acc-autopilot-folder");
-    if(!button)return;
-    if(String(button.textContent||"").trim()!==BUTTON_LABEL) button.textContent=BUTTON_LABEL;
-    if(button.dataset.accFolderFallback!==REVISION) button.dataset.accFolderFallback=REVISION;
-  }
+  function patch(){
+    const panel = document.getElementById("acc-kai-autopilot-panel");
+    if(!panel) return;
 
-  function setStatus(message){
-    const node=document.getElementById("acc-autopilot-status");
-    if(node){
-      if(node.textContent!==message) node.textContent=message;
-      node.style.color="#8796ad";
-    }
-  }
+    panel.dataset.mediaUiRevision = REVISION;
 
-  document.addEventListener("click",event=>{
-    const button=event.target?.closest?.("#acc-autopilot-folder");
-    if(!button)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    document.getElementById("acc-autopilot-folder")?.remove();
+    document.getElementById("acc-autopilot-folder-input")?.remove();
 
-    const normalInput=document.getElementById("acc-autopilot-file-input");
-    if(!normalInput){
-      setStatus("Media picker belum tersedia. Reopen PRODUCE lalu coba lagi.");
-      return;
+    const dropCopy = panel.querySelector("#acc-autopilot-drop .acc-auto-desc");
+    if(dropCopy){
+      const next = "Pilih satu atau beberapa foto/video. File disimpan lokal di device (IndexedDB), bukan dimasukkan ke channel selector.";
+      if(dropCopy.textContent !== next) dropCopy.textContent = next;
     }
 
-    setStatus("Android mode: pilih foto/video dari folder. Bisa pilih beberapa file sekaligus.");
-    normalInput.click();
-  },true);
+    const add = document.getElementById("acc-autopilot-add");
+    if(add && String(add.textContent||"").trim() !== "+ ADD MEDIA") add.textContent = "+ ADD MEDIA";
 
-  let queued=false;
-  const observer=new MutationObserver(()=>{
-    if(queued)return;
-    queued=true;
-    requestAnimationFrame(()=>{queued=false;patchButton();});
-  });
-  observer.observe(document.documentElement,{childList:true,subtree:true});
-  patchButton();
+    const status = document.getElementById("acc-autopilot-status");
+    if(status && /^Android mode:/i.test(String(status.textContent||"").trim())) status.textContent = "";
+  }
+
+  let queued = false;
+  const schedule = () => {
+    if(queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; patch(); });
+  };
+
+  new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener("pageshow",schedule);
+  window.addEventListener("focus",schedule);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) schedule(); });
+  schedule();
 })();
