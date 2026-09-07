@@ -205,16 +205,20 @@
   document.head.appendChild(script);
 })();
 
-// KAI ONE — Publishing Hub stat repaint fix v1.
-// Runtime evidence showed the direct Page conversion and top badge were correct,
-// while legacy stat cards retained pre-conversion values because their labels are
-// not guaranteed to be <span> nodes. Repaint by card order with live DOM/state data.
+// KAI ONE — Publishing Hub stat repaint fix v2.
+// The canonical stat component is .card.compact + .stat-label + .stat-value.
+// Runtime evidence confirmed Page mappings were correct; only these displayed
+// counters remained stale because v1 targeted non-existent .stat/strong nodes.
 (() => {
   "use strict";
-  if (window.__ACC_SOCIAL_PAGE_STAT_REPAINT_V1__) return;
-  window.__ACC_SOCIAL_PAGE_STAT_REPAINT_V1__ = true;
+  if (window.__ACC_SOCIAL_PAGE_STAT_REPAINT_V2__) return;
+  window.__ACC_SOCIAL_PAGE_STAT_REPAINT_V2__ = true;
   const STATE_KEY = "acc_os_x_ecosystem_v214";
-  const REVISION = "KAI_ONE_SOCIAL_PAGE_STAT_REPAINT_V1";
+  const REVISION = "KAI_ONE_SOCIAL_PAGE_STAT_REPAINT_V2_DOM_SELECTORS";
+  const STAT_LABELS = [
+    "FB CHANNELS","FB MAPPED","IG CHANNELS","IG READY",
+    "PAGES FOUND","TOTAL CHANNELS","TARGETS READY","ACTION NEEDED"
+  ];
 
   const readState = () => {
     try { const v = JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); return v && typeof v === "object" ? v : {}; }
@@ -254,8 +258,13 @@
     const total = buttons.length;
     const mapped = fbMapped + igMapped;
     const values = [fbChannels, fbMapped, igChannels, igMapped, pages.length, total, mapped, Math.max(0, total - mapped)];
-    const stats = [...hubCard.querySelectorAll(".stat")];
-    values.forEach((value, index) => setText(stats[index]?.querySelector("strong"), value));
+    const statValues = new Map();
+    for (const card of hubCard.querySelectorAll(".card.compact")) {
+      const label = card.querySelector(".stat-label")?.textContent?.trim();
+      const valueNode = card.querySelector(".stat-value");
+      if (label && valueNode) statValues.set(label, valueNode);
+    }
+    STAT_LABELS.forEach((label, index) => setText(statValues.get(label), values[index]));
     setText(hubCard.querySelector(".badge"), `${mapped}/${total} TARGETS READY`);
     document.documentElement.dataset.accSocialPageStats = REVISION;
     return true;
