@@ -1,12 +1,34 @@
-// ACC OS X — KAI AUTOPILOT MEDIA UI CLEANUP v2
+// ACC OS X — KAI AUTOPILOT MEDIA UI CLEANUP v3
 // Android runtime proved the normal media picker already supports multi-select.
-// Keep one media button and place Standalone Autopilot after the manual Produce panel.
+// Keep one media button, place Standalone Autopilot after manual Produce, and remove nested mobile chat scrolling.
 (() => {
   "use strict";
-  if (window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V2__) return;
-  window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V2__ = true;
+  if (window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V3__) return;
+  window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V3__ = true;
 
-  const REVISION = "KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V2_MANUAL_FIRST";
+  const REVISION = "KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V3_MANUAL_FIRST_MOBILE_SCROLL";
+  const SCROLL_STYLE_ID = "acc-produce-mobile-page-scroll-v1";
+
+  function ensureMobilePageScroll(){
+    if(document.getElementById(SCROLL_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = SCROLL_STYLE_ID;
+    style.textContent = `
+      @media (max-width:760px){
+        #acc-produce-copilot-panel .acc-copilot-chat{
+          max-height:none!important;
+          height:auto!important;
+          overflow:visible!important;
+          overflow-y:visible!important;
+          overscroll-behavior:auto!important;
+          touch-action:pan-y!important;
+          scroll-behavior:auto!important;
+          -webkit-overflow-scrolling:auto!important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function placeAfterManual(panel){
     const manual = document.getElementById("acc-produce-copilot-panel");
@@ -17,6 +39,11 @@
   }
 
   function patch(){
+    ensureMobilePageScroll();
+
+    const manual = document.getElementById("acc-produce-copilot-panel");
+    if(manual) manual.dataset.mobileScrollRevision = REVISION;
+
     const panel = document.getElementById("acc-kai-autopilot-panel");
     if(!panel) return;
 
