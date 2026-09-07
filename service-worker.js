@@ -1,5 +1,5 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v13-channel-info-compact";
+const CACHE="acc-os-x-build10-page-picker-v14-produce-manual-first";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
@@ -14,7 +14,7 @@ const CORE=[
   "./release-version-v257.js?rev=BUILD257_AUTONOMOUS_QUALITY_RECOVERY",
   "./produce-copilot-v2576.js?rev=BUILD257_6_PRODUCE_COPILOT",
   "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V1",
-  "./kai-autopilot-folder-fallback-v1.js?rev=KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V1",
+  "./kai-autopilot-folder-fallback-v1.js?rev=KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V2_MANUAL_FIRST",
   "./home-quick-access-v1.js?rev=KAI_ONE_HOME_QUICK_ACCESS_V1_CHANNEL_INFO_COMPACT",
   "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_2_POSTER_PREVIEW_MEMORY_FIX",
   "./poster-studio-v1.js?rev=BUILD253_KAI_CREATIVE",
