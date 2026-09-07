@@ -98,6 +98,17 @@
   document.head.appendChild(script);
 })();
 
+// Android WebView fallback for the Autopilot folder action.
+// Uses the proven multi-file picker when directory APIs are unavailable/unusable.
+(() => {
+  if (document.querySelector('script[data-acc-kai-autopilot-folder-fallback="v1"]')) return;
+  const script = document.createElement("script");
+  script.src = "./kai-autopilot-folder-fallback-v1.js?rev=KAI_AUTOPILOT_FOLDER_FALLBACK_V1_ANDROID";
+  script.dataset.accKaiAutopilotFolderFallback = "v1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 (() => {
   if (document.querySelector('script[data-acc-copilot-preview-fix="v25762"]')) return;
   const script = document.createElement("script");
