@@ -1,18 +1,27 @@
-// ACC OS X — KAI AUTOPILOT MEDIA UI CLEANUP v1
+// ACC OS X — KAI AUTOPILOT MEDIA UI CLEANUP v2
 // Android runtime proved the normal media picker already supports multi-select.
-// Remove the redundant folder action until a real native watched-folder bridge exists.
+// Keep one media button and place Standalone Autopilot after the manual Produce panel.
 (() => {
   "use strict";
-  if (window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V1__) return;
-  window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V1__ = true;
+  if (window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V2__) return;
+  window.__ACC_KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V2__ = true;
 
-  const REVISION = "KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V1";
+  const REVISION = "KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V2_MANUAL_FIRST";
+
+  function placeAfterManual(panel){
+    const manual = document.getElementById("acc-produce-copilot-panel");
+    if(!manual?.parentElement || !panel) return;
+    if(manual.nextElementSibling !== panel){
+      manual.parentElement.insertBefore(panel, manual.nextSibling);
+    }
+  }
 
   function patch(){
     const panel = document.getElementById("acc-kai-autopilot-panel");
     if(!panel) return;
 
     panel.dataset.mediaUiRevision = REVISION;
+    placeAfterManual(panel);
 
     document.getElementById("acc-autopilot-folder")?.remove();
     document.getElementById("acc-autopilot-folder-input")?.remove();
