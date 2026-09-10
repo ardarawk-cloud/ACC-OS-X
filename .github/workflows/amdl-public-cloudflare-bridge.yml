@@ -31,6 +31,10 @@ jobs:
           node --check site/app.js
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'Start a Project' site/index.html
+          grep -q 'device-browser' site/showcase.css
+          grep -q 'device-phone' site/showcase.css
+          grep -q 'Sitemap:' site/robots.txt
+          grep -q '<urlset' site/sitemap.xml
 
       - name: Deploy public website
         id: deploy
@@ -51,16 +55,18 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
-            if printf '%s' "$HEALTH" | grep -q 'am-digital-lab-public' && printf '%s' "$HOME" | grep -q 'WE BUILD DIGITAL PRODUCTS'; then
+            SHOWCASE="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/showcase.css" || true)"
+            ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
+            if printf '%s' "$HEALTH" | grep -q 'am-digital-lab-public' && printf '%s' "$HOME" | grep -q 'WE BUILD DIGITAL PRODUCTS' && printf '%s' "$SHOWCASE" | grep -q 'device-phone' && printf '%s' "$ROBOTS" | grep -q 'Sitemap:'; then
               break
             fi
             sleep 5
           done
           printf '%s' "$HEALTH" | grep -q '"ok":true'
           printf '%s' "$HOME" | grep -q 'AM DIGITAL LAB'
+          printf '%s' "$SHOWCASE" | grep -q 'device-browser'
+          printf '%s' "$ROBOTS" | grep -q 'Sitemap:'
           CODE="$(curl --silent --show-error --output /tmp/amdl-public-form.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":""}')"
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ]
-
-# redeploy marker: logo refresh 2026-09-11
