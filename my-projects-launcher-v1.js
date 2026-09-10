@@ -1,11 +1,11 @@
-// KAI ONE — ACC OS X MY PROJECTS launcher v3
+// KAI ONE — ACC OS X MY PROJECTS launcher v4
 // Map projects mirror MY MAPS order. CREATIVE LAB removed per owner instruction.
 (() => {
   "use strict";
 
-  const REVISION = "KAI_ONE_MY_PROJECTS_V3_MAP_ORDER";
+  const REVISION = "KAI_ONE_MY_PROJECTS_V4_APK_PROJECT";
   const ROOT_ID = "acc-my-projects";
-  const STYLE_ID = "acc-my-projects-v3-style";
+  const STYLE_ID = "acc-my-projects-v4-style";
 
   const ICONS = {
     map:`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M9 17l14-6 18 7 14-6v35l-14 6-18-7-14 6z"/><path d="M23 11v35M41 18v35"/><path class="fill" d="M32 23c-5 0-9 4-9 9 0 7 9 15 9 15s9-8 9-15c0-5-4-9-9-9zm0 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>`,
@@ -24,6 +24,7 @@
     {key:"track-01",title:"Track 01",icon:ICONS.map,accent:"#dc2626",url:"https://chatgpt.com/g/g-p-6a993fba89a08191822c644704eea2d5-track-01/project"},
     {key:"gunung-bbya",title:"Gunung BBYA",icon:ICONS.map,accent:"#22c55e",url:"https://chatgpt.com/g/g-p-6a99557b91d88191b871c4c0095ca41d-mount-bbya/project"},
     {key:"lost-found-night-shift",title:"Lost & Found: Night Shift",icon:ICONS.map,accent:"#f97316",url:"https://chatgpt.com/g/g-p-6a994791cff881918a3bfa94d3a8010f-lost-found-night-shift/project"},
+    {key:"apk",title:"APK",icon:ICONS.core,accent:"#38bdf8",url:"https://chatgpt.com/g/g-p-6a9917452e288191a7e825f1607f6bd6-apk/project"},
     {key:"arda-core-corporation",title:"Arda Core Corporation",icon:ICONS.core,accent:"#d4af37",url:"https://chatgpt.com/g/g-p-6a6a04f609388191b86dc08d22436683-arda-core-corporation/project"},
     {key:"personal",title:"PERSONAL",icon:ICONS.personal,accent:"#60a5fa",url:"https://chatgpt.com/g/g-p-6a677e80c6448191bd234bc1329a47d6-personal/project"},
     {key:"am-studio",title:"AM STUDIO",icon:ICONS.studio,accent:"#f97316",url:"https://chatgpt.com/g/g-p-6a67814fa060819195148be158f327b2-am-studio/project"},
