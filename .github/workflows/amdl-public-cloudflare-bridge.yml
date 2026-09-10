@@ -62,3 +62,5 @@ jobs:
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ]
+
+# redeploy marker: logo refresh 2026-09-11
