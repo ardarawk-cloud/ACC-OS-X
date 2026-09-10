@@ -30,6 +30,8 @@ jobs:
           npm run build
           node --check worker.js
           for f in public/*.js; do if [ -f "$f" ]; then node --check "$f"; fi; done
+          grep -q 'CRMDatabase' worker.js
+          grep -q 'sqlite-durable-object' worker.js
 
       - name: Deploy CRM to existing Cloudflare account
         id: deploy
@@ -40,7 +42,7 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy
 
-      - name: Verify CRM health
+      - name: Verify CRM health and SQLite Durable Object
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
@@ -50,7 +52,7 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             BODY="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             echo "$BODY"
-            if printf '%s' "$BODY" | grep -q '0.3.0-cloudflare'; then
+            if printf '%s' "$BODY" | grep -q '0.3.0-cloudflare' && printf '%s' "$BODY" | grep -q 'sqlite-durable-object' && printf '%s' "$BODY" | grep -q '"database":true'; then
               exit 0
             fi
             sleep 5
