@@ -42,19 +42,30 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy
 
-      - name: Verify CRM health and SQLite Durable Object
+      - name: Verify CRM health, database, and login secret
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
           set -euo pipefail
           echo "Deployment URL: ${DEPLOYMENT_URL:-<empty>}"
           [ -n "${DEPLOYMENT_URL:-}" ] || exit 1
+
+          HEALTH_OK=0
           for attempt in 1 2 3 4 5 6; do
             BODY="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             echo "$BODY"
             if printf '%s' "$BODY" | grep -q '0.3.0-cloudflare' && printf '%s' "$BODY" | grep -q 'sqlite-durable-object' && printf '%s' "$BODY" | grep -q '"database":true'; then
-              exit 0
+              HEALTH_OK=1
+              break
             fi
             sleep 5
           done
-          exit 1
+          [ "$HEALTH_OK" = "1" ] || exit 1
+
+          LOGIN_CODE="$(curl --silent --show-error --output /tmp/amdl-login-body.txt --write-out '%{http_code}' --max-time 30 \
+            -X POST "${DEPLOYMENT_URL%/}/api/login" \
+            -H 'content-type: application/json' \
+            --data '{"email":"admin@amdigital.local","password":"__amdl_intentionally_wrong_password__"}')"
+          cat /tmp/amdl-login-body.txt
+          echo "Wrong-password login status: $LOGIN_CODE"
+          [ "$LOGIN_CODE" = "401" ] || exit 1
