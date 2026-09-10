@@ -1,0 +1,64 @@
+name: AM DIGITAL LAB Public Website Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/amdl-public-cloudflare-bridge.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: amdl-public-cloudflare-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout AM DIGITAL LAB monorepo
+        uses: actions/checkout@v6
+        with:
+          repository: ardarawk-cloud/am-digital-lab-crm
+          ref: main
+
+      - name: Validate public website
+        run: |
+          node --check worker-public.js
+          node --check site/app.js
+          grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
+          grep -q 'Start a Project' site/index.html
+
+      - name: Deploy public website
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          command: deploy -c wrangler-public.jsonc
+
+      - name: Verify website and CRM lead bridge
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          echo "Deployment URL: ${DEPLOYMENT_URL:-<empty>}"
+          [ -n "${DEPLOYMENT_URL:-}" ] || exit 1
+          for attempt in 1 2 3 4 5 6; do
+            HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
+            HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
+            if printf '%s' "$HEALTH" | grep -q 'am-digital-lab-public' && printf '%s' "$HOME" | grep -q 'WE BUILD DIGITAL PRODUCTS'; then
+              break
+            fi
+            sleep 5
+          done
+          printf '%s' "$HEALTH" | grep -q '"ok":true'
+          printf '%s' "$HOME" | grep -q 'AM DIGITAL LAB'
+          CODE="$(curl --silent --show-error --output /tmp/amdl-public-form.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":""}')"
+          cat /tmp/amdl-public-form.txt
+          echo "Malformed lead bridge status: $CODE"
+          [ "$CODE" = "400" ]
