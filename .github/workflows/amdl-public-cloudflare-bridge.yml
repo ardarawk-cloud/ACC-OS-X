@@ -25,16 +25,22 @@ jobs:
           repository: ardarawk-cloud/am-digital-lab-crm
           ref: main
 
+      - name: Generate real project portfolio captures
+        run: |
+          bash scripts/capture-portfolio.sh
+
       - name: Validate public website
         run: |
           node --check worker-public.js
           node --check site/app.js
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'Start a Project' site/index.html
-          grep -q 'device-browser' site/showcase.css
-          grep -q 'device-phone' site/showcase.css
+          grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
+          for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup; do
+            test -s "site/portfolio/$f.png"
+          done
 
       - name: Deploy public website
         id: deploy
@@ -45,7 +51,7 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy -c wrangler-public.jsonc
 
-      - name: Verify website and CRM lead bridge
+      - name: Verify website, real previews and CRM lead bridge
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
@@ -55,20 +61,22 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
-            SHOWCASE="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/showcase.css" || true)"
+            UPGRADE="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/upgrade.css" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if printf '%s' "$HEALTH" | grep -q 'am-digital-lab-public' && printf '%s' "$HOME" | grep -q 'WE BUILD DIGITAL PRODUCTS' && printf '%s' "$SHOWCASE" | grep -q 'device-phone' && printf '%s' "$ROBOTS" | grep -q 'Sitemap:'; then
+            if printf '%s' "$HEALTH" | grep -q 'am-digital-lab-public' && printf '%s' "$HOME" | grep -q 'WE BUILD DIGITAL PRODUCTS' && printf '%s' "$UPGRADE" | grep -q 'REAL PROJECT PREVIEW' && printf '%s' "$ROBOTS" | grep -q 'Sitemap:'; then
               break
             fi
             sleep 5
           done
           printf '%s' "$HEALTH" | grep -q '"ok":true'
           printf '%s' "$HOME" | grep -q 'AM DIGITAL LAB'
-          printf '%s' "$SHOWCASE" | grep -q 'device-browser'
+          printf '%s' "$UPGRADE" | grep -q 'REAL PROJECT PREVIEW'
           printf '%s' "$ROBOTS" | grep -q 'Sitemap:'
+          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/acc-os-x.png" -o /tmp/acc-os-x.png
+          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/oracly.png" -o /tmp/oracly.png
+          test "$(wc -c < /tmp/acc-os-x.png)" -gt 10000
+          test "$(wc -c < /tmp/oracly.png)" -gt 10000
           CODE="$(curl --silent --show-error --output /tmp/amdl-public-form.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":""}')"
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ]
-
-# redeploy marker: compact mobile portfolio 2026-09-11
