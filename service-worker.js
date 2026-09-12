@@ -1,10 +1,10 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v18-my-projects-apk";
+const CACHE="acc-os-x-build10-page-picker-v19-my-admin";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
   `./my-maps-launcher-v1.js?rev=${MAP_ICON_REV}`,
-  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V4_ORDER_ONLY"
+  "./launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V5_ADMIN_ORDER"
 ];
 const CORE=[
   "./",
@@ -12,6 +12,7 @@ const CORE=[
   "./app.js",
   "./home-launchpad.js",
   "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V4_APK_PROJECT",
+  "./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V1",
   "./release-version-v257.js?rev=BUILD257_AUTONOMOUS_QUALITY_RECOVERY",
   "./produce-copilot-v2576.js?rev=BUILD257_6_PRODUCE_COPILOT",
   "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V1",
@@ -49,6 +50,7 @@ const FORCE_FRESH=new Set([
   "/home-launchpad.js",
   "/service-worker.js",
   "/my-projects-launcher-v1.js",
+  "/my-admin-launcher-v1.js",
   "/release-version-v257.js",
   "/kai-autopilot-media-drop-v1.js",
   "/kai-autopilot-folder-fallback-v1.js",
