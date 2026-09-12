@@ -1,5 +1,5 @@
-// ACC OS X — OWNER APP LAUNCHPAD v5
-// One front door for Arda's ACC phone apps. ACC OS X itself is intentionally excluded.
+// ACC OS X — OWNER APP LAUNCHPAD v6
+// One front door for Arda's ACC phone apps. Client apps are intentionally excluded.
 (() => {
   "use strict";
 
@@ -18,7 +18,11 @@
     {key:"casino", title:"KAI CASINO X", accent:"#facc15", fallback:"KC", native:["com.kai.casinox"]},
     {key:"media", title:"ACC Media", accent:"#ff2d55", fallback:"M", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/acc-media-downloader/icon.svg", native:["com.accbuilder.accmediadownloader"]},
     {key:"mashup", title:"AI Mashup", accent:"#a855f7", fallback:"AI", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/ai-mashup-bootleg-studio/icon.svg", native:["com.accbuilder.aimashupbootlegstudio"]},
-    {key:"content", title:"ACC Content Hub", accent:"#fbbf24", fallback:"ACC", native:["com.acc.contenthub"]}
+    {key:"content", title:"ACC Content Hub", accent:"#fbbf24", fallback:"ACC", native:["com.acc.contenthub"]},
+    {key:"music-distribution", title:"AM STUDIO Music Distribution", accent:"#e879f9", fallback:"MD", native:["com.amstudio.distribution"]},
+    {key:"kai-3d-free", title:"KAI 3D FREE", accent:"#22d3ee", fallback:"3D", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/kai-3d-free/icon.svg", native:["com.accbuilder.kai3dfree"]},
+    {key:"oracly", title:"ORACLY", accent:"#d4af37", fallback:"O", native:["com.accbuilder.oracly"]},
+    {key:"papa-sauce-lab", title:"Papa Sauce Lab", accent:"#fb923c", fallback:"PSL", native:["com.accbuilder.papasaucelab"]}
   ];
 
   function ensureStyle(){
