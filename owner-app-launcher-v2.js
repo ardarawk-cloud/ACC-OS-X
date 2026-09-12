@@ -1,9 +1,9 @@
-// KAI ONE — ACC OS X MY APPS launcher v3
-// One ACC OS X entry point for the owner's existing ACC apps. ACC OS X itself is intentionally excluded.
+// KAI ONE — ACC OS X MY APPS launcher v4
+// One ACC OS X entry point for the owner's ACC apps. Client apps are intentionally excluded.
 (() => {
   "use strict";
 
-  const REVISION = "KAI_ONE_MY_APPS_V3_OFFICIAL_ICONS";
+  const REVISION = "KAI_ONE_MY_APPS_V4_NEW_APPS_BWD_CLIENT_REMOVED";
   const ROOT_ID = "acc-home-launchpad";
   const STYLE_ID = "acc-owner-app-launcher-v2-style";
   const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
@@ -77,6 +77,27 @@
       packages:["com.acc.contenthub"],
       iconUrl:"./assets/app-launcher/acc-content-hub.svg?rev=OFFICIAL_V1",
       iconFallback:"ACC"
+    },
+    {
+      key:"am-studio-music-distribution", title:"AM STUDIO Music Distribution", short:"MUSIC", accent:"#e879f9", mode:"android",
+      packages:["com.amstudio.distribution"],
+      iconFallback:"MD"
+    },
+    {
+      key:"kai-3d-free", title:"KAI 3D FREE", short:"3D", accent:"#22d3ee", mode:"android",
+      packages:["com.accbuilder.kai3dfree"],
+      iconUrl:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/kai-3d-free/icon.svg",
+      iconFallback:"3D"
+    },
+    {
+      key:"oracly", title:"ORACLY", short:"ORACLY", accent:"#d4af37", mode:"android",
+      packages:["com.accbuilder.oracly"],
+      iconFallback:"O"
+    },
+    {
+      key:"papa-sauce-lab", title:"Papa Sauce Lab", short:"PSL", accent:"#fb923c", mode:"android",
+      packages:["com.accbuilder.papasaucelab"],
+      iconFallback:"PSL"
     }
   ];
 
