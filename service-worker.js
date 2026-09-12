@@ -1,5 +1,5 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v20-my-admin-collapse";
+const CACHE="acc-os-x-build10-page-picker-v21-my-apps-sync";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
@@ -11,6 +11,7 @@ const CORE=[
   "./index.html",
   "./app.js",
   "./home-launchpad.js",
+  "./owner-app-launcher-v2.js?rev=KAI_ONE_MY_APPS_V4_NEW_APPS_BWD_CLIENT_REMOVED",
   "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V4_APK_PROJECT",
   "./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V2_COLLAPSIBLE",
   "./release-version-v257.js?rev=BUILD257_AUTONOMOUS_QUALITY_RECOVERY",
@@ -27,7 +28,7 @@ const CORE=[
   "./publishing-page-aliases-v1.js?rev=KAI_ONE_OWNER_PAGE_ALIASES_V4_SOCIAL_PAGE_GATEWAY",
   "./publishing-sync-reconcile-v2.js?rev=KAI_ONE_PUBLISH_SYNC_RECONCILE_V2_BUILD8",
   "./build8-ui-stabilization-v1.js?rev=KAI_ONE_BUILD8_UI_V1",
-  "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BALI_WEDDING_DJ_LAUNCHER_V3_DIRECT_JPG",
+  "./bali-wedding-dj-launcher-v1.js?rev=KAI_ONE_BWD_CLIENT_APP_EXCLUDED_FROM_MY_APPS_V1",
   "./sync-cctv-launcher-v1.js?rev=KAI_ONE_SYNC_CCTV_LAUNCHER_V1_BUILD8",
   "./manifest.webmanifest",
   "./acc-os-x-192-build250.png",
@@ -49,6 +50,7 @@ const FORCE_FRESH=new Set([
   "/app.js",
   "/home-launchpad.js",
   "/service-worker.js",
+  "/owner-app-launcher-v2.js",
   "/my-projects-launcher-v1.js",
   "/my-admin-launcher-v1.js",
   "/release-version-v257.js",
