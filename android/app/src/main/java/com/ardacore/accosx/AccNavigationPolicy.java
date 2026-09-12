@@ -22,6 +22,10 @@ final class AccNavigationPolicy {
             "com.accbuilder.accmediadownloader",
             "com.accbuilder.aimashupbootlegstudio",
             "com.acc.contenthub",
+            "com.amstudio.distribution",
+            "com.accbuilder.kai3dfree",
+            "com.accbuilder.oracly",
+            "com.accbuilder.papasaucelab",
             "com.baliweddingdj.app",
             "com.kawanlama.smartklic",
 
