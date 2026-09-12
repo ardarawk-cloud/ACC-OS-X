@@ -8,6 +8,8 @@ on:
     paths:
       - 'android/**'
       - 'assets/app-icons/my-maps-icons-sprite.jpg.b64'
+      - 'ACC-OS-X-AUTHORITY.md'
+      - 'scripts/verify-android-release-contract.sh'
       - '.github/workflows/android-production-release.yml'
 
 permissions:
@@ -22,10 +24,15 @@ jobs:
       ACC_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ACC_ANDROID_KEYSTORE_PASSWORD }}
       ACC_ANDROID_KEY_ALIAS: ${{ secrets.ACC_ANDROID_KEY_ALIAS }}
       ACC_ANDROID_KEY_PASSWORD: ${{ secrets.ACC_ANDROID_KEY_PASSWORD }}
+      ACC_CANONICAL_CERT_SHA256: '33:76:70:DE:C0:F9:0B:72:74:8F:44:CC:F2:C0:52:9B:86:EA:E4:2C:1D:85:84:B4:C3:62:22:B2:B3:36:05:D5'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Enforce Android release contract
+        shell: bash
+        run: bash scripts/verify-android-release-contract.sh
 
       - name: Resolve Android release identity
         shell: bash
@@ -43,11 +50,65 @@ jobs:
           echo "ACC_RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
           echo "Release: $RELEASE_TAG"
 
+      - name: Validate production signing authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in ACC_OS_X_ANDROID_KEYSTORE_B64 ACC_ANDROID_KEYSTORE_PASSWORD ACC_ANDROID_KEY_ALIAS ACC_ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is required. STOP — NO DISTRIBUTABLE APK."
+              exit 1
+            fi
+          done
+          if [ "$ACC_ANDROID_KEY_ALIAS" != "accosx-production" ]; then
+            echo "::error::Production signing alias drift. Expected accosx-production. STOP."
+            exit 1
+          fi
+
+      - name: Reject duplicate production version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$ACC_RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Release tag $ACC_RELEASE_TAG already exists. Increase versionCode/versionName before another production release."
+            exit 1
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Restore production upload keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/acc-os-x-production-upload.jks"
+          printf '%s' "$ACC_OS_X_ANDROID_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          echo "ACC_ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+
+      - name: Verify canonical production certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACTUAL_SHA256="$(keytool -list -v \
+            -keystore "$ACC_ANDROID_KEYSTORE_PATH" \
+            -storepass "$ACC_ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ACC_ANDROID_KEY_ALIAS" \
+            | awk '/SHA256:/{print $2; exit}')"
+          if [ -z "$ACTUAL_SHA256" ]; then
+            echo "::error::Unable to read production certificate fingerprint. STOP."
+            exit 1
+          fi
+          if [ "$ACTUAL_SHA256" != "$ACC_CANONICAL_CERT_SHA256" ]; then
+            echo "::error::Production signing certificate mismatch. Expected canonical ACC OS X certificate. STOP — DO NOT DISTRIBUTE."
+            exit 1
+          fi
+          echo "Production certificate fingerprint VERIFIED."
 
       - name: Set up Gradle 9.5
         uses: gradle/actions/setup-gradle@v4
@@ -60,26 +121,6 @@ jobs:
       - name: Install Android SDK 36
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
 
-      - name: Validate production signing secrets
-        shell: bash
-        run: |
-          set -euo pipefail
-          for name in ACC_OS_X_ANDROID_KEYSTORE_B64 ACC_ANDROID_KEYSTORE_PASSWORD ACC_ANDROID_KEY_ALIAS ACC_ANDROID_KEY_PASSWORD; do
-            if [ -z "${!name:-}" ]; then
-              echo "::error::$name is required for production signing"
-              exit 1
-            fi
-          done
-
-      - name: Restore production upload keystore
-        shell: bash
-        run: |
-          set -euo pipefail
-          KEYSTORE="$RUNNER_TEMP/acc-os-x-production-upload.jks"
-          printf '%s' "$ACC_OS_X_ANDROID_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
-          chmod 600 "$KEYSTORE"
-          echo "ACC_ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
-
       - name: Build signed production APK and Android App Bundle
         working-directory: android
         run: gradle --no-daemon clean assembleRelease bundleRelease
@@ -89,6 +130,12 @@ jobs:
         run: |
           set -euo pipefail
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/release/app-release.apk
+          APK_SHA256="$($ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs android/app/build/outputs/apk/release/app-release.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n1 | tr '[:lower:]' '[:upper:]')"
+          EXPECTED_COMPACT="$(printf '%s' "$ACC_CANONICAL_CERT_SHA256" | tr -d ':')"
+          if [ -z "$APK_SHA256" ] || [ "$APK_SHA256" != "$EXPECTED_COMPACT" ]; then
+            echo "::error::Built APK signer does not match canonical ACC OS X certificate. STOP — DO NOT DISTRIBUTE."
+            exit 1
+          fi
 
       - name: Verify AAB signature
         shell: bash
@@ -150,11 +197,7 @@ jobs:
           APK="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X.apk"
           AAB="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-Play.aab"
           CERT="$RUNNER_TEMP/acc-os-x-release/ACC-OS-X-upload-certificate.txt"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK" "$AAB" "$CERT" --clobber
-          else
-            gh release create "$TAG" "$APK" "$AAB" "$CERT" \
-              --target "$GITHUB_SHA" \
-              --title "ACC OS X Android v${ACC_VERSION_NAME} / Build ${ACC_VERSION_CODE}" \
-              --notes "Production-signed ACC OS X Android v${ACC_VERSION_NAME} / Build ${ACC_VERSION_CODE}."
-          fi
+          gh release create "$TAG" "$APK" "$AAB" "$CERT" \
+            --target "$GITHUB_SHA" \
+            --title "ACC OS X Android v${ACC_VERSION_NAME} / Build ${ACC_VERSION_CODE}" \
+            --notes "Production-signed ACC OS X Android v${ACC_VERSION_NAME} / Build ${ACC_VERSION_CODE}. Normal update path: install over the existing ACC OS X; do not uninstall."
