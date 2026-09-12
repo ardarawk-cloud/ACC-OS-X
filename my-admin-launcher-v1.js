@@ -1,12 +1,14 @@
-// KAI ONE — ACC OS X MY ADMIN launcher v1
+// KAI ONE — ACC OS X MY ADMIN launcher v2
 // Owner-only shortcuts for real internal admin surfaces. ENTEGO Admin remains excluded while it is demo-only.
 (() => {
   "use strict";
-  if (window.__ACC_MY_ADMIN_V1__) return;
-  window.__ACC_MY_ADMIN_V1__ = true;
+  if (window.__ACC_MY_ADMIN_V2__) return;
+  window.__ACC_MY_ADMIN_V2__ = true;
 
-  const REVISION = "KAI_ONE_MY_ADMIN_V1";
+  const REVISION = "KAI_ONE_MY_ADMIN_V2_COLLAPSIBLE";
   const ROOT_ID = "acc-my-admin";
+  const STYLE_ID = "acc-my-admin-v2-style";
+  const ACCORDION_STATE_KEY = "acc_legacy_launcher_accordion_v1";
   const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
 
   const ADMINS = Object.freeze([
@@ -36,6 +38,88 @@
       web:"https://am-digital-lab-crm.ardarawk.workers.dev/"
     }
   ]);
+
+  function readAccordionState(){
+    try{
+      const value=JSON.parse(localStorage.getItem(ACCORDION_STATE_KEY)||"{}");
+      return value && typeof value==="object" ? value : {};
+    }catch{return {};}
+  }
+
+  function writeAccordionState(state){
+    try{localStorage.setItem(ACCORDION_STATE_KEY,JSON.stringify(state));}catch{}
+  }
+
+  const accordionState=readAccordionState();
+
+  function ensureStyle(){
+    let style=document.getElementById(STYLE_ID);
+    if(!style){
+      style=document.createElement("style");
+      style.id=STYLE_ID;
+      document.head.appendChild(style);
+    }
+    style.textContent=`
+      #${ROOT_ID}[data-admin-accordion="1"]{
+        overflow:hidden!important;
+        border:1px solid rgba(148,163,184,.16)!important;
+        border-radius:22px!important;
+        background:linear-gradient(180deg,rgba(10,18,34,.98),rgba(5,11,24,.98))!important;
+        padding:0!important;
+        margin:12px 0 0!important;
+      }
+      #${ROOT_ID}[data-admin-accordion="1"] .acc-launch-head{
+        cursor:pointer!important;
+        user-select:none!important;
+        padding:15px 16px!important;
+        margin:0!important;
+        align-items:center!important;
+        -webkit-tap-highlight-color:transparent!important;
+      }
+      #${ROOT_ID}[data-admin-accordion="1"] .acc-launch-head > .badge{margin-left:auto!important}
+      #${ROOT_ID}[data-admin-accordion="1"] .acc-launch-grid{padding:2px 10px 17px!important}
+      #${ROOT_ID}[data-expanded="0"] .acc-launch-grid{display:none!important}
+    `;
+  }
+
+  function setExpanded(root,expanded){
+    const head=root.querySelector(".acc-launch-head");
+    const grid=root.querySelector(".acc-launch-grid");
+    root.dataset.expanded=expanded?"1":"0";
+    if(head) head.setAttribute("aria-expanded",expanded?"true":"false");
+    if(grid) grid.style.setProperty("display",expanded?"grid":"none","important");
+    accordionState.admin=expanded;
+    writeAccordionState(accordionState);
+  }
+
+  function bindCollapse(root){
+    const head=root.querySelector(".acc-launch-head");
+    const grid=root.querySelector(".acc-launch-grid");
+    if(!head||!grid) return;
+
+    root.dataset.adminAccordion="1";
+    head.setAttribute("role","button");
+    head.setAttribute("tabindex","0");
+
+    if(root.dataset.adminAccordionInitialized!=="2"){
+      root.dataset.adminAccordionInitialized="2";
+      setExpanded(root,accordionState.admin===true);
+    }else{
+      grid.style.setProperty("display",root.dataset.expanded==="1"?"grid":"none","important");
+      head.setAttribute("aria-expanded",root.dataset.expanded==="1"?"true":"false");
+    }
+
+    if(head.dataset.adminAccordionBound!=="2"){
+      head.dataset.adminAccordionBound="2";
+      const toggle=event=>{
+        if(event.type==="keydown" && !["Enter"," "].includes(event.key)) return;
+        if(event.type==="keydown") event.preventDefault();
+        setExpanded(root,root.dataset.expanded!=="1");
+      };
+      head.addEventListener("click",toggle);
+      head.addEventListener("keydown",toggle);
+    }
+  }
 
   function toast(message){
     if(typeof window.showToast === "function"){
@@ -88,6 +172,7 @@
   }
 
   function render(){
+    ensureStyle();
     const projects=document.getElementById("acc-my-projects");
     const maps=document.getElementById("acc-my-maps");
     const apps=document.getElementById("acc-home-launchpad");
@@ -114,6 +199,7 @@
       const grid=root.querySelector(".acc-launch-grid");
       ADMINS.forEach(admin=>grid.appendChild(tile(admin)));
     }
+    bindCollapse(root);
     return true;
   }
 
