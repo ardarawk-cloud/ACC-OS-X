@@ -76,6 +76,12 @@ jobs:
             exit 1
           fi
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Restore production upload keystore
         shell: bash
         run: |
@@ -103,12 +109,6 @@ jobs:
             exit 1
           fi
           echo "Production certificate fingerprint VERIFIED."
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
 
       - name: Set up Gradle 9.5
         uses: gradle/actions/setup-gradle@v4
