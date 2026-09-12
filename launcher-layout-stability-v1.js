@@ -1,12 +1,12 @@
-// KAI ONE — Launcher layout stability v4
-// Canonical home order only: MY APPS -> MY MAPS -> MY PROJECTS -> phone categories.
+// KAI ONE — Launcher layout stability v5
+// Canonical home order: MY APPS -> MY MAPS -> MY PROJECTS -> MY ADMIN -> phone categories.
 // Logo rendering belongs exclusively to my-maps-launcher-v1.js.
 (() => {
   "use strict";
-  if (window.__ACC_LAUNCHER_LAYOUT_STABILITY_V4__) return;
-  window.__ACC_LAUNCHER_LAYOUT_STABILITY_V4__ = true;
+  if (window.__ACC_LAUNCHER_LAYOUT_STABILITY_V5__) return;
+  window.__ACC_LAUNCHER_LAYOUT_STABILITY_V5__ = true;
 
-  const REVISION = "KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V4_ORDER_ONLY";
+  const REVISION = "KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V5_ADMIN_ORDER";
 
   function placeAfter(node, anchor) {
     if (!node || !anchor || node === anchor) return false;
@@ -25,13 +25,16 @@
 
       const maps = document.getElementById("acc-my-maps");
       const projects = document.getElementById("acc-my-projects");
+      const admin = document.getElementById("acc-my-admin");
       const phone = document.getElementById("acc-owner-phone-sections");
 
       let changed = false;
       if (maps) changed = placeAfter(maps, apps) || changed;
       const projectAnchor = maps || apps;
       if (projects) changed = placeAfter(projects, projectAnchor) || changed;
-      const phoneAnchor = projects || maps || apps;
+      const adminAnchor = projects || maps || apps;
+      if (admin) changed = placeAfter(admin, adminAnchor) || changed;
+      const phoneAnchor = admin || projects || maps || apps;
       if (phone) changed = placeAfter(phone, phoneAnchor) || changed;
 
       document.documentElement.dataset.accLauncherOrder = REVISION;
@@ -41,6 +44,15 @@
     }
   }
 
+  function ensureMyAdmin(){
+    if(document.querySelector('script[data-acc-my-admin="v1"]')) return;
+    const script=document.createElement("script");
+    script.src="./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V1";
+    script.dataset.accMyAdmin="v1";
+    script.async=false;
+    document.head.appendChild(script);
+  }
+
   let queued = false;
   function schedule(delay = 0) {
     setTimeout(() => {
@@ -48,6 +60,7 @@
       queued = true;
       requestAnimationFrame(() => {
         queued = false;
+        ensureMyAdmin();
         stabilize();
       });
     }, delay);
@@ -59,6 +72,7 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden) schedule(0); });
 
   window.ACCLauncherLayoutStability = Object.freeze({ revision:REVISION, stabilize });
+  ensureMyAdmin();
   schedule(0);
   schedule(120);
   schedule(520);
