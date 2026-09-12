@@ -11,6 +11,10 @@
         <package android:name="com.accbuilder.accmediadownloader" />
         <package android:name="com.accbuilder.aimashupbootlegstudio" />
         <package android:name="com.acc.contenthub" />
+        <package android:name="com.amstudio.distribution" />
+        <package android:name="com.accbuilder.kai3dfree" />
+        <package android:name="com.accbuilder.oracly" />
+        <package android:name="com.accbuilder.papasaucelab" />
         <package android:name="com.baliweddingdj.app" />
         <package android:name="com.kawanlama.smartklic" />
 
