@@ -32,6 +32,7 @@ jobs:
           for f in public/*.js; do if [ -f "$f" ]; then node --check "$f"; fi; done
           grep -q 'CRMDatabase' worker.js
           grep -q 'sqlite-durable-object' worker.js
+          grep -q 'nav-count' public/core.js
 
       - name: Deploy CRM to existing Cloudflare account
         id: deploy
@@ -69,3 +70,5 @@ jobs:
           cat /tmp/amdl-login-body.txt
           echo "Wrong-password login status: $LOGIN_CODE"
           [ "$LOGIN_CODE" = "401" ] || exit 1
+
+# redeploy marker: CRM new-lead badge 2026-09-14
