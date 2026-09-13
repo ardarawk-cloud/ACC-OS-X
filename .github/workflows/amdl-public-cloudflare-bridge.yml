@@ -36,6 +36,7 @@ jobs:
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'Start a Project' site/index.html
           grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
+          grep -q 'sendWhatsAppLeadNotification' worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
           for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup; do
@@ -80,3 +81,5 @@ jobs:
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ]
+
+# redeploy marker: WhatsApp notification hook 2026-09-14
