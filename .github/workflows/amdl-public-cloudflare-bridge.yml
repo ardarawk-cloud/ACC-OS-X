@@ -52,7 +52,7 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy -c wrangler-public.jsonc
 
-      - name: Verify website, real previews and CRM lead bridge
+      - name: Verify website, WhatsApp config, real previews and CRM lead bridge
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
@@ -69,7 +69,9 @@ jobs:
             fi
             sleep 5
           done
+          echo "Health: $HEALTH"
           printf '%s' "$HEALTH" | grep -q '"ok":true'
+          printf '%s' "$HEALTH" | grep -q '"whatsapp_notification_configured":true'
           printf '%s' "$HOME" | grep -q 'AM DIGITAL LAB'
           printf '%s' "$UPGRADE" | grep -q 'REAL PROJECT PREVIEW'
           printf '%s' "$ROBOTS" | grep -q 'Sitemap:'
@@ -82,4 +84,4 @@ jobs:
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ]
 
-# redeploy marker: WhatsApp notification hook 2026-09-14
+# redeploy marker: verify WhatsApp secrets 2026-09-14
