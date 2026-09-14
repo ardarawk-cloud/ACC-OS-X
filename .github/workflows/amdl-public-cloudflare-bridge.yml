@@ -84,4 +84,15 @@ jobs:
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ]
 
+      - name: One-time WhatsApp E2E lead test
+        if: contains(github.event.head_commit.message, '[wa-e2e-test]')
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          TEST_CODE="$(curl --silent --show-error --output /tmp/amdl-wa-test.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":"AMDL Notification Test","company":"AM DIGITAL LAB Internal Test","email":"notification-test@example.com","project_type":"WhatsApp Notification Test","budget_range":"TEST ONLY","target_launch":"2026-09-14","project_description":"Automated end-to-end WhatsApp notification test. Safe to archive after verification."}')"
+          cat /tmp/amdl-wa-test.txt
+          echo "WhatsApp E2E lead status: $TEST_CODE"
+          [ "$TEST_CODE" = "201" ]
+
 # redeploy marker: verify WhatsApp secrets 2026-09-14
