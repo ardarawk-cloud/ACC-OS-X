@@ -1,5 +1,5 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v21-my-apps-sync";
+const CACHE="acc-os-x-build10-page-picker-v22-produce-scroll-stability";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
@@ -19,7 +19,7 @@ const CORE=[
   "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V1",
   "./kai-autopilot-folder-fallback-v1.js?rev=KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V5_ANDROID_PICKER_FEEDBACK_COMPACT",
   "./home-quick-access-v1.js?rev=KAI_ONE_HOME_QUICK_ACCESS_V1_CHANNEL_INFO_COMPACT",
-  "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_2_POSTER_PREVIEW_MEMORY_FIX",
+  "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_3_POSTER_PREVIEW_SCROLL_STABILITY",
   "./poster-studio-v1.js?rev=BUILD253_KAI_CREATIVE",
   "./kai-creative-client.js?rev=BUILD253_KAI_CREATIVE_CLIENT_V1",
   "./pwa-owner-safety-v1.js?rev=PWA_OWNER_SAFETY_V1",
@@ -54,6 +54,8 @@ const FORCE_FRESH=new Set([
   "/my-projects-launcher-v1.js",
   "/my-admin-launcher-v1.js",
   "/release-version-v257.js",
+  "/produce-copilot-v2576.js",
+  "/produce-copilot-preview-fix-v25762.js",
   "/kai-autopilot-media-drop-v1.js",
   "/kai-autopilot-folder-fallback-v1.js",
   "/home-quick-access-v1.js",
