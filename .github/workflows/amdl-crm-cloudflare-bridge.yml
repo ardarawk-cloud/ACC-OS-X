@@ -1,4 +1,4 @@
-name: AM DIGITAL LAB CRM Cloudflare Bridge
+name: NADMO STUDIO CRM Cloudflare Bridge
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout AM DIGITAL LAB CRM
+      - name: Checkout NADMO STUDIO CRM
         uses: actions/checkout@v6
         with:
           repository: ardarawk-cloud/am-digital-lab-crm
@@ -33,6 +33,7 @@ jobs:
           grep -q 'CRMDatabase' worker.js
           grep -q 'sqlite-durable-object' worker.js
           grep -q 'nav-count' public/core.js
+          grep -q 'NADMO STUDIO' public/index.html
 
       - name: Deploy CRM to existing Cloudflare account
         id: deploy
@@ -55,7 +56,7 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             BODY="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             echo "$BODY"
-            if printf '%s' "$BODY" | grep -q '0.3.0-cloudflare' && printf '%s' "$BODY" | grep -q 'sqlite-durable-object' && printf '%s' "$BODY" | grep -q '"database":true'; then
+            if printf '%s' "$BODY" | grep -q '0.4.0-nadmo' && printf '%s' "$BODY" | grep -q 'sqlite-durable-object' && printf '%s' "$BODY" | grep -q '"database":true'; then
               HEALTH_OK=1
               break
             fi
@@ -71,4 +72,4 @@ jobs:
           echo "Wrong-password login status: $LOGIN_CODE"
           [ "$LOGIN_CODE" = "401" ] || exit 1
 
-# redeploy marker: CRM new-lead badge 2026-09-14
+# redeploy marker: NADMO STUDIO CRM rebrand 2026-09-15
