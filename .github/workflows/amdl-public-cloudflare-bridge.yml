@@ -36,7 +36,9 @@ jobs:
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'Start a Project' site/index.html
           grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
+          grep -q 'sendDiscordLeadNotification' worker-public.js
           grep -q 'sendWhatsAppLeadNotification' worker-public.js
+          grep -q "const SITE_VERSION='1.3.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
           for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup; do
@@ -52,7 +54,7 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy -c wrangler-public.jsonc
 
-      - name: Verify website, WhatsApp config, real previews and CRM lead bridge
+      - name: Verify website, lead notifications, real previews and CRM lead bridge
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
@@ -71,7 +73,10 @@ jobs:
           done
           echo "Health: $HEALTH"
           printf '%s' "$HEALTH" | grep -q '"ok":true'
+          printf '%s' "$HEALTH" | grep -q '"version":"1.3.0"'
+          printf '%s' "$HEALTH" | grep -q '"discord_notification_configured":'
           printf '%s' "$HEALTH" | grep -q '"whatsapp_notification_configured":true'
+          printf '%s' "$HEALTH" | grep -q '"notification_primary":'
           printf '%s' "$HOME" | grep -q 'AM DIGITAL LAB'
           printf '%s' "$UPGRADE" | grep -q 'REAL PROJECT PREVIEW'
           printf '%s' "$ROBOTS" | grep -q 'Sitemap:'
@@ -95,4 +100,17 @@ jobs:
           echo "WhatsApp E2E lead status: $TEST_CODE"
           [ "$TEST_CODE" = "201" ]
 
-# redeploy marker: verify WhatsApp secrets 2026-09-14
+      - name: One-time Discord E2E lead test
+        if: contains(github.event.head_commit.message, '[discord-e2e-test]')
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz")"
+          printf '%s' "$HEALTH" | grep -q '"discord_notification_configured":true'
+          TEST_CODE="$(curl --silent --show-error --output /tmp/amdl-discord-test.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":"AMDL Discord Test","company":"AM DIGITAL LAB Internal Test","email":"notification-test@example.com","project_type":"Discord Notification Test","budget_range":"TEST ONLY","target_launch":"2026-09-14","project_description":"Automated end-to-end Discord notification test. Safe to archive after verification."}')"
+          cat /tmp/amdl-discord-test.txt
+          echo "Discord E2E lead status: $TEST_CODE"
+          [ "$TEST_CODE" = "201" ]
+
+# redeploy marker: Discord-first lead notifications 2026-09-14
