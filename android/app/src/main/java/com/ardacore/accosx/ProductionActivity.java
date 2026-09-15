@@ -108,7 +108,7 @@ public class ProductionActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setSafeBrowsingEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.1 ACCOSXAndroid/1.2.1 Build10");
+        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.1 ACCOSXAndroid/1.2.4 Build13");
 
         nativeAssets = new AccNativeAssets(this);
 
@@ -116,7 +116,7 @@ public class ProductionActivity extends Activity {
         WebView.setWebContentsDebuggingEnabled(debuggable);
         webView.setWebViewClient(new ProductionWebViewClient());
         webView.setWebChromeClient(new ProductionChromeClient());
-        webView.setDownloadListener(new AccDownloadBridge(this, settings.getUserAgentString()));
+        webView.setDownloadListener(new AccDownloadBridge(this));
         webView.addJavascriptInterface(new AccAppBridge(this), "ACCAndroid");
         webView.addJavascriptInterface(nativeAssets, "ACCNativeAssets");
 
