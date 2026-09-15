@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GRADLE="$ROOT/android/app/build.gradle"
 MANIFEST="$ROOT/android/app/src/main/AndroidManifest.xml"
 AUTHORITY="$ROOT/ACC-OS-X-AUTHORITY.md"
+ANDROID_SRC="$ROOT/android/app/src/main"
 
 fail() {
   echo "::error::$*"
@@ -37,6 +38,13 @@ grep -q 'android:label="ACC OS X"' "$MANIFEST" || fail "ACC OS X app label drift
 grep -q 'android:icon="@drawable/ic_acc_os_x"' "$MANIFEST" || fail "ACC OS X launcher icon drift"
 grep -q 'com.ardacore.accosx' "$AUTHORITY" || fail "Authority package lock missing"
 grep -q '33:76:70:DE:C0:F9:0B:72:74:8F:44:CC:F2:C0:52:9B:86:EA:E4:2C:1D:85:84:B4:C3:62:22:B2:B3:36:05:D5' "$AUTHORITY" || fail "Authority production certificate fingerprint missing"
+
+# Play Protect hard lock: ACC OS X may launch explicitly allowed installed apps,
+# but the production shell must not download/install Android application packages itself.
+if grep -R -nE 'android\.app\.DownloadManager|android\.content\.pm\.PackageInstaller|REQUEST_INSTALL_PACKAGES|ACTION_INSTALL_PACKAGE|ACTION_MANAGE_UNKNOWN_APP_SOURCES' \
+  "$ANDROID_SRC" --include='*.java' --include='*.xml'; then
+  fail "Production Android contains downloader/app-installer capability. STOP — keep downloads in the external browser/system handler."
+fi
 
 echo "ACC OS X Android release contract PASS"
 echo "package=$APPLICATION_ID versionName=$VERSION_NAME versionCode=$VERSION_CODE"
