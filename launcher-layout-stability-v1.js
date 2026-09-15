@@ -1,12 +1,12 @@
-// KAI ONE — Launcher layout stability v5
+// KAI ONE — Launcher layout stability v6
 // Canonical home order: MY APPS -> MY MAPS -> MY PROJECTS -> MY ADMIN -> phone categories.
 // Logo rendering belongs exclusively to my-maps-launcher-v1.js.
 (() => {
   "use strict";
-  if (window.__ACC_LAUNCHER_LAYOUT_STABILITY_V5__) return;
-  window.__ACC_LAUNCHER_LAYOUT_STABILITY_V5__ = true;
+  if (window.__ACC_LAUNCHER_LAYOUT_STABILITY_V6__) return;
+  window.__ACC_LAUNCHER_LAYOUT_STABILITY_V6__ = true;
 
-  const REVISION = "KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V5_ADMIN_ORDER";
+  const REVISION = "KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V6_BWD_ADMIN_OWNER";
 
   function placeAfter(node, anchor) {
     if (!node || !anchor || node === anchor) return false;
@@ -45,10 +45,11 @@
   }
 
   function ensureMyAdmin(){
-    if(document.querySelector('script[data-acc-my-admin="v1"]')) return;
+    if(document.querySelector('script[data-acc-my-admin="v3"]')) return;
+    document.querySelectorAll('script[data-acc-my-admin]').forEach(node=>node.remove());
     const script=document.createElement("script");
-    script.src="./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V1";
-    script.dataset.accMyAdmin="v1";
+    script.src="./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE";
+    script.dataset.accMyAdmin="v3";
     script.async=false;
     document.head.appendChild(script);
   }

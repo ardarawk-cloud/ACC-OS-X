@@ -1,13 +1,13 @@
-// KAI ONE — ACC OS X MY ADMIN launcher v2
+// KAI ONE — ACC OS X MY ADMIN launcher v3
 // Owner-only shortcuts for real internal admin surfaces. ENTEGO Admin remains excluded while it is demo-only.
 (() => {
   "use strict";
-  if (window.__ACC_MY_ADMIN_V2__) return;
-  window.__ACC_MY_ADMIN_V2__ = true;
+  if (window.__ACC_MY_ADMIN_V3__) return;
+  window.__ACC_MY_ADMIN_V3__ = true;
 
-  const REVISION = "KAI_ONE_MY_ADMIN_V2_COLLAPSIBLE";
+  const REVISION = "KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE";
   const ROOT_ID = "acc-my-admin";
-  const STYLE_ID = "acc-my-admin-v2-style";
+  const STYLE_ID = "acc-my-admin-v3-style";
   const ACCORDION_STATE_KEY = "acc_legacy_launcher_accordion_v1";
   const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
 
@@ -18,7 +18,7 @@
       accent:"#e6b85c",
       fallback:"BWD",
       kind:"APK / OWNER",
-      native:["com.baliweddingdj.app"]
+      native:["com.baliweddingdj.owner"]
     },
     {
       key:"am-studio-admin",
@@ -101,16 +101,16 @@
     head.setAttribute("role","button");
     head.setAttribute("tabindex","0");
 
-    if(root.dataset.adminAccordionInitialized!=="2"){
-      root.dataset.adminAccordionInitialized="2";
+    if(root.dataset.adminAccordionInitialized!=="3"){
+      root.dataset.adminAccordionInitialized="3";
       setExpanded(root,accordionState.admin===true);
     }else{
       grid.style.setProperty("display",root.dataset.expanded==="1"?"grid":"none","important");
       head.setAttribute("aria-expanded",root.dataset.expanded==="1"?"true":"false");
     }
 
-    if(head.dataset.adminAccordionBound!=="2"){
-      head.dataset.adminAccordionBound="2";
+    if(head.dataset.adminAccordionBound!=="3"){
+      head.dataset.adminAccordionBound="3";
       const toggle=event=>{
         if(event.type==="keydown" && !["Enter"," "].includes(event.key)) return;
         if(event.type==="keydown") event.preventDefault();
@@ -138,7 +138,7 @@
   function launch(admin){
     if(admin.native?.length){
       if(!IS_NATIVE_SHELL){
-        toast("Buka dari APK ACC OS X untuk menjalankan Bali Wedding DJ Admin.");
+        toast(`Buka dari APK ACC OS X untuk menjalankan ${admin.title}.`);
         return;
       }
       location.href=`accapp://launch?packages=${encodeURIComponent(admin.native.join(","))}`;

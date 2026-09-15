@@ -27,6 +27,7 @@ final class AccNavigationPolicy {
             "com.accbuilder.oracly",
             "com.accbuilder.papasaucelab",
             "com.baliweddingdj.app",
+            "com.baliweddingdj.owner",
             "com.kawanlama.smartklic",
 
             // Finance
