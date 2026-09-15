@@ -23,7 +23,7 @@ jobs:
       ACC_OS_X_ANDROID_KEYSTORE_B64: ${{ secrets.ACC_OS_X_ANDROID_KEYSTORE_B64 }}
       ACC_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ACC_OS_X_ANDROID_KEYSTORE_PASSWORD }}
       ACC_ANDROID_KEY_ALIAS: ${{ secrets.ACC_OS_X_ANDROID_KEY_ALIAS }}
-      ACC_ANDROID_KEY_PASSWORD: ${{ secrets.ACC_OS_X_ANDROID_KEY_PASSWORD }}
+      ACC_ANDROID_KEY_PASSWORD: ${{ secrets.ACC_ANDROID_KEY_PASSWORD }}
       ACC_CANONICAL_CERT_SHA256: '33:76:70:DE:C0:F9:0B:72:74:8F:44:CC:F2:C0:52:9B:86:EA:E4:2C:1D:85:84:B4:C3:62:22:B2:B3:36:05:D5'
 
     steps:
@@ -117,6 +117,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android SDK 36
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
