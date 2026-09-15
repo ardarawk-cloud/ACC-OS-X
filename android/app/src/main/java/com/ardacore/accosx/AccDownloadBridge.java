@@ -1,21 +1,18 @@
 package com.ardacore.accosx;
 
-import android.app.DownloadManager;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
-import android.os.Environment;
-import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
-import android.webkit.URLUtil;
 import android.widget.Toast;
+
+import java.util.Locale;
 
 final class AccDownloadBridge implements DownloadListener {
     private final Context context;
-    private final String userAgent;
 
-    AccDownloadBridge(Context context, String userAgent) {
+    AccDownloadBridge(Context context) {
         this.context = context;
-        this.userAgent = userAgent;
     }
 
     @Override
@@ -28,23 +25,23 @@ final class AccDownloadBridge implements DownloadListener {
                 return;
             }
 
-            String fileName = URLUtil.guessFileName(url, contentDisposition, mimeType);
-            DownloadManager.Request request = new DownloadManager.Request(uri);
-            request.setTitle(fileName);
-            request.setDescription("ACC OS X download");
-            request.setMimeType(mimeType);
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            request.setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName);
+            String lowerUrl = url == null ? "" : url.toLowerCase(Locale.ROOT);
+            String lowerMime = mimeType == null ? "" : mimeType.toLowerCase(Locale.ROOT);
+            boolean packagePayload = lowerMime.equals("application/vnd.android.package-archive")
+                    || lowerUrl.matches(".*\\.(apk|apks|xapk|aab)(\\?.*)?$");
 
-            String cookies = CookieManager.getInstance().getCookie(url);
-            if (cookies != null && !cookies.isBlank()) request.addRequestHeader("Cookie", cookies);
-            request.addRequestHeader("User-Agent", userAgentHeader == null ? userAgent : userAgentHeader);
+            if (packagePayload) {
+                Toast.makeText(context, "Unduhan paket aplikasi diblokir di ACC OS X.", Toast.LENGTH_LONG).show();
+                return;
+            }
 
-            DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-            manager.enqueue(request);
-            Toast.makeText(context, "Download dimulai: " + fileName, Toast.LENGTH_SHORT).show();
+            Intent browser = new Intent(Intent.ACTION_VIEW, uri);
+            browser.addCategory(Intent.CATEGORY_BROWSABLE);
+            browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(browser);
+            Toast.makeText(context, "Download dibuka di browser.", Toast.LENGTH_SHORT).show();
         } catch (Exception error) {
-            Toast.makeText(context, "Download gagal dimulai.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Tidak ada browser untuk membuka download.", Toast.LENGTH_SHORT).show();
         }
     }
 }
