@@ -16,6 +16,7 @@
         <package android:name="com.accbuilder.oracly" />
         <package android:name="com.accbuilder.papasaucelab" />
         <package android:name="com.baliweddingdj.app" />
+        <package android:name="com.baliweddingdj.owner" />
         <package android:name="com.kawanlama.smartklic" />
 
         <!-- Finance -->
