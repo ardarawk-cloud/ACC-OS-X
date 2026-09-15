@@ -33,7 +33,7 @@ jobs:
           grep -q 'CRMDatabase' worker.js
           grep -q 'sqlite-durable-object' worker.js
           grep -q 'nav-count' public/core.js
-          grep -q 'NADMO STUDIO' public/index.html
+          grep -q 'NADMO STUDIO' public/index.html\n          grep -q '<div class="brand-mark">N</div>' public/index.html\n          grep -q '<span class="version">v0.4.0</span>' public/index.html
 
       - name: Deploy CRM to existing Cloudflare account
         id: deploy
@@ -72,4 +72,4 @@ jobs:
           echo "Wrong-password login status: $LOGIN_CODE"
           [ "$LOGIN_CODE" = "401" ] || exit 1
 
-# redeploy marker: NADMO STUDIO CRM rebrand 2026-09-15
+# redeploy marker: NADMO CRM login rebrand complete 2026-09-15
