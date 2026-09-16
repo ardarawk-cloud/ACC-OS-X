@@ -1,0 +1,103 @@
+name: NADMO BIDIGI DNS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nadmo-bidigi-dns.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nadmo-bidigi-dns
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ZONE_NAME: nadmo.id
+      CNAME_NAME: bidigi.nadmo.id
+      CNAME_TARGET: custom-domains.chatgpt.site
+      OPENAI_TXT_NAME: _openai-site-verification.bidigi.nadmo.id
+      OPENAI_TXT_VALUE: openai-site-verification=bPFJy79EsKqnSJHUo7mtUgHjq8oAQ9jFatkcC2xJRdU
+      CF_TXT_NAME: _cf-custom-hostname.bidigi.nadmo.id
+      CF_TXT_VALUE: ab3a0ec4-3637-4562-a8a4-e4cbfa555e9d
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
+
+    steps:
+      - name: Configure BIDIGI DNS
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_DNS_API_TOKEN:-}"
+
+          request() {
+            curl --silent --show-error --fail-with-body               -H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}"               -H "Content-Type: application/json"               "$@"
+          }
+
+          ZONE_RESPONSE="$(request --get             --data-urlencode "name=${ZONE_NAME}"             "https://api.cloudflare.com/client/v4/zones")"
+          jq -e '.success == true' <<<"$ZONE_RESPONSE" >/dev/null
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONE_RESPONSE")"
+          test -n "$ZONE_ID"
+
+          upsert_record() {
+            local type="$1"
+            local name="$2"
+            local content="$3"
+            local existing record_id payload response
+
+            existing="$(request --get               --data-urlencode "type=${type}"               --data-urlencode "name=${name}"               "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+            jq -e '.success == true' <<<"$existing" >/dev/null
+            record_id="$(jq -r '.result[0].id // empty' <<<"$existing")"
+
+            if [ "$type" = "CNAME" ]; then
+              payload="$(jq -n                 --arg type "$type"                 --arg name "$name"                 --arg content "$content"                 '{type:$type,name:$name,content:$content,ttl:1,proxied:false}')"
+            else
+              payload="$(jq -n                 --arg type "$type"                 --arg name "$name"                 --arg content "$content"                 '{type:$type,name:$name,content:$content,ttl:1}')"
+            fi
+
+            if [ -n "$record_id" ]; then
+              response="$(request -X PUT --data "$payload"                 "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${record_id}")"
+            else
+              response="$(request -X POST --data "$payload"                 "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+            fi
+            jq -e '.success == true' <<<"$response" >/dev/null
+            echo "Configured ${type} ${name}"
+          }
+
+          upsert_record CNAME "$CNAME_NAME" "$CNAME_TARGET"
+          upsert_record TXT "$OPENAI_TXT_NAME" "$OPENAI_TXT_VALUE"
+          upsert_record TXT "$CF_TXT_NAME" "$CF_TXT_VALUE"
+
+      - name: Verify public DNS
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 20); do
+            CNAME="$(dig +short CNAME "$CNAME_NAME" @1.1.1.1 | head -n1 | sed 's/\.$//' || true)"
+            OPENAI_TXT="$(dig +short TXT "$OPENAI_TXT_NAME" @1.1.1.1 | tr -d '"' || true)"
+            CF_TXT="$(dig +short TXT "$CF_TXT_NAME" @1.1.1.1 | tr -d '"' || true)"
+
+            if [ "$CNAME" = "$CNAME_TARGET" ]               && printf '%s' "$OPENAI_TXT" | grep -Fq "$OPENAI_TXT_VALUE"               && printf '%s' "$CF_TXT" | grep -Fq "$CF_TXT_VALUE"; then
+              {
+                echo "## BIDIGI DNS active"
+                echo ""
+                echo "- CNAME: $CNAME_NAME -> $CNAME_TARGET"
+                echo "- OpenAI validation TXT: present"
+                echo "- Cloudflare validation TXT: present"
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "BIDIGI DNS is active."
+              exit 0
+            fi
+
+            echo "Waiting for DNS propagation (attempt $attempt/20)..."
+            sleep 15
+          done
+
+          echo "::error::BIDIGI DNS records did not propagate in time."
+          exit 1
