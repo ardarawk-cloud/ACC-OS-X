@@ -1,5 +1,6 @@
-// ACC OS X — BUILD 257.6 PRODUCE COPILOT PANEL
+// ACC OS X — BUILD 257.6.5 PRODUCE COPILOT PANEL
 // Semi-automatic K/P/C/N chat lane mounted directly above Automatic Mission.
+// Scroll architecture: one document viewport; Produce never owns or forces scroll position.
 // Reads the currently selected channel + locked contexts from ACC local state.
 // Automatic mission state is not modified.
 
@@ -8,7 +9,7 @@
   if (window.__ACC_PRODUCE_COPILOT_V2576__) return;
   window.__ACC_PRODUCE_COPILOT_V2576__ = true;
 
-  const REVISION = "BUILD257_6_PRODUCE_COPILOT";
+  const REVISION = "BUILD257_6_5_PRODUCE_COPILOT_PAGE_FLOW";
   const MAIN_STATE_KEY = "acc_os_x_ecosystem_v214";
   const COPILOT_KEY = "acc_os_x_produce_copilot_v1";
   const AI_ACCESS_KEY = "acc_os_x_ai_access_v1";
@@ -97,14 +98,14 @@
     const style=document.createElement("style");
     style.id=STYLE_ID;
     style.textContent=`
-      .acc-copilot-section{margin-bottom:14px}
-      .acc-copilot-card{padding:14px!important;background:linear-gradient(180deg,rgba(8,12,23,.99),rgba(7,13,24,.99))!important;border:1px solid rgba(71,235,181,.28)!important;box-shadow:0 0 30px rgba(30,180,130,.08)!important}
+      .acc-copilot-section{margin-bottom:14px;overflow:visible!important;contain:none!important}
+      .acc-copilot-card{padding:14px!important;background:linear-gradient(180deg,rgba(8,12,23,.99),rgba(7,13,24,.99))!important;border:1px solid rgba(71,235,181,.28)!important;box-shadow:0 0 30px rgba(30,180,130,.08)!important;overflow:visible!important;contain:none!important}
       .acc-copilot-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
       .acc-copilot-channel{font-size:1.12rem;font-weight:900;margin-top:4px}
       .acc-copilot-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
       .acc-copilot-badge{font-size:10px;font-weight:900;letter-spacing:.06em;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.035);color:var(--muted,#9ca3af)}
       .acc-copilot-badge.ok{color:#69efb3;border-color:rgba(105,239,179,.25);background:rgba(31,110,82,.13)}
-      .acc-copilot-chat{margin-top:12px;max-height:520px;overflow:auto;padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:14px;background:#030712;scroll-behavior:smooth}
+      .acc-copilot-chat{margin-top:12px;max-height:none!important;height:auto!important;overflow:visible!important;padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:14px;background:#030712;scroll-behavior:auto!important;overscroll-behavior:auto!important;touch-action:pan-y!important}
       .acc-copilot-empty{padding:20px 12px;text-align:center;color:var(--muted,#8390aa);font-size:12px;line-height:1.55}
       .acc-copilot-msg{display:flex;margin:8px 0}.acc-copilot-msg.user{justify-content:flex-end}
       .acc-copilot-bubble{max-width:91%;padding:10px 12px;border-radius:14px;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -122,7 +123,7 @@
       .acc-copilot-publish{width:100%;margin-top:10px;min-height:50px;border:1px solid rgba(105,239,179,.42);border-radius:13px;background:#0daa7b;color:#fff;font-weight:950;letter-spacing:.08em}.acc-copilot-publish:disabled{opacity:.35;filter:saturate(.4)}
       .acc-copilot-note{margin-top:8px;font-size:10px;color:#7f8ca3;line-height:1.45}
       .acc-copilot-modal{position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px}.acc-copilot-modal img{max-width:100%;max-height:88vh;object-fit:contain;border-radius:10px}.acc-copilot-modal button{margin-top:10px;border:1px solid rgba(255,255,255,.2);background:#111827;color:#fff;border-radius:10px;padding:10px 18px;font-weight:800}
-      @media(max-width:420px){.acc-copilot-card{padding:12px!important}.acc-copilot-chat{max-height:460px}.acc-copilot-tools{gap:5px}.acc-copilot-quick{font-size:11px}}
+      @media(max-width:420px){.acc-copilot-card{padding:12px!important}.acc-copilot-chat{max-height:none!important;overflow:visible!important}.acc-copilot-tools{gap:5px}.acc-copilot-quick{font-size:11px}}
     `;
     document.head.appendChild(style);
   }
@@ -155,7 +156,7 @@
     if(!section){section=document.createElement("section");section.id=PANEL_ID;section.className="section mono acc-copilot-section";missionSection.parentElement.insertBefore(section,missionSection);}else if(section.nextElementSibling!==missionSection){missionSection.parentElement.insertBefore(section,missionSection);}
     section.dataset.channelId=profile.id;
     const row=lane(profile.id),signature=`${profile.id}:${row.updatedAt}:${row.messages.length}:${row.package?.publishedPostId||""}`;
-    if(section.dataset.signature!==signature){section.innerHTML=panelHtml(profile,row);section.dataset.signature=signature;bindPanel();requestAnimationFrame(()=>{const chat=document.getElementById("acc-copilot-chat");if(chat)chat.scrollTop=chat.scrollHeight;});}
+    if(section.dataset.signature!==signature){section.innerHTML=panelHtml(profile,row);section.dataset.signature=signature;bindPanel();}
   }
   function setStatus(value,error=false){const el=document.getElementById("acc-copilot-status");if(el){el.textContent=value||"";el.style.color=error?"#ff8095":"#8b9bb4";}}
   function setBusy(busy,label="KAI sedang bekerja…"){document.querySelectorAll("#acc-produce-copilot-panel button,#acc-produce-copilot-panel input").forEach(el=>el.disabled=busy);if(busy)setStatus(label);}
