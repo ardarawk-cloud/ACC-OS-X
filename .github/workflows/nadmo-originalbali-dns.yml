@@ -1,0 +1,89 @@
+name: NADMO ORIGINAL BALI DNS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nadmo-originalbali-dns.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nadmo-originalbali-dns
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ZONE_NAME: nadmo.id
+      CNAME_NAME: originalbali.nadmo.id
+      CNAME_TARGET: proxy-v2.appdeploy.ai
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
+
+    steps:
+      - name: Configure ORIGINAL BALI DNS
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_DNS_API_TOKEN:-}"
+
+          request() {
+            curl --silent --show-error --fail-with-body \
+              -H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "$@"
+          }
+
+          ZONE_RESPONSE="$(request --get \
+            --data-urlencode "name=${ZONE_NAME}" \
+            "https://api.cloudflare.com/client/v4/zones")"
+          jq -e '.success == true' <<<"$ZONE_RESPONSE" >/dev/null
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONE_RESPONSE")"
+          test -n "$ZONE_ID"
+
+          EXISTING="$(request --get \
+            --data-urlencode "type=CNAME" \
+            --data-urlencode "name=${CNAME_NAME}" \
+            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+          jq -e '.success == true' <<<"$EXISTING" >/dev/null
+          RECORD_ID="$(jq -r '.result[0].id // empty' <<<"$EXISTING")"
+
+          PAYLOAD="$(jq -n \
+            --arg name "$CNAME_NAME" \
+            --arg content "$CNAME_TARGET" \
+            '{type:"CNAME",name:$name,content:$content,ttl:1,proxied:false}')"
+
+          if [ -n "$RECORD_ID" ]; then
+            RESULT="$(request -X PUT --data "$PAYLOAD" \
+              "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}")"
+          else
+            RESULT="$(request -X POST --data "$PAYLOAD" \
+              "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+          fi
+
+          jq -e '.success == true' <<<"$RESULT" >/dev/null
+          test "$(jq -r '.result.type' <<<"$RESULT")" = CNAME
+          test "$(jq -r '.result.name' <<<"$RESULT")" = "$CNAME_NAME"
+          test "$(jq -r '.result.content' <<<"$RESULT")" = "$CNAME_TARGET"
+          test "$(jq -r '.result.proxied' <<<"$RESULT")" = false
+          echo "Configured ${CNAME_NAME} -> ${CNAME_TARGET}"
+
+      - name: Verify public DNS
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 20); do
+            CNAME="$(dig +short CNAME "$CNAME_NAME" @1.1.1.1 | head -n1 | sed 's/\.$//' || true)"
+            echo "CNAME: ${CNAME:-no answer}"
+            if [ "$CNAME" = "$CNAME_TARGET" ]; then
+              echo "ORIGINAL BALI DNS is active."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::ORIGINAL BALI DNS did not propagate in time."
+          exit 1
