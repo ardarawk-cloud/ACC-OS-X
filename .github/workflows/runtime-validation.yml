@@ -1,10 +1,15 @@
 name: ACC OS X Runtime Validation
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
     paths:
+      - 'produce-copilot-v2576.js'
+      - 'produce-copilot-preview-fix-v25762.js'
       - 'produce-copilot-brain-firewall-v1.js'
       - 'produce-copilot-batch-runtime-v2.js'
       - 'produce-copilot-batch-runtime-v3.js'
@@ -15,6 +20,7 @@ on:
       - 'native-scroll-performance-v1.js'
       - 'native-scroll-performance-v2.js'
       - 'release-version-v257.js'
+      - 'service-worker.js'
       - 'worker-brain-isolation-runtime-v1.js'
       - 'worker-brain-runtime-rescue-v1.js'
       - 'worker-brain-runtime-rescue-v2.js'
@@ -57,6 +63,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          node --check produce-copilot-v2576.js
+          node --check produce-copilot-preview-fix-v25762.js
           node --check produce-copilot-brain-firewall-v1.js
           node --check produce-copilot-batch-runtime-v2.js
           node --check produce-copilot-batch-runtime-v3.js
@@ -67,6 +75,27 @@ jobs:
           node --check native-scroll-performance-v1.js
           node --check native-scroll-performance-v2.js
           node --check release-version-v257.js
+          node --check service-worker.js
+
+      - name: Validate Produce single scroll authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q 'native-scroll-performance-' release-version-v257.js; then
+            echo 'FAIL: release bootstrap still activates a native scroll runtime.' >&2
+            exit 1
+          fi
+          grep -q 'BUILD257_6_5_PRODUCE_COPILOT_PAGE_FLOW' release-version-v257.js
+          grep -q 'BUILD257_6_4_PREVIEW_ONLY_NO_SCROLL_CONTROL' release-version-v257.js
+          if grep -q 'native-scroll-performance-' service-worker.js; then
+            echo 'FAIL: active service-worker cache chain still includes a native scroll runtime.' >&2
+            exit 1
+          fi
+          if grep -Eq 'scrollTop\s*=|scrollIntoView\s*\(|window\.scroll(To|By)\s*\(' produce-copilot-v2576.js produce-copilot-preview-fix-v25762.js; then
+            echo 'FAIL: Produce runtime contains direct scroll-position control.' >&2
+            exit 1
+          fi
+          echo 'Produce scroll authority OK: document viewport only.'
 
       - name: Validate Worker module syntax
         shell: bash
