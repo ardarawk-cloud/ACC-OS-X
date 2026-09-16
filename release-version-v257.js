@@ -78,10 +78,12 @@
   window.dispatchEvent(new CustomEvent("acc-release-ready", {detail: RELEASE}));
 })();
 
+// Produce scrolling has one authority only: the browser/WebView document viewport.
+// No native scroll runtime is loaded here.
 (() => {
   if (document.querySelector('script[data-acc-produce-copilot="v2576"]')) return;
   const script = document.createElement("script");
-  script.src = "./produce-copilot-v2576.js?rev=BUILD257_6_PRODUCE_COPILOT";
+  script.src = "./produce-copilot-v2576.js?rev=BUILD257_6_5_PRODUCE_COPILOT_PAGE_FLOW";
   script.dataset.accProduceCopilot = "v2576";
   script.async = false;
   document.head.appendChild(script);
@@ -119,22 +121,12 @@
   document.head.appendChild(script);
 })();
 
+// Poster preview runtime is preview/storage only and must never control page scroll.
 (() => {
   if (document.querySelector('script[data-acc-copilot-preview-fix="v25762"]')) return;
   const script = document.createElement("script");
-  script.src = "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_2_POSTER_PREVIEW_MEMORY_FIX";
+  script.src = "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_4_PREVIEW_ONLY_NO_SCROLL_CONTROL";
   script.dataset.accCopilotPreviewFix = "v25762";
-  script.async = false;
-  document.head.appendChild(script);
-})();
-
-// Android scroll performance: V2 caused a WebView scroll regression on some devices.
-// Roll back to the proven V1 visual-only optimization. Batch Runtime V3 keeps the main jank reduction.
-(() => {
-  if (document.querySelector('script[data-acc-native-scroll-perf="v1"]')) return;
-  const script = document.createElement("script");
-  script.src = "./native-scroll-performance-v1.js?rev=NATIVE_ANDROID_SCROLL_PERF_V1_R1_ROLLBACK";
-  script.dataset.accNativeScrollPerf = "v1";
   script.async = false;
   document.head.appendChild(script);
 })();
