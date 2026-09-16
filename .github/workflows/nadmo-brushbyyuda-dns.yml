@@ -1,0 +1,81 @@
+name: NADMO Brush by Yuda DNS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nadmo-brushbyyuda-dns.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nadmo-brushbyyuda-dns
+  cancel-in-progress: false
+
+jobs:
+  bind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ZONE_NAME: nadmo.id
+      RECORD_NAME: brushbyyuda.nadmo.id
+      RECORD_TARGET: proxy-v2.appdeploy.ai
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
+    steps:
+      - name: Validate isolated DNS token
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_DNS_API_TOKEN:-}"
+
+      - name: Create or update Brush CNAME
+        run: |
+          set -euo pipefail
+          request() {
+            curl --silent --show-error --fail-with-body \
+              -H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "$@"
+          }
+
+          ZONES="$(request --get --data-urlencode "name=${ZONE_NAME}" "https://api.cloudflare.com/client/v4/zones")"
+          jq -e '.success == true' <<<"$ZONES" >/dev/null
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONES")"
+          test -n "$ZONE_ID"
+
+          EXISTING="$(request --get --data-urlencode "name=${RECORD_NAME}" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+          jq -e '.success == true' <<<"$EXISTING" >/dev/null
+          RECORD_ID="$(jq -r '.result[0].id // empty' <<<"$EXISTING")"
+
+          PAYLOAD="$(jq -n --arg name "$RECORD_NAME" --arg content "$RECORD_TARGET" '{type:"CNAME",name:$name,content:$content,ttl:1,proxied:false}')"
+
+          if [ -n "$RECORD_ID" ]; then
+            RESULT="$(request -X PUT --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}")"
+            ACTION=updated
+          else
+            RESULT="$(request -X POST --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+            ACTION=created
+          fi
+
+          jq -e '.success == true' <<<"$RESULT" >/dev/null
+          test "$(jq -r '.result.type' <<<"$RESULT")" = CNAME
+          test "$(jq -r '.result.name' <<<"$RESULT")" = "$RECORD_NAME"
+          test "$(jq -r '.result.content' <<<"$RESULT")" = "$RECORD_TARGET"
+          test "$(jq -r '.result.proxied' <<<"$RESULT")" = false
+          echo "${ACTION}: ${RECORD_NAME} -> ${RECORD_TARGET}"
+
+      - name: Verify public DNS
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            ANSWER="$(dig +short CNAME "${RECORD_NAME}" @1.1.1.1 | head -n1 | sed 's/\.$//' || true)"
+            echo "Attempt ${attempt}: ${ANSWER:-no answer}"
+            if [ "$ANSWER" = "$RECORD_TARGET" ]; then
+              echo "Public DNS verified."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo '::error::CNAME not visible on public resolver in verification window.'
+          exit 1
