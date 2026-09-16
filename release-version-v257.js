@@ -78,6 +78,29 @@
   window.dispatchEvent(new CustomEvent("acc-release-ready", {detail: RELEASE}));
 })();
 
+// Produce must never accept programmatic window scroll restoration.
+// The legacy Build 250 core still calls scrollTo(0, savedScroll) after every full render;
+// fence that call at the browser API boundary while Produce is the active tab.
+// Finger/touch scrolling remains native and unaffected.
+(() => {
+  "use strict";
+  if (window.__ACC_PRODUCE_PROGRAMMATIC_SCROLL_BLOCK_V1__) return;
+
+  const nativeScrollTo = window.scrollTo.bind(window);
+  const produceActive = () => Boolean(document.querySelector('.tab.active[data-value="production"]'));
+
+  window.scrollTo = function(...args) {
+    if (produceActive()) return;
+    return nativeScrollTo(...args);
+  };
+
+  window.__ACC_PRODUCE_PROGRAMMATIC_SCROLL_BLOCK_V1__ = Object.freeze({
+    revision: "PRODUCE_CORE_SCROLL_GUARD_V1",
+    active: true,
+    mode: "NATIVE_TOUCH_ONLY_ON_PRODUCE"
+  });
+})();
+
 // Produce scrolling has one authority only: the browser/WebView document viewport.
 // No native scroll runtime is loaded here.
 (() => {
