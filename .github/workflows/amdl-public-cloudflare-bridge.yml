@@ -115,3 +115,5 @@ jobs:
           [ "$TEST_CODE" = "201" ]
 
 # redeploy marker: NADMO STUDIO public rebrand 2026-09-15
+
+# deploy marker: CRM portfolio mobile precision 2026-09-16
