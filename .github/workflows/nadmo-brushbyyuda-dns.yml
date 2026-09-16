@@ -17,11 +17,12 @@ concurrency:
 jobs:
   bind:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       ZONE_NAME: nadmo.id
       RECORD_NAME: brushbyyuda.nadmo.id
       RECORD_TARGET: proxy-v2.appdeploy.ai
+      LIVE_URL: https://brushbyyuda.nadmo.id/
       CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
     steps:
       - name: Validate isolated DNS token
@@ -38,18 +39,14 @@ jobs:
               -H "Content-Type: application/json" \
               "$@"
           }
-
           ZONES="$(request --get --data-urlencode "name=${ZONE_NAME}" "https://api.cloudflare.com/client/v4/zones")"
           jq -e '.success == true' <<<"$ZONES" >/dev/null
           ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONES")"
           test -n "$ZONE_ID"
-
           EXISTING="$(request --get --data-urlencode "name=${RECORD_NAME}" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
           jq -e '.success == true' <<<"$EXISTING" >/dev/null
           RECORD_ID="$(jq -r '.result[0].id // empty' <<<"$EXISTING")"
-
           PAYLOAD="$(jq -n --arg name "$RECORD_NAME" --arg content "$RECORD_TARGET" '{type:"CNAME",name:$name,content:$content,ttl:1,proxied:false}')"
-
           if [ -n "$RECORD_ID" ]; then
             RESULT="$(request -X PUT --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}")"
             ACTION=updated
@@ -57,7 +54,6 @@ jobs:
             RESULT="$(request -X POST --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
             ACTION=created
           fi
-
           jq -e '.success == true' <<<"$RESULT" >/dev/null
           test "$(jq -r '.result.type' <<<"$RESULT")" = CNAME
           test "$(jq -r '.result.name' <<<"$RESULT")" = "$RECORD_NAME"
@@ -77,5 +73,58 @@ jobs:
             fi
             sleep 10
           done
-          echo '::error::CNAME not visible on public resolver in verification window.'
           exit 1
+
+      - name: Verify HTTPS
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            CODE="$(curl --silent --show-error --location --output /tmp/brush.html --write-out '%{http_code}' --max-time 30 "$LIVE_URL" || true)"
+            echo "Attempt ${attempt}: HTTP ${CODE}"
+            if [ "$CODE" = "200" ] && grep -q 'Brush by Yuda Christ' /tmp/brush.html && grep -q 'Beauty with presence' /tmp/brush.html; then
+              echo 'HTTPS content verified.'
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Mobile runtime QC
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/brush-qc
+          cd /tmp/brush-qc
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install chromium >/dev/null 2>&1
+          cat > qc.js <<'NODE'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for(const vp of [{width:390,height:844},{width:360,height:800}]){
+              const page=await browser.newPage({viewport:vp});
+              const errors=[];
+              page.on('pageerror',e=>errors.push(String(e)));
+              page.on('console',m=>{if(m.type()==='error') errors.push(m.text())});
+              const r=await page.goto(process.env.LIVE_URL,{waitUntil:'domcontentloaded',timeout:60000});
+              await page.waitForTimeout(3000);
+              if(!r || r.status()>=400) throw new Error(`HTTP failure ${vp.width}: ${r&&r.status()}`);
+              const state=await page.evaluate(()=>({
+                title:document.title,
+                body:document.body.innerText,
+                overflow:document.documentElement.scrollWidth-window.innerWidth,
+                images:[...document.images].map(i=>({complete:i.complete,w:i.naturalWidth,h:i.naturalHeight}))
+              }));
+              if(!state.title.includes('Brush by Yuda Christ')) throw new Error(`title fail ${vp.width}`);
+              if(!state.body.includes('Beauty with presence.')) throw new Error(`hero fail ${vp.width}`);
+              if(state.overflow>1) throw new Error(`horizontal overflow ${vp.width}: ${state.overflow}`);
+              if(state.images.length<6) throw new Error(`image count ${vp.width}: ${state.images.length}`);
+              if(state.images.some(i=>!i.complete||i.w===0||i.h===0)) throw new Error(`image load fail ${vp.width}`);
+              if(errors.length) throw new Error(`runtime errors ${vp.width}: ${errors.join(' | ')}`);
+              console.log(`PASS ${vp.width}x${vp.height}: no overflow, ${state.images.length} images loaded, no runtime errors`);
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node qc.js
