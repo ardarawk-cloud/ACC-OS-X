@@ -8,6 +8,7 @@ on:
     branches:
       - main
     paths:
+      - 'app.js'
       - 'produce-copilot-v2576.js'
       - 'produce-copilot-preview-fix-v25762.js'
       - 'produce-copilot-brain-firewall-v1.js'
@@ -63,6 +64,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          node --check app.js
           node --check produce-copilot-v2576.js
           node --check produce-copilot-preview-fix-v25762.js
           node --check produce-copilot-brain-firewall-v1.js
@@ -95,7 +97,13 @@ jobs:
             echo 'FAIL: Produce runtime contains direct scroll-position control.' >&2
             exit 1
           fi
-          echo 'Produce scroll authority OK: document viewport only.'
+          if grep -q 'scrollTo(0,scroll)' app.js; then
+            grep -q '__ACC_PRODUCE_PROGRAMMATIC_SCROLL_BLOCK_V1__' release-version-v257.js
+            grep -q 'tab.active\[data-value="production"\]' release-version-v257.js
+            grep -q 'PRODUCE_CORE_SCROLL_GUARD_V1' release-version-v257.js
+            grep -q 'BUILD257_PRODUCE_CORE_SCROLL_GUARD_V1' service-worker.js
+          fi
+          echo 'Produce scroll authority OK: manual document scrolling is not overridden by the active Produce runtime.'
 
       - name: Validate Worker module syntax
         shell: bash
