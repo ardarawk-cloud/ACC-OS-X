@@ -55,22 +55,29 @@ jobs:
               const pageErrors=[];
               page.on('pageerror',e=>pageErrors.push(String(e)));
               const response=await page.goto(process.env.LIVE_URL,{waitUntil:'domcontentloaded',timeout:60000});
-              await page.waitForTimeout(4000);
+              await page.waitForTimeout(1500);
+              await page.evaluate(async()=>{
+                const delay=ms=>new Promise(r=>setTimeout(r,ms));
+                for(let y=0;y<document.documentElement.scrollHeight;y+=600){window.scrollTo(0,y);await delay(120)}
+                window.scrollTo(0,document.documentElement.scrollHeight);
+              });
+              await page.waitForTimeout(2500);
               if(!response || response.status()>=400) throw new Error(`HTTP ${response&&response.status()} at ${vp.width}`);
               const s=await page.evaluate(()=>({
                 title:document.title,
                 text:document.body.innerText,
                 overflow:document.documentElement.scrollWidth-window.innerWidth,
-                imgs:[...document.images].map(i=>({complete:i.complete,w:i.naturalWidth,h:i.naturalHeight})),
+                imgs:[...document.querySelectorAll('img[data-photo]')].map(i=>({complete:i.complete,w:i.naturalWidth,h:i.naturalHeight,photo:i.dataset.photo})),
                 width:window.innerWidth
               }));
               if(!s.title.includes('Brush by Yuda Christ')) throw new Error(`title mismatch ${vp.width}`);
               if(!s.text.includes('Beauty with presence.')) throw new Error(`hero missing ${vp.width}`);
               if(s.overflow>1) throw new Error(`horizontal overflow ${vp.width}: ${s.overflow}px`);
-              if(s.imgs.length<6) throw new Error(`expected >=6 images, got ${s.imgs.length} at ${vp.width}`);
-              if(s.imgs.some(i=>!i.complete||i.w===0||i.h===0)) throw new Error(`image load failure ${vp.width}`);
+              if(s.imgs.length!==8) throw new Error(`expected 8 site image elements, got ${s.imgs.length} at ${vp.width}`);
+              const bad=s.imgs.filter(i=>!i.complete||i.w===0||i.h===0);
+              if(bad.length) throw new Error(`site image load failure ${vp.width}: ${JSON.stringify(bad)}`);
               if(pageErrors.length) throw new Error(`page errors ${vp.width}: ${pageErrors.join(' | ')}`);
-              console.log(`PASS ${vp.width}x${vp.height} | viewport=${s.width} | images=${s.imgs.length} | overflow=${s.overflow}px | pageErrors=0`);
+              console.log(`PASS ${vp.width}x${vp.height} | images=${s.imgs.length}/8 loaded | overflow=${s.overflow}px | pageErrors=0`);
               await page.close();
             }
             await browser.close();
