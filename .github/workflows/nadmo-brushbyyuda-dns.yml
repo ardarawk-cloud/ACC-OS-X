@@ -11,44 +11,69 @@ permissions:
   contents: read
 
 jobs:
-  diagnose:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       LIVE_URL: https://brushbyyuda.nadmo.id/
-      FALLBACK_URL: https://brush-by-yuda-christ-2e5tsl.v2.appdeploy.ai/
       RECORD_NAME: brushbyyuda.nadmo.id
       RECORD_TARGET: proxy-v2.appdeploy.ai
       CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
     steps:
-      - name: Verify DNS record
+      - name: Verify DNS and HTTPS
         run: |
           set -euo pipefail
           test -n "${CLOUDFLARE_DNS_API_TOKEN:-}"
           ANSWER="$(dig +short CNAME "${RECORD_NAME}" @1.1.1.1 | head -n1 | sed 's/\.$//' || true)"
           echo "CNAME: ${ANSWER:-no answer}"
           test "$ANSWER" = "$RECORD_TARGET"
+          CODE="$(curl --silent --show-error --location --output /tmp/brush.html --write-out '%{http_code}' --max-time 30 "$LIVE_URL")"
+          echo "HTTP ${CODE}"
+          test "$CODE" = "200"
+          grep -q '<title>Brush by Yuda Christ' /tmp/brush.html
+          echo 'DNS + HTTPS verified.'
 
-      - name: Compare custom and fallback responses
+      - name: Install Playwright Chromium
         run: |
           set -euo pipefail
-          CUSTOM_CODE="$(curl --silent --show-error --location --dump-header /tmp/custom.headers --output /tmp/custom.html --write-out '%{http_code}' --max-time 30 "$LIVE_URL")"
-          FALLBACK_CODE="$(curl --silent --show-error --location --dump-header /tmp/fallback.headers --output /tmp/fallback.html --write-out '%{http_code}' --max-time 30 "$FALLBACK_URL")"
-          echo "Custom HTTP: $CUSTOM_CODE"
-          echo "Fallback HTTP: $FALLBACK_CODE"
-          echo 'Custom title:'
-          grep -oi '<title[^>]*>[^<]*' /tmp/custom.html | head -n1 || true
-          echo 'Fallback title:'
-          grep -oi '<title[^>]*>[^<]*' /tmp/fallback.html | head -n1 || true
-          echo 'Custom content type:'
-          grep -i '^content-type:' /tmp/custom.headers | tail -n1 || true
-          echo 'Fallback content type:'
-          grep -i '^content-type:' /tmp/fallback.headers | tail -n1 || true
-          echo 'Hashes:'
-          sha256sum /tmp/custom.html /tmp/fallback.html
-          echo 'Custom body prefix:'
-          head -c 500 /tmp/custom.html | tr '\n' ' '; echo
-          echo 'Fallback body prefix:'
-          head -c 500 /tmp/fallback.html | tr '\n' ' '; echo
-          test "$CUSTOM_CODE" = "200"
-          test "$FALLBACK_CODE" = "200"
+          mkdir -p /tmp/brush-qc
+          cd /tmp/brush-qc
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install chromium >/dev/null 2>&1
+
+      - name: Mobile runtime QC 390 and 360
+        run: |
+          set -euo pipefail
+          cd /tmp/brush-qc
+          cat > qc.js <<'NODE'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for(const vp of [{width:390,height:844},{width:360,height:800}]){
+              const page=await browser.newPage({viewport:vp});
+              const pageErrors=[];
+              page.on('pageerror',e=>pageErrors.push(String(e)));
+              const response=await page.goto(process.env.LIVE_URL,{waitUntil:'domcontentloaded',timeout:60000});
+              await page.waitForTimeout(4000);
+              if(!response || response.status()>=400) throw new Error(`HTTP ${response&&response.status()} at ${vp.width}`);
+              const s=await page.evaluate(()=>({
+                title:document.title,
+                text:document.body.innerText,
+                overflow:document.documentElement.scrollWidth-window.innerWidth,
+                imgs:[...document.images].map(i=>({complete:i.complete,w:i.naturalWidth,h:i.naturalHeight})),
+                width:window.innerWidth
+              }));
+              if(!s.title.includes('Brush by Yuda Christ')) throw new Error(`title mismatch ${vp.width}`);
+              if(!s.text.includes('Beauty with presence.')) throw new Error(`hero missing ${vp.width}`);
+              if(s.overflow>1) throw new Error(`horizontal overflow ${vp.width}: ${s.overflow}px`);
+              if(s.imgs.length<6) throw new Error(`expected >=6 images, got ${s.imgs.length} at ${vp.width}`);
+              if(s.imgs.some(i=>!i.complete||i.w===0||i.h===0)) throw new Error(`image load failure ${vp.width}`);
+              if(pageErrors.length) throw new Error(`page errors ${vp.width}: ${pageErrors.join(' | ')}`);
+              console.log(`PASS ${vp.width}x${vp.height} | viewport=${s.width} | images=${s.imgs.length} | overflow=${s.overflow}px | pageErrors=0`);
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node qc.js
