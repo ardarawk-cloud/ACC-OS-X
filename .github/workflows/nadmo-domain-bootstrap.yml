@@ -1,0 +1,83 @@
+name: NADMO Domain Bootstrap
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nadmo-domain-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nadmo-domain-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ZONE_NAME: nadmo.id
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Validate Cloudflare credentials
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
+
+      - name: Create or inspect nadmo.id zone
+        id: zone
+        run: |
+          set -euo pipefail
+
+          request() {
+            curl --silent --show-error --fail-with-body               -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"               -H "Content-Type: application/json"               "$@"
+          }
+
+          LOOKUP="$(request --get             --data-urlencode "name=${ZONE_NAME}"             --data-urlencode "account.id=${CLOUDFLARE_ACCOUNT_ID}"             "https://api.cloudflare.com/client/v4/zones")"
+
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$LOOKUP")"
+
+          if [ -z "$ZONE_ID" ]; then
+            CREATE_PAYLOAD="$(jq -n               --arg name "$ZONE_NAME"               --arg account_id "$CLOUDFLARE_ACCOUNT_ID"               '{name:$name,account:{id:$account_id},type:"full",jump_start:true}')"
+
+            ZONE="$(request               -X POST               --data "$CREATE_PAYLOAD"               "https://api.cloudflare.com/client/v4/zones")"
+          else
+            ZONE="$(request "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}")"
+          fi
+
+          jq -e '.success == true' <<<"$ZONE" >/dev/null
+
+          ZONE_ID="$(jq -r '.result.id' <<<"$ZONE")"
+          STATUS="$(jq -r '.result.status' <<<"$ZONE")"
+          NS1="$(jq -r '.result.name_servers[0] // empty' <<<"$ZONE")"
+          NS2="$(jq -r '.result.name_servers[1] // empty' <<<"$ZONE")"
+
+          test -n "$ZONE_ID"
+          test -n "$NS1"
+          test -n "$NS2"
+
+          {
+            echo "zone_id=$ZONE_ID"
+            echo "status=$STATUS"
+            echo "ns1=$NS1"
+            echo "ns2=$NS2"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## NADMO domain bootstrap"
+            echo ""
+            echo "- Zone: `$ZONE_NAME`"
+            echo "- Status: `$STATUS`"
+            echo "- Nameserver 1: `$NS1`"
+            echo "- Nameserver 2: `$NS2`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Zone: $ZONE_NAME"
+          echo "Status: $STATUS"
+          echo "Nameserver 1: $NS1"
+          echo "Nameserver 2: $NS2"
