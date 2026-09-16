@@ -78,36 +78,14 @@
   window.dispatchEvent(new CustomEvent("acc-release-ready", {detail: RELEASE}));
 })();
 
-// Produce must never accept programmatic window scroll restoration.
-// The legacy Build 250 core still calls scrollTo(0, savedScroll) after every full render;
-// fence that call at the browser API boundary while Produce is the active tab.
-// Finger/touch scrolling remains native and unaffected.
+// Produce uses a stable DOM runtime. K/P/C/N appends messages in place;
+// no scroll guard, viewport lock, or native scroll runtime is active.
 (() => {
-  "use strict";
-  if (window.__ACC_PRODUCE_PROGRAMMATIC_SCROLL_BLOCK_V1__) return;
-
-  const nativeScrollTo = window.scrollTo.bind(window);
-  const produceActive = () => Boolean(document.querySelector('.tab.active[data-value="production"]'));
-
-  window.scrollTo = function(...args) {
-    if (produceActive()) return;
-    return nativeScrollTo(...args);
-  };
-
-  window.__ACC_PRODUCE_PROGRAMMATIC_SCROLL_BLOCK_V1__ = Object.freeze({
-    revision: "PRODUCE_CORE_SCROLL_GUARD_V1",
-    active: true,
-    mode: "NATIVE_TOUCH_ONLY_ON_PRODUCE"
-  });
-})();
-
-// Produce scrolling has one authority only: the browser/WebView document viewport.
-// No native scroll runtime is loaded here.
-(() => {
-  if (document.querySelector('script[data-acc-produce-copilot="v2576"]')) return;
+  if (document.querySelector('script[data-acc-produce-copilot="v2577"]')) return;
+  document.querySelectorAll('script[data-acc-produce-copilot]').forEach(node => node.remove());
   const script = document.createElement("script");
-  script.src = "./produce-copilot-v2576.js?rev=BUILD257_6_5_PRODUCE_COPILOT_PAGE_FLOW";
-  script.dataset.accProduceCopilot = "v2576";
+  script.src = "./produce-copilot-v2577.js?rev=BUILD257_7_PRODUCE_COPILOT_STABLE_DOM";
+  script.dataset.accProduceCopilot = "v2577";
   script.async = false;
   document.head.appendChild(script);
 })();
