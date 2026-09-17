@@ -5,8 +5,9 @@ import baseWorker from "./worker-brain-runtime-rescue-v8.js";
 import {getProductionContract} from "./production-contracts-v1.js";
 import {getDivisionPassport} from "./division-passports-v1.js";
 
-const REVISION="BRAIN_RUNTIME_RESCUE_V9_HERO_IMAGE_ONLY_CHANNEL_LOCK";
+const REVISION="BRAIN_RUNTIME_RESCUE_V9_1_HERO_IMAGE_PROMPT_LIMIT";
 const IMAGE="@cf/black-forest-labs/flux-1-schnell";
+const IMAGE_PROMPT_LIMIT=1900;
 const text=v=>typeof v==="string"?v.trim():"";
 
 function json(data,status=200,headersLike=null){
@@ -78,6 +79,15 @@ const HERO_ONLY=[
   "avoid all text-bearing objects: no phone screen content, computer interface, books with writing, documents, newspapers, cards, packaging labels, billboards, menus, clothing print or wall signs",
   "one clean dominant visual idea, natural readable lighting, premium composition, uncluttered background, generous clean negative space for later ACC OS X canvas typography"
 ].join(". ");
+function boundImagePrompt(value){
+  const source=text(value).replace(/\s+/g," ");
+  if(source.length<=IMAGE_PROMPT_LIMIT)return source;
+  const required=HERO_ONLY;
+  const withoutRequired=source.replace(required,"").replace(/[.\s]+$/g,"").trim();
+  const headLimit=Math.max(320,IMAGE_PROMPT_LIMIT-required.length-2);
+  const head=withoutRequired.slice(0,headLimit).replace(/[,:;\-–—.\s]+$/g,"").trim();
+  return `${head}. ${required}`.slice(0,IMAGE_PROMPT_LIMIT);
+}
 function channelDirection(id,headline,material,visual){
   if(id==="ch-yolo")return[
     "balanced dual-concept editorial scene showing two sides of the SAME topic in one coherent composition",
@@ -104,14 +114,15 @@ function planOf(profile,contract,item,label,id){
   let subhead="";
   if(id==="ch-yolo")subhead="Dua sisi satu topik: manfaat dan risikonya.";
   else subhead=concise(text(material).replace(new RegExp(headline.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"),"").replace(/^\s*[:\-–—]+\s*/,""),112);
-  const prompt=[channelDirection(id,headline,material,visual),`story context for visual grounding only: ${concise(material,650)}`,visual?.palette?`color/atmosphere direction: ${visual.palette}`:"",Array.isArray(visual?.avoid)&&visual.avoid.length?`also avoid: ${visual.avoid.join(", ")}`:"",HERO_ONLY].filter(Boolean).join(". ").slice(0,2600);
-  return{headline,subhead,badge:concise(label||profile.name||"ACC OS X",32),subjectAnchor:headline,visualPrompt:prompt,planMode:"V9_HERO_IMAGE_ONLY"};
+  const prompt=boundImagePrompt([channelDirection(id,headline,material,visual),`story context for visual grounding only: ${concise(material,650)}`,visual?.palette?`color/atmosphere direction: ${visual.palette}`:"",Array.isArray(visual?.avoid)&&visual.avoid.length?`also avoid: ${visual.avoid.join(", ")}`:"",HERO_ONLY].filter(Boolean).join(". "));
+  return{headline,subhead,badge:concise(label||profile.name||"ACC OS X",32),subjectAnchor:headline,visualPrompt:prompt,planMode:"V9_1_HERO_IMAGE_PROMPT_LIMIT"};
 }
 async function image(env,prompt){
   if(!env?.AI?.run)throw new Error("AI_BINDING_UNAVAILABLE");
+  const safePrompt=boundImagePrompt(prompt);
   const errors=[];
   for(let i=0;i<2;i++){
-    try{const raw=await timed(env.AI.run(IMAGE,{prompt,steps:8}),52000,"P_V9_IMAGE"),b64=text(raw?.image||raw?.result?.image);if(b64)return b64;throw new Error("EMPTY_IMAGE");}
+    try{const raw=await timed(env.AI.run(IMAGE,{prompt:safePrompt,steps:8}),52000,"P_V9_IMAGE"),b64=text(raw?.image||raw?.result?.image);if(b64)return b64;throw new Error("EMPTY_IMAGE");}
     catch(e){errors.push(String(e?.message||e));}
   }
   throw new Error(`POSTER_IMAGE_UNAVAILABLE:${errors.join("|")}`);
@@ -123,11 +134,11 @@ async function producePoster(env,body){
   if(items.length!==spec.n)return json({ok:false,stage:"COPILOT",status:"P_V9_MATERIAL_SHAPE_INVALID",error:`P_V9_REQUIRES_${spec.n}_MATERIAL_ITEM${spec.n===1?"":"S"}`,detail:{revision:REVISION,channelId:id,batchCount:spec.n,detectedItems:items.length}},422);
   const plans=items.map((item,i)=>planOf(profile,contract,item,spec.series[i]||profile.name||`Item ${i+1}`,id)),images=[];
   for(const p of plans)images.push(await image(env,p.visualPrompt));
-  const common={ok:true,stage:"COPILOT",op:"P",revision:REVISION,brainLock:{channelId:id,brainId:safe.expected,isolation:"HARD_1_TO_1",workflowAuthority:"CHANNEL_MASTER_LOCK",status:"VERIFIED"},masterRuntime:{...(body?.context?.masterRuntime||{}),batchCount:spec.n,series:spec.series,workflowAuthority:"LOCKED_CHANNEL_MASTER",globalEngineRole:"EXECUTION_ONLY",posterExecutionPath:"V9_HERO_IMAGE_ONLY"},posterPolicy:{canvasTypography:true,aiHeroImageOnly:true,noAiText:true,noPosterWithinPoster:true,channelVisualLock:true}};
+  const common={ok:true,stage:"COPILOT",op:"P",revision:REVISION,brainLock:{channelId:id,brainId:safe.expected,isolation:"HARD_1_TO_1",workflowAuthority:"CHANNEL_MASTER_LOCK",status:"VERIFIED"},masterRuntime:{...(body?.context?.masterRuntime||{}),batchCount:spec.n,series:spec.series,workflowAuthority:"LOCKED_CHANNEL_MASTER",globalEngineRole:"EXECUTION_ONLY",posterExecutionPath:"V9_1_HERO_IMAGE_PROMPT_LIMIT"},posterPolicy:{canvasTypography:true,aiHeroImageOnly:true,noAiText:true,noPosterWithinPoster:true,channelVisualLock:true,promptLimit:IMAGE_PROMPT_LIMIT}};
   if(spec.n===1)return json({...common,kind:"poster",reply:`Poster ${profile.name||passport?.name||id} siap.`,plan:plans[0],imageBase64:images[0]});
   return json({...common,kind:"poster_batch",reply:`${spec.n} poster ${profile.name||passport?.name||id} siap.`,posters:items.map((item,i)=>({index:i+1,label:spec.series[i]||`Item ${i+1}`,material:item,plan:plans[i],imageBase64:images[i]}))});
 }
-async function health(request,env,ctx){const r=await baseWorker.fetch(request,env,ctx);let d={};try{d=await r.clone().json();}catch{}return json({...d,brainRuntimeRescueV9:"ACTIVE",brainRuntimeRescueV9Revision:REVISION,posterHeroImageOnly:"ACTIVE",posterWithinPoster:"BLOCKED",yoloDualConceptLock:"ACTIVE",warisanBaliCultureLock:"ACTIVE"},r.status,r.headers);}
+async function health(request,env,ctx){const r=await baseWorker.fetch(request,env,ctx);let d={};try{d=await r.clone().json();}catch{}return json({...d,brainRuntimeRescueV9:"ACTIVE",brainRuntimeRescueV9Revision:REVISION,posterHeroImageOnly:"ACTIVE",posterWithinPoster:"BLOCKED",yoloDualConceptLock:"ACTIVE",warisanBaliCultureLock:"ACTIVE",posterImagePromptLimit:IMAGE_PROMPT_LIMIT},r.status,r.headers);}
 
 export default{async fetch(request,env,ctx){
   const url=new URL(request.url);
