@@ -85,11 +85,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'BUILD257_7_PRODUCE_COPILOT_STABLE_DOM' produce-copilot-v2577.js
-          grep -q 'produce-copilot-v2577.js?rev=BUILD257_7_PRODUCE_COPILOT_STABLE_DOM' release-version-v257.js
-          grep -q 'produce-copilot-v2577.js?rev=BUILD257_7_PRODUCE_COPILOT_STABLE_DOM' service-worker.js
+          grep -q 'BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE' produce-copilot-v2577.js
+          grep -q 'produce-copilot-v2577.js?rev=BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE' release-version-v257.js
+          grep -q 'produce-copilot-v2577.js?rev=BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE' service-worker.js
           grep -q 'data-copilot-message-id' produce-copilot-v2577.js
           grep -q 'insertAdjacentHTML("beforeend",messageHtml(m))' produce-copilot-v2577.js
+          grep -q 'window.dispatchEvent(new CustomEvent("acc-core-rendered"' app.js
+          grep -q 'const productionRender=ui.tab==="production"' app.js
+          grep -q 'if(!productionRender)scrollTo(0,scroll)' app.js
+          grep -q 'window.addEventListener("acc-core-rendered",onCoreRendered)' produce-copilot-v2577.js
 
           if grep -q 'produce-copilot-v2576.js?rev=' release-version-v257.js; then
             echo 'FAIL: release bootstrap still activates legacy Produce v2576.' >&2
@@ -111,11 +115,15 @@ jobs:
             echo 'FAIL: active Produce runtime contains direct scroll-position control.' >&2
             exit 1
           fi
+          if grep -Eq 'MutationObserver|setInterval\s*\(' produce-copilot-v2577.js; then
+            echo 'FAIL: Produce stable surface regressed to DOM polling.' >&2
+            exit 1
+          fi
           if grep -q 'dataset.signature' produce-copilot-v2577.js || grep -q 'section.innerHTML=panelHtml' produce-copilot-v2577.js; then
             echo 'FAIL: stable Produce runtime regressed to full-panel rerender refresh.' >&2
             exit 1
           fi
-          echo 'Produce stable DOM OK: K/P/C/N updates messages in place and owns no scroll position.'
+          echo 'Produce core stable surface OK: core remount is synchronous, no polling, no Produce viewport control.'
 
       - name: Validate Worker module syntax
         shell: bash
