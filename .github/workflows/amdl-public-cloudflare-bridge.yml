@@ -35,6 +35,7 @@ jobs:
           node --check site/app.js
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'NADMO STUDIO' site/index.html
+          grep -q 'Brush by Yuda Christ' site/app.js
           grep -q 'Start a Project' site/index.html
           grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
           grep -q 'sendDiscordLeadNotification' worker-public.js
@@ -42,7 +43,7 @@ jobs:
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup; do
+          for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup brush-by-yuda; do
             test -s "site/portfolio/$f.png"
           done
 
@@ -83,8 +84,10 @@ jobs:
           printf '%s' "$ROBOTS" | grep -q 'Sitemap:'
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/acc-os-x.png" -o /tmp/acc-os-x.png
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/oracly.png" -o /tmp/oracly.png
+          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/brush-by-yuda.png" -o /tmp/brush-by-yuda.png
           test "$(wc -c < /tmp/acc-os-x.png)" -gt 10000
           test "$(wc -c < /tmp/oracly.png)" -gt 10000
+          test "$(wc -c < /tmp/brush-by-yuda.png)" -gt 10000
           CODE="$(curl --silent --show-error --output /tmp/amdl-public-form.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":""}')"
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
@@ -116,4 +119,4 @@ jobs:
 
 # redeploy marker: NADMO STUDIO public rebrand 2026-09-15
 
-# deploy marker: CRM portfolio mobile precision 2026-09-16
+# deploy marker: Brush by Yuda portfolio 2026-09-19
