@@ -6,7 +6,7 @@
   if (window.__ACC_PRODUCE_COPILOT_V2577__) return;
   window.__ACC_PRODUCE_COPILOT_V2577__ = true;
 
-  const REVISION = "BUILD257_7_PRODUCE_COPILOT_STABLE_DOM";
+  const REVISION = "BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE";
   const MAIN_STATE_KEY = "acc_os_x_ecosystem_v214";
   const COPILOT_KEY = "acc_os_x_produce_copilot_v1";
   const AI_ACCESS_KEY = "acc_os_x_ai_access_v1";
@@ -166,11 +166,12 @@
   }
   function openPoster(src){if(!src)return;const modal=document.createElement("div");modal.className="acc-copilot-modal";modal.innerHTML=`<img src="${src}" alt="Poster preview"><button type="button">TUTUP</button>`;modal.addEventListener("click",e=>{if(e.target===modal||e.target.tagName==="BUTTON")modal.remove();});document.body.appendChild(modal);}
 
-  let scheduled=false;
-  const observer=new MutationObserver(()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;const section=document.getElementById(PANEL_ID);const mission=document.querySelector(".mission-live-card");if(!section&&mission)mount();else if(section&&section.dataset.channelId!==currentProfile().id)mount();});});
-  observer.observe(document.documentElement,{childList:true,subtree:true});
-  document.addEventListener("change",e=>{if(e.target?.id==="channel-select")setTimeout(mount,0);});
+  function onCoreRendered(event){
+    if(event?.detail?.tab && event.detail.tab!=="production")return;
+    mount();
+  }
+  window.addEventListener("acc-core-rendered",onCoreRendered);
   window.addEventListener("storage",e=>{if(e.key===MAIN_STATE_KEY||e.key===COPILOT_KEY){store=readStore();mount();}});
-  setInterval(()=>{const section=document.getElementById(PANEL_ID),active=currentProfile().id;if(!section||section.dataset.channelId!==active)mount();},1200);
-  ensureStyle();mount();
+  ensureStyle();
+  mount();
 })();
