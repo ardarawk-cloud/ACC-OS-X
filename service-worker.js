@@ -1,5 +1,5 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v27-produce-stable-dom";
+const CACHE="acc-os-x-build10-page-picker-v27-produce-core-stable-surface";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
@@ -15,7 +15,7 @@ const CORE=[
   "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V4_APK_PROJECT",
   "./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE",
   "./release-version-v257.js?rev=BUILD257_PRODUCE_STABLE_DOM_V1",
-  "./produce-copilot-v2577.js?rev=BUILD257_7_PRODUCE_COPILOT_STABLE_DOM",
+  "./produce-copilot-v2577.js?rev=BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE",
   "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_4_PREVIEW_ONLY_NO_SCROLL_CONTROL",
   "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V1",
   "./kai-autopilot-folder-fallback-v1.js?rev=KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V5_ANDROID_PICKER_FEEDBACK_COMPACT",
