@@ -97,6 +97,16 @@ jobs:
           grep -q 'PC_READY' home-launchpad.js
           grep -q 'ANDROID_ONLY' home-launchpad.js
           grep -q 'window.ACCPlatform' desktop-mode-v1.js
+          grep -q 'const isDesktop = () =>' home-launchpad.js
+          grep -q 'ACCOSX(?:Native|Android)' home-launchpad.js
+          node - <<'NODE'
+          const fs=require('fs');
+          const src=fs.readFileSync('home-launchpad.js','utf8');
+          const uses=(src.match(/\bisDesktop\s*\(/g)||[]).length;
+          const defs=(src.match(/const\s+isDesktop\s*=/g)||[]).length;
+          if(!defs || !uses) throw new Error('home-launchpad desktop helper contract missing');
+          console.log('home-launchpad desktop helper OK', {defs,uses});
+          NODE
           if grep -Eqi 'android emulator|bluestacks|waydroid' desktop-mode-v1.js home-launchpad.js; then
             echo 'FAIL: desktop mode must not depend on Android emulation.' >&2
             exit 1
