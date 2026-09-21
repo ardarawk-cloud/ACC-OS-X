@@ -47,6 +47,8 @@
       window.ACCMyProjects?.render?.();
 
       await loadScript("admin","./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE");
+      const adminScript=document.querySelector('script[data-acc-home-chain="admin"]');
+      if(adminScript) adminScript.dataset.accMyAdmin="v3";
       window.ACCMyAdmin?.render?.();
 
       if(isNativeAndroid()){
