@@ -1,5 +1,5 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v27-produce-core-stable-surface";
+const CACHE="acc-os-x-build10-page-picker-v28-desktop-mode-v1";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
@@ -9,6 +9,7 @@ const MAP_CORE=[
 const CORE=[
   "./",
   "./index.html",
+  "./desktop-mode-v1.js?rev=KAI_ONE_DESKTOP_MODE_V1",
   "./app.js",
   "./home-launchpad.js",
   "./owner-app-launcher-v2.js?rev=KAI_ONE_MY_APPS_V4_NEW_APPS_BWD_CLIENT_REMOVED",
@@ -47,6 +48,7 @@ const MAP_NETWORK_PATHS=new Set([
 const FORCE_FRESH=new Set([
   "/",
   "/index.html",
+  "/desktop-mode-v1.js",
   "/app.js",
   "/home-launchpad.js",
   "/service-worker.js",
