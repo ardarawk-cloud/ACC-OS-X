@@ -5,11 +5,11 @@
   "start_url": "/?pwa=build257",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#020617",
   "theme_color": "#020617",
   "lang": "id-ID",
-  "description": "ACC OS X — AI-native operating platform for Arda Core Corporation. Build 257.",
+  "description": "ACC OS X — AI-native operating platform for Arda Core Corporation across desktop and Android.",
   "icons": [
     {
       "src": "/acc-os-x-192-build250.png?v=257-autonomous-quality-recovery",
@@ -55,5 +55,9 @@
         }
       ]
     }
+  ],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
   ]
 }
