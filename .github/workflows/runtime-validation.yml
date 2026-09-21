@@ -9,6 +9,10 @@ on:
       - main
     paths:
       - 'app.js'
+      - 'index.html'
+      - 'home-launchpad.js'
+      - 'desktop-mode-v1.js'
+      - 'manifest.webmanifest'
       - 'produce-copilot-v2576.js'
       - 'produce-copilot-v2577.js'
       - 'produce-copilot-preview-fix-v25762.js'
@@ -66,6 +70,8 @@ jobs:
         run: |
           set -euo pipefail
           node --check app.js
+          node --check home-launchpad.js
+          node --check desktop-mode-v1.js
           node --check produce-copilot-v2576.js
           node --check produce-copilot-v2577.js
           node --check produce-copilot-preview-fix-v25762.js
@@ -80,6 +86,31 @@ jobs:
           node --check native-scroll-performance-v2.js
           node --check release-version-v257.js
           node --check service-worker.js
+
+      - name: Validate desktop mode contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'desktop-mode-v1.js?rev=KAI_ONE_DESKTOP_MODE_V1' index.html
+          grep -q 'desktop-mode-v1.js?rev=KAI_ONE_DESKTOP_MODE_V1' service-worker.js
+          grep -q 'KAI_ONE_DESKTOP_MODE_V1' desktop-mode-v1.js
+          grep -q 'PC_READY' home-launchpad.js
+          grep -q 'ANDROID_ONLY' home-launchpad.js
+          grep -q 'window.ACCPlatform' desktop-mode-v1.js
+          if grep -Eqi 'android emulator|bluestacks|waydroid' desktop-mode-v1.js home-launchpad.js; then
+            echo 'FAIL: desktop mode must not depend on Android emulation.' >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          data=json.load(open('manifest.webmanifest'))
+          assert data.get('display') == 'standalone'
+          assert data.get('orientation') == 'any'
+          override=data.get('display_override') or []
+          assert 'standalone' in override
+          print('Desktop PWA manifest OK')
+          PY
+          echo 'Desktop mode OK: web/PWA apps are PC-ready; APK-only apps are explicitly Android-only.'
 
       - name: Validate Produce stable DOM authority
         shell: bash

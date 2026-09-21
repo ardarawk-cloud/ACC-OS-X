@@ -1,4 +1,4 @@
-// ACC OS X — OWNER APP LAUNCHPAD v6
+// ACC OS X — OWNER APP LAUNCHPAD v7 DESKTOP AWARE
 // One front door for Arda's ACC phone apps. Client apps are intentionally excluded.
 (() => {
   "use strict";
@@ -47,16 +47,22 @@
     `;
   }
 
-  function notifyNativeShell(){
-    const msg="APK native dibuka lewat ACC OS X Android Shell. Pasang/update ACC OS X Shell agar launcher APK aktif.";
+  function notifyNativeShell(app){
+    const msg=isDesktop()
+      ? `${app?.title||"App ini"} adalah ANDROID APP. Buka dari ACC OS X di HP.`
+      : "APK native dibuka lewat ACC OS X Android Shell. Pasang/update ACC OS X Shell agar launcher APK aktif.";
     if(typeof window.showToast==="function") window.showToast(msg); else alert(msg);
   }
 
   async function launch(app){
-    if(app.native?.length){
-      if(!IS_NATIVE_SHELL){notifyNativeShell();return;}
+    if(IS_NATIVE_SHELL && app.native?.length){
       const q=encodeURIComponent(app.native.join(","));
       window.location.href=`accapp://launch?packages=${q}`;
+      return;
+    }
+
+    if(app.native?.length && !app.web){
+      notifyNativeShell(app);
       return;
     }
 
@@ -69,14 +75,24 @@
         url=window.ACCSyncHub?.getState?.()?.[app.syncKey]?.manifest?.appUrl || url;
       }catch{}
     }
-    if(url) window.location.assign(url);
+    if(url){
+      if(isDesktop()){
+        const opened=window.open(url,"_blank","noopener,noreferrer");
+        if(!opened) window.location.assign(url);
+      }else{
+        window.location.assign(url);
+      }
+    }
   }
 
   function appCard(app){
     const button=document.createElement("button");
+    const desktop=isDesktop();
+    const desktopAvailability=app.web ? "PC_READY" : app.native?.length ? "ANDROID_ONLY" : "UNAVAILABLE";
     button.type="button";
     button.className="acc-launch-card mono";
     button.dataset.ownerApp=app.key;
+    button.dataset.desktopAvailability=desktopAvailability;
     button.style.setProperty("--launch-accent",app.accent);
     button.setAttribute("aria-label",`Open ${app.title}`);
     button.innerHTML=`
@@ -85,7 +101,7 @@
         <span class="acc-launch-icon-fallback">${app.fallback}</span>
       </div>
       <div class="acc-launch-title">${app.title}</div>
-      <div class="acc-launch-kind">${app.native?.length?"APK":"WEB / PWA"}</div>`;
+      <div class="acc-launch-kind">${IS_NATIVE_SHELL&&app.native?.length?"APK":app.web?(desktop?"PC READY • WEB":"WEB / PWA"):(desktop?"ANDROID ONLY":"APK • ANDROID")}</div>`;
     const img=button.querySelector("img");
     img?.addEventListener("error",()=>{img.style.display="none";},{once:true});
     button.addEventListener("click",()=>launch(app));
@@ -96,7 +112,9 @@
     const box=document.createElement("div");
     box.id=LAUNCHPAD_ID;
     box.className="acc-home-launchpad mono";
-    box.innerHTML=`<div class="acc-launch-head"><div><div class="eyebrow">ACC PERSONAL COMMAND</div><h2 class="card-title" style="margin-top:3px">MY APPS</h2></div><span class="badge">${apps.length} APPS</span></div><div class="acc-launch-grid"></div>`;
+    const pcReady=apps.filter(app=>Boolean(app.web)).length;
+    const badge=isDesktop()?`${pcReady} PC READY • ${apps.length-pcReady} ANDROID`:`${apps.length} APPS`;
+    box.innerHTML=`<div class="acc-launch-head"><div><div class="eyebrow">${isDesktop()?"ACC DESKTOP COMMAND":"ACC PERSONAL COMMAND"}</div><h2 class="card-title" style="margin-top:3px">MY APPS</h2></div><span class="badge">${badge}</span></div><div class="acc-launch-grid"></div>`;
     const grid=box.querySelector(".acc-launch-grid");
     apps.forEach(app=>grid.appendChild(appCard(app)));
     return box;
