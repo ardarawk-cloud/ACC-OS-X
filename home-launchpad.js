@@ -5,7 +5,8 @@
 
   const STYLE_ID = "acc-home-launchpad-style";
   const LAUNCHPAD_ID = "acc-home-launchpad";
-  const IS_NATIVE_SHELL = /ACCOSXNative\//i.test(navigator.userAgent || "");
+  const IS_NATIVE_SHELL = /ACCOSX(?:Native|Android)\//i.test(navigator.userAgent || "");
+  const isDesktop = () => Boolean(window.ACCPlatform?.isDesktop || document.documentElement.classList.contains("acc-desktop-mode"));
 
   const apps = [
     {key:"cleaner", title:"ACC Cleaner", accent:"#38bdf8", fallback:"CLN", native:["com.acc.cleaner"]},
