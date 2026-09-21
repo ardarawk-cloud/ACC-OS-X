@@ -11,6 +11,8 @@ on:
       - 'app.js'
       - 'index.html'
       - 'home-launchpad.js'
+      - 'home-launcher-chain-v1.js'
+      - 'owner-phone-launcher-v1.js'
       - 'desktop-mode-v1.js'
       - 'manifest.webmanifest'
       - 'produce-copilot-v2576.js'
@@ -71,6 +73,8 @@ jobs:
           set -euo pipefail
           node --check app.js
           node --check home-launchpad.js
+          node --check home-launcher-chain-v1.js
+          node --check owner-phone-launcher-v1.js
           node --check desktop-mode-v1.js
           node --check produce-copilot-v2576.js
           node --check produce-copilot-v2577.js
@@ -86,6 +90,30 @@ jobs:
           node --check native-scroll-performance-v2.js
           node --check release-version-v257.js
           node --check service-worker.js
+
+      - name: Validate canonical HOME launcher chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'home-launcher-chain-v1.js?rev=KAI_ONE_HOME_LAUNCHER_CHAIN_V1' index.html
+          grep -q 'home-launcher-chain-v1.js?rev=KAI_ONE_HOME_LAUNCHER_CHAIN_V1' service-worker.js
+          grep -q 'owner-phone-launcher-v1.js?rev=KAI_ONE_OWNER_PHONE_LAUNCHER_V3_FAST_TAP_BUILD10' service-worker.js
+          grep -q 'KAI_ONE_HOME_LAUNCHER_CHAIN_V1' home-launcher-chain-v1.js
+          grep -q 'my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE' home-launcher-chain-v1.js
+          grep -q 'my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V4_APK_PROJECT' home-launcher-chain-v1.js
+          grep -q 'my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE' home-launcher-chain-v1.js
+          grep -q 'launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V6_BWD_ADMIN_OWNER' home-launcher-chain-v1.js
+          grep -q 'window.ACCHomeLaunchpad=Object.freeze' home-launchpad.js
+          grep -q 'window.addEventListener("acc-core-rendered"' home-launchpad.js
+          if grep -q 'document.getElementById(LAUNCHPAD_ID)?.remove()' home-launchpad.js; then
+            echo 'FAIL: MY APPS anchor is still destroyed during HOME refresh.' >&2
+            exit 1
+          fi
+          if grep -q 'owner-app-launcher-v2.js' home-launcher-chain-v1.js; then
+            echo 'FAIL: desktop-aware MY APPS must not be overwritten by legacy owner-app launcher.' >&2
+            exit 1
+          fi
+          echo 'HOME launcher chain OK: APPS -> MAPS -> PROJECTS -> ADMIN -> native phone categories.'
 
       - name: Validate desktop mode contract
         shell: bash
