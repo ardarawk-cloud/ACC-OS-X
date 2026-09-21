@@ -131,8 +131,12 @@
     if(registryButton)registryButton.parentElement?.remove();
     [...section.querySelectorAll(".card")].forEach(card=>{const eyebrow=card.querySelector(".eyebrow");if(eyebrow&&eyebrow.textContent.trim().toUpperCase()==="CLASSIFICATION POLICY")card.remove();});
     section.querySelector(".grid.stats")?.remove();
-    document.getElementById(LAUNCHPAD_ID)?.remove();
-    hero.insertAdjacentElement("afterend",buildLaunchpad());
+    const existing=document.getElementById(LAUNCHPAD_ID);
+    if(!existing){
+      hero.insertAdjacentElement("afterend",buildLaunchpad());
+    }else if(existing.previousElementSibling!==hero){
+      hero.insertAdjacentElement("afterend",existing);
+    }
     window.ACCSyncHub?.patchCards?.();
   }
 
@@ -140,6 +144,8 @@
   const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;patchHome();});};
   const observer=new MutationObserver(()=>{if(!document.getElementById(LAUNCHPAD_ID))schedule();});
   observer.observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener("acc-core-rendered",event=>{if(!event?.detail?.tab || event.detail.tab==="enterprise")schedule();});
+  window.ACCHomeLaunchpad=Object.freeze({render:schedule,isDesktop,apps:apps.map(({key,title,web,native})=>({key,title,web:!!web,native:!!native}))});
   schedule();
 })();
 

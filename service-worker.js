@@ -1,5 +1,5 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v29-desktop-mobile-runtime-fix";
+const CACHE="acc-os-x-build10-page-picker-v30-home-launcher-chain";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
@@ -12,6 +12,8 @@ const CORE=[
   "./desktop-mode-v1.js?rev=KAI_ONE_DESKTOP_MODE_V1",
   "./app.js",
   "./home-launchpad.js",
+  "./home-launcher-chain-v1.js?rev=KAI_ONE_HOME_LAUNCHER_CHAIN_V1",
+  "./owner-phone-launcher-v1.js?rev=KAI_ONE_OWNER_PHONE_LAUNCHER_V3_FAST_TAP_BUILD10",
   "./owner-app-launcher-v2.js?rev=KAI_ONE_MY_APPS_V4_NEW_APPS_BWD_CLIENT_REMOVED",
   "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V4_APK_PROJECT",
   "./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE",
@@ -51,6 +53,8 @@ const FORCE_FRESH=new Set([
   "/desktop-mode-v1.js",
   "/app.js",
   "/home-launchpad.js",
+  "/home-launcher-chain-v1.js",
+  "/owner-phone-launcher-v1.js",
   "/service-worker.js",
   "/owner-app-launcher-v2.js",
   "/my-projects-launcher-v1.js",
