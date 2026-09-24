@@ -91,27 +91,4 @@
   function openMediaDb(){
     return new Promise((resolve,reject)=>{
       if(!("indexedDB" in window))return reject(new Error("INDEXEDDB_UNAVAILABLE"));
-      const request=indexedDB.open(MEDIA_DB_NAME,1);
-      request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(MEDIA_DB_STORE))db.createObjectStore(MEDIA_DB_STORE,{keyPath:"key"});};
-      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error("MEDIA_DB_OPEN_FAILED"));
-    });
-  }
-  async function mediaPut(key,base64,mimeType="image/jpeg"){
-    if(!key||!txt(base64))throw new Error("POSTER_MEDIA_EMPTY");mediaMemory.set(key,{base64,mimeType});
-    try{const db=await openMediaDb();await new Promise((resolve,reject)=>{const tx=db.transaction(MEDIA_DB_STORE,"readwrite");tx.objectStore(MEDIA_DB_STORE).put({key,base64,mimeType,updatedAt:now()});tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error("MEDIA_DB_WRITE_FAILED"));});db.close();}catch(error){console.warn("[POSTER MEDIA PUT]",error);}return key;
-  }
-  async function mediaGet(key){
-    if(!key)return null;if(mediaMemory.has(key))return mediaMemory.get(key);
-    try{const db=await openMediaDb();const value=await new Promise((resolve,reject)=>{const tx=db.transaction(MEDIA_DB_STORE,"readonly"),request=tx.objectStore(MEDIA_DB_STORE).get(key);request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error||new Error("MEDIA_DB_READ_FAILED"));});db.close();if(value)mediaMemory.set(key,{base64:value.base64,mimeType:value.mimeType||"image/jpeg"});return value?{base64:value.base64,mimeType:value.mimeType||"image/jpeg"}:null;}catch{return null;}
-  }
-  async function mediaDelete(key){
-    if(!key)return;mediaMemory.delete(key);
-    try{const db=await openMediaDb();await new Promise((resolve,reject)=>{const tx=db.transaction(MEDIA_DB_STORE,"readwrite");tx.objectStore(MEDIA_DB_STORE)delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error("MEDIA_DB_DELETE_FAILED"));});db.close();}catch{}
-  }
-  async function clearPackageMedia(pkg){const keys=[txt(pkg?.posterMediaKey),...(Array.isArray(pkg?.batchPosters)?pkg.batchPosters.map(x=>txt(x?.mediaKey)):[])].filter(Boolean);await Promise.all(keys.map(mediaDelete));}
-  async function migrateLegacyMedia(channelId,row){
-    const original=row.package||{},p=row.package=normalizePackage(original);let changed=false;
-    const legacy=txt(original.posterBase64);
-    if(legacy&&!p.posterMediaKey){p.posterMediaKey=`${channelId}:legacy:single`;await mediaPut(p.posterMediaKey,legacy);changed=true;}
-    if(Array.isArray(original.batchPosters)){
     
