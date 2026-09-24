@@ -78,14 +78,14 @@
   window.dispatchEvent(new CustomEvent("acc-release-ready", {detail: RELEASE}));
 })();
 
-// Produce uses a stable DOM runtime. K/P/C/N appends messages in place;
-// no scroll guard, viewport lock, or native scroll runtime is active.
+// Produce v2578 is the only client authority for single + batch K/P/C/N and publishing.
+// No legacy batch/publish runtime is allowed to compete with this surface.
 (() => {
-  if (document.querySelector('script[data-acc-produce-copilot="v2577"]')) return;
+  if (document.querySelector('script[data-acc-produce-copilot="v2578"]')) return;
   document.querySelectorAll('script[data-acc-produce-copilot]').forEach(node => node.remove());
   const script = document.createElement("script");
-  script.src = "./produce-copilot-v2577.js?rev=BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE";
-  script.dataset.accProduceCopilot = "v2577";
+  script.src = "./produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE";
+  script.dataset.accProduceCopilot = "v2578";
   script.async = false;
   document.head.appendChild(script);
 })();
