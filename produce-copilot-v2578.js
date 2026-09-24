@@ -203,19 +203,21 @@
   }
   function contractSpec(channelId){
     try{
-      const c=window.ACCProductionContracts?.get?.(channelId),count=Math.max(1,Math.min(8,Number(c?.batch?.count)||1));
+      const api=window.ACCProductionContracts;
+      if(!api?.get)return {ready:false,count:0,labels:[]};
+      const c=api.get(channelId),count=Math.max(1,Math.min(8,Number(c?.batch?.count)||1));
       const labels=Array.isArray(c?.batch?.series)?c.batch.series.map(txt).filter(Boolean).slice(0,count):[];
-      return {count,labels:labels.length===count?labels:[]};
-    }catch{return {count:1,labels:[]};}
+      return {ready:true,count,labels:labels.length===count?labels:[]};
+    }catch{return {ready:false,count:0,labels:[]};}
   }
   function effectiveSpec(profile,row){
-    const c=contractSpec(profile.id),pkg=row.package,count=Math.max(1,Number(pkg.batchCount)||1,c.count||1);
+    const c=contractSpec(profile.id),pkg=row.package,count=Math.max(1,Number(pkg.batchCount)||1,c.count||0,1);
     const labels=Array.from({length:count},(_,i)=>txt(pkg.batchLabels?.[i])||txt(pkg.batchPosters?.[i]?.label)||txt(pkg.batchCaptions?.[i]?.label)||txt(c.labels?.[i])||`Item ${i+1}`);
-    return {count,labels};
+    return {count,labels,contractReady:c.ready};
   }
   function itemReady(pkg,index){return Boolean(txt(pkg?.batchPosters?.[index]?.mediaKey)&&txt(pkg?.batchCaptions?.[index]?.caption)&&!txt(pkg?.batchPublished?.[index]?.postId));}
   function canPublishSingle(row){return Boolean(txt(row.package?.posterMediaKey)&&txt(row.package?.caption)&&!txt(row.package?.publishedPostId));}
-  function contractPublishAllowed(channelId){try{const state=window.ACCProductionContracts?.state?.();return state?.channels?.[channelId]?.publishBlocked!==true;}catch{return true;}}
+  function contractPublishAllowed(channelId){try{if(!window.ACCProductionContracts?.state)return false;const state=window.ACCProductionContracts.state();return state?.channels?.[channelId]?.publishBlocked===false;}catch{return false;}}
 
   function messageHtml(m){
     const label=m.role==="user"?"OWNER":"KAI";
@@ -310,7 +312,7 @@
     const spec=effectiveSpec(profile,row);return {
       workerTask:{id:id("copilot"),stage:"COPILOT",workerType:"KAI_PRODUCE_COPILOT",workerName:"KAI PRODUCE COPILOT",goal:"Owner production",source:"OWNER_CHAT",autoApply:false},
       profile:{id:profile.id,code:profile.code,name:profile.name,platform:profile.platform},contexts:profile.contexts,
-      masterRuntime:{batchCount:spec.count,series:spec.labels,workflowAuthority:"CHANNEL_MASTER_LOCK",globalEngineRole:"EXECUTION_ONLY",brainId:`acc-brain:${profile.id}`},
+      masterRuntime:{...(spec.contractReady?{batchCount:spec.count,series:spec.labels}:{}),workflowAuthority:"CHANNEL_MASTER_LOCK",globalEngineRole:"EXECUTION_ONLY",brainId:`acc-brain:${profile.id}`},
       brainLock:{channelId:profile.id,brainId:`acc-brain:${profile.id}`,isolation:"HARD_1_TO_1",workflowAuthority:"CHANNEL_MASTER_LOCK"},
       copilot:{command,brainId:`acc-brain:${profile.id}`,packageChannelId:profile.id,research:profile.research,material:row.package?.material||"",caption:row.package?.caption||"",history:row.messages.slice(-8).filter(m=>m.type!=="poster").map(m=>({role:m.role==="user"?"user":"assistant",content:m.content}))},
       client:{revision:REVISION,language:"id-ID",timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Makassar"}
@@ -368,7 +370,7 @@
   function publishTarget(main,channelId){return main?.settings?.publishMappings?.[channelId]||FALLBACK_TARGETS[channelId]||null;}
   function publishEndpoint(){const configured=txt(localStorage.getItem(PUBLISH_ENDPOINT_KEY));if(!configured)return DEFAULT_PUBLISH_ENDPOINT;return configured.replace("acc-publish-connector.ardarawk.workers.dev","acc-publish-connectorv2.ardarawk.workers.dev");}
   async function publishRequest(profile,target,message,mediaKey,idempotencyKey,sourceWorkflowId){
-    const access=localStorage.getItem(PUBLISH_ACCESS_KEY)||localStorage.getItem(AI_ACCESS_KEY)||"";if(!access)throw new Error("Connector access belum tersimpan di perangkat.");const media=await mediaGet(mediaKey);if(!media?.base64)throw new Error("POSTER_MEDIA_MISSING");
+    const access=localStorage.getItem(PUBLISH_ACCESS_KEY)||"";if(!access)throw new Error("Connector access belum tersimpan di perangkat.");const media=await mediaGet(mediaKey);if(!media?.base64)throw new Error("POSTER_MEDIA_MISSING");
     const platform=String(profile.platform||"Facebook").toUpperCase(),payload={id:id("copilot_publish"),sourceWorkflowId,sourceWorkflowRunKey:idempotencyKey,sourceTaskId:null,channelId:profile.id,channelName:profile.name,workspaceId:profile.workspaceId||readMain().activeWorkspaceId||"acc-enterprise",platform,status:"QUEUED",attempts:1,idempotencyKey,createdAt:now(),updatedAt:now(),connector:target.connector||"META_FACEBOOK",target,pageId:target.pageId||null,pageName:target.pageName||null,instagramAccountId:target.instagramAccountId||null,content:{message:txt(message),mediaUrl:null,imageBase64:media.base64,mimeType:media.mimeType||"image/jpeg"},clientRevision:REVISION,mediaSource:"PRODUCE_MEDIA_DB"};
     const response=await fetch(publishEndpoint(),{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json","X-ACC-Access-Code":access},body:JSON.stringify(payload)}),data=await response.json().catch(()=>({}));
     if(!response.ok||!data.ok){const e=data?.error||{};throw new Error(e.message||e.code||data.message||`HTTP ${response.status}`);}const postId=txt(data.externalPostId||data.postId||data.id||data.result?.id);if(!postId)throw new Error("PUBLISH_RESPONSE_MISSING_POST_ID");return{postId,publishedAt:now()};
