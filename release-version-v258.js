@@ -107,7 +107,11 @@
   const observer=new MutationObserver(queuePatch);observer.observe(document.documentElement,{childList:true,subtree:true});queuePatch();window.dispatchEvent(new CustomEvent("acc-release-ready",{detail:{...RELEASE,runtime:RUNTIME}}));
 })();
 
-// Produce Copilot base panel remains the proven 257.6 UI implementation.
-(()=>{if(document.querySelector('script[data-acc-produce-copilot="v2576"]'))return;const script=document.createElement("script");script.src="./produce-copilot-v2576.js?rev=BUILD257_6_PRODUCE_COPILOT";script.dataset.accProduceCopilot="v2576";script.async=false;document.head.appendChild(script);})();
-// Poster preview/storage fix remains underneath the Build 258 contract runtime injected by the Worker.
-(()=>{if(document.querySelector('script[data-acc-copilot-preview-fix="v25762"]'))return;const script=document.createElement("script");script.src="./produce-copilot-preview-fix-v25762.js?rev=BUILD258_1_CONTRACT_HARDENING";script.dataset.accCopilotPreviewFix="v25762";script.async=false;document.head.appendChild(script);})();
+// Build 258 is identity/credential policy only.
+// Produce runtime ownership belongs exclusively to release-version-v257.js -> Produce v2578.
+// Never load a second Produce implementation from this bridge.
+window.ACCRelease258RuntimePolicy=Object.freeze({
+  revision:"BUILD258_IDENTITY_ONLY_PRODUCE_V2578_AUTHORITY",
+  produceAuthority:"BUILD257_8_PRODUCTION_PUBLISHING_STABLE",
+  legacyProduceLoader:false
+});
