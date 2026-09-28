@@ -1,0 +1,70 @@
+[
+  {
+    "name": "Enter ORACLY and open the daily guidance",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "onboarding",
+      "home navigation",
+      "daily guidance",
+      "desktop layout"
+    ],
+    "description": "Verifies the shareable web build reaches the core ORACLY experience and opens daily guidance on desktop.",
+    "steps": [
+      "Click \"Get Started\"",
+      "Click \"Enter ORACLY\"",
+      "Click \"Daily\""
+    ],
+    "expected": "The Daily Reading screen is visible with interactive guidance content."
+  },
+  {
+    "name": "Complete a three-card tarot reading and retain it in history",
+    "viewport": "desktop",
+    "covers": [
+      "tarot three-card reading",
+      "saved reading history",
+      "local persistence"
+    ],
+    "description": "Verifies a tarot reading can be completed and remains available in the local history after refresh.",
+    "steps": [
+      "Open Tarot",
+      "Choose the three-card reading",
+      "Select three cards and wait for the reading result",
+      "Open History",
+      "Refresh the page"
+    ],
+    "expected": "A Three Card Reading entry remains visible in History after refresh."
+  },
+  {
+    "name": "Use zodiac and compatibility tools",
+    "viewport": "mobile",
+    "covers": [
+      "horoscope zodiac selection",
+      "compatibility calculator",
+      "responsive interaction"
+    ],
+    "description": "Verifies zodiac guidance and compatibility remain usable on a mobile-sized browser as well as desktop.",
+    "steps": [
+      "Open Horoscope and select Leo",
+      "Return to Home and open Compatibility",
+      "Change one zodiac selector"
+    ],
+    "expected": "A horoscope detail screen is shown for Leo and the compatibility score updates when a sign changes."
+  },
+  {
+    "name": "Toggle TikTok Live Mode on desktop",
+    "viewport": "desktop",
+    "covers": [
+      "TikTok Live desktop mode",
+      "fullscreen-friendly presentation",
+      "navigation decluttering"
+    ],
+    "description": "Verifies the desktop-only live presentation mode enlarges the experience and can be toggled back off.",
+    "steps": [
+      "Click \"LIVE MODE\"",
+      "Observe the enlarged ORACLY presentation",
+      "Click \"EXIT LIVE\""
+    ],
+    "expected": "Live Mode activates with a larger presentation and then returns to the normal desktop layout."
+  }
+]
