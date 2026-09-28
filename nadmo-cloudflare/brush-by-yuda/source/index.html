@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f2eee8" />
+    <title>Brush by Yuda Christ — Makeup Artist & Hair Stylist Bali</title>
+    <meta
+      name="description"
+      content="Premium makeup artist and hair stylist in Bali for weddings, preweddings, traditional ceremonies, glam events and hair styling. Based in Bali · Travel available."
+    />
+    <link rel="canonical" href="https://brushbyyuda.nadmo.id/" />
+    <meta
+      property="og:title"
+      content="Brush by Yuda Christ — Makeup Artist & Hair Stylist Bali"
+    />
+    <meta
+      property="og:description"
+      content="Premium makeup and hair in Bali for weddings, preweddings, ceremonies and special events."
+    />
+    <meta property="og:url" content="https://brushbyyuda.nadmo.id/" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #f2eee8;
+        color: #171310;
+        font-family: Arial, sans-serif;
+      }
+      .loading {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 24px;
+      }
+      .loading strong {
+        font-family: Georgia, serif;
+        font-size: 28px;
+        font-weight: 500;
+      }
+      .loading span {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #716960;
+      }
+      .error {
+        max-width: 560px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading" id="loader">
+      <div>
+        <strong>Brush by Yuda Christ</strong><span>Loading portfolio</span>
+      </div>
+    </div>
+    <script>
+      (async function () {
+        const base =
+          'https://cdn.jsdelivr.net/gh/ardarawk-cloud/AM-Studio-PWA@f49503a2436d23fe77984166a4e7559c95896688/brush-by-yuda/';
+        try {
+          const response = await fetch(base + 'index.html', {
+            cache: 'no-store',
+          });
+          if (!response.ok) throw new Error('Source unavailable');
+          let html = await response.text();
+          const dot = String.fromCharCode(46);
+          for (let n = 0; n < 6; n += 1) {
+            const local = '<script src="photo' + n + dot + 'js"></' + 'script>';
+            const remote = '<script src="' + base + 'photo' + n + dot + 'js"></' + 'script>';
+            html = html.split(local).join(remote);
+          }
+          html = html.replace(
+            '</head>',
+            '<link rel="stylesheet" href="' + base + 'mobile-hero-fix.css"><link rel="canonical" href="https://brushbyyuda.nadmo.id/"><meta property="og:url" content="https://brushbyyuda.nadmo.id/"><style>.heroStamp{display:none!important}</style></head>'
+          );
+          let extraPhotos = ''; for (let n = 6; n < 20; n += 1) { extraPhotos += '<script src="' + base + 'photo' + n + dot + 'js"></' + 'script>'; } html = html.replace('</body>', extraPhotos + '<script src="' + base + 'portfolio-extra.js"></' + 'script></body>');
+          document.open();
+          document.write(html);
+          document.close();
+        } catch (error) {
+          document.getElementById('loader').innerHTML =
+            '<div class="error"><strong>Brush by Yuda Christ</strong><span>Portfolio is temporarily unavailable. Please contact us on Instagram @brushbyudachrist or WhatsApp +62 896-8551-8262.</span></div>';
+        }
+      })();
+    </script>
+  </body>
+</html>
