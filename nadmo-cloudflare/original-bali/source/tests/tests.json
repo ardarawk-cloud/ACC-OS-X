@@ -1,0 +1,39 @@
+[
+  {
+    "name": "View the approved DROP 001 storefront",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": ["campaign hero", "Drop 001 master product visual", "six-product collection"],
+    "description": "Verifies the rebuilt storefront presents the campaign and complete locked DROP 001 collection.",
+    "steps": [
+      "Open the storefront",
+      "Scroll from the campaign hero to DROP 001",
+      "Confirm the master product visual and all six locked design names are visible"
+    ],
+    "expected": "The campaign renders without an error state and ORIGINAL BALI CORE, MORE THAN PARADISE, ISLAND AFTER DARK, SOUTH COAST, ISLAND SPIRIT, and ORIGINAL PEOPLE are all visible."
+  },
+  {
+    "name": "Use the rebuilt storefront on mobile",
+    "viewport": "mobile",
+    "covers": ["mobile-first responsive layout", "no body horizontal overflow", "collection readability", "packaging section"],
+    "description": "Verifies the storefront remains contained and readable at phone width while preserving the master product visual.",
+    "steps": [
+      "Open the storefront on mobile",
+      "Scroll through DROP 001 and the six product cards",
+      "Continue through Product Line and Packaging"
+    ],
+    "expected": "The page content stays within the phone viewport, the six product cards are readable, and the packaging section renders without broken imagery."
+  },
+  {
+    "name": "Navigate through story and First Access",
+    "viewport": "desktop",
+    "covers": ["in-page navigation", "brand story", "product line", "First Access"],
+    "description": "Verifies the main storefront navigation reaches customer-facing sections without exposing internal guideline content as page sections.",
+    "steps": [
+      "Use the STORY navigation link and read the brand story section",
+      "Use the PRODUCT LINE navigation link and confirm the five product-line categories",
+      "Use the FIRST ACCESS navigation link"
+    ],
+    "expected": "Story, Product Line, and First Access sections are reachable and contain customer-facing storefront content."
+  }
+]

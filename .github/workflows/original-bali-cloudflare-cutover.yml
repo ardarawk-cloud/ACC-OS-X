@@ -1,8 +1,11 @@
 name: Original Bali Cloudflare Cutover
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/original-bali-cloudflare-cutover.yml']
+    paths:
+      - '.github/workflows/original-bali-cloudflare-cutover.yml'
+      - 'nadmo-cloudflare/original-bali/**'
 permissions:
   contents: read
 jobs:
