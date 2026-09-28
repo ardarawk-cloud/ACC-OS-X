@@ -1,0 +1,131 @@
+name: NADMO Cloudflare Final Cutover
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nadmo-cloudflare-final-cutover.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
+      BUNDLE_URL: 'https://sdmntprseasia.oaiusercontent.com/files/00000000-8aa0-8207-8bcc-10afbb428429/raw?se=2026-09-28T18%3A26%3A27Z&sp=r&sv=2026-02-06&sr=b&scid=514adc40-e66a-58af-a6c3-399d8855730a&skoid=45d5558d-260a-4eed-aec4-6bc512bdfda4&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-28T11%3A10%3A15Z&ske=2026-09-29T11%3A10%3A15Z&sks=b&skv=2026-02-06&sig=ZRDpCLyp52EjjqHwFDo3v9Ru24YgnE98wpsgjvLCBTw%3D'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Fetch migration bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf nadmo-migration bundle.zip
+          mkdir nadmo-migration
+          curl --fail --location --silent --show-error "$BUNDLE_URL" -o bundle.zip
+          unzip -q bundle.zip -d nadmo-migration
+          test -f nadmo-migration/roamink/worker.js
+          test -f nadmo-migration/original-bali/source/dist/index.html
+
+      - name: Replace D1 with Durable Objects and generate configs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+
+          let roam=fs.readFileSync('nadmo-migration/roamink/worker.js','utf8');
+          roam=`export class OrderStore {
+            constructor(ctx){this.ctx=ctx}
+            async fetch(request){
+              const u=new URL(request.url),id=decodeURIComponent(u.pathname.slice(1));
+              if(request.method==='GET') return Response.json((await this.ctx.storage.get(id))??null);
+              if(request.method==='PUT'){await this.ctx.storage.put(id,await request.json());return Response.json({ok:true});}
+              return new Response('Method Not Allowed',{status:405});
+            }
+          }\n`+roam;
+          roam=roam.replace(/async function save\(env,id,data\)\{[^}]*\}/,"async function save(env,id,data){const s=env.ORDERS.get(env.ORDERS.idFromName('global'));await s.fetch('https://orders/'+encodeURIComponent(id),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(data)})}");
+          roam=roam.replace(/async function get\(env,id\)\{[^}]*\}/,"async function get(env,id){const s=env.ORDERS.get(env.ORDERS.idFromName('global'));const r=await s.fetch('https://orders/'+encodeURIComponent(id));return r.json()}");
+          fs.writeFileSync('nadmo-migration/roamink/worker.js',roam);
+
+          let scout=fs.readFileSync('nadmo-migration/nadmo-scout/worker.js','utf8');
+          scout=`export class ScoutStore {
+            constructor(ctx){this.ctx=ctx}
+            async fetch(request){
+              const u=new URL(request.url),p=u.pathname.split('/').filter(Boolean),key='lead:'+p[1];
+              if(p[0]==='event'&&request.method==='POST'){const ev=await request.json();const a=(await this.ctx.storage.get(key))||[];a.unshift(ev);if(a.length>50)a.length=50;await this.ctx.storage.put(key,a);return Response.json({ok:true});}
+              if(p[0]==='status'&&request.method==='GET')return Response.json((await this.ctx.storage.get(key))||[]);
+              return new Response('Not Found',{status:404});
+            }
+          }\n`+scout;
+          scout=scout.replace(/async function record\(env, leadId, name, status, ph\) \{[\s\S]*?\n\}/,"async function record(env,leadId,name,status,ph){const s=env.SCOUT_STORE.get(env.SCOUT_STORE.idFromName('global'));await s.fetch('https://store/event/'+leadId,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leadId,name,status,phone:ph||null,createdAt:new Date().toISOString()})})}");
+          scout=scout.replace(/async function status\(env, leadId\) \{[\s\S]*?\n\}/,"async function status(env,leadId){const s=env.SCOUT_STORE.get(env.SCOUT_STORE.idFromName('global'));const r=await s.fetch('https://store/status/'+leadId);const events=await r.json();const stage=events.find(e=>e.status!=='FOLLOW_UP_SENT');const follow=events.find(e=>e.status==='FOLLOW_UP_SENT');return{leadId,latestStatus:stage?.status||'REVIEW_PENDING',latestAt:stage?.createdAt||null,lastFollowUpAt:follow?.createdAt||null,events}}");
+          fs.writeFileSync('nadmo-migration/nadmo-scout/worker.js',scout);
+
+          const apps={
+            'roamink':'roamink.nadmo.id',
+            'acc-content-hub':'contenthub.nadmo.id',
+            'nadmo-scout':'scout.nadmo.id',
+            'bali-live':'balilive.nadmo.id',
+            'oracly':'oracly.nadmo.id',
+            'zuzu':'zuzu.nadmo.id',
+            'brush-by-yuda':'brushbyyuda.nadmo.id',
+            'original-bali':'originalbali.nadmo.id'
+          };
+          for(const [app,host] of Object.entries(apps)){
+            const cfg=JSON.parse(fs.readFileSync('nadmo-migration/'+app+'/wrangler.template.json','utf8'));
+            delete cfg.d1_databases;
+            cfg.routes=[{pattern:host+'/*',zone_name:'nadmo.id'}];
+            if(app==='roamink'){cfg.durable_objects={bindings:[{name:'ORDERS',class_name:'OrderStore'}]};cfg.exports={OrderStore:{type:'durable-object',storage:'sqlite'}};}
+            if(app==='nadmo-scout'){cfg.durable_objects={bindings:[{name:'SCOUT_STORE',class_name:'ScoutStore'}]};cfg.exports={ScoutStore:{type:'durable-object',storage:'sqlite'}};}
+            fs.writeFileSync('nadmo-migration/'+app+'/wrangler.deploy.json',JSON.stringify(cfg,null,2));
+          }
+          NODE
+
+      - name: Point eight NADMO hosts at Cloudflare
+        shell: bash
+        run: |
+          set -euo pipefail
+          request(){ curl --silent --show-error --fail-with-body -H "Authorization: Bearer $CLOUDFLARE_DNS_API_TOKEN" -H "Content-Type: application/json" "$@"; }
+          Z="$(request --get --data-urlencode "name=nadmo.id" https://api.cloudflare.com/client/v4/zones)"
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$Z")"
+          test -n "$ZONE_ID"
+          HOSTS=(roamink.nadmo.id contenthub.nadmo.id scout.nadmo.id balilive.nadmo.id oracly.nadmo.id zuzu.nadmo.id brushbyyuda.nadmo.id originalbali.nadmo.id)
+          for host in "${HOSTS[@]}"; do
+            E="$(request --get --data-urlencode "name=$host" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records")"
+            while read -r id; do [ -z "$id" ] || request -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$id" >/dev/null; done < <(jq -r '.result[].id' <<<"$E")
+            P="$(jq -n --arg n "$host" '{type:"A",name:$n,content:"192.0.2.1",ttl:1,proxied:true}')"
+            request -X POST --data "$P" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" | jq -e '.success==true' >/dev/null
+          done
+
+      - name: Deploy eight Cloudflare Workers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for app in roamink acc-content-hub nadmo-scout bali-live oracly zuzu brush-by-yuda original-bali; do
+            npx wrangler@4.115.0 deploy --config "nadmo-migration/$app/wrangler.deploy.json"
+          done
+
+      - name: Verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOSTS=(roamink.nadmo.id contenthub.nadmo.id scout.nadmo.id balilive.nadmo.id oracly.nadmo.id zuzu.nadmo.id brushbyyuda.nadmo.id originalbali.nadmo.id)
+          for host in "${HOSTS[@]}"; do
+            ok=0
+            for n in $(seq 1 12); do
+              body="$(curl --silent --show-error --max-time 20 "https://$host/api/_healthcheck" || true)"
+              if printf '%s' "$body" | grep -Eqi 'ok|success|cloudflare|nadmo'; then ok=1; echo "$host OK"; break; fi
+              sleep 5
+            done
+            test "$ok" = 1
+          done
