@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ROAMINK — Travel eSIMs for wherever you land</title>
+    <meta
+      name="description"
+      content="Stay connected abroad with instant travel eSIMs. Search your destination, compare data plans and prepare your eSIM before takeoff."
+    />
+    <meta name="theme-color" content="#07111f" />
+    <meta
+      property="og:title"
+      content="ROAMINK — Travel eSIMs for wherever you land"
+    />
+    <meta
+      property="og:description"
+      content="Travel connectivity without the roaming drama."
+    />
+    <link rel="canonical" href="https://roamink.nadmo.id/" />
+    <link rel="icon" href="./logo.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+    <header class="site-header" id="top">
+      <a class="brand" href="./" aria-label="ROAMINK home"
+        ><img src="./logo.svg" alt="ROAMINK"
+      /></a>
+      <nav class="desktop-nav" aria-label="Primary">
+        <a href="#destinations">Destinations</a>
+        <a href="#how">How it works</a>
+        <a href="#devices">Devices</a>
+        <a href="#faq">Help</a>
+      </nav>
+      <a class="header-action" href="#my-esim" data-open-lookup>My eSIM</a>
+    </header>
+
+    <main id="app">
+      <section class="hero shell">
+        <div class="hero-copy">
+          <div class="eyebrow">
+            <span class="dot"></span> GLOBAL CONNECTIVITY · INSTANT DELIVERY
+          </div>
+          <h1>Land connected.<br /><em>Roam lighter.</em></h1>
+          <p class="hero-lead">
+            Travel data without SIM-counter queues, surprise roaming bills or
+            plastic cards. Pick a destination and prepare your eSIM before
+            takeoff.
+          </p>
+          <div class="search-card" role="search">
+            <label for="destinationSearch">Where are you going?</label>
+            <div class="search-row">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+                ></path>
+              </svg>
+              <input
+                id="destinationSearch"
+                type="search"
+                placeholder="Search Japan, Bali, Europe…"
+                autocomplete="off"
+              />
+              <button id="searchButton" type="button">Find plans</button>
+            </div>
+            <div class="search-results" id="searchResults" hidden></div>
+          </div>
+          <div class="trust-strip">
+            <span>200+ destinations</span><span>Instant QR delivery</span
+            ><span>Secure checkout</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="globe">
+            <div class="globe-grid"></div>
+            <div class="pin pin-a"><i></i><span>Tokyo</span></div>
+            <div class="pin pin-b"><i></i><span>Bali</span></div>
+            <div class="pin pin-c"><i></i><span>Paris</span></div>
+          </div>
+          <div class="floating-card sim-card">
+            <div class="sim-chip"></div>
+            <b>ROAMINK eSIM</b><span>Ready in minutes</span>
+          </div>
+          <div class="floating-card signal-card">
+            <strong>5G</strong><span>where available</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section shell" id="destinations">
+        <div class="section-head">
+          <div>
+            <span class="kicker">START HERE</span>
+            <h2>Popular places to go online.</h2>
+          </div>
+          <p>
+            Choose a destination to compare available data and validity. Live
+            supplier inventory will replace the preview catalog automatically at
+            commercial activation.
+          </p>
+        </div>
+        <div class="destination-grid" id="destinationGrid">
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+        </div>
+      </section>
+
+      <section class="plans-panel shell" id="plans" hidden>
+        <div class="plans-top">
+          <button class="text-button" id="closePlans">
+            ← All destinations
+          </button>
+          <div>
+            <span class="kicker">AVAILABLE PLANS</span>
+            <h2 id="plansTitle">Plans</h2>
+          </div>
+          <p id="plansMeta"></p>
+        </div>
+        <div class="plan-grid" id="planGrid"></div>
+      </section>
+
+      <section class="section process-section" id="how">
+        <div class="shell">
+          <div class="section-head">
+            <div>
+              <span class="kicker">NO AIRPORT QUEUES</span>
+              <h2>Connected in three clean steps.</h2>
+            </div>
+            <p>
+              Buy before you fly or after you land. Your existing physical SIM
+              can stay exactly where it is.
+            </p>
+          </div>
+          <div class="process-grid">
+            <article>
+              <span class="step">01</span>
+              <h3>Choose your destination</h3>
+              <p>
+                Search a country or region and pick the data allowance that fits
+                your trip.
+              </p>
+            </article>
+            <article>
+              <span class="step">02</span>
+              <h3>Receive your eSIM</h3>
+              <p>
+                After verified payment, your installation details and QR are
+                delivered automatically.
+              </p>
+            </article>
+            <article>
+              <span class="step">03</span>
+              <h3>Install & roam</h3>
+              <p>
+                Add the eSIM to your compatible phone, enable data roaming for
+                it, and travel connected.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section shell device-section" id="devices">
+        <div class="device-card">
+          <div class="device-copy">
+            <span class="kicker">DEVICE CHECK</span>
+            <h2>Your phone probably already speaks eSIM.</h2>
+            <p>
+              Most recent iPhone, Google Pixel, Samsung Galaxy and many other
+              flagship devices support eSIM. Your device must also be
+              carrier-unlocked.
+            </p>
+            <button class="secondary-btn" data-open-devices>
+              Check compatibility
+            </button>
+          </div>
+          <div class="phone-stack" aria-hidden="true">
+            <div class="phone phone-back"></div>
+            <div class="phone phone-front">
+              <div class="dynamic-island"></div>
+              <div class="phone-screen">
+                <img src="./logo.svg" alt="" /><span>Connected</span
+                ><b>Indonesia · 5G</b>
+                <div class="signal-bars"><i></i><i></i><i></i><i></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section shell" id="faq">
+        <div class="section-head">
+          <div>
+            <span class="kicker">GOOD TO KNOW</span>
+            <h2>Before your boarding call.</h2>
+          </div>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>When should I install my eSIM?<span>+</span></summary>
+            <p>
+              You can install it before departure while you have reliable Wi-Fi.
+              Activation timing depends on the plan, so follow the instructions
+              shown with your eSIM.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Can I keep WhatsApp on my normal number?<span>+</span>
+            </summary>
+            <p>
+              Yes. An eSIM can provide mobile data while your existing number
+              remains on your primary SIM.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Do I need to remove my physical SIM?<span>+</span>
+            </summary>
+            <p>
+              No. On compatible dual-SIM devices, the travel eSIM can be added
+              alongside your physical SIM.
+            </p>
+          </details>
+          <details>
+            <summary>
+              What if payment succeeds but delivery is delayed?<span>+</span>
+            </summary>
+            <p>
+              Payment and provisioning are tracked separately, so an interrupted
+              fulfillment never means you should pay twice.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <section class="cta shell">
+        <div>
+          <span class="kicker">NEXT TRIP?</span>
+          <h2>Take your internet with you.</h2>
+          <p>Search your destination and compare travel data in seconds.</p>
+        </div>
+        <a href="#top" class="primary-btn">Find my eSIM</a>
+      </section>
+    </main>
+
+    <footer>
+      <div class="shell footer-grid">
+        <div>
+          <img src="./logo.svg" alt="ROAMINK" />
+          <p>Travel connectivity without the roaming drama.</p>
+        </div>
+        <div>
+          <b>Explore</b><a href="#destinations">Destinations</a
+          ><a href="#how">How it works</a
+          ><a href="#devices">Compatible devices</a>
+        </div>
+        <div>
+          <b>Support</b><a href="#faq">Help center</a
+          ><a href="./legal.html#refunds">Refund policy</a
+          ><a href="./legal.html#terms">Terms</a>
+        </div>
+        <div>
+          <b>Company</b><a href="./legal.html#privacy">Privacy</a
+          ><a href="./contact.html">Contact</a>
+        </div>
+      </div>
+      <div class="shell footnote">
+        <span>© 2026 ROAMINK</span><span>Stay connected wherever you go.</span>
+      </div>
+    </footer>
+
+    <div class="modal-backdrop" id="modalBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true">
+        <button class="modal-close" data-close-modal aria-label="Close">
+          ×
+        </button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
