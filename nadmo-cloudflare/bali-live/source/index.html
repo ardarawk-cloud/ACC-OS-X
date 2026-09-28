@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Bali Live Cloud</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <main class="stage" id="stage">
+        <div class="ambient ambient-a"></div>
+        <div class="ambient ambient-b"></div>
+        <div class="grid"></div>
+        <div class="rain" id="rain" aria-hidden="true"></div>
+
+        <section class="top">
+          <div class="station-badge"><span class="station-dot"></span><span>BALI LIVE RADIO</span><small id="buildTag">V2.4</small><b>ON AIR</b></div>
+          <h1 id="daypartTitle">BALI AFTER DARK</h1>
+          <div class="date" id="date">BALI TIME</div>
+          <div class="radio-meta"><span>LIVE REQUEST</span><span>BALI AI</span><span>24/7 MUSIC</span></div>
+          <div class="clock" id="clock">00:00:00</div>
+          <div class="equalizer" id="equalizer" aria-hidden="true"></div>
+          <div class="rotating-prompt" id="prompt">DROP YOUR CITY IN CHAT</div>
+        </section>
+
+        <section class="interaction-card">
+          <div class="interaction-kicker">
+            <span></span><strong>BALI RADIO • ON AIR</strong><span></span>
+          </div>
+          <div class="interaction-row">
+            <div class="interaction-icon music">♫</div>
+            <div class="interaction-copy">
+              <div class="interaction-label">SONG REQUEST</div>
+              <div class="command">!play Judul Lagu - Artis</div>
+              <div class="example">
+                Contoh: !play Levels - Avicii • 1 point = 1 request
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="interaction-row">
+            <div class="interaction-icon ai">AI</div>
+            <div class="interaction-copy">
+              <div class="interaction-label">BALI AI CHAT</div>
+              <div class="command">!ai pertanyaan kamu</div>
+              <div class="example">
+                Juga tersedia: !curhat • !tanya • !roast • !quote • !jodoh
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="aiLiveCard" class="ai-live-card hidden" aria-live="polite">
+          <div class="ai-live-top">
+            <span class="ai-live-badge">BALI AI</span
+            ><span id="aiLiveCommand" class="ai-live-command">!ai</span>
+          </div>
+          <div id="aiLiveViewer" class="ai-live-viewer">@viewer</div>
+          <div id="aiLiveQuestion" class="ai-live-question"></div>
+          <div id="aiLiveThinking" class="ai-live-thinking">
+            AI lagi mikir<span>.</span><span>.</span><span>.</span>
+          </div>
+          <div id="aiLiveAnswer" class="ai-live-answer"></div>
+        </section>
+
+        <section class="lower-strip">
+          <div class="live-indicator"><span></span> LIVE</div>
+          <div id="modeLabel">CHILL • MUSIC • NIGHT</div>
+        </section>
+        <div id="cloudStatus" class="cloud-status">CLOUD AI • CONNECTING</div>
+      </main>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
