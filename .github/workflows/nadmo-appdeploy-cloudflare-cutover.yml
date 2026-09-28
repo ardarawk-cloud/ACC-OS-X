@@ -1,0 +1,138 @@
+name: NADMO AppDeploy to Cloudflare Cutover
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nadmo-appdeploy-cloudflare-cutover.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nadmo-appdeploy-cloudflare-cutover
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_ZONE: nadmo.id
+      BUNDLE_URL: 'https://sdmntprseasia.oaiusercontent.com/files/00000000-1f50-8207-8d45-247ce215d48f/raw?se=2026-09-28T18%3A21%3A51Z&sp=r&sv=2026-02-06&sr=b&scid=2fc271a0-5737-56bc-b3e3-f58712bf1e60&skoid=45d5558d-260a-4eed-aec4-6bc512bdfda4&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-28T03%3A48%3A33Z&ske=2026-09-29T03%3A48%3A33Z&sks=b&skv=2026-02-06&sig=GTfVwakbX11iUOwvgC8x/VAkhwR/PVU1LE2eC9Vh/RI%3D'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Fetch verified migration bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf nadmo-migration bundle.zip
+          mkdir -p nadmo-migration
+          curl --fail --location --silent --show-error "$BUNDLE_URL" -o bundle.zip
+          unzip -q bundle.zip -d nadmo-migration
+          test -f nadmo-migration/schema.sql
+          for app in roamink acc-content-hub nadmo-scout bali-live oracly zuzu brush-by-yuda original-bali; do
+            test -f "nadmo-migration/$app/worker.js"
+            test -f "nadmo-migration/$app/wrangler.template.json"
+            test -f "nadmo-migration/$app/source/dist/index.html"
+          done
+
+      - name: Prepare D1
+        id: d1
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIST="$(npx wrangler@4.115.0 d1 list --json)"
+          DB_ID="$(jq -r '.[] | select(.name=="nadmo-apps-db") | (.uuid // .id)' <<<"$LIST" | head -n1)"
+          if [ -z "$DB_ID" ] || [ "$DB_ID" = "null" ]; then
+            CREATED="$(npx wrangler@4.115.0 d1 create nadmo-apps-db --json)"
+            DB_ID="$(jq -r '.uuid // .id // .database_id' <<<"$CREATED")"
+          fi
+          test -n "$DB_ID"
+          test "$DB_ID" != "null"
+          echo "db_id=$DB_ID" >> "$GITHUB_OUTPUT"
+          npx wrangler@4.115.0 d1 execute nadmo-apps-db --remote --file=nadmo-migration/schema.sql
+
+      - name: Generate Cloudflare custom-domain configs
+        shell: bash
+        env:
+          DB_ID: ${{ steps.d1.outputs.db_id }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const apps = {
+            'roamink':'roamink.nadmo.id',
+            'acc-content-hub':'contenthub.nadmo.id',
+            'nadmo-scout':'scout.nadmo.id',
+            'bali-live':'balilive.nadmo.id',
+            'oracly':'oracly.nadmo.id',
+            'zuzu':'zuzu.nadmo.id',
+            'brush-by-yuda':'brushbyyuda.nadmo.id',
+            'original-bali':'originalbali.nadmo.id'
+          };
+          for (const [app, host] of Object.entries(apps)) {
+            const p = 'nadmo-migration/' + app + '/wrangler.template.json';
+            const raw = fs.readFileSync(p,'utf8').replaceAll('__D1_DATABASE_ID__', process.env.DB_ID);
+            const cfg = JSON.parse(raw);
+            cfg.routes = [{ pattern: host, custom_domain: true }];
+            fs.writeFileSync('nadmo-migration/' + app + '/wrangler.deploy.json', JSON.stringify(cfg,null,2));
+          }
+          NODE
+
+      - name: Remove old DNS records for cutover hosts
+        shell: bash
+        run: |
+          set -euo pipefail
+          H=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json")
+          ZONES="$(curl --fail --silent --show-error "${H[@]}" --get --data-urlencode "name=$CF_ZONE" --data-urlencode "account.id=$CLOUDFLARE_ACCOUNT_ID" https://api.cloudflare.com/client/v4/zones)"
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONES")"
+          test -n "$ZONE_ID"
+          HOSTS=(roamink.nadmo.id contenthub.nadmo.id scout.nadmo.id balilive.nadmo.id oracly.nadmo.id zuzu.nadmo.id brushbyyuda.nadmo.id originalbali.nadmo.id)
+          for host in "${HOSTS[@]}"; do
+            EXISTING="$(curl --fail --silent --show-error "${H[@]}" --get --data-urlencode "name=$host" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records")"
+            while read -r id; do
+              [ -z "$id" ] && continue
+              curl --fail --silent --show-error "${H[@]}" -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$id" >/dev/null
+            done < <(jq -r '.result[].id' <<<"$EXISTING")
+          done
+
+      - name: Deploy all eight Workers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for app in roamink acc-content-hub nadmo-scout bali-live oracly zuzu brush-by-yuda original-bali; do
+            echo "::group::deploy $app"
+            npx wrangler@4.115.0 deploy --config "nadmo-migration/$app/wrangler.deploy.json"
+            echo "::endgroup::"
+          done
+
+      - name: Verify all NADMO subdomains
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOSTS=(roamink.nadmo.id contenthub.nadmo.id scout.nadmo.id balilive.nadmo.id oracly.nadmo.id zuzu.nadmo.id brushbyyuda.nadmo.id originalbali.nadmo.id)
+          for host in "${HOSTS[@]}"; do
+            ok=0
+            for attempt in 1 2 3 4 5 6 7 8 9 10; do
+              BODY="$(curl --silent --show-error --max-time 20 "https://$host/api/_healthcheck" || true)"
+              if printf '%s' "$BODY" | grep -Eqi 'ok|success|cloudflare|nadmo'; then
+                echo "$host OK"
+                ok=1
+                break
+              fi
+              sleep 5
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "::error::$host healthcheck failed"
+              exit 1
+            fi
+          done
