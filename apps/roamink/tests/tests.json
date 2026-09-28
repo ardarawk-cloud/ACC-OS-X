@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Find a destination and open a travel plan",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": ["preview catalog API", "destination search", "plan selection", "checkout modal"],
+    "description": "Verifies the core storefront flow from destination search to a selected eSIM plan.",
+    "steps": ["Type Japan into the destination search", "Choose Japan from the search results", "Select the 5 GB Japan plan"],
+    "expected": "A secure checkout modal is visible for Japan Essential with 5 GB, 15 days, and the displayed IDR price."
+  },
+  {
+    "name": "Create an iPaymu sandbox payment session",
+    "viewport": "desktop",
+    "covers": ["checkout API", "iPaymu hosted sandbox session", "order database create", "hosted payment selection"],
+    "description": "Verifies ROAMINK can create an iPaymu hosted sandbox payment session without charging real money.",
+    "steps": ["Open the Indonesia Essential plan checkout", "Enter Traveler Test as Name", "Enter 081234567890 as Phone", "Enter traveler@example.com as Email", "Press Continue to sandbox payment"],
+    "expected": "The checkout creates a sandbox payment session and redirects to an iPaymu hosted payment URL."
+  },
+  {
+    "name": "Show a useful checkout error",
+    "viewport": "desktop",
+    "covers": ["checkout API failure handling", "user-visible payment error state"],
+    "description": "Verifies an upstream checkout failure is visible and the customer is not redirected.",
+    "qa_faults": [{"method": "POST", "path": "/api/checkout", "status": 502, "body_json": {"ok": false, "error": {"code": "PAYMENT_GATEWAY_UNREACHABLE"}}}],
+    "steps": ["Open the Japan Essential plan checkout", "Enter Traveler Test as Name", "Enter 081234567890 as Phone", "Enter traveler@example.com as Email", "Press Continue to sandbox payment"],
+    "expected": "A visible checkout error message appears and the payment form remains usable."
+  },
+  {
+    "name": "Show My eSIM activation state",
+    "viewport": "desktop",
+    "covers": ["magic-link API", "My eSIM lookup", "inactive-order-access guardrail"],
+    "description": "Verifies customers get a clear state while live order access is not yet enabled.",
+    "steps": ["Open My eSIM", "Enter traveler@example.com", "Press Email secure link"],
+    "expected": "A visible message explains that My eSIM access will activate with live orders."
+  },
+  {
+    "name": "Use device help and open verified contact details on mobile",
+    "viewport": "mobile",
+    "covers": ["mobile storefront", "device compatibility guidance", "public contact page", "merchant verification contact details"],
+    "description": "Verifies mobile visitors can use compatibility guidance and reach the public business contact details required for merchant verification.",
+    "steps": ["Scroll to the device section", "Press Check compatibility and confirm the guidance is readable", "Close the dialog", "Scroll to the footer and open Contact"],
+    "expected": "The contact page is readable on mobile and shows nadmostudio@gmail.com, 0822-4797-2288, and Jl. Sekarwaru No. 17B, Sanur, Bali, Indonesia."
+  }
+]

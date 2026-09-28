@@ -1,0 +1,113 @@
+name: ROAMINK Cloudflare Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/roamink/**'
+      - '.github/workflows/roamink-cloudflare-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: roamink-cloudflare-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install and build exact ROAMINK frontend
+        working-directory: apps/roamink
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+          test -s dist/index.html
+          grep -q 'ROAMINK' dist/index.html
+          test -s dist/contact.html
+          test -s dist/legal.html
+          test -s dist/logo.svg
+
+      - name: Deploy ROAMINK Worker
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          workingDirectory: 'apps/roamink'
+          command: deploy -c wrangler.jsonc
+
+      - name: Restore iPaymu secrets when available
+        working-directory: apps/roamink
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          IPAYMU_API_KEY: ${{ secrets.ROAMINK_IPAYMU_API_KEY || secrets.IPAYMU_API_KEY }}
+          IPAYMU_VA: ${{ secrets.ROAMINK_IPAYMU_VA || secrets.IPAYMU_VA }}
+        run: |
+          set -euo pipefail
+          if [ -n "${IPAYMU_API_KEY:-}" ]; then
+            printf '%s' "$IPAYMU_API_KEY" | npx wrangler@4.115.0 secret put IPAYMU_API_KEY -c wrangler.jsonc
+          else
+            echo "::warning::ROAMINK IPAYMU_API_KEY is not configured in GitHub secrets."
+          fi
+
+          if [ -n "${IPAYMU_VA:-}" ]; then
+            printf '%s' "$IPAYMU_VA" | npx wrangler@4.115.0 secret put IPAYMU_VA -c wrangler.jsonc
+          else
+            echo "::warning::ROAMINK IPAYMU_VA is not configured in GitHub secrets."
+          fi
+
+      - name: Verify Cloudflare deployment
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          echo "Deployment URL: ${DEPLOYMENT_URL:-<empty>}"
+          [ -n "${DEPLOYMENT_URL:-}" ]
+          BASE="${DEPLOYMENT_URL%/}"
+
+          for attempt in 1 2 3 4 5 6; do
+            HEALTH="$(curl --fail --silent --show-error --max-time 30 "$BASE/api/_healthcheck" || true)"
+            HOME="$(curl --fail --silent --show-error --max-time 30 "$BASE/" || true)"
+            if printf '%s' "$HEALTH" | grep -q '"service":"roamink"' && printf '%s' "$HOME" | grep -q 'ROAMINK'; then
+              echo "ROAMINK verified on attempt $attempt"
+              exit 0
+            fi
+            sleep 5
+          done
+
+          exit 1
+
+      - name: Attempt roamink.nadmo.id custom-domain bind
+        id: domain
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          workingDirectory: 'apps/roamink'
+          command: deploy -c wrangler-domain.jsonc
+
+      - name: Domain bind result
+        run: |
+          if [ "${{ steps.domain.outcome }}" = "success" ]; then
+            echo "roamink.nadmo.id custom-domain configuration applied."
+          else
+            echo "::warning::Cloudflare Worker deployed, but custom-domain binding still needs DNS/zone permission or cleanup of the old AppDeploy CNAME."
+          fi
