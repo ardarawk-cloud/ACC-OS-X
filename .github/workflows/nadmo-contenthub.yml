@@ -1,0 +1,51 @@
+name: NADMO Content Hub Cloudflare
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'nadmo-cloudflare/acc-content-hub/**'
+      - '.github/workflows/nadmo-contenthub.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Build ACC Content Hub
+        run: |
+          set -e
+          cd nadmo-cloudflare/acc-content-hub/source
+          npm install
+          npm run build
+
+      - name: Deploy ACC Content Hub to Cloudflare
+        run: |
+          set -e
+          cd nadmo-cloudflare/acc-content-hub
+          sed 's/2026-09-29/2026-09-28/g' wrangler.template.json > wrangler.deploy.json
+          npx wrangler@4.115.0 deploy --config wrangler.deploy.json
+
+      - name: Verify production
+        run: |
+          set -e
+          ok=0
+          for n in $(seq 1 10); do
+            body="$(curl -sS --max-time 15 https://contenthub.nadmo.id/api/_healthcheck || true)"
+            echo "$body"
+            echo "$body" | grep -Eqi 'ok|success|cloudflare|nadmo' && { ok=1; break; }
+            sleep 4
+          done
+          test "$ok" = 1
