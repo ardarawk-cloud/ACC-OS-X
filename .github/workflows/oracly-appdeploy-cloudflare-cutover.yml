@@ -1,0 +1,102 @@
+name: ORACLY AppDeploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'nadmo-cloudflare/oracly/**'
+      - '.github/workflows/oracly-appdeploy-cloudflare-cutover.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oracly-appdeploy-cloudflare-cutover
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_ZONE: nadmo.id
+      CF_HOST: oracly.nadmo.id
+      APPDEPLOY_ORIGIN: https://oracly-live-web-i7irpg.v2.appdeploy.ai
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Validate Cloudflare credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
+
+      - name: Build exact ORACLY source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd nadmo-cloudflare/oracly/source
+          npm install --no-audit --no-fund
+          npm run build
+          test -f dist/index.html
+          test -f dist/oracly.js
+          test -f dist/v3.js
+          test -f dist/card-art.js
+          test -f dist/enhancements.js
+          test -f dist/i18n.js
+          grep -q 'ORACLY Live Web' dist/index.html
+
+      - name: Remove conflicting DNS record only for ORACLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json")
+          ZONES="$(curl --fail --silent --show-error "${AUTH[@]}" --get --data-urlencode "name=$CF_ZONE" --data-urlencode "account.id=$CLOUDFLARE_ACCOUNT_ID" https://api.cloudflare.com/client/v4/zones)"
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONES")"
+          test -n "$ZONE_ID"
+          EXISTING="$(curl --fail --silent --show-error "${AUTH[@]}" --get --data-urlencode "name=$CF_HOST" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records")"
+          while read -r id; do
+            [ -z "$id" ] && continue
+            curl --fail --silent --show-error "${AUTH[@]}" -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$id" >/dev/null
+          done < <(jq -r '.result[].id' <<<"$EXISTING")
+
+      - name: Deploy ORACLY to Cloudflare
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler@4.115.0 deploy --config nadmo-cloudflare/oracly/wrangler.deploy.json
+
+      - name: Verify Cloudflare runtime and parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          ok=0
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            HTML="$(curl --silent --show-error --max-time 20 "https://$CF_HOST/" || true)"
+            if printf '%s' "$HTML" | grep -q 'ORACLY Live Web'; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+          [ "$ok" -eq 1 ] || { echo "::error::ORACLY Cloudflare homepage verification failed"; exit 1; }
+
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          for f in oracly.js v3.js card-art.js enhancements.js i18n.js; do
+            curl --fail --silent --show-error "$APPDEPLOY_ORIGIN/$f" -o "$tmp/appdeploy-$f"
+            curl --fail --silent --show-error "https://$CF_HOST/$f" -o "$tmp/cloudflare-$f"
+            cmp "$tmp/appdeploy-$f" "$tmp/cloudflare-$f"
+            echo "$f parity OK"
+          done
+          echo "ORACLY Cloudflare migration verified: https://$CF_HOST/"
