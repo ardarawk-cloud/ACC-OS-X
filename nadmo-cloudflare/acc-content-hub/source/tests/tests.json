@@ -1,0 +1,69 @@
+[
+  {
+    "name": "Activate a channel and show it on Home",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "channel registry navigation",
+      "channel search",
+      "channel activation",
+      "active channel home state"
+    ],
+    "description": "Verifies the core PC workflow can choose a channel and make it the active production channel.",
+    "steps": [
+      "Open Channels from the bottom navigation",
+      "Search for Bali Wedding DJ and activate it",
+      "Open Home"
+    ],
+    "expected": "Home shows Bali Wedding DJ as the active channel."
+  },
+  {
+    "name": "Save and retain AI settings",
+    "viewport": "desktop",
+    "covers": [
+      "Settings navigation",
+      "AI provider settings",
+      "local settings persistence",
+      "Settings freeze regression"
+    ],
+    "description": "Verifies Settings remains responsive on desktop and saved provider settings survive a reload.",
+    "steps": [
+      "Open Settings and enter https://api.openai.com/v1 as AI API Base URL, a non-empty test API key value, and gpt-5-mini as the text model",
+      "Click Save settings",
+      "Refresh the page and reopen Settings"
+    ],
+    "expected": "The Settings page remains responsive and the saved base URL, API key field, and text model values are retained."
+  },
+  {
+    "name": "Block production when the brief is empty",
+    "viewport": "desktop",
+    "covers": [
+      "Create package workflow",
+      "required brief validation",
+      "invalid production guardrail"
+    ],
+    "description": "Verifies a production package is not started when the required brief is empty.",
+    "steps": [
+      "Open Create",
+      "Leave Topik / brief empty",
+      "Click Generate real package"
+    ],
+    "expected": "The app shows the required-brief warning and does not create a content package."
+  },
+  {
+    "name": "Filter the channel registry on mobile",
+    "viewport": "mobile",
+    "covers": [
+      "responsive navigation",
+      "channel search",
+      "mobile channel registry"
+    ],
+    "description": "Verifies the responsive UI can find a specific channel from the registry.",
+    "steps": [
+      "Open Channels",
+      "Type TechVerse into the channel search field",
+      "Inspect the filtered channel list"
+    ],
+    "expected": "TechVerse is visible in the filtered results and unrelated channels are not shown."
+  }
+]
