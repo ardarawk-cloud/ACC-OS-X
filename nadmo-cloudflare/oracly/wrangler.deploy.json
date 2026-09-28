@@ -1,0 +1,15 @@
+{
+  "name": "nadmo-oracly",
+  "compatibility_date": "2026-09-29",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "oracly.nadmo.id",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./source/dist",
+    "not_found_handling": "single-page-application"
+  }
+}
