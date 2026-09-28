@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 42" role="img" aria-label="ROAMINK">
+  <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#3cf2b4"/><stop offset="1" stop-color="#78a8ff"/></linearGradient></defs>
+  <g fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="20" cy="21" r="13"/><path d="M7 21h26M20 8c5 5 7 9 7 13s-2 8-7 13M20 8c-5 5-7 9-7 13s2 8 7 13"/><path d="M30 12l7-5-2 8"/>
+  </g>
+  <text x="45" y="27" fill="#f7fbff" font-size="20" font-family="Arial,Helvetica,sans-serif" font-weight="800" letter-spacing="2.2">ROAMINK</text>
+</svg>
