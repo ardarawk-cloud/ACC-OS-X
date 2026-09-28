@@ -1,0 +1,55 @@
+name: Archive AppDeploy Builds to GitHub
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/archive-appdeploy-builds.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Archive public builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf nadmo-import
+          mkdir -p nadmo-import/{oracly,brush-by-yuda,zuzu,roamink,nadmo-scout}/assets
+
+          fetch(){ curl -fLsS "$1" -o "$2"; }
+
+          O='https://oracly-live-web-i7irpg.v2.appdeploy.ai'
+          fetch "$O/" nadmo-import/oracly/index.html
+          for f in card-art.js enhancements.js i18n.js oracly.js v3.js; do fetch "$O/$f" "nadmo-import/oracly/$f"; done
+          fetch "$O/assets/index-DeFzQuZN.js" nadmo-import/oracly/assets/index-DeFzQuZN.js
+          fetch "$O/assets/index-DaCshv6t.css" nadmo-import/oracly/assets/index-DaCshv6t.css
+
+          B='https://brush-by-yuda-christ-2e5tsl.v2.appdeploy.ai'
+          fetch "$B/" nadmo-import/brush-by-yuda/index.html
+          fetch "$B/robots.txt" nadmo-import/brush-by-yuda/robots.txt
+          fetch "$B/sitemap.xml" nadmo-import/brush-by-yuda/sitemap.xml
+
+          Z='https://zuzu-family-house-bfwh1u.v2.appdeploy.ai'
+          fetch "$Z/" nadmo-import/zuzu/index.html
+          for f in admin.html admin.js app.js; do fetch "$Z/$f" "nadmo-import/zuzu/$f"; done
+          fetch "$Z/assets/admin-BBcx265S.css" nadmo-import/zuzu/assets/admin-BBcx265S.css
+          fetch "$Z/assets/main-Cp8S-aJF.css" nadmo-import/zuzu/assets/main-Cp8S-aJF.css
+
+          R='https://roamink-33bzpu.v2.appdeploy.ai'
+          fetch "$R/" nadmo-import/roamink/index.html
+          for f in legal.html contact.html logo.svg; do fetch "$R/$f" "nadmo-import/roamink/$f"; done
+          fetch "$R/assets/index-vC82c_Bz.js" nadmo-import/roamink/assets/index-vC82c_Bz.js
+          fetch "$R/assets/index-CZGAKSwr.css" nadmo-import/roamink/assets/index-CZGAKSwr.css
+
+          S='https://nadmo-scout-approval-gateway-hid7pd.v2.appdeploy.ai'
+          fetch "$S/" nadmo-import/nadmo-scout/index.html
+          fetch "$S/assets/index-8GLMQcHn.js" nadmo-import/nadmo-scout/assets/index-8GLMQcHn.js
+          fetch "$S/assets/index-w_NPKsDc.css" nadmo-import/nadmo-scout/assets/index-w_NPKsDc.css
+
+          git config user.name 'NADMO Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add nadmo-import
+          git commit -m 'migration: archive AppDeploy builds in GitHub' || exit 0
+          git push
