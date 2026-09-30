@@ -35,11 +35,18 @@ jobs:
           set -euo pipefail
           npm install --no-audit --no-fund
           npm run build
-          test -s dist/index.html
+          for file in index.html contact.html legal.html faq.html plans.html logo.svg; do
+            test -s "dist/$file"
+          done
           grep -q 'ROAMINK' dist/index.html
-          test -s dist/contact.html
-          test -s dist/legal.html
-          test -s dist/logo.svg
+          grep -q 'Travel eSIM Plans & Pricing' dist/plans.html
+          grep -q 'Frequently Asked Questions' dist/faq.html
+          grep -q 'Refund Policy' dist/legal.html
+          grep -q 'PT NADMO STUDIO INDONESIA' dist/contact.html
+          if grep -RniE 'preview catalog|sandbox payment|Commercial sales remain disabled' dist; then
+            echo "::error::ROAMINK production build still contains preview/sandbox copy."
+            exit 1
+          fi
 
       - name: Deploy ROAMINK Worker
         id: deploy
@@ -65,7 +72,6 @@ jobs:
           else
             echo "::warning::ROAMINK IPAYMU_API_KEY is not configured in GitHub secrets."
           fi
-
           if [ -n "${IPAYMU_VA:-}" ]; then
             printf '%s' "$IPAYMU_VA" | npx wrangler@4.115.0 secret put IPAYMU_VA -c wrangler.jsonc
           else
@@ -77,25 +83,21 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
           set -euo pipefail
-          echo "Deployment URL: ${DEPLOYMENT_URL:-<empty>}"
           [ -n "${DEPLOYMENT_URL:-}" ]
           BASE="${DEPLOYMENT_URL%/}"
-
           for attempt in 1 2 3 4 5 6; do
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "$BASE/api/_healthcheck" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "$BASE/" || true)"
             if printf '%s' "$HEALTH" | grep -q '"service":"roamink"' && printf '%s' "$HOME" | grep -q 'ROAMINK'; then
-              echo "ROAMINK verified on attempt $attempt"
-              exit 0
+              echo "ROAMINK Worker verified on attempt $attempt"
+              break
             fi
+            [ "$attempt" -lt 6 ] || exit 1
             sleep 5
           done
 
-          exit 1
-
-      - name: Attempt roamink.nadmo.id custom-domain bind
+      - name: Bind roamink.nadmo.id Worker route
         id: domain
-        continue-on-error: true
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -104,10 +106,25 @@ jobs:
           workingDirectory: 'apps/roamink'
           command: deploy -c wrangler-domain.jsonc
 
-      - name: Domain bind result
+      - name: Verify public merchant website
         run: |
-          if [ "${{ steps.domain.outcome }}" = "success" ]; then
-            echo "roamink.nadmo.id custom-domain configuration applied."
-          else
-            echo "::warning::Cloudflare Worker deployed, but custom-domain binding still needs DNS/zone permission or cleanup of the old AppDeploy CNAME."
-          fi
+          set -euo pipefail
+          BASE="https://roamink.nadmo.id"
+          for attempt in $(seq 1 12); do
+            ok=1
+            for path in / /plans.html /legal.html /faq.html /contact.html; do
+              code="$(curl --silent --show-error --location --output "/tmp/roamink$(echo "$path" | tr '/.' '__').html" --write-out '%{http_code}' --max-time 30 "$BASE$path" || true)"
+              echo "$path -> HTTP $code"
+              [ "$code" = "200" ] || ok=0
+            done
+            if [ "$ok" = "1" ]               && grep -q 'ROAMINK' /tmp/roamink_.html               && grep -q 'Rp119.000' /tmp/roamink_plans_html.html               && grep -q 'Refund Policy' /tmp/roamink_legal_html.html               && grep -q 'Frequently Asked Questions' /tmp/roamink_faq_html.html               && grep -q 'PT NADMO STUDIO INDONESIA' /tmp/roamink_contact_html.html; then
+              if grep -RniE 'preview catalog|sandbox payment|Commercial sales remain disabled' /tmp/roamink*.html; then
+                echo "::error::Public ROAMINK site still exposes preview/sandbox wording."
+                exit 1
+              fi
+              echo "ROAMINK public merchant website verified."
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
