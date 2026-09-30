@@ -215,6 +215,24 @@ async function handleApi(request, env) {
     return json({ ok: true, service: 'roamink' });
   }
 
+  if (request.method === 'GET' && path === '/api/payment-relay-check') {
+    try {
+      const [healthResponse, egressResponse] = await Promise.all([
+        fetch(`${IPAYMU_RELAY_BASE_URL}/api/_healthcheck`, { headers: { 'cache-control': 'no-cache' } }),
+        fetch(`${IPAYMU_RELAY_BASE_URL}/api/_egress`, { headers: { 'cache-control': 'no-cache' } }),
+      ]);
+      const health = await healthResponse.json();
+      const egress = await egressResponse.json();
+      return json({
+        ok: healthResponse.ok && egressResponse.ok && health?.ok === true && egress?.ok === true,
+        relay: health,
+        egress,
+      }, healthResponse.ok && egressResponse.ok ? 200 : 502);
+    } catch {
+      return json({ ok: false, error: 'PAYMENT_RELAY_UNREACHABLE' }, 502);
+    }
+  }
+
   if (request.method === 'GET' && path === '/api/config') {
     return json({
       environment: 'production',
