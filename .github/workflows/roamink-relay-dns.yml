@@ -41,10 +41,10 @@ jobs:
             request -X DELETE "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${record_id}" >/dev/null
           done
 
-          PAYLOAD="$(jq -n --arg name "$RECORD_NAME" --arg content "$RECORD_IPV6" '{type:"AAAA",name:$name,content:$content,ttl:300,proxied:false}')"
+          PAYLOAD="$(jq -n --arg name "$RECORD_NAME" --arg content "$RECORD_IPV6" '{type:"AAAA",name:$name,content:$content,ttl:1,proxied:true}')"
           CREATED="$(request -X POST --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
-          jq -e '.success == true and .result.type == "AAAA" and .result.proxied == false' <<<"$CREATED" >/dev/null
-          echo "relay.nadmo.id -> ${RECORD_IPV6} (DNS only)"
+          jq -e '.success == true and .result.type == "AAAA" and .result.proxied == true' <<<"$CREATED" >/dev/null
+          echo "relay.nadmo.id -> ${RECORD_IPV6} (Cloudflare proxied)"
 
       - name: Verify DNS
         shell: bash
