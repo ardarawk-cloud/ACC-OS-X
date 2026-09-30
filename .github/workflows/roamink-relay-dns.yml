@@ -1,0 +1,59 @@
+name: ROAMINK Relay DNS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/roamink-relay-dns.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    env:
+      ZONE_NAME: nadmo.id
+      RECORD_NAME: relay.nadmo.id
+      RECORD_IPV6: 2407:6ac0:0003:0005:1234:4321:619f:0001
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
+
+    steps:
+      - name: Configure relay AAAA record
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_DNS_API_TOKEN:-}"
+
+          request() {
+            curl --silent --show-error --fail-with-body               -H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}"               -H "Content-Type: application/json"               "$@"
+          }
+
+          ZONE_RESPONSE="$(request --get --data-urlencode "name=${ZONE_NAME}" "https://api.cloudflare.com/client/v4/zones")"
+          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONE_RESPONSE")"
+          test -n "$ZONE_ID"
+
+          EXISTING="$(request --get --data-urlencode "name=${RECORD_NAME}" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+          mapfile -t OLD_IDS < <(jq -r '.result[] | select(.type=="A" or .type=="AAAA" or .type=="CNAME") | .id' <<<"$EXISTING")
+          for record_id in "${OLD_IDS[@]:-}"; do
+            [ -n "$record_id" ] || continue
+            request -X DELETE "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${record_id}" >/dev/null
+          done
+
+          PAYLOAD="$(jq -n --arg name "$RECORD_NAME" --arg content "$RECORD_IPV6" '{type:"AAAA",name:$name,content:$content,ttl:300,proxied:false}')"
+          CREATED="$(request -X POST --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")"
+          jq -e '.success == true and .result.type == "AAAA" and .result.proxied == false' <<<"$CREATED" >/dev/null
+          echo "relay.nadmo.id -> ${RECORD_IPV6} (DNS only)"
+
+      - name: Verify DNS
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            ANSWER="$(dig +short AAAA "$RECORD_NAME" @1.1.1.1 | head -n1 || true)"
+            echo "attempt=$attempt AAAA=${ANSWER:-none}"
+            if [ -n "$ANSWER" ]; then exit 0; fi
+            sleep 10
+          done
+          exit 1
