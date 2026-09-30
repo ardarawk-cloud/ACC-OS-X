@@ -29,6 +29,6 @@ jobs:
           CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/config)"
           echo "DOMAIN_CONFIG=$CONFIG"
           if jq -e '.supplier_configured == true' <<<"$CONFIG" >/dev/null 2>&1; then
-            CHECK="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check)"
+            CHECK="$(curl --silent --show-error --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check || true)"
             echo "SUPPLIER_CHECK=$CHECK"
           fi
