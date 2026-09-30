@@ -1,4 +1,4 @@
-const IPAYMU_RELAY_BASE_URL = 'https://agent.nadmo.id/roamink-payment';
+const IPAYMU_RELAY_BASE_URL = 'https://relay.nadmo.id';
 const PUBLIC_BASE_URL = 'https://roamink.nadmo.id';
 const encoder = new TextEncoder();
 
