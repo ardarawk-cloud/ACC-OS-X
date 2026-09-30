@@ -53,3 +53,5 @@ No payment credential is committed to the repository.
 - `GET /api/payment-credential-check` — iPaymu credential diagnosis through the VPS relay
 
 The production deployment workflow verifies the public merchant site and payment relay on every deployment.
+
+Credential sync trigger: production iPaymu secrets configured in GitHub Actions.
