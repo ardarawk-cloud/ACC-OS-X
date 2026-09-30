@@ -6,6 +6,12 @@
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
   "workers_dev": true,
+  "vars": {
+    "DIGIFLAZZ_AUTOFULFILL": "true"
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
