@@ -97,6 +97,8 @@ const destinationAliases = {
   cambodia: { name: 'Cambodia', iso2: 'KH', region: 'Asia', slug: 'cambodia' },
   kamboja: { name: 'Cambodia', iso2: 'KH', region: 'Asia', slug: 'cambodia' },
   usa: { name: 'United States', iso2: 'US', region: 'Americas', slug: 'united-states' },
+  'u.s.a': { name: 'United States', iso2: 'US', region: 'Americas', slug: 'united-states' },
+  'u s a': { name: 'United States', iso2: 'US', region: 'Americas', slug: 'united-states' },
   'united states': { name: 'United States', iso2: 'US', region: 'Americas', slug: 'united-states' },
   'hong kong': { name: 'Hong Kong', iso2: 'HK', region: 'Asia', slug: 'hong-kong' },
   filipina: { name: 'Philippines', iso2: 'PH', region: 'Asia', slug: 'philippines' },
