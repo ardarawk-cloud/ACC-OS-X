@@ -525,7 +525,7 @@ async function probeIpaymu(environment, apiKey, va) {
   }
 }
 
-async function handleApi(request, env) {
+async function handleApi(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname;
 
@@ -629,6 +629,23 @@ async function handleApi(request, env) {
       return json(
         { ok: false, error: { code: 'INVALID_CHECKOUT_DETAILS' } },
         400
+      );
+    }
+
+    if (
+      product.supplier !== 'digiflazz' ||
+      !product.supplier_sku ||
+      !Number(product.supplier_price || 0)
+    ) {
+      return json(
+        {
+          ok: false,
+          error: {
+            code: 'SUPPLIER_CATALOG_SYNCING',
+            message: 'Live eSIM inventory is syncing. Please try again shortly.',
+          },
+        },
+        503
       );
     }
 
