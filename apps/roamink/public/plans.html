@@ -1,1 +1,49 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Plans & Pricing — ROAMINK</title><style>body{margin:0;background:#07111f;color:#f4f8fb;font-family:system-ui,sans-serif}.w{width:min(960px,calc(100% - 40px));margin:auto;padding:56px 0 96px}a{color:#42edb5}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.c{padding:20px;border:1px solid #243647;border-radius:16px;background:#0b1725}.c small,p{color:#9aabba}.p{font-size:24px;font-weight:800;margin-top:14px}h1{font-size:48px}</style></head><body><main class="w"><a href="./">← Back to ROAMINK</a><h1>Travel eSIM Plans & Pricing</h1><p>Prices are shown in Indonesian Rupiah (IDR).</p><div class="g"><div class="c"><h2>Indonesia Essential</h2><small>5 GB · 15 days</small><div class="p">Rp119.000</div></div><div class="c"><h2>Indonesia Plus</h2><small>10 GB · 30 days</small><div class="p">Rp179.000</div></div><div class="c"><h2>Japan Essential</h2><small>5 GB · 15 days</small><div class="p">Rp149.000</div></div><div class="c"><h2>Japan Plus</h2><small>10 GB · 30 days</small><div class="p">Rp229.000</div></div><div class="c"><h2>Thailand Essential</h2><small>5 GB · 15 days</small><div class="p">Rp129.000</div></div><div class="c"><h2>Europe Explorer</h2><small>10 GB · 30 days</small><div class="p">Rp319.000</div></div><div class="c"><h2>USA Roadtrip</h2><small>10 GB · 30 days</small><div class="p">Rp289.000</div></div><div class="c"><h2>Australia Plus</h2><small>10 GB · 30 days</small><div class="p">Rp269.000</div></div></div></main></body></html>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Plans & Pricing — ROAMINK</title>
+  <style>
+    body{margin:0;background:#07111f;color:#f4f8fb;font-family:system-ui,sans-serif}
+    .w{width:min(1120px,calc(100% - 40px));margin:auto;padding:56px 0 96px}
+    a{color:#42edb5}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .c{padding:20px;border:1px solid #243647;border-radius:16px;background:#0b1725}
+    .c small,p{color:#9aabba}.p{font-size:24px;font-weight:800;margin-top:14px}h1{font-size:48px;margin-bottom:12px}
+    .meta{margin:0 0 28px}.status{margin:18px 0;padding:14px 16px;border:1px solid #243647;border-radius:12px;background:#0b1725;color:#c8d5df}
+  </style>
+</head>
+<body>
+  <main class="w">
+    <a href="./">← Back to ROAMINK</a>
+    <h1>Travel eSIM Plans & Pricing</h1>
+    <p class="meta">Live travel eSIM inventory. Prices are shown in Indonesian Rupiah (IDR) and can change when supplier pricing changes.</p>
+    <div id="status" class="status">Loading current plans…</div>
+    <div id="plans" class="g"></div>
+  </main>
+  <script>
+    const money = value => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(value||0));
+    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+    fetch('/api/catalog',{headers:{'cache-control':'no-cache'}})
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('CATALOG_UNAVAILABLE')))
+      .then(data => {
+        const products = Array.isArray(data.products) ? data.products : [];
+        const status = document.getElementById('status');
+        status.textContent = products.length
+          ? `${products.length} active travel eSIM plans currently available.`
+          : 'No active travel eSIM plans are available right now.';
+        document.getElementById('plans').innerHTML = products.slice(0,72).map(p => `
+          <div class="c">
+            <h2>${escapeHtml(p.title)}</h2>
+            <small>${escapeHtml(p.data_label || 'Travel data')} · ${Number(p.validity_days || 0)} days</small>
+            <div class="p">${money(p.retail_price_minor)}</div>
+          </div>
+        `).join('');
+      })
+      .catch(() => {
+        document.getElementById('status').textContent = 'Current plan pricing is temporarily unavailable. Please return to the ROAMINK homepage and try again.';
+      });
+  </script>
+</body>
+</html>
