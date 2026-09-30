@@ -307,7 +307,9 @@ async function getDigiflazzCatalog(env, { force = false } = {}) {
     const payload = await response.json();
 
     if (!response.ok || !Array.isArray(payload?.data)) {
-      throw new Error(String(payload?.data?.message || payload?.message || 'DIGIFLAZZ_CATALOG_ERROR'));
+      const rc = String(payload?.data?.rc || payload?.rc || '').trim();
+      const message = String(payload?.data?.message || payload?.message || 'DIGIFLAZZ_CATALOG_ERROR').trim();
+      throw new Error(rc ? `DIGIFLAZZ_RC_${rc}: ${message}` : message);
     }
 
     const catalog = buildDigiflazzCatalog(payload.data);
