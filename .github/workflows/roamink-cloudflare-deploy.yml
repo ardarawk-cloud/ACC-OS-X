@@ -39,7 +39,7 @@ jobs:
             test -s "dist/$file"
           done
           grep -q 'ROAMINK' dist/index.html
-          grep -q 'Travel eSIM Plans & Pricing' dist/plans.html
+          grep -q 'Worldwide Plans & Pricing' dist/plans.html
           grep -q 'Frequently Asked Questions' dist/faq.html
           grep -q 'Refund Policy' dist/legal.html
           grep -q 'PT NADMO STUDIO INDONESIA' dist/contact.html
@@ -158,7 +158,7 @@ jobs:
               echo "$path -> HTTP $code"
               [ "$code" = "200" ] || ok=0
             done
-            if [ "$ok" = "1" ]               && grep -q 'ROAMINK' /tmp/roamink_.html               && grep -q 'Live travel eSIM inventory' /tmp/roamink_plans_html.html               && grep -q 'Refund Policy' /tmp/roamink_legal_html.html               && grep -q 'Frequently Asked Questions' /tmp/roamink_faq_html.html               && grep -q 'PT NADMO STUDIO INDONESIA' /tmp/roamink_contact_html.html; then
+            if [ "$ok" = "1" ]               && grep -q 'ROAMINK' /tmp/roamink_.html               && grep -q 'All active travel eSIM inventory' /tmp/roamink_plans_html.html               && grep -q 'Refund Policy' /tmp/roamink_legal_html.html               && grep -q 'Frequently Asked Questions' /tmp/roamink_faq_html.html               && grep -q 'PT NADMO STUDIO INDONESIA' /tmp/roamink_contact_html.html; then
               if grep -RniE 'preview catalog|sandbox payment|Commercial sales remain disabled' /tmp/roamink*.html; then
                 echo "::error::Public ROAMINK site still exposes preview/sandbox wording."
                 exit 1
