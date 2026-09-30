@@ -145,3 +145,20 @@ jobs:
           done
           echo "::error::ROAMINK payment relay verification failed."
           exit 1
+
+
+      - name: Verify production iPaymu credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 10); do
+            CHECK="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/payment-credential-check || true)"
+            echo "$CHECK"
+            if [ -n "$CHECK" ] && jq -e '.ok == true and .diagnosis == "PRODUCTION_CREDENTIAL" and .production.authenticated == true' <<<"$CHECK" >/dev/null 2>&1; then
+              echo "ROAMINK production iPaymu credentials verified through VPS relay."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::ROAMINK production iPaymu credentials were not accepted."
+          exit 1
