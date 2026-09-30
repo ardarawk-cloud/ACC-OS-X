@@ -292,11 +292,13 @@ async function getDigiflazzCatalog(env, { force = false } = {}) {
       return { ...cached, source: 'digiflazz-cache', stale: true };
     }
     return {
-      source: 'digiflazz-unavailable',
+      source: 'static-fallback',
       supplier_configured: true,
+      supplier: 'digiflazz',
+      stale: true,
       error: String(error instanceof Error ? error.message : error),
-      destinations: [],
-      products: [],
+      destinations: fallbackDestinations,
+      products: fallbackProducts,
     };
   }
 }
@@ -529,9 +531,9 @@ async function handleApi(request, env) {
       return json({ ok: false, configured: false, supplier: 'digiflazz', error: 'SUPPLIER_NOT_CONFIGURED' }, 503);
     }
 
-    const catalog = await getDigiflazzCatalog(env, { force: true });
+    const catalog = await getDigiflazzCatalog(env);
     return json({
-      ok: catalog.source === 'digiflazz',
+      ok: catalog.source === 'digiflazz' || catalog.source === 'digiflazz-cache',
       configured: true,
       supplier: 'digiflazz',
       source: catalog.source,
@@ -539,7 +541,7 @@ async function handleApi(request, env) {
       destinations: catalog.destinations?.length || 0,
       outbound_ipv4: '151.243.222.93',
       error: catalog.error || null,
-    }, catalog.source === 'digiflazz' ? 200 : 502);
+    }, (catalog.source === 'digiflazz' || catalog.source === 'digiflazz-cache') ? 200 : 503);
   }
 
   if (request.method === 'GET' && path === '/api/payment-credential-check') {
