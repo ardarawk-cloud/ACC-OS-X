@@ -1,4 +1,4 @@
-name: ROAMINK Digiflazz Final Diagnostic
+name: ROAMINK Digiflazz Cooldown Verification
 
 on:
   push:
@@ -11,48 +11,36 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  verify:
     runs-on: ubuntu-latest
-    env:
-      DIGIFLAZZ_USERNAME: ${{ secrets.ROAMINK_DIGIFLAZZ_USERNAME || secrets.DIGIFLAZZ_USERNAME }}
-      DIGIFLAZZ_API_KEY: ${{ secrets.ROAMINK_DIGIFLAZZ_API_KEY || secrets.DIGIFLAZZ_API_KEY }}
     steps:
-      - name: Query Digiflazz eSIM price list once through VPS
+      - name: Wait for Digiflazz rate-limit window
+        shell: bash
+        run: sleep 430
+
+      - name: Verify cron-refreshed live eSIM catalog
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${DIGIFLAZZ_USERNAME:-}"
-          test -n "${DIGIFLAZZ_API_KEY:-}"
+          CATALOG="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/catalog)"
+          echo "$CATALOG" > /tmp/catalog.json
 
-          SIGN="$(printf '%s' "${DIGIFLAZZ_USERNAME}${DIGIFLAZZ_API_KEY}pricelist" | md5sum | awk '{print $1}')"
-          BODY="$(jq -cn --arg username "$DIGIFLAZZ_USERNAME" --arg sign "$SIGN" '{cmd:"prepaid",username:$username,sign:$sign,brand:"eSIM"}')"
+          jq -e '.source == "digiflazz" or .source == "digiflazz-cache"' /tmp/catalog.json >/dev/null
+          jq -e '(.products|length) > 0 and (.destinations|length) > 0' /tmp/catalog.json >/dev/null
+          jq -e '[.products[] | select(.supplier == "digiflazz" and (.supplier_sku|length) > 0 and .supplier_price > 0)] | length > 0' /tmp/catalog.json >/dev/null
 
-          HTTP="$(curl --silent --show-error --max-time 45             --output /tmp/digiflazz.json             --write-out '%{http_code}'             -H 'Content-Type: application/json'             --data "$BODY"             https://relay.nadmo.id/digiflazz/price-list || true)"
-
-          echo "HTTP=$HTTP"
-          jq -c '
-            if (.data|type) == "array" then
-              {
-                kind:"catalog",
-                count:(.data|length),
-                brands:(.data|map(.brand)|unique),
-                categories:(.data|map(.category)|unique),
-                sample:(.data[0:5]|map({
-                  product_name,
-                  buyer_sku_code,
-                  category,
-                  brand,
-                  type,
-                  price,
-                  buyer_product_status,
-                  seller_product_status,
-                  unlimited_stock,
-                  stock
-                }))
-              }
-            elif (.data|type) == "object" then
-              {kind:"error",data:{rc:(.data.rc // null),message:(.data.message // null)}}
-            else
-              {kind:"other",keys:(keys),rc:(.rc // null),message:(.message // null),error:(.error // null),data_type:(.data|type)}
-            end
-          ' /tmp/digiflazz.json
+          jq -c '{
+            source,
+            product_count:(.products|length),
+            destination_count:(.destinations|length),
+            pricing,
+            sample:(.products[0:8] | map({
+              title,
+              destination_slug,
+              data_label,
+              validity_days,
+              retail_price_minor,
+              supplier_sku,
+              supplier_price
+            }))
+          }' /tmp/catalog.json
