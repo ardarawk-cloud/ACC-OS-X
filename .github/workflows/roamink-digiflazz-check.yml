@@ -32,3 +32,13 @@ jobs:
             CHECK="$(curl --silent --show-error --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check || true)"
             echo "SUPPLIER_CHECK=$CHECK"
           fi
+
+
+      - name: Direct Digiflazz relay diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          SIGN="$(printf '%s' "${DIGIFLAZZ_USERNAME}${DIGIFLAZZ_API_KEY}pricelist" | md5sum | awk '{print $1}')"
+          BODY="$(jq -cn --arg username "$DIGIFLAZZ_USERNAME" --arg sign "$SIGN" '{cmd:"prepaid",username:$username,sign:$sign,brand:"eSIM"}')"
+          RESPONSE="$(curl --silent --show-error --max-time 45             -H 'Content-Type: application/json'             --data "$BODY"             https://relay.nadmo.id/digiflazz/price-list || true)"
+          echo "$RESPONSE" | jq -c 'if (.data|type)=="array" then {data_type:"array",count:(.data|length),sample:(.data[0] // null)} else {data_type:(.data|type),data:.data,message:(.message // null)} end'
