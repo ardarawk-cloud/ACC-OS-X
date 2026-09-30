@@ -370,7 +370,153 @@ function parseEsimDelivery(rawSn) {
   let activationCode = activationMatch?.[1] || '';
 
   if (lpaMatch?.[0]) {
-    const parts = lpaMatch[0].split('
+    const parts = lpaMatch[0].split("$");
+    if (!smdpAddress && parts[1]) smdpAddress = parts[1];
+    if (!activationCode && parts[2]) activationCode = parts[2];
+  }
+
+  return {
+    raw,
+    qr_data: lpaMatch?.[0] || '',
+    smdp_address: smdpAddress,
+    activation_code: activationCode,
+  };
+}
+
+function safeSupplierResult(data) {
+  return {
+    status: String(data?.status || '').trim(),
+    rc: String(data?.rc || '').trim(),
+    message: String(data?.message || '').trim(),
+    sn: String(data?.sn || '').trim(),
+    price: Number(data?.price || 0),
+    buyer_sku_code: String(data?.buyer_sku_code || '').trim(),
+    customer_no: String(data?.customer_no || '').trim(),
+    ref_id: String(data?.ref_id || '').trim(),
+  };
+}
+
+function publicOrder(order, id) {
+  const delivery = order?.delivery && typeof order.delivery === 'object'
+    ? order.delivery
+    : parseEsimDelivery(order?.supplierSn || '');
+
+  return {
+    id,
+    reference_id: order?.referenceId || '',
+    status: order?.status || '',
+    fulfillment_state: order?.fulfillmentState || '',
+    product_title: order?.productTitle || '',
+    amount: Number(order?.amount || 0),
+    paid_at: order?.paidAt || null,
+    fulfilled_at: order?.fulfilledAt || null,
+    supplier_status: order?.supplierStatus || null,
+    supplier_message: order?.supplierMessage || null,
+    delivery: order?.fulfillmentState === 'DELIVERED' ? delivery : null,
+  };
+}
+
+async function fulfillOrder(env, orderId) {
+  const order = await getOrder(env, orderId);
+  if (!order) return { ok: false, error: 'ORDER_NOT_FOUND' };
+  if (order.status !== 'PAID') return { ok: false, error: 'ORDER_NOT_PAID' };
+  if (order.fulfillmentState === 'DELIVERED') {
+    return { ok: true, delivered: true, order: publicOrder(order, orderId) };
+  }
+
+  if (order.supplier !== 'digiflazz' || !order.supplierSku || !Number(order.supplierCost || 0)) {
+    await updateOrder(env, orderId, {
+      fulfillmentState: 'SUPPLIER_CATALOG_REQUIRED',
+      supplierMessage: 'Live supplier SKU is not attached to this order.',
+    });
+    return { ok: false, error: 'SUPPLIER_CATALOG_REQUIRED' };
+  }
+
+  const refId = order.supplierRefId || ('ROAMINK-DF-' + orderId);
+  const customerNo = String(order.phone || '').replace(/\D/g, '') || orderId.replace(/-/g, '').slice(0, 16);
+
+  await updateOrder(env, orderId, {
+    fulfillmentState: 'SUPPLIER_PROCESSING',
+    supplierRefId: refId,
+    supplierLastAttemptAt: new Date().toISOString(),
+  });
+
+  let raw;
+  try {
+    raw = await digiflazzTransaction(env, {
+      sku: order.supplierSku,
+      customerNo,
+      refId,
+      maxPrice: Number(order.supplierCost || 0),
+    });
+  } catch (error) {
+    await updateOrder(env, orderId, {
+      fulfillmentState: 'SUPPLIER_RETRY',
+      supplierMessage: String(error instanceof Error ? error.message : error).slice(0, 300),
+    });
+    return { ok: false, retry: true, error: 'SUPPLIER_TEMPORARY_ERROR' };
+  }
+
+  const result = safeSupplierResult(raw);
+  const status = result.status.toLowerCase();
+
+  if (status === 'sukses' || result.rc === '00') {
+    const delivery = parseEsimDelivery(result.sn);
+    const next = await updateOrder(env, orderId, {
+      fulfillmentState: 'DELIVERED',
+      supplierStatus: result.status || 'Sukses',
+      supplierRc: result.rc,
+      supplierMessage: result.message,
+      supplierSn: result.sn,
+      supplierPriceCharged: result.price,
+      delivery,
+      fulfilledAt: new Date().toISOString(),
+    });
+    return { ok: true, delivered: true, order: publicOrder(next, orderId) };
+  }
+
+  if (status === 'pending' || result.rc === '03') {
+    await updateOrder(env, orderId, {
+      fulfillmentState: 'SUPPLIER_PENDING',
+      supplierStatus: result.status || 'Pending',
+      supplierRc: result.rc,
+      supplierMessage: result.message,
+      supplierSn: result.sn,
+      supplierPriceCharged: result.price,
+    });
+    return { ok: true, pending: true };
+  }
+
+  await updateOrder(env, orderId, {
+    fulfillmentState: 'SUPPLIER_FAILED',
+    supplierStatus: result.status || 'Gagal',
+    supplierRc: result.rc,
+    supplierMessage: result.message || 'Supplier transaction failed.',
+    supplierSn: result.sn,
+    supplierPriceCharged: result.price,
+  });
+  return { ok: false, failed: true, error: 'SUPPLIER_TRANSACTION_FAILED' };
+}
+
+async function listPendingSupplierOrders(env) {
+  const response = await orderStore(env).fetch('https://orders/pending?limit=20');
+  if (!response.ok) return [];
+  const payload = await response.json();
+  return Array.isArray(payload.orders) ? payload.orders : [];
+}
+
+async function runMaintenance(env) {
+  try {
+    await getDigiflazzCatalog(env);
+  } catch {}
+
+  const pending = await listPendingSupplierOrders(env);
+  for (const item of pending) {
+    try {
+      await fulfillOrder(env, item.id);
+    } catch {}
+  }
+}
 function timestamp() {
   return new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
 }
