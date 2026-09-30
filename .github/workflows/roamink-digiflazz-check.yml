@@ -24,8 +24,10 @@ jobs:
           set -euo pipefail
           if [ -n "${DIGIFLAZZ_USERNAME:-}" ]; then echo "DIGIFLAZZ_USERNAME_SET=yes"; else echo "DIGIFLAZZ_USERNAME_SET=no"; fi
           if [ -n "${DIGIFLAZZ_API_KEY:-}" ]; then echo "DIGIFLAZZ_API_KEY_SET=yes"; else echo "DIGIFLAZZ_API_KEY_SET=no"; fi
+          DEV_CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.ardarawk.workers.dev/api/config)"
+          echo "WORKERS_DEV_CONFIG=$DEV_CONFIG"
           CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/config)"
-          echo "CONFIG=$CONFIG"
+          echo "DOMAIN_CONFIG=$CONFIG"
           if jq -e '.supplier_configured == true' <<<"$CONFIG" >/dev/null 2>&1; then
             CHECK="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check)"
             echo "SUPPLIER_CHECK=$CHECK"
