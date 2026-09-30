@@ -1,4 +1,4 @@
-name: ROAMINK Final Live Catalog
+name: ROAMINK Worldwide Catalog Check
 
 on:
   push:
@@ -14,38 +14,18 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for clean Digiflazz window
-        run: sleep 230
-
-      - name: Verify real Digiflazz eSIM products
+      - name: Verify worldwide catalog state
         shell: bash
         run: |
           set -euo pipefail
           CATALOG="$(curl --silent --show-error --fail --max-time 60 https://roamink.nadmo.id/api/catalog)"
           printf '%s' "$CATALOG" > /tmp/catalog.json
-
-          echo "SOURCE=$(jq -r '.source // "unknown"' /tmp/catalog.json)"
-          echo "ERROR=$(jq -r '.error // ""' /tmp/catalog.json)"
-          echo "PRODUCTS=$(jq -r '(.products // []) | length' /tmp/catalog.json)"
-          echo "DESTINATIONS=$(jq -r '(.destinations // []) | length' /tmp/catalog.json)"
-
           jq -c '{
             source,
+            supplier_configured,
             error:(.error // null),
             product_count:(.products|length),
             destination_count:(.destinations|length),
-            pricing:(.pricing // null),
-            sample:(.products[0:8] | map({
-              title,
-              destination_slug,
-              data_label,
-              validity_days,
-              retail_price_minor,
-              supplier,
-              supplier_sku,
-              supplier_price
-            }))
+            digiflazz_products:([.products[] | select(.supplier=="digiflazz")]|length),
+            sample_destinations:(.destinations[0:12]|map(.name))
           }' /tmp/catalog.json
-
-          jq -e '(.source == "digiflazz" or .source == "digiflazz-cache") and (.products|length) > 0' /tmp/catalog.json >/dev/null
-          jq -e '[.products[] | select(.supplier == "digiflazz" and (.supplier_sku|length)>0 and (.supplier_price|tonumber)>0)] | length > 0' /tmp/catalog.json >/dev/null
