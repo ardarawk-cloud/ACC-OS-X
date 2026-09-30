@@ -156,7 +156,7 @@ function showPlans(slug) {
       ${index === 1 ? '<span class="plan-tag">TRAVELER PICK</span>' : ''}
       <h3>${escapeHtml(plan.title)}</h3><div class="data-size">${escapeHtml(plan.data_label)}</div>
       <div class="plan-meta"><span>${plan.validity_days} days</span><span>${plan.supports_5g ? '4G / 5G' : '4G/LTE'}</span><span>eSIM</span></div>
-      <div class="price">${money(plan.retail_price_minor)}</div><button data-plan="${plan.id}">Get this plan</button>
+      <div class="price">${money(plan.retail_price_minor)}</div><button data-plan="${plan.id}" ${plan.supplier === 'digiflazz' ? '' : 'disabled'}>${plan.supplier === 'digiflazz' ? 'Get this plan' : 'Supplier syncing'}</button>
     </article>
   `
       )
@@ -181,6 +181,10 @@ function checkout(id) {
     item => String(item.id) === String(id)
   );
   if (!plan) return;
+  if (plan.supplier !== 'digiflazz' || !plan.supplier_sku) {
+    toast('Live eSIM inventory is syncing. Please try again shortly.');
+    return;
+  }
   openModal(`
     <span class="kicker">SECURE CHECKOUT</span><h2>${escapeHtml(plan.title)}</h2>
     <p>Your eSIM is delivered after confirmed payment.</p>
@@ -201,6 +205,15 @@ async function submitCheckout(event) {
     const response = await api.post('/api/checkout', body);
     const data = response.data;
     if (data?.payment?.redirect_url) {
+      try {
+        sessionStorage.setItem(
+          'roamink:lastOrder',
+          JSON.stringify({
+            order_id: data?.order?.id || '',
+            email: String(body.email || '').trim().toLowerCase(),
+          })
+        );
+      } catch {}
       const paymentUrl = new URL(data.payment.redirect_url);
       if (paymentUrl.protocol !== 'https:' || !paymentUrl.hostname.endsWith('ipaymu.com')) {
         throw new Error('UNTRUSTED_GATEWAY_URL');
