@@ -1,5 +1,4 @@
-name: ROAMINK Digiflazz Check
-# final-live-check-1
+name: ROAMINK Digiflazz Final Diagnostic
 
 on:
   push:
@@ -18,33 +17,42 @@ jobs:
       DIGIFLAZZ_USERNAME: ${{ secrets.ROAMINK_DIGIFLAZZ_USERNAME || secrets.DIGIFLAZZ_USERNAME }}
       DIGIFLAZZ_API_KEY: ${{ secrets.ROAMINK_DIGIFLAZZ_API_KEY || secrets.DIGIFLAZZ_API_KEY }}
     steps:
-      - name: Check configured secrets and live supplier state
+      - name: Query Digiflazz eSIM price list once through VPS
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "${DIGIFLAZZ_USERNAME:-}" ]; then echo "DIGIFLAZZ_USERNAME_SET=yes"; else echo "DIGIFLAZZ_USERNAME_SET=no"; fi
-          if [ -n "${DIGIFLAZZ_API_KEY:-}" ]; then echo "DIGIFLAZZ_API_KEY_SET=yes"; else echo "DIGIFLAZZ_API_KEY_SET=no"; fi
-          DEV_CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.ardarawk.workers.dev/api/config)"
-          echo "WORKERS_DEV_CONFIG=$DEV_CONFIG"
-          CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/config)"
-          echo "DOMAIN_CONFIG=$CONFIG"
-          if jq -e '.supplier_configured == true' <<<"$CONFIG" >/dev/null 2>&1; then
-            CHECK="$(curl --silent --show-error --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check || true)"
-            echo "SUPPLIER_CHECK=$CHECK"
-          fi
+          test -n "${DIGIFLAZZ_USERNAME:-}"
+          test -n "${DIGIFLAZZ_API_KEY:-}"
 
+          SIGN="$(printf '%s' "${DIGIFLAZZ_USERNAME}${DIGIFLAZZ_API_KEY}pricelist" | md5sum | awk '{print $1}')"
+          BODY="$(jq -cn --arg username "$DIGIFLAZZ_USERNAME" --arg sign "$SIGN" '{cmd:"prepaid",username:$username,sign:$sign,brand:"eSIM"}')"
 
+          HTTP="$(curl --silent --show-error --max-time 45             --output /tmp/digiflazz.json             --write-out '%{http_code}'             -H 'Content-Type: application/json'             --data "$BODY"             https://relay.nadmo.id/digiflazz/price-list || true)"
 
-      - name: Summarize live ROAMINK eSIM catalog
-        shell: bash
-        run: |
-          set -euo pipefail
-          CATALOG="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/catalog)"
-          echo "$CATALOG" | jq -c '{
-            source,
-            supplier_configured,
-            product_count:(.products|length),
-            destination_count:(.destinations|length),
-            pricing,
-            sample_products:(.products[0:5] | map({title,destination_slug,data_label,validity_days,retail_price_minor,supplier,supplier_sku}))
-          }'
+          echo "HTTP=$HTTP"
+          jq -c '
+            if (.data|type) == "array" then
+              {
+                kind:"catalog",
+                count:(.data|length),
+                brands:(.data|map(.brand)|unique),
+                categories:(.data|map(.category)|unique),
+                sample:(.data[0:5]|map({
+                  product_name,
+                  buyer_sku_code,
+                  category,
+                  brand,
+                  type,
+                  price,
+                  buyer_product_status,
+                  seller_product_status,
+                  unlimited_stock,
+                  stock
+                }))
+              }
+            elif (.data|type) == "object" then
+              {kind:"error",data:{rc:(.data.rc // null),message:(.data.message // null)}}
+            else
+              {kind:"other",keys:(keys),rc:(.rc // null),message:(.message // null),error:(.error // null),data_type:(.data|type)}
+            end
+          ' /tmp/digiflazz.json
