@@ -913,6 +913,28 @@ export class OrderStore {
       return json({ ok: true });
     }
 
+    if (request.method === 'POST' && url.pathname === '/catalog/claim') {
+      const body = await request.json();
+      const intervalMs = Math.max(300000, Number(body?.intervalMs || 300000));
+      const key = 'catalog:digiflazz:next-attempt-at';
+      const now = Date.now();
+      const nextAttemptAt = Number((await this.state.storage.get(key)) || 0);
+
+      if (nextAttemptAt > now) {
+        return json({
+          allowed: false,
+          retryAfter: new Date(nextAttemptAt).toISOString(),
+        });
+      }
+
+      const next = now + intervalMs;
+      await this.state.storage.put(key, next);
+      return json({
+        allowed: true,
+        retryAfter: new Date(next).toISOString(),
+      });
+    }
+
     return json({ error: 'NOT_FOUND' }, 404);
   }
 }
