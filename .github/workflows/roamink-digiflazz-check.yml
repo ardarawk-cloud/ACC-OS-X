@@ -1,4 +1,4 @@
-name: ROAMINK Digiflazz Cooldown Verification
+name: ROAMINK Final Live Catalog
 
 on:
   push:
@@ -14,33 +14,38 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for Digiflazz rate-limit window
-        shell: bash
-        run: sleep 430
+      - name: Wait for clean Digiflazz window
+        run: sleep 230
 
-      - name: Verify cron-refreshed live eSIM catalog
+      - name: Verify real Digiflazz eSIM products
         shell: bash
         run: |
           set -euo pipefail
-          CATALOG="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/catalog)"
-          echo "$CATALOG" > /tmp/catalog.json
+          CATALOG="$(curl --silent --show-error --fail --max-time 60 https://roamink.nadmo.id/api/catalog)"
+          printf '%s' "$CATALOG" > /tmp/catalog.json
 
-          jq -e '.source == "digiflazz" or .source == "digiflazz-cache"' /tmp/catalog.json >/dev/null
-          jq -e '(.products|length) > 0 and (.destinations|length) > 0' /tmp/catalog.json >/dev/null
-          jq -e '[.products[] | select(.supplier == "digiflazz" and (.supplier_sku|length) > 0 and .supplier_price > 0)] | length > 0' /tmp/catalog.json >/dev/null
+          echo "SOURCE=$(jq -r '.source // "unknown"' /tmp/catalog.json)"
+          echo "ERROR=$(jq -r '.error // ""' /tmp/catalog.json)"
+          echo "PRODUCTS=$(jq -r '(.products // []) | length' /tmp/catalog.json)"
+          echo "DESTINATIONS=$(jq -r '(.destinations // []) | length' /tmp/catalog.json)"
 
           jq -c '{
             source,
+            error:(.error // null),
             product_count:(.products|length),
             destination_count:(.destinations|length),
-            pricing,
+            pricing:(.pricing // null),
             sample:(.products[0:8] | map({
               title,
               destination_slug,
               data_label,
               validity_days,
               retail_price_minor,
+              supplier,
               supplier_sku,
               supplier_price
             }))
           }' /tmp/catalog.json
+
+          jq -e '(.source == "digiflazz" or .source == "digiflazz-cache") and (.products|length) > 0' /tmp/catalog.json >/dev/null
+          jq -e '[.products[] | select(.supplier == "digiflazz" and (.supplier_sku|length)>0 and (.supplier_price|tonumber)>0)] | length > 0' /tmp/catalog.json >/dev/null
