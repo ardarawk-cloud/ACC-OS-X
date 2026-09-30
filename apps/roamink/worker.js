@@ -983,6 +983,28 @@ export class OrderStore {
       return json({ ok: true });
     }
 
+    if (request.method === 'GET' && url.pathname === '/pending') {
+      const limit = Math.max(1, Math.min(50, Number(url.searchParams.get('limit') || 20)));
+      const entries = await this.state.storage.list({ prefix: 'order:' });
+      const orders = [];
+
+      for (const [key, record] of entries) {
+        if (
+          record?.status === 'PAID' &&
+          ['WAITING_FOR_SUPPLIER', 'SUPPLIER_PENDING', 'SUPPLIER_RETRY', 'SUPPLIER_PROCESSING'].includes(record?.fulfillmentState)
+        ) {
+          orders.push({
+            id: key.slice(6),
+            fulfillmentState: record.fulfillmentState,
+            updatedAt: record.updatedAt || null,
+          });
+          if (orders.length >= limit) break;
+        }
+      }
+
+      return json({ orders });
+    }
+
     if (request.method === 'POST' && url.pathname === '/catalog/claim') {
       const body = await request.json();
       const intervalMs = Math.max(300000, Number(body?.intervalMs || 300000));
@@ -1010,14 +1032,18 @@ export class OrderStore {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/api/')) {
-      return handleApi(request, env);
+      return handleApi(request, env, ctx);
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(_controller, env, ctx) {
+    ctx.waitUntil(runMaintenance(env));
   },
 };
 );
