@@ -1,5 +1,5 @@
 name: ROAMINK Digiflazz Check
-# check-final
+# check-live
 
 on:
   push:
