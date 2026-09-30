@@ -128,3 +128,20 @@ jobs:
             sleep 5
           done
           exit 1
+
+
+      - name: Verify payment relay from Cloudflare Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 10); do
+            RELAY="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/payment-relay-check || true)"
+            echo "$RELAY"
+            if [ -n "$RELAY" ] && jq -e '.ok == true and .relay.service == "roamink-payment-relay" and .egress.outbound_ipv4 == "151.243.222.93"' <<<"$RELAY" >/dev/null 2>&1; then
+              echo "ROAMINK payment relay verified through Cloudflare Worker."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::ROAMINK payment relay verification failed."
+          exit 1
