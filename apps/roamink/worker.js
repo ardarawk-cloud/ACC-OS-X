@@ -1,4 +1,4 @@
-const IPAYMU_BASE_URL = 'https://sandbox.ipaymu.com';
+const IPAYMU_RELAY_BASE_URL = 'https://agent.nadmo.id/roamink-payment';
 const PUBLIC_BASE_URL = 'https://roamink.nadmo.id';
 const encoder = new TextEncoder();
 
@@ -174,14 +174,14 @@ async function updateOrder(env, id, patch) {
   return response.json();
 }
 
-async function probeIpaymu(baseUrl, apiKey, va) {
+async function probeIpaymu(environment, apiKey, va) {
   const rawBody = '{}';
   const bodyHash = await sha256Hex(rawBody);
   const stringToSign = `GET:${va}:${bodyHash}:${apiKey}`;
   const signature = await hmacHex(stringToSign, apiKey);
 
   try {
-    const response = await fetch(`${baseUrl}/api/areas/province`, {
+    const response = await fetch(`${IPAYMU_RELAY_BASE_URL}/ipaymu/${environment}/api/areas/province`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -217,8 +217,8 @@ async function handleApi(request, env) {
 
   if (request.method === 'GET' && path === '/api/config') {
     return json({
-      environment: 'production-preview',
-      payment_environment: 'ipaymu-sandbox',
+      environment: 'production',
+      payment_environment: 'ipaymu-production',
       payment_configured: Boolean(env.IPAYMU_API_KEY && env.IPAYMU_VA),
       supplier_configured: false,
       turnstile_site_key: null,
@@ -238,8 +238,8 @@ async function handleApi(request, env) {
     }
 
     const [sandbox, production] = await Promise.all([
-      probeIpaymu('https://sandbox.ipaymu.com', apiKey, va),
-      probeIpaymu('https://my.ipaymu.com', apiKey, va),
+      probeIpaymu('sandbox', apiKey, va),
+      probeIpaymu('production', apiKey, va),
     ]);
 
     return json({
@@ -304,7 +304,7 @@ async function handleApi(request, env) {
     await updateOrder(env, orderId, {
       status: 'PENDING_PAYMENT',
       referenceId,
-      paymentProvider: 'ipaymu-sandbox',
+      paymentProvider: 'ipaymu-production',
       paymentChannel: 'hosted',
     });
 
@@ -333,7 +333,7 @@ async function handleApi(request, env) {
     let gatewayResponse;
 
     try {
-      gatewayResponse = await fetch(`${IPAYMU_BASE_URL}/api/v2/payment`, {
+      gatewayResponse = await fetch(`${IPAYMU_RELAY_BASE_URL}/ipaymu/production/api/v2/payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -367,7 +367,7 @@ async function handleApi(request, env) {
             code: 'PAYMENT_SESSION_FAILED',
             message:
               gatewayData.Message ||
-              'Sandbox payment session could not be created.',
+              'Payment session could not be created.',
           },
         },
         502
@@ -414,7 +414,7 @@ async function handleApi(request, env) {
       },
       payment: {
         provider: 'ipaymu',
-        environment: 'sandbox',
+        environment: 'production',
         redirect_url: paymentUrl,
       },
     });
