@@ -239,25 +239,100 @@ async function submitCheckout(event) {
   }
 }
 
-$$('[data-open-lookup]').forEach(node =>
+function orderStatusCopy(order) {
+  const state = String(order?.fulfillment_state || '');
+  if (state === 'DELIVERED') return 'Your eSIM is ready to install.';
+  if (['WAITING_FOR_SUPPLIER','SUPPLIER_PROCESSING','SUPPLIER_PENDING','SUPPLIER_RETRY'].includes(state)) {
+    return 'Payment is confirmed. Your eSIM is being issued now; this page can be refreshed safely.';
+  }
+  if (state === 'SUPPLIER_FAILED') {
+    return 'The supplier could not issue this eSIM. Contact ROAMINK support with your order ID.';
+  }
+  return order?.status === 'PAID'
+    ? 'Payment is confirmed and fulfillment is queued.'
+    : 'Payment has not been confirmed yet.';
+}
+
+function renderOrderAccess(order, email = '') {
+  const delivery = order?.delivery || {};
+  const delivered = order?.fulfillment_state === 'DELIVERED';
+  const installDetails = delivered
+    ? `
+      <div class="checkout-summary">
+        ${delivery.smdp_address ? `<div><small>SM-DP+ Address</small><b id="smdpValue">${escapeHtml(delivery.smdp_address)}</b></div>` : ''}
+        ${delivery.activation_code ? `<div><small>Activation Code</small><b id="activationValue">${escapeHtml(delivery.activation_code)}</b></div>` : ''}
+      </div>
+      ${delivery.qr_data ? `<div class="notice"><b>QR installation data</b><br><code id="qrDataValue">${escapeHtml(delivery.qr_data)}</code></div>` : ''}
+      <div class="notice"><b>Supplier delivery reference</b><br><code>${escapeHtml(delivery.raw || '')}</code></div>
+      <button class="submit" id="copyInstallData" type="button">Copy installation data</button>
+    `
+    : '';
+
+  openModal(`
+    <span class="kicker">MY ESIM</span>
+    <h2>${escapeHtml(order?.product_title || 'ROAMINK eSIM')}</h2>
+    <p>${escapeHtml(orderStatusCopy(order))}</p>
+    <div class="checkout-summary">
+      <div><small>Order ID</small><b>${escapeHtml(order?.id || '')}</b></div>
+      <div><small>Status</small><b>${escapeHtml(order?.fulfillment_state || order?.status || '')}</b></div>
+    </div>
+    ${installDetails}
+    ${!delivered ? `<button class="submit" id="refreshOrder" type="button">Refresh order</button>` : ''}
+    <div class="notice">Keep this order ID and the checkout email. They can be used from “My eSIM” to reopen the order.</div>
+  `);
+
+  $('#copyInstallData')?.addEventListener('click', async () => {
+    const text = [delivery.qr_data, delivery.smdp_address, delivery.activation_code]
+      .filter(Boolean)
+      .join('\n');
+    try {
+      await navigator.clipboard.writeText(text || delivery.raw || '');
+      toast('Installation data copied.');
+    } catch {
+      toast('Copy failed. Select the installation data manually.');
+    }
+  });
+
+  $('#refreshOrder')?.addEventListener('click', async () => {
+    try {
+      const response = await api.post('/api/order-access', {
+        order_id: order.id,
+        email,
+      });
+      if (response.data?.ok) renderOrderAccess(response.data.order, email);
+    } catch {
+      toast('Order status could not be refreshed yet.');
+    }
+  });
+}
+
+async function openOrder(orderId, email) {
+  const response = await api.post('/api/order-access', {
+    order_id: String(orderId || '').trim(),
+    email: String(email || '').trim().toLowerCase(),
+  });
+  if (!response.data?.ok) throw new Error('ORDER_NOT_FOUND');
+  renderOrderAccess(response.data.order, email);
+}
+
+$('[data-open-lookup]').forEach(node =>
   node.addEventListener('click', event => {
     event.preventDefault();
     openModal(
-      `<span class="kicker">MY ESIM</span><h2>Open your travel eSIMs.</h2><p>Enter the email used at checkout. We will send a short-lived secure access link when live orders are enabled.</p><form id="lookupForm" class="form-grid"><label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><button class="submit" type="submit">Email secure link</button></form><div class="notice">No password required. Live access links expire after 15 minutes.</div>`
+      `<span class="kicker">MY ESIM</span><h2>Open your travel eSIM.</h2><p>Use the order ID and email from checkout.</p><form id="lookupForm" class="form-grid"><label>Order ID<input name="order_id" required placeholder="Order ID"></label><label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><button class="submit" type="submit">Open my eSIM</button></form><div class="notice">No password is required. Order access requires the matching order ID and checkout email.</div>`
     );
     $('#lookupForm').onsubmit = async submitEvent => {
       submitEvent.preventDefault();
       const button = $('.submit', submitEvent.currentTarget);
       button.disabled = true;
       button.textContent = 'Checking…';
-      const email = new FormData(submitEvent.currentTarget).get('email');
+      const data = Object.fromEntries(new FormData(submitEvent.currentTarget));
       try {
-        const response = await api.post('/api/magic-link', { email });
-        if (!response.data?.ok) throw new Error('NOT_ACTIVE');
+        await openOrder(data.order_id, data.email);
       } catch {
         button.disabled = false;
-        button.textContent = 'Email secure link';
-        toast('My eSIM access will activate with live orders.');
+        button.textContent = 'Open my eSIM';
+        toast('Order not found. Check the order ID and checkout email.');
       }
     };
   })
@@ -271,4 +346,19 @@ $$('[data-open-devices]').forEach(node =>
   )
 );
 
-Promise.all([loadConfig(), loadCatalog()]);
+Promise.all([loadConfig(), loadCatalog()]).then(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get('order');
+  if (!orderId || params.get('payment') !== 'success') return;
+
+  try {
+    const remembered = JSON.parse(sessionStorage.getItem('roamink:lastOrder') || '{}');
+    if (remembered.order_id === orderId && remembered.email) {
+      await openOrder(orderId, remembered.email);
+    } else {
+      toast('Payment return received. Open “My eSIM” with your order ID and checkout email.');
+    }
+  } catch {
+    toast('Payment return received. Open “My eSIM” to check delivery.');
+  }
+});
