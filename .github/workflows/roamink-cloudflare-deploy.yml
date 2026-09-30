@@ -205,17 +205,12 @@ jobs:
           exit 1
 
 
-      - name: Verify Digiflazz eSIM supplier when configured
+      - name: Verify Digiflazz supplier configuration
         shell: bash
         run: |
           set -euo pipefail
           CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/config)"
           echo "$CONFIG"
-          if jq -e '.supplier_configured == true' <<<"$CONFIG" >/dev/null 2>&1; then
-            CHECK="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check)"
-            echo "$CHECK"
-            jq -e '.ok == true and .supplier == "digiflazz" and .active_products > 0 and .destinations > 0' <<<"$CHECK" >/dev/null
-            echo "ROAMINK Digiflazz eSIM supplier verified."
-          else
-            echo "::warning::Digiflazz supplier secrets are not configured yet; ROAMINK remains on the safe fallback catalog."
-          fi
+          jq -e '.supplier_configured == true and .supplier == "digiflazz"' <<<"$CONFIG" >/dev/null
+          echo "ROAMINK Digiflazz supplier credentials are configured."
+          echo "Pricelist is intentionally not queried on every deployment to respect Digiflazz rate limits."
