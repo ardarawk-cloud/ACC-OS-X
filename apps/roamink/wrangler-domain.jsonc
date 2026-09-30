@@ -7,8 +7,8 @@
   "workers_dev": true,
   "routes": [
     {
-      "pattern": "roamink.nadmo.id",
-      "custom_domain": true
+      "pattern": "roamink.nadmo.id/*",
+      "zone_name": "nadmo.id"
     }
   ],
   "assets": {
