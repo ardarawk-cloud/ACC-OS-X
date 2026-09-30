@@ -512,7 +512,9 @@ async function handleApi(request, env) {
       environment: 'production',
       payment_environment: 'ipaymu-production',
       payment_configured: Boolean(env.IPAYMU_API_KEY && env.IPAYMU_VA),
-      supplier_configured: false,
+      supplier_configured: Boolean(env.DIGIFLAZZ_USERNAME && env.DIGIFLAZZ_API_KEY),
+      supplier: 'digiflazz',
+      supplier_autofulfill: env.DIGIFLAZZ_AUTOFULFILL === 'true',
       turnstile_site_key: null,
     });
   }
