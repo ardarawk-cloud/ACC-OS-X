@@ -55,6 +55,7 @@ No payment credential is committed to the repository.
 The production deployment workflow verifies the public merchant site and payment relay on every deployment.
 
 Credential sync trigger: production iPaymu secrets configured in GitHub Actions.
+Digiflazz supplier credential sync trigger: configured.
 
 
 ## eSIM supplier
