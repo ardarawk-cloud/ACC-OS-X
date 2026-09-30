@@ -1,0 +1,31 @@
+name: ROAMINK Digiflazz Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/roamink-digiflazz-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DIGIFLAZZ_USERNAME: ${{ secrets.ROAMINK_DIGIFLAZZ_USERNAME || secrets.DIGIFLAZZ_USERNAME }}
+      DIGIFLAZZ_API_KEY: ${{ secrets.ROAMINK_DIGIFLAZZ_API_KEY || secrets.DIGIFLAZZ_API_KEY }}
+    steps:
+      - name: Check configured secrets and live supplier state
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${DIGIFLAZZ_USERNAME:-}" ]; then echo "DIGIFLAZZ_USERNAME_SET=yes"; else echo "DIGIFLAZZ_USERNAME_SET=no"; fi
+          if [ -n "${DIGIFLAZZ_API_KEY:-}" ]; then echo "DIGIFLAZZ_API_KEY_SET=yes"; else echo "DIGIFLAZZ_API_KEY_SET=no"; fi
+          CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/config)"
+          echo "CONFIG=$CONFIG"
+          if jq -e '.supplier_configured == true' <<<"$CONFIG" >/dev/null 2>&1; then
+            CHECK="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check)"
+            echo "SUPPLIER_CHECK=$CHECK"
+          fi
