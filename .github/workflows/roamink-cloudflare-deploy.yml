@@ -65,6 +65,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           IPAYMU_API_KEY: ${{ secrets.ROAMINK_IPAYMU_API_KEY || secrets.IPAYMU_API_KEY }}
           IPAYMU_VA: ${{ secrets.ROAMINK_IPAYMU_VA || secrets.IPAYMU_VA }}
+          DIGIFLAZZ_USERNAME: ${{ secrets.ROAMINK_DIGIFLAZZ_USERNAME || secrets.DIGIFLAZZ_USERNAME }}
+          DIGIFLAZZ_API_KEY: ${{ secrets.ROAMINK_DIGIFLAZZ_API_KEY || secrets.DIGIFLAZZ_API_KEY }}
         run: |
           set -euo pipefail
           if [ -n "${IPAYMU_API_KEY:-}" ]; then
@@ -76,6 +78,16 @@ jobs:
             printf '%s' "$IPAYMU_VA" | npx wrangler@4.115.0 secret put IPAYMU_VA -c wrangler.jsonc
           else
             echo "::warning::ROAMINK IPAYMU_VA is not configured in GitHub secrets."
+          fi
+          if [ -n "${DIGIFLAZZ_USERNAME:-}" ]; then
+            printf '%s' "$DIGIFLAZZ_USERNAME" | npx wrangler@4.115.0 secret put DIGIFLAZZ_USERNAME -c wrangler.jsonc
+          else
+            echo "::warning::ROAMINK DIGIFLAZZ_USERNAME is not configured in GitHub secrets."
+          fi
+          if [ -n "${DIGIFLAZZ_API_KEY:-}" ]; then
+            printf '%s' "$DIGIFLAZZ_API_KEY" | npx wrangler@4.115.0 secret put DIGIFLAZZ_API_KEY -c wrangler.jsonc
+          else
+            echo "::warning::ROAMINK DIGIFLAZZ_API_KEY is not configured in GitHub secrets."
           fi
 
       - name: Verify Cloudflare deployment
@@ -117,7 +129,7 @@ jobs:
               echo "$path -> HTTP $code"
               [ "$code" = "200" ] || ok=0
             done
-            if [ "$ok" = "1" ]               && grep -q 'ROAMINK' /tmp/roamink_.html               && grep -q 'Rp119.000' /tmp/roamink_plans_html.html               && grep -q 'Refund Policy' /tmp/roamink_legal_html.html               && grep -q 'Frequently Asked Questions' /tmp/roamink_faq_html.html               && grep -q 'PT NADMO STUDIO INDONESIA' /tmp/roamink_contact_html.html; then
+            if [ "$ok" = "1" ]               && grep -q 'ROAMINK' /tmp/roamink_.html               && grep -q 'Live travel eSIM inventory' /tmp/roamink_plans_html.html               && grep -q 'Refund Policy' /tmp/roamink_legal_html.html               && grep -q 'Frequently Asked Questions' /tmp/roamink_faq_html.html               && grep -q 'PT NADMO STUDIO INDONESIA' /tmp/roamink_contact_html.html; then
               if grep -RniE 'preview catalog|sandbox payment|Commercial sales remain disabled' /tmp/roamink*.html; then
                 echo "::error::Public ROAMINK site still exposes preview/sandbox wording."
                 exit 1
@@ -162,3 +174,19 @@ jobs:
           done
           echo "::error::ROAMINK production iPaymu credentials were not accepted."
           exit 1
+
+
+      - name: Verify Digiflazz eSIM supplier when configured
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONFIG="$(curl --silent --show-error --fail --max-time 30 https://roamink.nadmo.id/api/config)"
+          echo "$CONFIG"
+          if jq -e '.supplier_configured == true' <<<"$CONFIG" >/dev/null 2>&1; then
+            CHECK="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/supplier-credential-check)"
+            echo "$CHECK"
+            jq -e '.ok == true and .supplier == "digiflazz" and .active_products > 0 and .destinations > 0' <<<"$CHECK" >/dev/null
+            echo "ROAMINK Digiflazz eSIM supplier verified."
+          else
+            echo "::warning::Digiflazz supplier secrets are not configured yet; ROAMINK remains on the safe fallback catalog."
+          fi
