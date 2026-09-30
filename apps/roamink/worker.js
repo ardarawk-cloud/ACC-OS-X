@@ -1,8 +1,16 @@
+import { createHash } from 'node:crypto';
+
 const IPAYMU_RELAY_BASE_URL = 'https://relay.nadmo.id';
 const PUBLIC_BASE_URL = 'https://roamink.nadmo.id';
 const encoder = new TextEncoder();
+const DIGIFLAZZ_RELAY_BASE_URL = 'https://relay.nadmo.id';
+const DIGIFLAZZ_CATALOG_TTL_MS = 15 * 60 * 1000;
+const DIGIFLAZZ_MARKUP_PERCENT = 20;
+const DIGIFLAZZ_MIN_MARKUP_IDR = 5000;
+const DIGIFLAZZ_ROUNDING_IDR = 1000;
 
-const destinations = [
+
+const fallbackDestinations = [
   { slug: 'indonesia', name: 'Indonesia', iso2: 'ID', region: 'Asia', featured: 1, hero_key: 'island' },
   { slug: 'japan', name: 'Japan', iso2: 'JP', region: 'Asia', featured: 1, hero_key: 'city' },
   { slug: 'thailand', name: 'Thailand', iso2: 'TH', region: 'Asia', featured: 1, hero_key: 'tropical' },
@@ -11,7 +19,7 @@ const destinations = [
   { slug: 'australia', name: 'Australia', iso2: 'AU', region: 'Oceania', featured: 1, hero_key: 'coast' },
 ];
 
-const products = [
+const fallbackProducts = [
   { id: 'preview-id-5', destination_slug: 'indonesia', title: 'Indonesia Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 119000, supports_5g: 1, preview: true },
   { id: 'preview-id-10', destination_slug: 'indonesia', title: 'Indonesia Plus', data_label: '10 GB', validity_days: 30, retail_price_minor: 179000, supports_5g: 1, preview: true },
   { id: 'preview-jp-5', destination_slug: 'japan', title: 'Japan Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 149000, supports_5g: 1, preview: true },
@@ -51,6 +59,272 @@ async function hmacHex(value, key) {
     ['sign']
   );
   return bytesToHex(await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(value)));
+}
+
+
+function md5Hex(value) {
+  return createHash('md5').update(String(value), 'utf8').digest('hex');
+}
+
+function normalizeKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function slugify(value) {
+  return normalizeKey(value)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+const destinationAliases = {
+  indonesia: { name: 'Indonesia', iso2: 'ID', region: 'Asia', slug: 'indonesia' },
+  malaysia: { name: 'Malaysia', iso2: 'MY', region: 'Asia', slug: 'malaysia' },
+  macao: { name: 'Macao', iso2: 'MO', region: 'Asia', slug: 'macao' },
+  singapore: { name: 'Singapore', iso2: 'SG', region: 'Asia', slug: 'singapore' },
+  'korea selatan': { name: 'South Korea', iso2: 'KR', region: 'Asia', slug: 'south-korea' },
+  'south korea': { name: 'South Korea', iso2: 'KR', region: 'Asia', slug: 'south-korea' },
+  taiwan: { name: 'Taiwan', iso2: 'TW', region: 'Asia', slug: 'taiwan' },
+  china: { name: 'China', iso2: 'CN', region: 'Asia', slug: 'china' },
+  jepang: { name: 'Japan', iso2: 'JP', region: 'Asia', slug: 'japan' },
+  japan: { name: 'Japan', iso2: 'JP', region: 'Asia', slug: 'japan' },
+  thailand: { name: 'Thailand', iso2: 'TH', region: 'Asia', slug: 'thailand' },
+  australia: { name: 'Australia', iso2: 'AU', region: 'Oceania', slug: 'australia' },
+  cambodia: { name: 'Cambodia', iso2: 'KH', region: 'Asia', slug: 'cambodia' },
+  kamboja: { name: 'Cambodia', iso2: 'KH', region: 'Asia', slug: 'cambodia' },
+  usa: { name: 'United States', iso2: 'US', region: 'Americas', slug: 'united-states' },
+  'united states': { name: 'United States', iso2: 'US', region: 'Americas', slug: 'united-states' },
+  'hong kong': { name: 'Hong Kong', iso2: 'HK', region: 'Asia', slug: 'hong-kong' },
+  filipina: { name: 'Philippines', iso2: 'PH', region: 'Asia', slug: 'philippines' },
+  philippines: { name: 'Philippines', iso2: 'PH', region: 'Asia', slug: 'philippines' },
+  vietnam: { name: 'Vietnam', iso2: 'VN', region: 'Asia', slug: 'vietnam' },
+  asia: { name: 'Asia', iso2: '', region: 'Regional', slug: 'asia' },
+  'saudi arabia': { name: 'Saudi Arabia', iso2: 'SA', region: 'Middle East', slug: 'saudi-arabia' },
+  algeria: { name: 'Algeria', iso2: 'DZ', region: 'Africa', slug: 'algeria' },
+  'united arab emirates': { name: 'United Arab Emirates', iso2: 'AE', region: 'Middle East', slug: 'united-arab-emirates' },
+  uae: { name: 'United Arab Emirates', iso2: 'AE', region: 'Middle East', slug: 'united-arab-emirates' },
+  bahrain: { name: 'Bahrain', iso2: 'BH', region: 'Middle East', slug: 'bahrain' },
+  europe: { name: 'Europe', iso2: 'EU', region: 'Regional', slug: 'europe' },
+};
+
+const featuredDestinationSlugs = new Set([
+  'indonesia',
+  'singapore',
+  'japan',
+  'thailand',
+  'australia',
+  'united-states',
+]);
+
+function destinationFromName(raw) {
+  const cleaned = String(raw || '').trim();
+  const alias = destinationAliases[normalizeKey(cleaned)];
+  if (alias) return { ...alias };
+  return {
+    name: cleaned || 'Global',
+    iso2: '',
+    region: 'Global',
+    slug: slugify(cleaned || 'global'),
+  };
+}
+
+function parseDestinationName(item) {
+  const type = String(item?.type || '').trim();
+  if (type && normalizeKey(type) !== 'umum') return type;
+
+  const productName = String(item?.product_name || '');
+  const match = productName.match(/\(([^()]+)\)\s*$/);
+  return match?.[1]?.trim() || type || 'Global';
+}
+
+function parseDataLabel(productName) {
+  const match = String(productName || '').match(/(\d+(?:[.,]\d+)?)\s*(MB|GB)/i);
+  return match ? `${match[1].replace(',', '.')} ${match[2].toUpperCase()}` : 'Travel Data';
+}
+
+function parseValidityDays(productName) {
+  const match = String(productName || '').match(/(\d+)\s*(?:Hari|Days?)/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function retailPrice(cost) {
+  const numeric = Math.max(0, Number(cost || 0));
+  const percentageMarkup = Math.ceil(numeric * (DIGIFLAZZ_MARKUP_PERCENT / 100));
+  const markup = Math.max(percentageMarkup, DIGIFLAZZ_MIN_MARKUP_IDR);
+  return Math.ceil((numeric + markup) / DIGIFLAZZ_ROUNDING_IDR) * DIGIFLAZZ_ROUNDING_IDR;
+}
+
+function buildDigiflazzCatalog(rows) {
+  const activeRows = (Array.isArray(rows) ? rows : []).filter(item => {
+    const stockOk = item?.unlimited_stock === true || Number(item?.stock || 0) > 0;
+    return (
+      normalizeKey(item?.brand) === 'esim' &&
+      item?.buyer_product_status === true &&
+      item?.seller_product_status === true &&
+      stockOk
+    );
+  });
+
+  const destinationMap = new Map();
+  const products = [];
+
+  for (const item of activeRows) {
+    const destination = destinationFromName(parseDestinationName(item));
+    if (!destination.slug) continue;
+
+    if (!destinationMap.has(destination.slug)) {
+      destinationMap.set(destination.slug, {
+        ...destination,
+        featured: featuredDestinationSlugs.has(destination.slug) ? 1 : 0,
+        hero_key: destination.region === 'Regional' ? 'regional' : 'travel',
+      });
+    }
+
+    const sku = String(item.buyer_sku_code || '').trim();
+    if (!sku) continue;
+
+    products.push({
+      id: `df:${sku}`,
+      destination_slug: destination.slug,
+      title: String(item.product_name || 'Travel eSIM'),
+      data_label: parseDataLabel(item.product_name),
+      validity_days: parseValidityDays(item.product_name),
+      retail_price_minor: retailPrice(item.price),
+      supports_5g: /5g/i.test(`${item.product_name || ''} ${item.desc || ''}`) ? 1 : 0,
+      supplier: 'digiflazz',
+      supplier_sku: sku,
+      supplier_price: Number(item.price || 0),
+      supplier_type: String(item.type || ''),
+      seller_name: String(item.seller_name || ''),
+      unlimited_stock: item.unlimited_stock === true,
+      stock: Number(item.stock || 0),
+    });
+  }
+
+  const destinations = [...destinationMap.values()].sort((a, b) => {
+    if (a.featured !== b.featured) return b.featured - a.featured;
+    return a.name.localeCompare(b.name);
+  });
+
+  products.sort((a, b) => {
+    if (a.destination_slug !== b.destination_slug) {
+      return a.destination_slug.localeCompare(b.destination_slug);
+    }
+    return a.retail_price_minor - b.retail_price_minor;
+  });
+
+  return {
+    source: 'digiflazz',
+    updated_at: new Date().toISOString(),
+    pricing: {
+      markup_percent: DIGIFLAZZ_MARKUP_PERCENT,
+      minimum_markup_idr: DIGIFLAZZ_MIN_MARKUP_IDR,
+      rounding_idr: DIGIFLAZZ_ROUNDING_IDR,
+    },
+    destinations,
+    products,
+  };
+}
+
+async function getCatalogCache(env) {
+  const response = await orderStore(env).fetch('https://orders/catalog');
+  if (!response.ok) return null;
+  return response.json();
+}
+
+async function putCatalogCache(env, catalog) {
+  await orderStore(env).fetch('https://orders/catalog', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(catalog),
+  });
+}
+
+async function getDigiflazzCatalog(env, { force = false } = {}) {
+  const username = String(env.DIGIFLAZZ_USERNAME || '').trim();
+  const apiKey = String(env.DIGIFLAZZ_API_KEY || '').trim();
+
+  if (!username || !apiKey) {
+    return {
+      source: 'static-fallback',
+      supplier_configured: Boolean(env.DIGIFLAZZ_USERNAME && env.DIGIFLAZZ_API_KEY),
+      supplier: 'digiflazz',
+      supplier_autofulfill: env.DIGIFLAZZ_AUTOFULFILL === 'true',
+      destinations: fallbackDestinations,
+      products: fallbackProducts,
+    };
+  }
+
+  const cached = await getCatalogCache(env);
+  const cachedAt = cached?.updated_at ? Date.parse(cached.updated_at) : 0;
+  if (!force && cached && Number.isFinite(cachedAt) && Date.now() - cachedAt < DIGIFLAZZ_CATALOG_TTL_MS) {
+    return cached;
+  }
+
+  const requestBody = {
+    cmd: 'prepaid',
+    username,
+    sign: md5Hex(username + apiKey + 'pricelist'),
+    brand: 'eSIM',
+  };
+
+  try {
+    const response = await fetch(`${DIGIFLAZZ_RELAY_BASE_URL}/digiflazz/price-list`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+    const payload = await response.json();
+
+    if (!response.ok || !Array.isArray(payload?.data)) {
+      throw new Error(String(payload?.data?.message || payload?.message || 'DIGIFLAZZ_CATALOG_ERROR'));
+    }
+
+    const catalog = buildDigiflazzCatalog(payload.data);
+    catalog.supplier_configured = true;
+    await putCatalogCache(env, catalog);
+    return catalog;
+  } catch (error) {
+    if (cached?.products?.length) {
+      return { ...cached, source: 'digiflazz-cache', stale: true };
+    }
+    return {
+      source: 'digiflazz-unavailable',
+      supplier_configured: true,
+      error: String(error instanceof Error ? error.message : error),
+      destinations: [],
+      products: [],
+    };
+  }
+}
+
+async function digiflazzTransaction(env, { sku, customerNo, refId, maxPrice }) {
+  const username = String(env.DIGIFLAZZ_USERNAME || '').trim();
+  const apiKey = String(env.DIGIFLAZZ_API_KEY || '').trim();
+  if (!username || !apiKey) throw new Error('DIGIFLAZZ_NOT_CONFIGURED');
+
+  const body = {
+    username,
+    buyer_sku_code: sku,
+    customer_no: customerNo,
+    ref_id: refId,
+    sign: md5Hex(username + apiKey + refId),
+    max_price: Number(maxPrice || 0),
+  };
+
+  const response = await fetch(`${DIGIFLAZZ_RELAY_BASE_URL}/digiflazz/transaction`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload?.data) {
+    throw new Error(String(payload?.message || 'DIGIFLAZZ_TRANSACTION_ERROR'));
+  }
+  return payload.data;
 }
 
 function timestamp() {
@@ -244,7 +518,26 @@ async function handleApi(request, env) {
   }
 
   if (request.method === 'GET' && path === '/api/catalog') {
-    return json({ source: 'preview', destinations, products });
+    return json(await getDigiflazzCatalog(env));
+  }
+
+  if (request.method === 'GET' && path === '/api/supplier-credential-check') {
+    const configured = Boolean(env.DIGIFLAZZ_USERNAME && env.DIGIFLAZZ_API_KEY);
+    if (!configured) {
+      return json({ ok: false, configured: false, supplier: 'digiflazz', error: 'SUPPLIER_NOT_CONFIGURED' }, 503);
+    }
+
+    const catalog = await getDigiflazzCatalog(env, { force: true });
+    return json({
+      ok: catalog.source === 'digiflazz',
+      configured: true,
+      supplier: 'digiflazz',
+      source: catalog.source,
+      active_products: catalog.products?.length || 0,
+      destinations: catalog.destinations?.length || 0,
+      outbound_ipv4: '151.243.222.93',
+      error: catalog.error || null,
+    }, catalog.source === 'digiflazz' ? 200 : 502);
   }
 
   if (request.method === 'GET' && path === '/api/payment-credential-check') {
@@ -278,7 +571,8 @@ async function handleApi(request, env) {
     const payload =
       raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 
-    const product = products.find(
+    const catalog = await getDigiflazzCatalog(env);
+    const product = (catalog.products || []).find(
       item => item.id === String(payload.product_id || '')
     );
     const email = safeEmail(payload.email);
@@ -310,6 +604,9 @@ async function handleApi(request, env) {
       productId: product.id,
       productTitle: product.title,
       amount: product.retail_price_minor,
+      supplier: product.supplier || null,
+      supplierSku: product.supplier_sku || null,
+      supplierCost: Number(product.supplier_price || 0),
       status: 'CREATED',
       fulfillmentState: 'WAITING_FOR_SUPPLIER',
       createdAt: now,
@@ -571,6 +868,18 @@ export class OrderStore {
       await this.state.storage.put(key, next);
 
       return json(next);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/catalog') {
+      const catalog = await this.state.storage.get('catalog:digiflazz');
+      if (!catalog) return json({ error: 'NOT_FOUND' }, 404);
+      return json(catalog);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/catalog') {
+      const catalog = await request.json();
+      await this.state.storage.put('catalog:digiflazz', catalog);
+      return json({ ok: true });
     }
 
     return json({ error: 'NOT_FOUND' }, 404);
