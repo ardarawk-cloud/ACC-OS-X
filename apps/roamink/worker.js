@@ -274,6 +274,23 @@ async function getDigiflazzCatalog(env, { force = false } = {}) {
     return cached;
   }
 
+  const claim = await claimDigiflazzCatalogRefresh(env);
+  if (!claim?.allowed) {
+    if (cached?.products?.length) {
+      return { ...cached, source: 'digiflazz-cache', stale: true };
+    }
+    return {
+      source: 'static-fallback',
+      supplier_configured: true,
+      supplier: 'digiflazz',
+      stale: true,
+      retry_after: claim?.retryAfter || null,
+      error: 'DIGIFLAZZ_REFRESH_RATE_GATED',
+      destinations: fallbackDestinations,
+      products: fallbackProducts,
+    };
+  }
+
   const requestBody = {
     cmd: 'prepaid',
     username,
