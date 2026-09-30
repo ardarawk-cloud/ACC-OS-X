@@ -55,3 +55,37 @@ No payment credential is committed to the repository.
 The production deployment workflow verifies the public merchant site and payment relay on every deployment.
 
 Credential sync trigger: production iPaymu secrets configured in GitHub Actions.
+
+
+## eSIM supplier
+
+ROAMINK is wired to the same Digiflazz Buyer supply path used by BIDIGI, but keeps its own storefront, pricing, and payment flow.
+
+Production supplier flow:
+
+`Digiflazz eSIM → ROAMINK catalog cache → ROAMINK markup → iPaymu payment → Digiflazz fulfillment`
+
+Supplier API traffic is relayed through `relay.nadmo.id` so Digiflazz sees the stable NADMO VPS outbound IPv4:
+
+`151.243.222.93`
+
+Required GitHub Actions secrets:
+
+- `ROAMINK_DIGIFLAZZ_USERNAME` (fallback: `DIGIFLAZZ_USERNAME`)
+- `ROAMINK_DIGIFLAZZ_API_KEY` (fallback: `DIGIFLAZZ_API_KEY`)
+
+The deploy workflow restores those into Cloudflare Worker secrets as:
+
+- `DIGIFLAZZ_USERNAME`
+- `DIGIFLAZZ_API_KEY`
+
+Catalog behavior:
+- Calls Digiflazz Buyer `/v1/price-list` through the VPS relay.
+- Requests prepaid products with brand `eSIM`.
+- Only exposes products where both buyer and seller status are active and stock is available.
+- Caches the catalog for 15 minutes to avoid excessive supplier price-list calls.
+- Default ROAMINK retail pricing is supplier cost + 20%, with a minimum Rp5.000 markup, rounded up to Rp1.000.
+- If supplier credentials are not configured, the existing static catalog remains as a safe fallback.
+- If Digiflazz is configured but unavailable and no prior cache exists, checkout does not expose unavailable Digiflazz products.
+
+Digiflazz Production IP must include `151.243.222.93`.
