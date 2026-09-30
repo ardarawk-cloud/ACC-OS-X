@@ -295,7 +295,6 @@ async function getDigiflazzCatalog(env, { force = false } = {}) {
     cmd: 'prepaid',
     username,
     sign: md5Hex(username + apiKey + 'pricelist'),
-    brand: 'eSIM',
   };
 
   try {
