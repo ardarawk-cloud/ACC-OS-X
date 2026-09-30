@@ -3,6 +3,7 @@
   "name": "roamink",
   "main": "worker.js",
   "compatibility_date": "2026-09-29",
+  "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
   "workers_dev": true,
   "routes": [
