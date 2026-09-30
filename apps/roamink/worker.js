@@ -5,6 +5,7 @@ const PUBLIC_BASE_URL = 'https://roamink.nadmo.id';
 const encoder = new TextEncoder();
 const DIGIFLAZZ_RELAY_BASE_URL = 'https://relay.nadmo.id';
 const DIGIFLAZZ_CATALOG_TTL_MS = 15 * 60 * 1000;
+const DIGIFLAZZ_MIN_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const DIGIFLAZZ_MARKUP_PERCENT = 20;
 const DIGIFLAZZ_MIN_MARKUP_IDR = 5000;
 const DIGIFLAZZ_ROUNDING_IDR = 1000;
