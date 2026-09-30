@@ -147,7 +147,7 @@ function showPlans(slug) {
   $('#plansTitle').textContent =
     `${flag(destination.iso2)} ${destination.name}`;
   $('#plansMeta').textContent =
-    `${plans.length} plan${plans.length === 1 ? '' : 's'} available · preview catalog until supplier sync`;
+    `${plans.length} plan${plans.length === 1 ? '' : 's'} available`;
   $('#planGrid').innerHTML =
     plans
       .map(
@@ -185,8 +185,8 @@ function checkout(id) {
     <span class="kicker">SECURE CHECKOUT</span><h2>${escapeHtml(plan.title)}</h2>
     <p>Your eSIM is delivered after confirmed payment.</p>
     <div class="checkout-summary"><div><small>Plan</small><b>${escapeHtml(plan.data_label)} · ${plan.validity_days} days</b></div><div><small>Total</small><b>${money(plan.retail_price_minor)}</b></div></div>
-    <form id="checkoutForm" class="form-grid"><label>Name<input name="name" autocomplete="name" required minlength="2" placeholder="Traveler name"></label><label>Phone<input name="phone" type="tel" autocomplete="tel" required placeholder="081234567890"></label><label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><input type="hidden" name="product_id" value="${plan.id}"><button class="submit" type="submit">Continue to sandbox payment</button></form>
-    <div class="notice warning">iPaymu Sandbox is active for payment testing. No real charge is made. Live sales stay locked until the supplier connection is approved.</div>
+    <form id="checkoutForm" class="form-grid"><label>Name<input name="name" autocomplete="name" required minlength="2" placeholder="Traveler name"></label><label>Phone<input name="phone" type="tel" autocomplete="tel" required placeholder="081234567890"></label><label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><input type="hidden" name="product_id" value="${plan.id}"><button class="submit" type="submit">Continue to payment</button></form>
+    <div class="notice">Payment is processed securely by our payment gateway. Order fulfillment starts only after payment confirmation.</div>
   `);
   $('#checkoutForm').onsubmit = submitCheckout;
 }
@@ -211,7 +211,7 @@ async function submitCheckout(event) {
     throw new Error(data?.error?.code || 'PAYMENT_NOT_READY');
   } catch (error) {
     button.disabled = false;
-    button.textContent = 'Continue to sandbox payment';
+    button.textContent = 'Continue to payment';
     const gatewayError =
       error?.response?.data?.error?.message ||
       error?.response?.data?.error?.code ||
@@ -221,7 +221,7 @@ async function submitCheckout(event) {
         ? 'Payment connection is not active yet.'
         : gatewayError === 'INVALID_CHECKOUT_DETAILS'
           ? 'Check your name, phone, and email.'
-          : `iPaymu Sandbox: ${String(gatewayError).slice(0, 120)}`
+          : `Payment gateway: ${String(gatewayError).slice(0, 120)}`
     );
   }
 }
