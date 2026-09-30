@@ -90,3 +90,24 @@ Catalog behavior:
 - If Digiflazz is configured but unavailable and no prior cache exists, checkout does not expose unavailable Digiflazz products.
 
 Digiflazz Production IP must include `151.243.222.93`.
+
+
+## Automatic eSIM fulfillment
+
+ROAMINK is configured for automatic fulfillment after a verified iPaymu payment callback.
+
+Flow:
+
+`Customer → iPaymu Production → verified PAID callback → Digiflazz transaction → eSIM activation data → My eSIM`
+
+Safety controls:
+- Checkout is allowed only for a live Digiflazz product carrying a supplier SKU and supplier cost.
+- Static fallback plans are display-only and cannot create payment sessions.
+- Digiflazz purchase requests use a stable per-order `ref_id` for idempotent retries.
+- `max_price` is pinned to the supplier cost captured at checkout, preventing an unexpected supplier price increase from silently consuming margin.
+- Pending/transient supplier transactions are retried automatically by a Cloudflare cron every 5 minutes.
+- The Digiflazz price list is cached for 15 minutes and rate-gated so the supplier endpoint is not queried more frequently than allowed.
+- Successful supplier `sn` delivery data is stored with the order and exposed only through matching Order ID + checkout email.
+- The customer can retrieve installation data from the public “My eSIM” flow without another external email provider.
+
+A real Digiflazz purchase is never created before iPaymu payment is cryptographically verified as successful.
