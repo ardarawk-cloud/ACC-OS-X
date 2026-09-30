@@ -244,6 +244,15 @@ async function putCatalogCache(env, catalog) {
   });
 }
 
+async function claimDigiflazzCatalogRefresh(env) {
+  const response = await orderStore(env).fetch('https://orders/catalog/claim', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ intervalMs: DIGIFLAZZ_MIN_REFRESH_INTERVAL_MS }),
+  });
+  return response.json();
+}
+
 async function getDigiflazzCatalog(env, { force = false } = {}) {
   const username = String(env.DIGIFLAZZ_USERNAME || '').trim();
   const apiKey = String(env.DIGIFLAZZ_API_KEY || '').trim();
