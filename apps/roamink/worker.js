@@ -848,6 +848,9 @@ async function handleApi(request, env, ctx) {
     const textStatus = String(normalized.status || '').toLowerCase();
 
     if (order.status === 'PAID') {
+      if (order.fulfillmentState !== 'DELIVERED' && ctx?.waitUntil) {
+        ctx.waitUntil(fulfillOrder(env, orderId));
+      }
       return json({ ok: true, duplicate: true });
     }
 
@@ -863,6 +866,12 @@ async function handleApi(request, env, ctx) {
         ),
         fulfillmentState: 'WAITING_FOR_SUPPLIER',
       });
+
+      if (ctx?.waitUntil) {
+        ctx.waitUntil(fulfillOrder(env, orderId));
+      } else {
+        await fulfillOrder(env, orderId);
+      }
     } else if (
       statusCode === -2 ||
       textStatus === 'expired'
@@ -873,6 +882,35 @@ async function handleApi(request, env, ctx) {
     }
 
     return json({ ok: true });
+  }
+
+  if (request.method === 'POST' && path === '/api/order-access') {
+    const raw = await parseBody(request);
+    const payload = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+    const orderId = String(payload.order_id || '').trim();
+    const email = safeEmail(payload.email);
+
+    if (!orderId || !email) {
+      return json({ ok: false, error: 'INVALID_ORDER_ACCESS' }, 400);
+    }
+
+    let order = await getOrder(env, orderId);
+    if (!order || safeEmail(order.email) !== email) {
+      return json({ ok: false, error: 'ORDER_NOT_FOUND' }, 404);
+    }
+
+    if (
+      order.status === 'PAID' &&
+      ['WAITING_FOR_SUPPLIER', 'SUPPLIER_PENDING', 'SUPPLIER_RETRY', 'SUPPLIER_PROCESSING'].includes(order.fulfillmentState)
+    ) {
+      await fulfillOrder(env, orderId);
+      order = await getOrder(env, orderId);
+    }
+
+    return json({
+      ok: true,
+      order: publicOrder(order, orderId),
+    });
   }
 
   if (request.method === 'POST' && path === '/api/magic-link') {
