@@ -4,45 +4,92 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#07111f">
-  <title>Plans & Pricing — ROAMINK</title>
+  <title>Worldwide Plans & Pricing — ROAMINK</title>
   <style>
     body{margin:0;background:#07111f;color:#f4f8fb;font-family:system-ui,sans-serif}
-    .w{width:min(1120px,calc(100% - 40px));margin:auto;padding:56px 0 96px}
-    a{color:#42edb5}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .w{width:min(1180px,calc(100% - 40px));margin:auto;padding:56px 0 96px}
+    a{color:#42edb5}.toolbar{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0}
+    input,select{background:#0b1725;color:#f4f8fb;border:1px solid #243647;border-radius:12px;padding:13px 14px;font:inherit}
+    input{flex:1;min-width:240px}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
     .c{padding:20px;border:1px solid #243647;border-radius:16px;background:#0b1725}
     .c small,p{color:#9aabba}.p{font-size:24px;font-weight:800;margin-top:14px}h1{font-size:48px;margin-bottom:12px}
-    .meta{margin:0 0 28px}.status{margin:18px 0;padding:14px 16px;border:1px solid #243647;border-radius:12px;background:#0b1725;color:#c8d5df}
+    h2.country{margin:36px 0 14px}.meta{margin:0 0 28px}.status{margin:18px 0;padding:14px 16px;border:1px solid #243647;border-radius:12px;background:#0b1725;color:#c8d5df}
+    .section{margin-top:28px}
   </style>
 </head>
 <body>
   <main class="w">
     <a href="./">← Back to ROAMINK</a>
-    <h1>Travel eSIM Plans & Pricing</h1>
-    <p class="meta">Live travel eSIM inventory. Prices are shown in Indonesian Rupiah (IDR) and can change when supplier pricing changes.</p>
-    <div id="status" class="status">Loading current plans…</div>
-    <div id="plans" class="g"></div>
+    <h1>Worldwide eSIM Plans</h1>
+    <p class="meta">All active travel eSIM inventory supplied to ROAMINK. Prices are shown in Indonesian Rupiah (IDR) and can change when supplier pricing changes.</p>
+
+    <div class="toolbar">
+      <input id="search" placeholder="Search country, region, plan or data size">
+      <select id="destination"><option value="">All destinations</option></select>
+    </div>
+
+    <div id="status" class="status">Loading worldwide catalog…</div>
+    <div id="plans"></div>
   </main>
+
   <script>
     const money = value => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(value||0));
     const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+    let catalog={destinations:[],products:[]};
+
+    function render(){
+      const q=document.getElementById('search').value.trim().toLowerCase();
+      const selected=document.getElementById('destination').value;
+      const destinationMap=new Map((catalog.destinations||[]).map(d=>[d.slug,d]));
+      const products=(catalog.products||[]).filter(p=>{
+        const d=destinationMap.get(p.destination_slug)||{};
+        if(selected && p.destination_slug!==selected) return false;
+        if(!q) return true;
+        return `${p.title||''} ${p.data_label||''} ${d.name||''} ${d.region||''}`.toLowerCase().includes(q);
+      });
+
+      const grouped=new Map();
+      for(const p of products){
+        const key=p.destination_slug||'global';
+        if(!grouped.has(key)) grouped.set(key,[]);
+        grouped.get(key).push(p);
+      }
+
+      document.getElementById('status').textContent =
+        `${products.length} active plan${products.length===1?'':'s'} across ${grouped.size} destination${grouped.size===1?'':'s'}.`;
+
+      document.getElementById('plans').innerHTML=[...grouped.entries()].map(([slug,items])=>{
+        const d=destinationMap.get(slug)||{name:slug||'Global',region:''};
+        return `
+          <section class="section">
+            <h2 class="country">${escapeHtml(d.name)}${d.region ? ` · ${escapeHtml(d.region)}` : ''}</h2>
+            <div class="g">
+              ${items.map(p=>`
+                <div class="c">
+                  <h3>${escapeHtml(p.title)}</h3>
+                  <small>${escapeHtml(p.data_label||'Travel data')} · ${Number(p.validity_days||0)} days</small>
+                  <div class="p">${money(p.retail_price_minor)}</div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+        `;
+      }).join('') || '<div class="status">No matching active eSIM plans.</div>';
+    }
+
     fetch('/api/catalog',{headers:{'cache-control':'no-cache'}})
-      .then(r => r.ok ? r.json() : Promise.reject(new Error('CATALOG_UNAVAILABLE')))
-      .then(data => {
-        const products = Array.isArray(data.products) ? data.products : [];
-        const status = document.getElementById('status');
-        status.textContent = products.length
-          ? `${products.length} active travel eSIM plans currently available.`
-          : 'No active travel eSIM plans are available right now.';
-        document.getElementById('plans').innerHTML = products.slice(0,72).map(p => `
-          <div class="c">
-            <h2>${escapeHtml(p.title)}</h2>
-            <small>${escapeHtml(p.data_label || 'Travel data')} · ${Number(p.validity_days || 0)} days</small>
-            <div class="p">${money(p.retail_price_minor)}</div>
-          </div>
-        `).join('');
+      .then(r=>r.ok?r.json():Promise.reject(new Error('CATALOG_UNAVAILABLE')))
+      .then(data=>{
+        catalog=data||{destinations:[],products:[]};
+        const select=document.getElementById('destination');
+        select.innerHTML='<option value="">All destinations</option>'+
+          (catalog.destinations||[]).map(d=>`<option value="${escapeHtml(d.slug)}">${escapeHtml(d.name)}</option>`).join('');
+        document.getElementById('search').addEventListener('input',render);
+        select.addEventListener('change',render);
+        render();
       })
-      .catch(() => {
-        document.getElementById('status').textContent = 'Current plan pricing is temporarily unavailable. Please return to the ROAMINK homepage and try again.';
+      .catch(()=>{
+        document.getElementById('status').textContent='Current worldwide catalog is temporarily unavailable. Please try again shortly.';
       });
   </script>
 </body>
