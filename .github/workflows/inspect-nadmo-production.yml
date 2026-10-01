@@ -1,0 +1,63 @@
+name: Inspect NADMO Production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-nadmo-production.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Inspect public site and Cloudflare mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p nadmo-live
+          curl -fsSL --max-time 30 -D nadmo-live/headers.txt https://nadmo.id/ -o nadmo-live/index.html
+
+          echo "=== PUBLIC SITE ==="
+          echo "bytes=$(wc -c < nadmo-live/index.html)"
+          grep -oiE '<title>[^<]*</title>' nadmo-live/index.html | head -n1 || true
+          grep -oiE '<meta[^>]+name=["'"'"']description["'"'"'][^>]*>' nadmo-live/index.html | head -n1 || true
+
+          request() {
+            curl --silent --show-error --fail-with-body               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"               -H "Content-Type: application/json"               "$@"
+          }
+
+          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            ZONES="$(request --get --data-urlencode "name=nadmo.id" --data-urlencode "account.id=$CLOUDFLARE_ACCOUNT_ID" https://api.cloudflare.com/client/v4/zones || true)"
+            ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONES" 2>/dev/null || true)"
+            echo "zone_id_present=$([ -n "$ZONE_ID" ] && echo yes || echo no)"
+
+            if [ -n "$ZONE_ID" ]; then
+              echo "=== ROOT DNS ==="
+              request --get --data-urlencode "name=nadmo.id" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"                 | jq -r '.result[] | [.type,.name,.content,(.proxied|tostring)] | @tsv' || true
+
+              echo "=== WORKER ROUTES ==="
+              request "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes"                 | jq -r '.result[]? | [.pattern,.script] | @tsv' || true
+            fi
+
+            echo "=== PAGES PROJECTS ==="
+            request "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects"               | jq -r '.result[]? | [.name,.subdomain,(.production_branch // ""),(.source.type // ""),(.source.config.repo_name // "")] | @tsv' || true
+
+            echo "=== WORKER SCRIPTS ==="
+            request "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts"               | jq -r '.result[]?.id' || true
+          fi
+
+      - name: Upload live HTML snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: nadmo-live-snapshot
+          path: nadmo-live
+          retention-days: 1
