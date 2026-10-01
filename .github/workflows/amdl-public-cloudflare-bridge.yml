@@ -37,6 +37,9 @@ jobs:
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Brush by Yuda Christ' site/app.js
           grep -q 'Start a Project' site/index.html
+          grep -q 'PT Perorangan' site/index.html
+          grep -q 'Rp599.000' site/index.html
+          grep -q 'Business &amp; Legal Setup' site/index.html
           grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
           grep -q 'sendDiscordLeadNotification' worker-public.js
           grep -q 'sendWhatsAppLeadNotification' worker-public.js
@@ -123,3 +126,4 @@ jobs:
 # deploy marker: NADMO legal pages 2026-09-29
 # deploy marker: NADMO legal branding sync 2026-09-29
 # deploy marker: Brush by Yuda preview refresh 2026-09-29
+# deploy marker: PT Perorangan legal setup service 2026-10-02
