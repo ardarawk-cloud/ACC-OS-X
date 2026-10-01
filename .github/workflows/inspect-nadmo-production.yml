@@ -25,6 +25,11 @@ jobs:
           set -euo pipefail
           mkdir -p nadmo-live
           curl -fsSL --max-time 30 -D nadmo-live/headers.txt https://nadmo.id/ -o nadmo-live/index.html
+          curl -fsSL --max-time 30 https://nadmo.id/app.js -o nadmo-live/app.js
+          curl -fsSL --max-time 30 https://nadmo.id/styles.css -o nadmo-live/styles.css
+          curl -fsSL --max-time 30 https://nadmo.id/legal.html -o nadmo-live/legal.html || true
+          curl -fsSL --max-time 30 https://nadmo.id/privacy.html -o nadmo-live/privacy.html || true
+          curl -fsSL --max-time 30 https://nadmo.id/terms.html -o nadmo-live/terms.html || true
 
           echo "=== PUBLIC SITE ==="
           echo "bytes=$(wc -c < nadmo-live/index.html)"
@@ -61,6 +66,12 @@ jobs:
           echo '=== LIVE HTML START ==='
           nl -ba nadmo-live/index.html | sed -n '1,360p'
           echo '=== LIVE HTML END ==='
+          echo '=== RESPONSE HEADERS ==='
+          cat nadmo-live/headers.txt
+          echo '=== APP JS ==='
+          nl -ba nadmo-live/app.js | sed -n '1,320p'
+          echo '=== CSS MARKERS ==='
+          grep -nE 'service-grid|pricing-grid|@media|footer|start-section' nadmo-live/styles.css | head -n 120 || true
 
       - name: Upload live HTML snapshot
         uses: actions/upload-artifact@v4
