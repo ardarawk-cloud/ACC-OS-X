@@ -55,7 +55,7 @@ jobs:
             request "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts"               | jq -r '.result[]?.id' || true
           fi
 
-      - name: Upload live HTML snapshot
+      - name: Dump live HTML\n        shell: bash\n        run: |\n          echo '=== LIVE HTML START ==='\n          nl -ba nadmo-live/index.html | sed -n '1,360p'\n          echo '=== LIVE HTML END ==='\n\n      - name: Upload live HTML snapshot
         uses: actions/upload-artifact@v4
         with:
           name: nadmo-live-snapshot
