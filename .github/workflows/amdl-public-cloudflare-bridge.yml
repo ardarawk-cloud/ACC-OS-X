@@ -39,7 +39,7 @@ jobs:
           grep -q 'Start a Project' site/index.html
           grep -q 'PT Perorangan' site/index.html
           grep -q 'Rp599.000' site/index.html
-          grep -q 'Business &amp; Legal Setup' site/index.html
+          grep -q 'BUSINESS &amp; LEGAL SETUP' site/index.html
           grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
           grep -q 'sendDiscordLeadNotification' worker-public.js
           grep -q 'sendWhatsAppLeadNotification' worker-public.js
