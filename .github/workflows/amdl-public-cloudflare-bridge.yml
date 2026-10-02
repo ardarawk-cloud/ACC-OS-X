@@ -88,20 +88,20 @@ jobs:
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             UPGRADE="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/upgrade.css" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if printf '%s' "$HEALTH" | grep -q 'am-digital-lab-public' && printf '%s' "$HEALTH" | grep -q '"version":"2.0.0"' && printf '%s' "$HEALTH" | grep -q '"discord_notification_configured":' && printf '%s' "$HOME" | grep -q 'WE BUILD DIGITAL PRODUCTS' && printf '%s' "$UPGRADE" | grep -q 'REAL PROJECT PREVIEW' && printf '%s' "$ROBOTS" | grep -q 'Sitemap:'; then
+            if grep -q 'am-digital-lab-public' <<<"$HEALTH" && grep -q '"version":"2.0.0"' <<<"$HEALTH" && grep -q '"discord_notification_configured":' <<<"$HEALTH" && grep -q 'WE BUILD DIGITAL PRODUCTS' <<<"$HOME" && grep -q 'REAL PROJECT PREVIEW' <<<"$UPGRADE" && grep -q 'Sitemap:' <<<"$ROBOTS"; then
               break
             fi
             sleep 5
           done
           echo "Health: $HEALTH"
-          printf '%s' "$HEALTH" | grep -q '"ok":true'
-          printf '%s' "$HEALTH" | grep -q '"version":"2.0.0"'
-          printf '%s' "$HEALTH" | grep -q '"discord_notification_configured":'
-          printf '%s' "$HEALTH" | grep -q '"whatsapp_notification_configured":true'
-          printf '%s' "$HEALTH" | grep -q '"notification_primary":'
-          printf '%s' "$HOME" | grep -q 'NADMO STUDIO'
-          printf '%s' "$UPGRADE" | grep -q 'REAL PROJECT PREVIEW'
-          printf '%s' "$ROBOTS" | grep -q 'Sitemap:'
+          grep -q '"ok":true' <<<"$HEALTH"
+          grep -q '"version":"2.0.0"' <<<"$HEALTH"
+          grep -q '"discord_notification_configured":' <<<"$HEALTH"
+          grep -q '"whatsapp_notification_configured":true' <<<"$HEALTH"
+          grep -q '"notification_primary":' <<<"$HEALTH"
+          grep -q 'NADMO STUDIO' <<<"$HOME"
+          grep -q 'REAL PROJECT PREVIEW' <<<"$UPGRADE"
+          grep -q 'Sitemap:' <<<"$ROBOTS"
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/acc-os-x.png" -o /tmp/acc-os-x.png
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/oracly.png" -o /tmp/oracly.png
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/brush-by-yuda.png" -o /tmp/brush-by-yuda.png
@@ -136,7 +136,7 @@ jobs:
         run: |
           set -euo pipefail
           HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz")"
-          printf '%s' "$HEALTH" | grep -q '"discord_notification_configured":true'
+          grep -q '"discord_notification_configured":true' <<<"$HEALTH"
           TEST_CODE="$(curl --silent --show-error --output /tmp/amdl-discord-test.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":"AMDL Discord Test","company":"NADMO STUDIO Internal Test","email":"notification-test@example.com","project_type":"Discord Notification Test","budget_range":"TEST ONLY","target_launch":"2026-09-14","project_description":"Automated end-to-end Discord notification test. Safe to archive after verification."}')"
           cat /tmp/amdl-discord-test.txt
           echo "Discord E2E lead status: $TEST_CODE"
