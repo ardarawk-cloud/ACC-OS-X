@@ -38,6 +38,11 @@ jobs:
           grep -q 'Brush by Yuda Christ' site/app.js
           grep -q 'Start a Project' site/index.html
           grep -q 'PT Perorangan' site/index.html
+          grep -q 'PERSONAL BRANDING SAMPLES' site/index.html
+          grep -q 'FOR BUSINESS' site/index.html
+          grep -q 'Arda Moron' site/index.html
+          grep -q 'BBYA' site/index.html
+          grep -q 'DWP' site/index.html
           grep -q 'Personal Branding' site/index.html
           grep -q 'Arda Moron' site/index.html
           grep -q 'BBYA' site/index.html
@@ -51,7 +56,7 @@ jobs:
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup brush-by-yuda; do
+          for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup brush-by-yuda arda-moron bbya dwp; do
             test -s "site/portfolio/$f.png"
           done
 
