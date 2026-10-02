@@ -12,7 +12,7 @@
     input,select{background:#0b1725;color:#f4f8fb;border:1px solid #243647;border-radius:12px;padding:13px 14px;font:inherit}
     input{flex:1;min-width:240px}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
     .c{padding:20px;border:1px solid #243647;border-radius:16px;background:#0b1725}
-    .c small,p{color:#9aabba}.p{font-size:24px;font-weight:800;margin-top:14px}h1{font-size:48px;margin-bottom:12px}
+    .c small,p{color:#9aabba}.p{font-size:24px;font-weight:800;margin-top:14px}.buy{display:inline-block;margin-top:16px;padding:11px 14px;border-radius:10px;background:#42edb5;color:#07111f;text-decoration:none;font-weight:800}h1{font-size:48px;margin-bottom:12px}
     h2.country{margin:36px 0 14px}.meta{margin:0 0 28px}.status{margin:18px 0;padding:14px 16px;border:1px solid #243647;border-radius:12px;background:#0b1725;color:#c8d5df}
     .section{margin-top:28px}
   </style>
@@ -69,6 +69,7 @@
                   <h3>${escapeHtml(p.title)}</h3>
                   <small>${escapeHtml(p.data_label||'Travel data')} · ${Number(p.validity_days||0)} days</small>
                   <div class="p">${money(p.retail_price_minor)}</div>
+                  <a class="buy" href="/?plan=${encodeURIComponent(p.id)}">Buy this plan</a>
                 </div>
               `).join('')}
             </div>
