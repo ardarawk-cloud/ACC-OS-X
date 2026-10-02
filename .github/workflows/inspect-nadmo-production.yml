@@ -67,7 +67,8 @@ jobs:
         run: |
           grep -q 'PT Perorangan' nadmo-live/index.html
           grep -q 'Rp599.000' nadmo-live/index.html
-          curl -fsSL --max-time 30 https://nadmo.id/upgrade.css | grep -q 'Business & Legal Setup'
+          UPGRADE_VERIFY="$(curl -fsSL --max-time 30 https://nadmo.id/upgrade.css)"
+          grep -Fq 'Business & Legal Setup' <<<"$UPGRADE_VERIFY"
 
       - name: Dump live HTML
         shell: bash
