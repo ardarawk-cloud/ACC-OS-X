@@ -37,6 +37,13 @@ jobs:
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Brush by Yuda Christ' site/app.js
           grep -q 'Start a Project' site/index.html
+          grep -q 'ORDER / CHECKOUT' site/checkout.html
+          grep -q 'Rp599.000' site/checkout.html
+          grep -q 'Rp799.000' site/checkout.html
+          grep -q 'Kota Denpasar, Bali, Indonesia' site/checkout.html
+          grep -q '+62 822-4797-2288' site/checkout.html
+          grep -q '/checkout.html' site/index.html
+          node --check site/checkout.js
           grep -q 'PT Perorangan' site/index.html
           grep -q 'PERSONAL BRANDING SAMPLES' site/index.html
           grep -q 'FOR BUSINESS' site/index.html
@@ -98,6 +105,11 @@ jobs:
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/acc-os-x.png" -o /tmp/acc-os-x.png
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/oracly.png" -o /tmp/oracly.png
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/brush-by-yuda.png" -o /tmp/brush-by-yuda.png
+          CHECKOUT="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
+          printf '%s' "$CHECKOUT" | grep -q 'ORDER / CHECKOUT'
+          printf '%s' "$CHECKOUT" | grep -q 'Kota Denpasar, Bali, Indonesia'
+          printf '%s' "$CHECKOUT" | grep -q '+62 822-4797-2288'
+          printf '%s' "$CHECKOUT" | grep -q 'Rp599.000'
           test "$(wc -c < /tmp/acc-os-x.png)" -gt 10000
           test "$(wc -c < /tmp/oracly.png)" -gt 10000
           test "$(wc -c < /tmp/brush-by-yuda.png)" -gt 10000
