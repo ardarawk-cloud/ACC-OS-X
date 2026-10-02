@@ -38,6 +38,11 @@ jobs:
           grep -q 'Brush by Yuda Christ' site/app.js
           grep -q 'Start a Project' site/index.html
           grep -q 'PT Perorangan' site/index.html
+          grep -q 'Personal Branding' site/index.html
+          grep -q 'Arda Moron' site/index.html
+          grep -q 'BBYA' site/index.html
+          grep -q 'DWP' site/index.html
+          grep -q 'Rp799.000' site/index.html
           grep -q 'Rp599.000' site/index.html
           grep -q 'BUSINESS &amp; LEGAL SETUP' site/index.html
           grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
@@ -127,3 +132,4 @@ jobs:
 # deploy marker: NADMO legal branding sync 2026-09-29
 # deploy marker: Brush by Yuda preview refresh 2026-09-29
 # deploy marker: PT Perorangan legal setup service 2026-10-02
+# deploy marker: Personal Branding service split 2026-10-02
