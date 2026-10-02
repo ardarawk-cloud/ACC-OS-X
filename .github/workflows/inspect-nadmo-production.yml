@@ -30,6 +30,8 @@ jobs:
           curl -fsSL --max-time 30 https://nadmo.id/legal.html -o nadmo-live/legal.html || true
           curl -fsSL --max-time 30 https://nadmo.id/privacy.html -o nadmo-live/privacy.html || true
           curl -fsSL --max-time 30 https://nadmo.id/terms.html -o nadmo-live/terms.html || true
+          curl -fsSL --max-time 30 https://nadmo.id/checkout.html -o nadmo-live/checkout.html || true
+          curl -fsSL --max-time 30 https://nadmo.id/checkout.js -o nadmo-live/checkout.js || true
 
           echo "=== PUBLIC SITE ==="
           echo "bytes=$(wc -c < nadmo-live/index.html)"
@@ -73,6 +75,12 @@ jobs:
           echo '=== LIVE HTML START ==='
           nl -ba nadmo-live/index.html | sed -n '1,360p'
           echo '=== LIVE HTML END ==='
+          echo '=== CHECKOUT VERIFY ==='
+          wc -c nadmo-live/checkout.html || true
+          grep -F 'ORDER / CHECKOUT' nadmo-live/checkout.html || true
+          grep -F 'Kota Denpasar, Bali, Indonesia' nadmo-live/checkout.html || true
+          grep -F '+62 822-4797-2288' nadmo-live/checkout.html || true
+          grep -F 'Rp599.000' nadmo-live/checkout.html || true
           echo '=== RESPONSE HEADERS ==='
           cat nadmo-live/headers.txt
           echo '=== APP JS ==='
