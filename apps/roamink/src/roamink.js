@@ -354,6 +354,13 @@ $$('[data-open-devices]').forEach(node =>
 
 Promise.all([loadConfig(), loadCatalog()]).then(async () => {
   const params = new URLSearchParams(window.location.search);
+  const requestedPlan = params.get('plan');
+
+  if (requestedPlan) {
+    const plan = state.catalog?.products?.find(item => String(item.id) === requestedPlan);
+    if (plan) checkout(requestedPlan);
+  }
+
   const orderId = params.get('order');
   if (!orderId || params.get('payment') !== 'success') return;
 
