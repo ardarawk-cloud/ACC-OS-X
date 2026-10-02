@@ -21,14 +21,14 @@ const fallbackDestinations = [
 ];
 
 const fallbackProducts = [
-  { id: 'preview-id-5', destination_slug: 'indonesia', title: 'Indonesia Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 119000, supports_5g: 1, preview: true },
-  { id: 'preview-id-10', destination_slug: 'indonesia', title: 'Indonesia Plus', data_label: '10 GB', validity_days: 30, retail_price_minor: 179000, supports_5g: 1, preview: true },
-  { id: 'preview-jp-5', destination_slug: 'japan', title: 'Japan Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 149000, supports_5g: 1, preview: true },
-  { id: 'preview-jp-10', destination_slug: 'japan', title: 'Japan Plus', data_label: '10 GB', validity_days: 30, retail_price_minor: 229000, supports_5g: 1, preview: true },
-  { id: 'preview-th-5', destination_slug: 'thailand', title: 'Thailand Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 129000, supports_5g: 1, preview: true },
-  { id: 'preview-eu-10', destination_slug: 'europe', title: 'Europe Explorer', data_label: '10 GB', validity_days: 30, retail_price_minor: 319000, supports_5g: 1, preview: true },
-  { id: 'preview-us-10', destination_slug: 'united-states', title: 'USA Roadtrip', data_label: '10 GB', validity_days: 30, retail_price_minor: 289000, supports_5g: 1, preview: true },
-  { id: 'preview-au-10', destination_slug: 'australia', title: 'Australia Plus', data_label: '10 GB', validity_days: 30, retail_price_minor: 269000, supports_5g: 1, preview: true },
+  { id: 'manual-id-5', destination_slug: 'indonesia', title: 'Indonesia Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 119000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
+  { id: 'manual-id-10', destination_slug: 'indonesia', title: 'Indonesia Plus', data_label: '10 GB', validity_days: 30, retail_price_minor: 179000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
+  { id: 'manual-jp-5', destination_slug: 'japan', title: 'Japan Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 149000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
+  { id: 'manual-jp-10', destination_slug: 'japan', title: 'Japan Plus', data_label: '10 GB', validity_days: 30, retail_price_minor: 229000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
+  { id: 'manual-th-5', destination_slug: 'thailand', title: 'Thailand Essential', data_label: '5 GB', validity_days: 15, retail_price_minor: 129000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
+  { id: 'manual-eu-10', destination_slug: 'europe', title: 'Europe Explorer', data_label: '10 GB', validity_days: 30, retail_price_minor: 319000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
+  { id: 'manual-us-10', destination_slug: 'united-states', title: 'USA Roadtrip', data_label: '10 GB', validity_days: 30, retail_price_minor: 289000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
+  { id: 'manual-au-10', destination_slug: 'australia', title: 'Australia Plus', data_label: '10 GB', validity_days: 30, retail_price_minor: 269000, supports_5g: 1, supplier: 'manual', manual_fulfillment: true },
 ];
 
 function json(data, status = 200) {
@@ -315,6 +315,21 @@ async function getDigiflazzCatalog(env, { force = false } = {}) {
 
     const catalog = buildDigiflazzCatalog(payload.data);
     catalog.supplier_configured = true;
+
+    if (!catalog.products.length) {
+      const merchantCatalog = {
+        source: 'merchant-ready-fallback',
+        supplier_configured: true,
+        supplier: 'digiflazz',
+        supplier_pending_activation: true,
+        updated_at: new Date().toISOString(),
+        destinations: fallbackDestinations,
+        products: fallbackProducts,
+      };
+      await putCatalogCache(env, merchantCatalog);
+      return merchantCatalog;
+    }
+
     await putCatalogCache(env, catalog);
     return catalog;
   } catch (error) {
@@ -779,17 +794,21 @@ async function handleApi(request, env, ctx) {
       );
     }
 
-    if (
-      product.supplier !== 'digiflazz' ||
-      !product.supplier_sku ||
-      !Number(product.supplier_price || 0)
-    ) {
+    const supplierReady =
+      product.supplier === 'digiflazz' &&
+      Boolean(product.supplier_sku) &&
+      Number(product.supplier_price || 0) > 0;
+    const manualReady =
+      product.supplier === 'manual' &&
+      product.manual_fulfillment === true;
+
+    if (!supplierReady && !manualReady) {
       return json(
         {
           ok: false,
           error: {
-            code: 'SUPPLIER_CATALOG_SYNCING',
-            message: 'Live eSIM inventory is syncing. Please try again shortly.',
+            code: 'PRODUCT_NOT_AVAILABLE',
+            message: 'This eSIM plan is temporarily unavailable.',
           },
         },
         503
@@ -818,7 +837,7 @@ async function handleApi(request, env, ctx) {
       supplierSku: product.supplier_sku || null,
       supplierCost: Number(product.supplier_price || 0),
       status: 'CREATED',
-      fulfillmentState: 'WAITING_FOR_SUPPLIER',
+      fulfillmentState: supplierReady ? 'WAITING_FOR_SUPPLIER' : 'SUPPLIER_ACTIVATION_PENDING',
       createdAt: now,
       updatedAt: now,
     });
@@ -995,7 +1014,11 @@ async function handleApi(request, env, ctx) {
     const textStatus = String(normalized.status || '').toLowerCase();
 
     if (order.status === 'PAID') {
-      if (order.fulfillmentState !== 'DELIVERED' && ctx?.waitUntil) {
+      if (
+        order.supplier === 'digiflazz' &&
+        order.fulfillmentState !== 'DELIVERED' &&
+        ctx?.waitUntil
+      ) {
         ctx.waitUntil(fulfillOrder(env, orderId));
       }
       return json({ ok: true, duplicate: true });
@@ -1006,18 +1029,23 @@ async function handleApi(request, env, ctx) {
       statusCode === 6 ||
       textStatus === 'berhasil'
     ) {
+      const liveSupplierOrder = order.supplier === 'digiflazz' && Boolean(order.supplierSku);
       await updateOrder(env, orderId, {
         status: 'PAID',
         paidAt: String(
           normalized.paid_at || new Date().toISOString()
         ),
-        fulfillmentState: 'WAITING_FOR_SUPPLIER',
+        fulfillmentState: liveSupplierOrder
+          ? 'WAITING_FOR_SUPPLIER'
+          : 'SUPPLIER_ACTIVATION_PENDING',
       });
 
-      if (ctx?.waitUntil) {
-        ctx.waitUntil(fulfillOrder(env, orderId));
-      } else {
-        await fulfillOrder(env, orderId);
+      if (liveSupplierOrder) {
+        if (ctx?.waitUntil) {
+          ctx.waitUntil(fulfillOrder(env, orderId));
+        } else {
+          await fulfillOrder(env, orderId);
+        }
       }
     } else if (
       statusCode === -2 ||
@@ -1048,6 +1076,7 @@ async function handleApi(request, env, ctx) {
 
     if (
       order.status === 'PAID' &&
+      order.supplier === 'digiflazz' &&
       ['WAITING_FOR_SUPPLIER', 'SUPPLIER_PENDING', 'SUPPLIER_RETRY', 'SUPPLIER_PROCESSING'].includes(order.fulfillmentState)
     ) {
       await fulfillOrder(env, orderId);
@@ -1138,6 +1167,7 @@ export class OrderStore {
       for (const [key, record] of entries) {
         if (
           record?.status === 'PAID' &&
+          record?.supplier === 'digiflazz' &&
           ['WAITING_FOR_SUPPLIER', 'SUPPLIER_PENDING', 'SUPPLIER_RETRY', 'SUPPLIER_PROCESSING'].includes(record?.fulfillmentState)
         ) {
           orders.push({
