@@ -272,6 +272,21 @@ async function getDigiflazzCatalog(env, { force = false } = {}) {
 
   const cached = await getCatalogCache(env);
   const cachedAt = cached?.updated_at ? Date.parse(cached.updated_at) : 0;
+
+  if (!force && cached && Array.isArray(cached.products) && cached.products.length === 0) {
+    const merchantCatalog = {
+      source: 'merchant-ready-fallback',
+      supplier_configured: true,
+      supplier: 'digiflazz',
+      supplier_pending_activation: true,
+      updated_at: new Date().toISOString(),
+      destinations: fallbackDestinations,
+      products: fallbackProducts,
+    };
+    await putCatalogCache(env, merchantCatalog);
+    return merchantCatalog;
+  }
+
   if (!force && cached && Number.isFinite(cachedAt) && Date.now() - cachedAt < DIGIFLAZZ_CATALOG_TTL_MS) {
     return cached;
   }
