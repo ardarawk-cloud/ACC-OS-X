@@ -156,7 +156,7 @@ function showPlans(slug) {
       ${index === 1 ? '<span class="plan-tag">TRAVELER PICK</span>' : ''}
       <h3>${escapeHtml(plan.title)}</h3><div class="data-size">${escapeHtml(plan.data_label)}</div>
       <div class="plan-meta"><span>${plan.validity_days} days</span><span>${plan.supports_5g ? '4G / 5G' : '4G/LTE'}</span><span>eSIM</span></div>
-      <div class="price">${money(plan.retail_price_minor)}</div><button data-plan="${plan.id}" ${plan.supplier === 'digiflazz' ? '' : 'disabled'}>${plan.supplier === 'digiflazz' ? 'Get this plan' : 'Supplier syncing'}</button>
+      <div class="price">${money(plan.retail_price_minor)}</div><button data-plan="${plan.id}">Get this plan</button>
     </article>
   `
       )
@@ -181,8 +181,11 @@ function checkout(id) {
     item => String(item.id) === String(id)
   );
   if (!plan) return;
-  if (plan.supplier !== 'digiflazz' || !plan.supplier_sku) {
-    toast('Live eSIM inventory is syncing. Please try again shortly.');
+  const checkoutReady =
+    (plan.supplier === 'digiflazz' && Boolean(plan.supplier_sku)) ||
+    plan.supplier === 'manual';
+  if (!checkoutReady) {
+    toast('This eSIM plan is temporarily unavailable.');
     return;
   }
   openModal(`
@@ -244,6 +247,9 @@ function orderStatusCopy(order) {
   if (state === 'DELIVERED') return 'Your eSIM is ready to install.';
   if (['WAITING_FOR_SUPPLIER','SUPPLIER_PROCESSING','SUPPLIER_PENDING','SUPPLIER_RETRY'].includes(state)) {
     return 'Payment is confirmed. Your eSIM is being issued now; this page can be refreshed safely.';
+  }
+  if (state === 'SUPPLIER_ACTIVATION_PENDING') {
+    return 'Payment is confirmed. Your order is held safely while supplier activation is completed.';
   }
   if (state === 'SUPPLIER_FAILED') {
     return 'The supplier could not issue this eSIM. Contact ROAMINK support with your order ID.';
