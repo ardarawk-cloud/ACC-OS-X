@@ -36,7 +36,7 @@ jobs:
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Start a Project' site/index.html
-          grep -q 'BUSINESSES WE RUN' site/index.html
+          grep -q 'FEATURED BUSINESSES' site/index.html
           grep -q 'ROAMINK' site/index.html
           grep -q 'STAYINK' site/index.html
           grep -q 'Bali Wedding DJ' site/index.html
@@ -94,7 +94,7 @@ jobs:
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if grep -q 'am-digital-lab-public' <<<"$HEALTH" && grep -q '"version":"2.0.0"' <<<"$HEALTH" && grep -q '"discord_notification_configured":' <<<"$HEALTH" && grep -q 'WE BUILD DIGITAL PRODUCTS' <<<"$HOME" && grep -q 'BUSINESSES WE RUN' <<<"$HOME" && grep -q 'Sitemap:' <<<"$ROBOTS"; then
+            if grep -q 'am-digital-lab-public' <<<"$HEALTH" && grep -q '"version":"2.0.0"' <<<"$HEALTH" && grep -q '"discord_notification_configured":' <<<"$HEALTH" && grep -q 'WE BUILD DIGITAL PRODUCTS' <<<"$HOME" && grep -q 'FEATURED BUSINESSES' <<<"$HOME" && grep -q 'Sitemap:' <<<"$ROBOTS"; then
               break
             fi
             sleep 5
@@ -163,3 +163,5 @@ jobs:
 # deploy marker: internal builds removed from public site 2026-10-03
 
 # deploy marker: final businesses-only public site 2026-10-03
+
+# deploy marker: simplify featured businesses language 2026-10-03
