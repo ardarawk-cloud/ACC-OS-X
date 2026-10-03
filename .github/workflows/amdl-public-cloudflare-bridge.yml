@@ -52,7 +52,7 @@ jobs:
           grep -q 'ORDER / CHECKOUT' site/checkout.html
           grep -q 'Rp599.000' site/checkout.html
           grep -q 'Rp799.000' site/checkout.html
-          grep -q 'Kota Denpasar, Bali, Indonesia' site/checkout.html
+          grep -q 'Denpasar, Bali, Indonesia' site/checkout.html
           grep -q '+62 822-4797-2288' site/checkout.html
           grep -q '/checkout.html' site/index.html
           node --check site/checkout.js
@@ -110,7 +110,7 @@ jobs:
           grep -q '"whatsapp_notification_configured":true' <<<"$HEALTH"
           grep -q '"notification_primary":' <<<"$HEALTH"
           grep -q 'NADMO STUDIO' <<<"$HOME"
-          grep -q 'BUSINESSES WE RUN' <<<"$HOME"
+          grep -q 'FEATURED BUSINESSES' <<<"$HOME"
           grep -q 'Bali Wedding DJ' <<<"$HOME"
           grep -q 'AM Sound Rental' <<<"$HOME"
           grep -q 'STAYINK' <<<"$HOME"
@@ -121,7 +121,7 @@ jobs:
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/dwp.png" -o /tmp/dwp.png
           CHECKOUT="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
           grep -Fq 'ORDER / CHECKOUT' <<<"$CHECKOUT"
-          grep -Fq 'Kota Denpasar, Bali, Indonesia' <<<"$CHECKOUT"
+          grep -Fq 'Denpasar, Bali, Indonesia' <<<"$CHECKOUT"
           grep -Fq '+62 822-4797-2288' <<<"$CHECKOUT"
           grep -Fq 'Rp599.000' <<<"$CHECKOUT"
           test "$(wc -c < /tmp/arda-moron.png)" -gt 10000
@@ -179,3 +179,5 @@ jobs:
 # deploy marker: compact personal branding preview height 2026-10-03
 
 # deploy marker: compact personal sample cards 2026-10-04
+
+# deploy marker: English-only NADMO public copy 2026-10-04
