@@ -37,6 +37,8 @@ jobs:
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Start a Project' site/index.html
           grep -q 'FEATURED BUSINESSES' site/index.html
+          grep -q 'business-slider' site/index.html
+          grep -q 'initBusinessSlider' site/app.js
           grep -q 'ROAMINK' site/index.html
           grep -q 'STAYINK' site/index.html
           grep -q 'Bali Wedding DJ' site/index.html
@@ -165,3 +167,5 @@ jobs:
 # deploy marker: final businesses-only public site 2026-10-03
 
 # deploy marker: simplify featured businesses language 2026-10-03
+
+# deploy marker: autoplay featured business slider 2026-10-03
