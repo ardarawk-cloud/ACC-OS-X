@@ -65,7 +65,7 @@ jobs:
       - name: Verify ecosystem live
         shell: bash
         run: |
-          grep -q 'BUSINESSES WE RUN' nadmo-live/index.html
+          grep -q 'FEATURED BUSINESSES' nadmo-live/index.html
           grep -q 'ROAMINK' nadmo-live/index.html
           grep -q 'STAYINK' nadmo-live/index.html
           grep -q 'Bali Wedding DJ' nadmo-live/index.html
