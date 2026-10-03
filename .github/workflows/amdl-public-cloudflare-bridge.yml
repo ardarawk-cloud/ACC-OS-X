@@ -37,6 +37,12 @@ jobs:
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Brush by Yuda Christ' site/app.js
           grep -q 'Start a Project' site/index.html
+          grep -q 'NADMO ECOSYSTEM' site/index.html
+          grep -q 'ROAMINK' site/index.html
+          grep -q 'ORACLY' site/index.html
+          grep -q 'Bali Nightlife Connect' site/index.html
+          grep -q 'Original Bali' site/index.html
+          grep -q 'KAMIKAZE' site/index.html
           grep -q 'ORDER / CHECKOUT' site/checkout.html
           grep -q 'Rp599.000' site/checkout.html
           grep -q 'Rp799.000' site/checkout.html
