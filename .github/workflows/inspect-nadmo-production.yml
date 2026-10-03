@@ -62,6 +62,16 @@ jobs:
             request "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts"               | jq -r '.result[]?.id' || true
           fi
 
+      - name: Verify ecosystem live
+        shell: bash
+        run: |
+          grep -q 'NADMO ECOSYSTEM' nadmo-live/index.html
+          grep -q 'ROAMINK' nadmo-live/index.html
+          grep -q 'ORACLY' nadmo-live/index.html
+          grep -q 'Bali Nightlife Connect' nadmo-live/index.html
+          grep -q 'Original Bali' nadmo-live/index.html
+          grep -q 'KAMIKAZE' nadmo-live/index.html
+
       - name: Verify PT Perorangan live
         shell: bash
         run: |
