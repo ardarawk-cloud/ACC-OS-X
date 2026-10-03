@@ -44,6 +44,7 @@ jobs:
           grep -q 'Bali Wedding DJ' site/index.html
           grep -q 'https://bookbwd.nadmo.id/' site/index.html
           grep -q 'AM Sound Rental' site/index.html
+          grep -q 'https://amsound.nadmo.id/' site/index.html
           grep -q 'Bali Nightlife Connect' site/index.html
           grep -q 'Arakkadabra' site/index.html
           grep -q 'Ayam Ayem' site/index.html
@@ -172,3 +173,5 @@ jobs:
 # deploy marker: autoplay featured business slider 2026-10-03
 
 # deploy marker: Bali Wedding DJ direct booking link 2026-10-03
+
+# deploy marker: AM Sound Rental direct website link 2026-10-03
