@@ -25,7 +25,7 @@ jobs:
           repository: ardarawk-cloud/am-digital-lab-crm
           ref: main
 
-      - name: Generate real project portfolio captures
+      - name: Generate public personal-brand samples
         run: |
           bash scripts/capture-portfolio.sh
 
@@ -35,7 +35,6 @@ jobs:
           node --check site/app.js
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'NADMO STUDIO' site/index.html
-          grep -q 'Brush by Yuda Christ' site/app.js
           grep -q 'Start a Project' site/index.html
           grep -q 'BUSINESSES WE RUN' site/index.html
           grep -q 'ROAMINK' site/index.html
@@ -66,13 +65,12 @@ jobs:
           grep -q 'Rp799.000' site/index.html
           grep -q 'Rp599.000' site/index.html
           grep -q 'BUSINESS &amp; LEGAL SETUP' site/index.html
-          grep -q 'REAL PROJECT PREVIEW' site/upgrade.css
           grep -q 'sendDiscordLeadNotification' worker-public.js
           grep -q 'sendWhatsAppLeadNotification' worker-public.js
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in acc-os-x amdl-crm zuzu-family-house am-studio-music oracly ai-mashup brush-by-yuda arda-moron bbya dwp; do
+          for f in arda-moron bbya dwp; do
             test -s "site/portfolio/$f.png"
           done
 
@@ -85,7 +83,7 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy -c wrangler-public.jsonc
 
-      - name: Verify website, lead notifications, real previews and CRM lead bridge
+      - name: Verify public website, businesses, checkout and lead bridge
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
@@ -95,9 +93,8 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
-            UPGRADE="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/upgrade.css" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if grep -q 'am-digital-lab-public' <<<"$HEALTH" && grep -q '"version":"2.0.0"' <<<"$HEALTH" && grep -q '"discord_notification_configured":' <<<"$HEALTH" && grep -q 'WE BUILD DIGITAL PRODUCTS' <<<"$HOME" && grep -q 'REAL PROJECT PREVIEW' <<<"$UPGRADE" && grep -q 'Sitemap:' <<<"$ROBOTS"; then
+            if grep -q 'am-digital-lab-public' <<<"$HEALTH" && grep -q '"version":"2.0.0"' <<<"$HEALTH" && grep -q '"discord_notification_configured":' <<<"$HEALTH" && grep -q 'WE BUILD DIGITAL PRODUCTS' <<<"$HOME" && grep -q 'BUSINESSES WE RUN' <<<"$HOME" && grep -q 'Sitemap:' <<<"$ROBOTS"; then
               break
             fi
             sleep 5
@@ -109,19 +106,23 @@ jobs:
           grep -q '"whatsapp_notification_configured":true' <<<"$HEALTH"
           grep -q '"notification_primary":' <<<"$HEALTH"
           grep -q 'NADMO STUDIO' <<<"$HOME"
-          grep -q 'REAL PROJECT PREVIEW' <<<"$UPGRADE"
+          grep -q 'BUSINESSES WE RUN' <<<"$HOME"
+          grep -q 'Bali Wedding DJ' <<<"$HOME"
+          grep -q 'AM Sound Rental' <<<"$HOME"
+          grep -q 'STAYINK' <<<"$HOME"
+          grep -q 'ROAMINK' <<<"$HOME"
           grep -q 'Sitemap:' <<<"$ROBOTS"
-          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/acc-os-x.png" -o /tmp/acc-os-x.png
-          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/oracly.png" -o /tmp/oracly.png
-          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/brush-by-yuda.png" -o /tmp/brush-by-yuda.png
+          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/arda-moron.png" -o /tmp/arda-moron.png
+          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/bbya.png" -o /tmp/bbya.png
+          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/dwp.png" -o /tmp/dwp.png
           CHECKOUT="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
           grep -Fq 'ORDER / CHECKOUT' <<<"$CHECKOUT"
           grep -Fq 'Kota Denpasar, Bali, Indonesia' <<<"$CHECKOUT"
           grep -Fq '+62 822-4797-2288' <<<"$CHECKOUT"
           grep -Fq 'Rp599.000' <<<"$CHECKOUT"
-          test "$(wc -c < /tmp/acc-os-x.png)" -gt 10000
-          test "$(wc -c < /tmp/oracly.png)" -gt 10000
-          test "$(wc -c < /tmp/brush-by-yuda.png)" -gt 10000
+          test "$(wc -c < /tmp/arda-moron.png)" -gt 10000
+          test "$(wc -c < /tmp/bbya.png)" -gt 10000
+          test "$(wc -c < /tmp/dwp.png)" -gt 10000
           CODE="$(curl --silent --show-error --output /tmp/amdl-public-form.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":""}')"
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
@@ -159,3 +160,4 @@ jobs:
 # deploy marker: Brush by Yuda preview refresh 2026-09-29
 # deploy marker: PT Perorangan legal setup service 2026-10-02
 # deploy marker: Personal Branding service split 2026-10-02
+# deploy marker: internal builds removed from public site 2026-10-03
