@@ -42,6 +42,7 @@ jobs:
           grep -q 'ROAMINK' site/index.html
           grep -q 'STAYINK' site/index.html
           grep -q 'Bali Wedding DJ' site/index.html
+          grep -q 'https://bookbwd.nadmo.id/' site/index.html
           grep -q 'AM Sound Rental' site/index.html
           grep -q 'Bali Nightlife Connect' site/index.html
           grep -q 'Arakkadabra' site/index.html
@@ -169,3 +170,5 @@ jobs:
 # deploy marker: simplify featured businesses language 2026-10-03
 
 # deploy marker: autoplay featured business slider 2026-10-03
+
+# deploy marker: Bali Wedding DJ direct booking link 2026-10-03
