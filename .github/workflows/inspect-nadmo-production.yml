@@ -74,6 +74,7 @@ jobs:
           grep -q 'Arakkadabra' nadmo-live/index.html
           grep -q 'Ayam Ayem' nadmo-live/index.html
           grep -q 'Original Bali' nadmo-live/index.html
+          ! grep -q 'SELECTED BUILDS' nadmo-live/index.html
 
       - name: Verify PT Perorangan live
         shell: bash
@@ -108,3 +109,5 @@ jobs:
           name: nadmo-live-snapshot
           path: nadmo-live
           retention-days: 1
+
+# inspect marker: businesses-only public site 2026-10-03
