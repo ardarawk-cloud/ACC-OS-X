@@ -66,6 +66,7 @@ jobs:
         shell: bash
         run: |
           grep -q 'FEATURED BUSINESSES' nadmo-live/index.html
+          grep -q 'business-slider' nadmo-live/index.html
           grep -q 'ROAMINK' nadmo-live/index.html
           grep -q 'STAYINK' nadmo-live/index.html
           grep -q 'Bali Wedding DJ' nadmo-live/index.html
