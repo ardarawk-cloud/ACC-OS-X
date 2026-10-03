@@ -65,12 +65,15 @@ jobs:
       - name: Verify ecosystem live
         shell: bash
         run: |
-          grep -q 'NADMO ECOSYSTEM' nadmo-live/index.html
+          grep -q 'BUSINESSES WE RUN' nadmo-live/index.html
           grep -q 'ROAMINK' nadmo-live/index.html
-          grep -q 'ORACLY' nadmo-live/index.html
+          grep -q 'STAYINK' nadmo-live/index.html
+          grep -q 'Bali Wedding DJ' nadmo-live/index.html
+          grep -q 'AM Sound Rental' nadmo-live/index.html
           grep -q 'Bali Nightlife Connect' nadmo-live/index.html
+          grep -q 'Arakkadabra' nadmo-live/index.html
+          grep -q 'Ayam Ayem' nadmo-live/index.html
           grep -q 'Original Bali' nadmo-live/index.html
-          grep -q 'KAMIKAZE' nadmo-live/index.html
 
       - name: Verify PT Perorangan live
         shell: bash
