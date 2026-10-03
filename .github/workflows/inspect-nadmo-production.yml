@@ -94,7 +94,7 @@ jobs:
           echo '=== CHECKOUT VERIFY ==='
           wc -c nadmo-live/checkout.html || true
           grep -F 'ORDER / CHECKOUT' nadmo-live/checkout.html || true
-          grep -F 'Kota Denpasar, Bali, Indonesia' nadmo-live/checkout.html || true
+          grep -F 'Denpasar, Bali, Indonesia' nadmo-live/checkout.html || true
           grep -F '+62 822-4797-2288' nadmo-live/checkout.html || true
           grep -F 'Rp599.000' nadmo-live/checkout.html || true
           echo '=== RESPONSE HEADERS ==='
@@ -114,3 +114,5 @@ jobs:
 # inspect marker: businesses-only public site 2026-10-03
 
 # inspect marker: post-slider deploy 2026-10-03
+
+# inspect marker: English-only NADMO public copy 2026-10-04
