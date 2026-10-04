@@ -10,7 +10,17 @@
   const STORE_KEY = "acc_os_x_home_quick_access_v1";
   const PANEL_ID = "acc-home-quick-access";
   const STYLE_ID = "acc-home-quick-access-style";
-  const LIMIT = 4;
+  const MOBILE_LIMIT = 4;
+  const DESKTOP_LIMIT = 8;
+
+  function currentLimit(){
+    const root = document.documentElement;
+    if(root.classList.contains("acc-desktop-mode") || root.dataset.accPlatform === "DESKTOP_WEB") return DESKTOP_LIMIT;
+    const ua = navigator.userAgent || "";
+    const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    const finePointer = Boolean(window.matchMedia?.("(pointer:fine)")?.matches);
+    return !mobileUA && (finePointer || window.innerWidth >= 900) ? DESKTOP_LIMIT : MOBILE_LIMIT;
+  }
 
   const txt = value => String(value ?? "").trim();
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -65,11 +75,11 @@
       const recency = Math.max(0,30 - ageHours/3);
       const frequency = Math.min(40,Math.log2(Math.max(1,Number(item.count || 1))+1)*10);
       return {...item,_score:recency+frequency};
-    }).sort((a,b) => b._score-a._score || Number(b.lastUsed||0)-Number(a.lastUsed||0)).slice(0,LIMIT);
+    }).sort((a,b) => b._score-a._score || Number(b.lastUsed||0)-Number(a.lastUsed||0)).slice(0,currentLimit());
   }
 
   function signatureFor(items){
-    return items.map(item=>`${item.type}:${item.key}:${item.count}:${item.lastUsed}`).join("|") || "EMPTY";
+    return `L${currentLimit()}|` + (items.map(item=>`${item.type}:${item.key}:${item.count}:${item.lastUsed}`).join("|") || "EMPTY");
   }
 
   function sourceButton(item){
@@ -101,6 +111,7 @@
       #${PANEL_ID} .acc-quick-title{font-size:.83rem;font-weight:950;letter-spacing:.08em}
       #${PANEL_ID} .acc-quick-sub{font-size:.52rem;color:var(--muted,#8390aa);letter-spacing:.08em;margin-top:3px}
       #${PANEL_ID} .acc-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+      html.acc-desktop-mode #${PANEL_ID} .acc-quick-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}
       #${PANEL_ID} .acc-quick-item{appearance:none;border:0;background:transparent;color:var(--text,#f8fafc);padding:4px 1px 6px;min-width:0;text-align:center;border-radius:14px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
       #${PANEL_ID} .acc-quick-item:active{transform:scale(.94);background:rgba(255,255,255,.035)}
       #${PANEL_ID} .acc-launch-icon,#${PANEL_ID} .acc-map-icon,#${PANEL_ID} .acc-project-icon,#${PANEL_ID} .acc-quick-fallback{width:min(14vw,58px)!important;height:min(14vw,58px)!important;min-width:48px!important;min-height:48px!important;margin:0 auto!important;border-radius:17px!important;display:grid!important;place-items:center!important;overflow:hidden!important;position:relative!important}
@@ -127,7 +138,7 @@
     panel.id = PANEL_ID;
     panel.dataset.revision = REVISION;
     panel.dataset.signature = signatureFor(items);
-    panel.innerHTML = `<div class="acc-quick-head"><div><div class="acc-quick-title">QUICK ACCESS</div><div class="acc-quick-sub">RECENT + FREQUENT</div></div><span class="badge">${items.length}/${LIMIT}</span></div><div class="acc-quick-grid">${items.length?items.map(itemHtml).join(""):`<div class="acc-quick-empty">Belum ada history. Buka APP, MAP, atau PROJECT dari launcher di bawah — shortcut yang paling baru/sering dipakai akan muncul otomatis di sini.</div>`}</div>`;
+    panel.innerHTML = `<div class="acc-quick-head"><div><div class="acc-quick-title">QUICK ACCESS</div><div class="acc-quick-sub">RECENT + FREQUENT</div></div><span class="badge">${items.length}/${currentLimit()}</span></div><div class="acc-quick-grid">${items.length?items.map(itemHtml).join(""):`<div class="acc-quick-empty">Belum ada history. Buka APP, MAP, atau PROJECT dari launcher di bawah — shortcut yang paling baru/sering dipakai akan muncul otomatis di sini.</div>`}</div>`;
     panel.addEventListener("click",event => {
       const button = event.target.closest?.("[data-quick-type][data-quick-key]");
       if(!button) return;
@@ -193,6 +204,7 @@
 
   new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener("pageshow",schedule);
+  window.addEventListener("acc-platform-change",schedule);
   window.addEventListener("focus",schedule);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedule();});
 
