@@ -135,7 +135,7 @@ jobs:
           require_text "SAIXKO portfolio link" "$HOME" "https://saixko.nadmo.id/"
           require_text "robots sitemap" "$ROBOTS" "Sitemap:"
 
-          CHECKOUT="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
+          CHECKOUT="$(curl --fail --location --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
           require_text "checkout title" "$CHECKOUT" "ORDER / CHECKOUT"
           require_text "checkout domicile" "$CHECKOUT" "Denpasar, Bali, Indonesia"
           require_text "checkout contact" "$CHECKOUT" "+62 822-4797-2288"
@@ -206,3 +206,5 @@ jobs:
 # deploy marker: English-only NADMO public copy 2026-10-04
 
 # deploy marker: SAIXKO personal branding portfolio 2026-10-04
+
+# deploy marker: follow checkout redirect in production verification 2026-10-04
