@@ -66,6 +66,8 @@ jobs:
           grep -q 'https://saixko.nadmo.id/' site/index.html
           grep -q 'Berlin Bintang' site/index.html
           grep -q 'https://berlinbintang.nadmo.id/' site/index.html
+          grep -q 'DJ Keyrin' site/index.html
+          grep -q 'https://djkeyrin.nadmo.id/' site/index.html
           grep -q 'Personal Branding' site/index.html
           grep -q 'Arda Moron' site/index.html
           grep -q 'BBYA' site/index.html
@@ -78,7 +80,7 @@ jobs:
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in arda-moron bbya dwp saixko berlin-bintang; do
+          for f in arda-moron bbya dwp saixko berlin-bintang dj-keyrin; do
             test -s "site/portfolio/$f.png"
           done
 
@@ -115,7 +117,7 @@ jobs:
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
+            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
               break
             fi
             sleep 5
@@ -137,6 +139,8 @@ jobs:
           require_text "SAIXKO portfolio link" "$HOME" "https://saixko.nadmo.id/"
           require_text "Berlin Bintang portfolio title" "$HOME" "Berlin Bintang"
           require_text "Berlin Bintang portfolio link" "$HOME" "https://berlinbintang.nadmo.id/"
+          require_text "DJ Keyrin portfolio title" "$HOME" "DJ Keyrin"
+          require_text "DJ Keyrin portfolio link" "$HOME" "https://djkeyrin.nadmo.id/"
           require_text "robots sitemap" "$ROBOTS" "Sitemap:"
 
           CHECKOUT="$(curl --fail --location --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
@@ -145,7 +149,7 @@ jobs:
           require_text "checkout contact" "$CHECKOUT" "+62 822-4797-2288"
           require_text "checkout PT price" "$CHECKOUT" "Rp599.000"
 
-          for asset in arda-moron bbya dwp saixko berlin-bintang; do
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin; do
             curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/$asset.png" -o "/tmp/$asset.png"
             SIZE="$(wc -c < "/tmp/$asset.png")"
             echo "Asset $asset.png: $SIZE bytes"
@@ -216,3 +220,5 @@ jobs:
 # deploy marker: Berlin Bintang personal branding portfolio 2026-10-05
 
 # deploy marker: wait for Berlin Bintang edge propagation 2026-10-05
+
+# deploy marker: DJ Keyrin beside Berlin Bintang portfolio 2026-10-05
