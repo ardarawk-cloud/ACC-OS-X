@@ -62,6 +62,8 @@ jobs:
           grep -q 'Arda Moron' site/index.html
           grep -q 'BBYA' site/index.html
           grep -q 'DWP' site/index.html
+          grep -q 'SAIXKO' site/index.html
+          grep -q 'https://saixko.nadmo.id/' site/index.html
           grep -q 'Personal Branding' site/index.html
           grep -q 'Arda Moron' site/index.html
           grep -q 'BBYA' site/index.html
@@ -74,7 +76,7 @@ jobs:
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in arda-moron bbya dwp; do
+          for f in arda-moron bbya dwp saixko; do
             test -s "site/portfolio/$f.png"
           done
 
@@ -119,6 +121,7 @@ jobs:
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/arda-moron.png" -o /tmp/arda-moron.png
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/bbya.png" -o /tmp/bbya.png
           curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/dwp.png" -o /tmp/dwp.png
+          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/saixko.png" -o /tmp/saixko.png
           CHECKOUT="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
           grep -Fq 'ORDER / CHECKOUT' <<<"$CHECKOUT"
           grep -Fq 'Denpasar, Bali, Indonesia' <<<"$CHECKOUT"
@@ -127,6 +130,7 @@ jobs:
           test "$(wc -c < /tmp/arda-moron.png)" -gt 10000
           test "$(wc -c < /tmp/bbya.png)" -gt 10000
           test "$(wc -c < /tmp/dwp.png)" -gt 10000
+          test "$(wc -c < /tmp/saixko.png)" -gt 10000
           CODE="$(curl --silent --show-error --output /tmp/amdl-public-form.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":""}')"
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
@@ -181,3 +185,5 @@ jobs:
 # deploy marker: compact personal sample cards 2026-10-04
 
 # deploy marker: English-only NADMO public copy 2026-10-04
+
+# deploy marker: SAIXKO personal branding portfolio 2026-10-04
