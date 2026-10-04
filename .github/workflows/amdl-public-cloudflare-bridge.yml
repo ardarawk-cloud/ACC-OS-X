@@ -95,46 +95,65 @@ jobs:
         run: |
           set -euo pipefail
           echo "Deployment URL: ${DEPLOYMENT_URL:-<empty>}"
-          [ -n "${DEPLOYMENT_URL:-}" ] || exit 1
+          [ -n "${DEPLOYMENT_URL:-}" ] || { echo "FAIL: missing deployment URL"; exit 1; }
+
+          require_text() {
+            local label="$1"
+            local haystack="$2"
+            local needle="$3"
+            if [[ "$haystack" == *"$needle"* ]]; then
+              echo "PASS: $label"
+            else
+              echo "FAIL: $label — missing: $needle"
+              exit 1
+            fi
+          }
+
           for attempt in 1 2 3 4 5 6; do
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if grep -q 'am-digital-lab-public' <<<"$HEALTH" && grep -q '"version":"2.0.0"' <<<"$HEALTH" && grep -q '"discord_notification_configured":' <<<"$HEALTH" && grep -q 'WE BUILD DIGITAL PRODUCTS' <<<"$HOME" && grep -q 'FEATURED BUSINESSES' <<<"$HOME" && grep -q 'Sitemap:' <<<"$ROBOTS"; then
+            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
               break
             fi
             sleep 5
           done
-          echo "Health: $HEALTH"
-          grep -q '"ok":true' <<<"$HEALTH"
-          grep -q '"version":"2.0.0"' <<<"$HEALTH"
-          grep -q '"discord_notification_configured":' <<<"$HEALTH"
-          grep -q '"whatsapp_notification_configured":true' <<<"$HEALTH"
-          grep -q '"notification_primary":' <<<"$HEALTH"
-          grep -q 'NADMO STUDIO' <<<"$HOME"
-          grep -q 'FEATURED BUSINESSES' <<<"$HOME"
-          grep -q 'Bali Wedding DJ' <<<"$HOME"
-          grep -q 'AM Sound Rental' <<<"$HOME"
-          grep -q 'STAYINK' <<<"$HOME"
-          grep -q 'ROAMINK' <<<"$HOME"
-          grep -q 'Sitemap:' <<<"$ROBOTS"
-          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/arda-moron.png" -o /tmp/arda-moron.png
-          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/bbya.png" -o /tmp/bbya.png
-          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/dwp.png" -o /tmp/dwp.png
-          curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/saixko.png" -o /tmp/saixko.png
+
+          require_text "health service" "$HEALTH" "am-digital-lab-public"
+          require_text "health ok" "$HEALTH" '"ok":true'
+          require_text "health version" "$HEALTH" '"version":"2.0.0"'
+          require_text "WhatsApp notification config" "$HEALTH" '"whatsapp_notification_configured":true'
+          require_text "notification primary field" "$HEALTH" '"notification_primary":'
+
+          require_text "homepage brand" "$HOME" "NADMO STUDIO"
+          require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
+          require_text "Bali Wedding DJ" "$HOME" "Bali Wedding DJ"
+          require_text "AM Sound Rental" "$HOME" "AM Sound Rental"
+          require_text "STAYINK" "$HOME" "STAYINK"
+          require_text "ROAMINK" "$HOME" "ROAMINK"
+          require_text "SAIXKO portfolio title" "$HOME" "SAIXKO"
+          require_text "SAIXKO portfolio link" "$HOME" "https://saixko.nadmo.id/"
+          require_text "robots sitemap" "$ROBOTS" "Sitemap:"
+
           CHECKOUT="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
-          grep -Fq 'ORDER / CHECKOUT' <<<"$CHECKOUT"
-          grep -Fq 'Denpasar, Bali, Indonesia' <<<"$CHECKOUT"
-          grep -Fq '+62 822-4797-2288' <<<"$CHECKOUT"
-          grep -Fq 'Rp599.000' <<<"$CHECKOUT"
-          test "$(wc -c < /tmp/arda-moron.png)" -gt 10000
-          test "$(wc -c < /tmp/bbya.png)" -gt 10000
-          test "$(wc -c < /tmp/dwp.png)" -gt 10000
-          test "$(wc -c < /tmp/saixko.png)" -gt 10000
+          require_text "checkout title" "$CHECKOUT" "ORDER / CHECKOUT"
+          require_text "checkout domicile" "$CHECKOUT" "Denpasar, Bali, Indonesia"
+          require_text "checkout contact" "$CHECKOUT" "+62 822-4797-2288"
+          require_text "checkout PT price" "$CHECKOUT" "Rp599.000"
+
+          for asset in arda-moron bbya dwp saixko; do
+            curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/$asset.png" -o "/tmp/$asset.png"
+            SIZE="$(wc -c < "/tmp/$asset.png")"
+            echo "Asset $asset.png: $SIZE bytes"
+            [ "$SIZE" -gt 10000 ] || { echo "FAIL: $asset.png too small"; exit 1; }
+          done
+
           CODE="$(curl --silent --show-error --output /tmp/amdl-public-form.txt --write-out '%{http_code}' --max-time 30 -X POST "${DEPLOYMENT_URL%/}/api/start-project" -H 'content-type: application/json' --data '{"name":""}')"
           cat /tmp/amdl-public-form.txt
           echo "Malformed lead bridge status: $CODE"
-          [ "$CODE" = "400" ]
+          [ "$CODE" = "400" ] || { echo "FAIL: malformed lead request expected HTTP 400"; exit 1; }
+
+          echo "Production verification PASS"
 
       - name: One-time WhatsApp E2E lead test
         if: contains(github.event.head_commit.message, '[wa-e2e-test]')
