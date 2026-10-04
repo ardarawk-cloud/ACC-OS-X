@@ -161,6 +161,17 @@ jobs:
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ] || { echo "FAIL: malformed lead request expected HTTP 400"; exit 1; }
 
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin; do
+            URL="https://nadmo.id/portfolio/$asset.png?v=20261005"
+            CODE="$(curl --location --silent --show-error --output "/tmp/custom-$asset.png" --write-out '%{http_code}' --max-time 30 "$URL")"
+            TYPE="$(curl --location --silent --show-error --head --max-time 30 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2); exit}')"
+            SIZE="$(wc -c < "/tmp/custom-$asset.png")"
+            echo "Custom domain asset $asset: HTTP $CODE, type=$TYPE, bytes=$SIZE"
+            [ "$CODE" = "200" ] || { echo "FAIL: custom-domain $asset HTTP $CODE"; exit 1; }
+            [[ "$TYPE" == image/* ]] || { echo "FAIL: custom-domain $asset content-type $TYPE"; exit 1; }
+            [ "$SIZE" -gt 10000 ] || { echo "FAIL: custom-domain $asset too small"; exit 1; }
+          done
+
           echo "Production verification PASS"
 
       - name: One-time WhatsApp E2E lead test
@@ -222,3 +233,5 @@ jobs:
 # deploy marker: wait for Berlin Bintang edge propagation 2026-10-05
 
 # deploy marker: DJ Keyrin beside Berlin Bintang portfolio 2026-10-05
+
+# deploy marker: bust and verify portfolio preview cache 2026-10-05
