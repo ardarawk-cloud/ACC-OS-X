@@ -37,6 +37,12 @@ jobs:
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Start a Project' site/index.html
           grep -q 'FEATURED BUSINESSES' site/index.html
+          grep -q 'business-roamink.png' site/index.html
+          grep -q 'business-stayink.png' site/index.html
+          grep -q 'business-bwd.png' site/index.html
+          grep -q 'business-amsound.png' site/index.html
+          grep -q 'business-balinightlifeconnect.png' site/index.html
+          grep -q 'business-originalbali.png' site/index.html
           grep -q 'business-slider' site/index.html
           grep -q 'initBusinessSlider' site/app.js
           grep -q 'ROAMINK' site/index.html
@@ -80,7 +86,7 @@ jobs:
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in arda-moron bbya dwp saixko berlin-bintang dj-keyrin; do
+          for f in arda-moron bbya dwp saixko berlin-bintang dj-keyrin business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             test -s "site/portfolio/$f.png"
           done
 
@@ -131,6 +137,12 @@ jobs:
 
           require_text "homepage brand" "$HOME" "NADMO STUDIO"
           require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
+          require_text "ROAMINK preview image" "$HOME" "business-roamink.png"
+          require_text "STAYINK preview image" "$HOME" "business-stayink.png"
+          require_text "BWD preview image" "$HOME" "business-bwd.png"
+          require_text "AM Sound preview image" "$HOME" "business-amsound.png"
+          require_text "Bali Nightlife Connect preview image" "$HOME" "business-balinightlifeconnect.png"
+          require_text "Original Bali preview image" "$HOME" "business-originalbali.png"
           require_text "Bali Wedding DJ" "$HOME" "Bali Wedding DJ"
           require_text "AM Sound Rental" "$HOME" "AM Sound Rental"
           require_text "STAYINK" "$HOME" "STAYINK"
@@ -149,7 +161,7 @@ jobs:
           require_text "checkout contact" "$CHECKOUT" "+62 822-4797-2288"
           require_text "checkout PT price" "$CHECKOUT" "Rp599.000"
 
-          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin; do
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/$asset.png" -o "/tmp/$asset.png"
             SIZE="$(wc -c < "/tmp/$asset.png")"
             echo "Asset $asset.png: $SIZE bytes"
@@ -161,7 +173,7 @@ jobs:
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ] || { echo "FAIL: malformed lead request expected HTTP 400"; exit 1; }
 
-          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin; do
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             URL="https://nadmo.id/portfolio/$asset.png?v=20261005"
             CODE="$(curl --location --silent --show-error --output "/tmp/custom-$asset.png" --write-out '%{http_code}' --max-time 30 "$URL")"
             TYPE="$(curl --location --silent --show-error --head --max-time 30 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2); exit}')"
@@ -235,3 +247,5 @@ jobs:
 # deploy marker: DJ Keyrin beside Berlin Bintang portfolio 2026-10-05
 
 # deploy marker: bust and verify portfolio preview cache 2026-10-05
+
+# deploy marker: visual featured business website previews 2026-10-05
