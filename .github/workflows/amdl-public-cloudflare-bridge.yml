@@ -123,7 +123,7 @@ jobs:
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
+            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-stayink.png'* ]] && [[ "$HOME" == *'business-bwd.png'* ]] && [[ "$HOME" == *'business-amsound.png'* ]] && [[ "$HOME" == *'business-balinightlifeconnect.png'* ]] && [[ "$HOME" == *'business-originalbali.png'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
               break
             fi
             sleep 5
@@ -249,3 +249,5 @@ jobs:
 # deploy marker: bust and verify portfolio preview cache 2026-10-05
 
 # deploy marker: visual featured business website previews 2026-10-05
+
+# deploy marker: wait for business preview edge propagation 2026-10-05
