@@ -17,6 +17,7 @@ on:
       - 'manifest.webmanifest'
       - 'produce-copilot-v2576.js'
       - 'produce-copilot-v2577.js'
+      - 'produce-copilot-v2578.js'
       - 'produce-copilot-preview-fix-v25762.js'
       - 'produce-copilot-brain-firewall-v1.js'
       - 'produce-copilot-batch-runtime-v2.js'
@@ -28,6 +29,7 @@ on:
       - 'native-scroll-performance-v1.js'
       - 'native-scroll-performance-v2.js'
       - 'release-version-v257.js'
+      - 'release-version-v258.js'
       - 'service-worker.js'
       - 'worker-brain-isolation-runtime-v1.js'
       - 'worker-brain-runtime-rescue-v1.js'
@@ -78,6 +80,7 @@ jobs:
           node --check desktop-mode-v1.js
           node --check produce-copilot-v2576.js
           node --check produce-copilot-v2577.js
+          node --check produce-copilot-v2578.js
           node --check produce-copilot-preview-fix-v25762.js
           node --check produce-copilot-brain-firewall-v1.js
           node --check produce-copilot-batch-runtime-v2.js
@@ -89,6 +92,7 @@ jobs:
           node --check native-scroll-performance-v1.js
           node --check native-scroll-performance-v2.js
           node --check release-version-v257.js
+          node --check release-version-v258.js
           node --check service-worker.js
 
       - name: Validate canonical HOME launcher chain
@@ -150,49 +154,77 @@ jobs:
           PY
           echo 'Desktop mode OK: web/PWA apps are PC-ready; APK-only apps are explicitly Android-only.'
 
-      - name: Validate Produce stable DOM authority
+      - name: Validate production and publishing stabilization
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE' produce-copilot-v2577.js
-          grep -q 'produce-copilot-v2577.js?rev=BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE' release-version-v257.js
-          grep -q 'produce-copilot-v2577.js?rev=BUILD257_7_1_PRODUCE_CORE_STABLE_SURFACE' service-worker.js
-          grep -q 'data-copilot-message-id' produce-copilot-v2577.js
-          grep -q 'insertAdjacentHTML("beforeend",messageHtml(m))' produce-copilot-v2577.js
+
+          # Active client authority must be v2578 only.
+          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE' produce-copilot-v2578.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE' release-version-v257.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE' service-worker.js
+          if grep -Eq 'produce-copilot-v257[67]\.js\?rev=' release-version-v257.js release-version-v258.js service-worker.js; then
+            echo 'FAIL: legacy Produce v2576/v2577 is still active.' >&2
+            exit 1
+          fi
+          grep -q 'BUILD258_IDENTITY_ONLY_PRODUCE_V2578_AUTHORITY' release-version-v258.js
+
+          # Single + batch packaging and durable media.
+          grep -q 'MEDIA_DB_NAME = "acc-os-x-produce-media-v1"' produce-copilot-v2578.js
+          grep -q 'poster_batch' produce-copilot-v2578.js
+          grep -q 'caption_batch' produce-copilot-v2578.js
+          grep -q 'publishBatchItem' produce-copilot-v2578.js
+          grep -q 'SINGLE_OR_PER_ITEM' produce-copilot-v2578.js
+          grep -q 'PUBLISH_RESPONSE_MISSING_POST_ID' produce-copilot-v2578.js
+          grep -q 'acc-publish-connectorv2.ardarawk.workers.dev/api/acc-publish' produce-copilot-v2578.js
+          grep -q 'idempotencyKey' produce-copilot-v2578.js
+
+          # Poster bytes must not remain in localStorage payloads.
+          grep -q 'delete row.package.posterBase64' produce-copilot-v2578.js
+          grep -q 'delete row.package.posterDataUrl' produce-copilot-v2578.js
+          grep -q 'mediaPut' produce-copilot-v2578.js
+          grep -q 'mediaGet' produce-copilot-v2578.js
+
+          # No competing batch/queue authority from the Worker bootstrap.
+          grep -q 'BUILD257_7_ENTRY_WRAPPER_R7_CONSOLIDATED_PUBLISH' worker-build2577-entry.js
+          grep -q 'batchRuntime:"CONSOLIDATED_CLIENT_V2578"' worker-build2577-entry.js
+          grep -q 'publishMode:"SINGLE_OR_PER_ITEM"' worker-build2577-entry.js
+          grep -q 'publishApi:"ACTIVE"' worker-build2577-entry.js
+          if grep -Eq 's\.src="\./produce-copilot-(batch-runtime-v3|publish-queue-v2)\.js' worker-build2577-entry.js; then
+            echo 'FAIL: competing legacy batch/publish loader is active.' >&2
+            exit 1
+          fi
+
+          # Contract guard is event-driven, not a polling DOM controller.
+          grep -q 'BUILD259_CLIENT_CONTRACT_GUARD_EVENT_DRIVEN' produce-copilot-contract-guard-v259.js
+          grep -q 'acc-production-contract-updated' produce-copilot-contract-guard-v259.js
+          grep -q 'acc-produce-package-updated' produce-copilot-contract-guard-v259.js
+          if grep -Eq 'MutationObserver|setInterval\s*\(' produce-copilot-contract-guard-v259.js; then
+            echo 'FAIL: contract guard regressed to DOM polling.' >&2
+            exit 1
+          fi
+
+          # Poster provider hard limit remains fenced below 2048.
+          grep -q 'IMAGE_PROMPT_LIMIT=1900' worker-brain-runtime-rescue-v9.js
+          grep -q 'boundImagePrompt' worker-brain-runtime-rescue-v9.js
+
+          # Produce cannot own viewport position or poll/remount the page.
+          if grep -Eq 'MutationObserver|setInterval\s*\(|scrollTop\s*=|scrollIntoView\s*\(|window\.scroll(To|By)\s*\(' produce-copilot-v2578.js; then
+            echo 'FAIL: consolidated Produce runtime contains polling or viewport control.' >&2
+            exit 1
+          fi
           grep -q 'window.dispatchEvent(new CustomEvent("acc-core-rendered"' app.js
           grep -q 'const productionRender=ui.tab==="production"' app.js
           grep -q 'if(!productionRender)scrollTo(0,scroll)' app.js
-          grep -q 'window.addEventListener("acc-core-rendered",onCoreRendered)' produce-copilot-v2577.js
+          grep -q 'window.addEventListener("acc-core-rendered",onCoreRendered)' produce-copilot-v2578.js
 
-          if grep -q 'produce-copilot-v2576.js?rev=' release-version-v257.js; then
-            echo 'FAIL: release bootstrap still activates legacy Produce v2576.' >&2
-            exit 1
-          fi
-          if grep -q 'produce-copilot-v2576.js?rev=' service-worker.js; then
-            echo 'FAIL: service-worker active cache still activates legacy Produce v2576.' >&2
-            exit 1
-          fi
-          if grep -q '__ACC_PRODUCE_PROGRAMMATIC_SCROLL_BLOCK_V1__' release-version-v257.js; then
-            echo 'FAIL: legacy Produce window.scrollTo interception is still active.' >&2
-            exit 1
-          fi
+          # No native/legacy scroll runtime in active release/cache chain.
           if grep -q 'native-scroll-performance-' release-version-v257.js || grep -q 'native-scroll-performance-' service-worker.js; then
             echo 'FAIL: active runtime still loads a competing native scroll controller.' >&2
             exit 1
           fi
-          if grep -Eq 'scrollTop\s*=|scrollIntoView\s*\(|window\.scroll(To|By)\s*\(' produce-copilot-v2577.js produce-copilot-preview-fix-v25762.js; then
-            echo 'FAIL: active Produce runtime contains direct scroll-position control.' >&2
-            exit 1
-          fi
-          if grep -Eq 'MutationObserver|setInterval\s*\(' produce-copilot-v2577.js; then
-            echo 'FAIL: Produce stable surface regressed to DOM polling.' >&2
-            exit 1
-          fi
-          if grep -q 'dataset.signature' produce-copilot-v2577.js || grep -q 'section.innerHTML=panelHtml' produce-copilot-v2577.js; then
-            echo 'FAIL: stable Produce runtime regressed to full-panel rerender refresh.' >&2
-            exit 1
-          fi
-          echo 'Produce core stable surface OK: core remount is synchronous, no polling, no Produce viewport control.'
+
+          echo 'Production + publishing stabilization contract OK.'
 
       - name: Validate Worker module syntax
         shell: bash
