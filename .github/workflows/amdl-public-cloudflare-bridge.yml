@@ -132,7 +132,7 @@ jobs:
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$HOME" == *'Oka Raditya'* ]] && [[ "$HOME" == *'https://okaraditya.nadmo.id/'* ]] && [[ "$HOME" == *'oka-raditya-shot'* ]] && [[ "$HOME" == *'Anya Kaizy'* ]] && [[ "$HOME" == *'https://anyakaizy.nadmo.id/'* ]] && [[ "$HOME" == *'Dekhan Good'* ]] && [[ "$HOME" == *'https://dekhangood.nadmo.id/'* ]] && [[ "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-stayink.png'* ]] && [[ "$HOME" == *'business-bwd.png'* ]] && [[ "$HOME" == *'business-amsound.png'* ]] && [[ "$HOME" == *'business-balinightlifeconnect.png'* ]] && [[ "$HOME" == *'business-originalbali.png'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
+            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$HOME" == *'Oka Raditya'* ]] && [[ "$HOME" == *'https://okaraditya.nadmo.id/'* ]] && [[ "$HOME" == *'oka-raditya-shot'* ]] && [[ "$HOME" == *'Anya Kaizy'* ]] && [[ "$HOME" == *'https://anyakaizy.nadmo.id/'* ]] && [[ "$HOME" == *'Dekhan Good'* ]] && [[ "$HOME" == *'https://dekhangood.nadmo.id/'* ]] && [[ "$HOME" == *'BUSINESS WEBSITE PORTFOLIO'* ]] && [[ "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-stayink.png'* ]] && [[ "$HOME" == *'business-bwd.png'* ]] && [[ "$HOME" == *'business-amsound.png'* ]] && [[ "$HOME" == *'business-balinightlifeconnect.png'* ]] && [[ "$HOME" == *'business-originalbali.png'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
               break
             fi
             sleep 5
@@ -284,3 +284,5 @@ jobs:
 # deploy marker: add business samples with existing personal-card layout only 2026-10-05
 
 # deploy marker: business portfolio belongs to business website pricing; legal and featured unchanged 2026-10-05
+
+# deploy marker: wait for business portfolio edge propagation 2026-10-05
