@@ -71,7 +71,6 @@ jobs:
           grep -q 'id="business-portfolio"' site/index.html
           grep -q 'BUSINESS WEBSITE SAMPLES' site/index.html
           grep -q 'ZUZU Family House' site/index.html
-          grep -q 'https://zuzu.nadmo.id/' site/index.html
           grep -q 'Brush by Yuda' site/index.html
           grep -q 'https://brushbyyuda.nadmo.id/' site/index.html
           grep -q 'Arda Moron' site/index.html
@@ -314,3 +313,5 @@ jobs:
 # deploy marker: clean separation personal vs business portfolio vs featured promotions 2026-10-05
 
 # deploy marker: business samples only, personal untouched, featured ads unchanged 2026-10-05
+
+# deploy marker: remove invalid ZUZU live-link check 2026-10-05
