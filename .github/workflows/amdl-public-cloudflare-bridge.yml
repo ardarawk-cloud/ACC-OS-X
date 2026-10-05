@@ -157,6 +157,7 @@ jobs:
           require_text "DJ Keyrin portfolio link" "$HOME" "https://djkeyrin.nadmo.id/"
           require_text "Oka Raditya portfolio title" "$HOME" "Oka Raditya"
           require_text "Oka Raditya portfolio link" "$HOME" "https://okaraditya.nadmo.id/"
+          require_text "Oka Raditya preview framing" "$HOME" "oka-raditya-shot"
           require_text "robots sitemap" "$ROBOTS" "Sitemap:"
 
           CHECKOUT="$(curl --fail --location --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
@@ -257,3 +258,5 @@ jobs:
 # deploy marker: wait for business preview edge propagation 2026-10-05
 
 # deploy marker: Oka Raditya personal branding portfolio 2026-10-05
+
+# deploy marker: improve Oka Raditya portfolio preview framing 2026-10-05
