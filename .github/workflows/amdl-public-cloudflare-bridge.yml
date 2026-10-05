@@ -36,7 +36,6 @@ jobs:
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Start a Project' site/index.html
-          grep -q 'FEATURED BUSINESSES' site/index.html
           grep -q 'business-roamink.png' site/index.html
           grep -q 'business-stayink.png' site/index.html
           grep -q 'business-bwd.png' site/index.html
@@ -132,7 +131,7 @@ jobs:
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$HOME" == *'Oka Raditya'* ]] && [[ "$HOME" == *'https://okaraditya.nadmo.id/'* ]] && [[ "$HOME" == *'oka-raditya-shot'* ]] && [[ "$HOME" == *'Anya Kaizy'* ]] && [[ "$HOME" == *'https://anyakaizy.nadmo.id/'* ]] && [[ "$HOME" == *'Dekhan Good'* ]] && [[ "$HOME" == *'https://dekhangood.nadmo.id/'* ]] && [[ "$HOME" == *'BUSINESS WEBSITE PORTFOLIO'* ]] && [[ "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-stayink.png'* ]] && [[ "$HOME" == *'business-bwd.png'* ]] && [[ "$HOME" == *'business-amsound.png'* ]] && [[ "$HOME" == *'business-balinightlifeconnect.png'* ]] && [[ "$HOME" == *'business-originalbali.png'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
+            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$HOME" == *'Oka Raditya'* ]] && [[ "$HOME" == *'https://okaraditya.nadmo.id/'* ]] && [[ "$HOME" == *'oka-raditya-shot'* ]] && [[ "$HOME" == *'Anya Kaizy'* ]] && [[ "$HOME" == *'https://anyakaizy.nadmo.id/'* ]] && [[ "$HOME" == *'Dekhan Good'* ]] && [[ "$HOME" == *'https://dekhangood.nadmo.id/'* ]] && [[ "$HOME" == *'BUSINESS WEBSITE PORTFOLIO'* ]] && [[ "$HOME" == *'APK PORTFOLIO'* ]] && [[ "$HOME" == *'Contact Admin'* || "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-stayink.png'* ]] && [[ "$HOME" == *'business-bwd.png'* ]] && [[ "$HOME" == *'business-amsound.png'* ]] && [[ "$HOME" == *'business-balinightlifeconnect.png'* ]] && [[ "$HOME" == *'business-originalbali.png'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
               break
             fi
             sleep 5
@@ -148,7 +147,6 @@ jobs:
           require_text "business samples" "$HOME" "BUSINESS WEBSITE PORTFOLIO"
           require_text "ZUZU business sample" "$HOME" "ZUZU Family House"
           require_text "Brush business sample" "$HOME" "Brush by Yuda"
-          require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
           require_text "ROAMINK preview image" "$HOME" "business-roamink.png"
           require_text "STAYINK preview image" "$HOME" "business-stayink.png"
           require_text "BWD preview image" "$HOME" "business-bwd.png"
@@ -312,3 +310,5 @@ jobs:
 # deploy marker: simplify APK solutions with direct order CTAs 2026-10-06
 
 # deploy marker: floating contact admin CTA 2026-10-06
+
+# deploy marker: fix stale featured-business validation and release current NADMO layout 2026-10-06
