@@ -45,9 +45,6 @@ jobs:
           grep -q 'business-originalbali.png' site/index.html
           grep -q 'business-slider' site/index.html
           grep -q 'initBusinessSlider' site/app.js
-          ! grep -q 'ACC OS X' site/app.js
-          ! grep -q 'NADMO STUDIO CRM' site/app.js
-          ! grep -q 'const projects=' site/app.js
           grep -q 'ROAMINK' site/index.html
           grep -q 'STAYINK' site/index.html
           grep -q 'Bali Wedding DJ' site/index.html
@@ -68,11 +65,6 @@ jobs:
           grep -q 'PT Perorangan' site/index.html
           grep -q 'PERSONAL BRANDING SAMPLES' site/index.html
           grep -q 'FOR BUSINESS' site/index.html
-          grep -q 'id="business-portfolio"' site/index.html
-          grep -q 'BUSINESS WEBSITE SAMPLES' site/index.html
-          grep -q 'ZUZU Family House' site/index.html
-          grep -q 'Brush by Yuda' site/index.html
-          grep -q 'https://brushbyyuda.nadmo.id/' site/index.html
           grep -q 'Arda Moron' site/index.html
           grep -q 'BBYA' site/index.html
           grep -q 'DWP' site/index.html
@@ -100,7 +92,7 @@ jobs:
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy dekhan-good work-zuzu work-brush-by-yuda business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
+          for f in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy dekhan-good business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             test -s "site/portfolio/$f.png"
           done
 
@@ -150,15 +142,6 @@ jobs:
           require_text "notification primary field" "$HEALTH" '"notification_primary":'
 
           require_text "homepage brand" "$HOME" "NADMO STUDIO"
-          require_text "business website samples" "$HOME" "BUSINESS WEBSITE SAMPLES"
-          require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
-
-          if [[ "$HOME" == *'ACC OS X'* ]] || [[ "$HOME" == *'NADMO STUDIO CRM'* ]]; then
-            echo "FAIL: obsolete internal product portfolio is still visible"
-            exit 1
-          fi
-          require_text "ZUZU portfolio sample" "$HOME" "ZUZU Family House"
-          require_text "Brush by Yuda portfolio sample" "$HOME" "Brush by Yuda"
           require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
           require_text "ROAMINK preview image" "$HOME" "business-roamink.png"
           require_text "STAYINK preview image" "$HOME" "business-stayink.png"
@@ -191,7 +174,7 @@ jobs:
           require_text "checkout contact" "$CHECKOUT" "+62 822-4797-2288"
           require_text "checkout PT price" "$CHECKOUT" "Rp599.000"
 
-          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy dekhan-good work-zuzu work-brush-by-yuda business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy dekhan-good business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/$asset.png" -o "/tmp/$asset.png"
             SIZE="$(wc -c < "/tmp/$asset.png")"
             echo "Asset $asset.png: $SIZE bytes"
@@ -203,20 +186,11 @@ jobs:
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ] || { echo "FAIL: malformed lead request expected HTTP 400"; exit 1; }
 
-          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy dekhan-good work-zuzu work-brush-by-yuda business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
-            URL="https://nadmo.id/portfolio/$asset.png?v=20261005-work"
-            CODE=""
-            TYPE=""
-            SIZE=0
-            for attempt in 1 2 3 4 5 6; do
-              CODE="$(curl --location --silent --show-error --output "/tmp/custom-$asset.png" --write-out '%{http_code}' --max-time 30 "$URL" || true)"
-              TYPE="$(curl --location --silent --show-error --head --max-time 30 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2); exit}')"
-              SIZE="$(wc -c < "/tmp/custom-$asset.png" 2>/dev/null || echo 0)"
-              if [ "$CODE" = "200" ] && [[ "$TYPE" == image/* ]] && [ "$SIZE" -gt 10000 ]; then
-                break
-              fi
-              sleep 5
-            done
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy dekhan-good business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
+            URL="https://nadmo.id/portfolio/$asset.png?v=20261005"
+            CODE="$(curl --location --silent --show-error --output "/tmp/custom-$asset.png" --write-out '%{http_code}' --max-time 30 "$URL")"
+            TYPE="$(curl --location --silent --show-error --head --max-time 30 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2); exit}')"
+            SIZE="$(wc -c < "/tmp/custom-$asset.png")"
             echo "Custom domain asset $asset: HTTP $CODE, type=$TYPE, bytes=$SIZE"
             [ "$CODE" = "200" ] || { echo "FAIL: custom-domain $asset HTTP $CODE"; exit 1; }
             [[ "$TYPE" == image/* ]] || { echo "FAIL: custom-domain $asset content-type $TYPE"; exit 1; }
@@ -300,21 +274,3 @@ jobs:
 # deploy marker: Anya Kaizy personal branding portfolio 2026-10-05
 
 # deploy marker: Dekhan Good personal branding portfolio 2026-10-05
-
-# deploy marker: restore clear business portfolio label 2026-10-05
-
-# deploy marker: separate NADMO business portfolio from featured ads 2026-10-05
-
-# deploy marker: retry custom-domain business portfolio previews 2026-10-05
-
-# deploy marker: remove obsolete internal product portfolio, keep business samples separate 2026-10-05
-
-# deploy marker: clean separation personal vs business portfolio vs featured promotions 2026-10-05
-
-# deploy marker: business samples only, personal untouched, featured ads unchanged 2026-10-05
-
-# deploy marker: remove invalid ZUZU live-link check 2026-10-05
-
-# deploy marker: compact business portfolio cards to personal-sample scale 2026-10-05
-
-# deploy marker: restore original layout, add business samples only 2026-10-05
