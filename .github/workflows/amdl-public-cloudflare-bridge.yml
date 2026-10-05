@@ -65,7 +65,7 @@ jobs:
           grep -q 'PT Perorangan' site/index.html
           grep -q 'PERSONAL BRANDING SAMPLES' site/index.html
           grep -q 'FOR BUSINESS' site/index.html
-          grep -q 'BUSINESS WEBSITE SAMPLES' site/index.html
+          grep -q 'BUSINESS WEBSITE PORTFOLIO' site/index.html
           grep -q 'ZUZU Family House' site/index.html
           grep -q 'Brush by Yuda' site/index.html
           grep -q 'Arda Moron' site/index.html
@@ -145,7 +145,7 @@ jobs:
           require_text "notification primary field" "$HEALTH" '"notification_primary":'
 
           require_text "homepage brand" "$HOME" "NADMO STUDIO"
-          require_text "business samples" "$HOME" "BUSINESS WEBSITE SAMPLES"
+          require_text "business samples" "$HOME" "BUSINESS WEBSITE PORTFOLIO"
           require_text "ZUZU business sample" "$HOME" "ZUZU Family House"
           require_text "Brush business sample" "$HOME" "Brush by Yuda"
           require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
@@ -282,3 +282,5 @@ jobs:
 # deploy marker: Dekhan Good personal branding portfolio 2026-10-05
 
 # deploy marker: add business samples with existing personal-card layout only 2026-10-05
+
+# deploy marker: business portfolio belongs to business website pricing; legal and featured unchanged 2026-10-05
