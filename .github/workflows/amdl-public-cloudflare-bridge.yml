@@ -159,7 +159,6 @@ jobs:
           fi
           require_text "ZUZU portfolio sample" "$HOME" "ZUZU Family House"
           require_text "Brush by Yuda portfolio sample" "$HOME" "Brush by Yuda"
-          require_text "portfolio nav target" "$HOME" "#business-portfolio"
           require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
           require_text "ROAMINK preview image" "$HOME" "business-roamink.png"
           require_text "STAYINK preview image" "$HOME" "business-stayink.png"
@@ -317,3 +316,5 @@ jobs:
 # deploy marker: remove invalid ZUZU live-link check 2026-10-05
 
 # deploy marker: compact business portfolio cards to personal-sample scale 2026-10-05
+
+# deploy marker: restore original layout, add business samples only 2026-10-05
