@@ -36,7 +36,7 @@ jobs:
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Start a Project' site/index.html
-          grep -q 'FEATURED BUSINESSES' site/index.html
+          grep -q 'BUSINESS PORTFOLIO' site/index.html
           grep -q 'business-roamink.png' site/index.html
           grep -q 'business-stayink.png' site/index.html
           grep -q 'business-bwd.png' site/index.html
@@ -142,7 +142,7 @@ jobs:
           require_text "notification primary field" "$HEALTH" '"notification_primary":'
 
           require_text "homepage brand" "$HOME" "NADMO STUDIO"
-          require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
+          require_text "business portfolio" "$HOME" "BUSINESS PORTFOLIO"
           require_text "ROAMINK preview image" "$HOME" "business-roamink.png"
           require_text "STAYINK preview image" "$HOME" "business-stayink.png"
           require_text "BWD preview image" "$HOME" "business-bwd.png"
@@ -274,3 +274,5 @@ jobs:
 # deploy marker: Anya Kaizy personal branding portfolio 2026-10-05
 
 # deploy marker: Dekhan Good personal branding portfolio 2026-10-05
+
+# deploy marker: restore clear business portfolio label 2026-10-05
