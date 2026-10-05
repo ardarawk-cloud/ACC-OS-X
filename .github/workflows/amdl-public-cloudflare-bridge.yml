@@ -36,7 +36,7 @@ jobs:
           grep -q 'WE BUILD DIGITAL PRODUCTS' site/index.html
           grep -q 'NADMO STUDIO' site/index.html
           grep -q 'Start a Project' site/index.html
-          grep -q 'FEATURED BUSINESSES' site/index.html
+          grep -q 'FEATURED BUSINESS SPOTLIGHT' site/index.html
           grep -q 'business-roamink.png' site/index.html
           grep -q 'business-stayink.png' site/index.html
           grep -q 'business-bwd.png' site/index.html
@@ -151,6 +151,8 @@ jobs:
 
           require_text "homepage brand" "$HOME" "NADMO STUDIO"
           require_text "business portfolio section" "$HOME" "BUSINESS PORTFOLIO"
+          require_text "featured promotions section" "$HOME" "FEATURED BUSINESS SPOTLIGHT"
+          require_text "featured promotions disclaimer" "$HOME" "These are not NADMO STUDIO portfolio projects."
           if [[ "$HOME" == *'ACC OS X'* ]] || [[ "$HOME" == *'NADMO STUDIO CRM'* ]]; then
             echo "FAIL: obsolete internal product portfolio is still visible"
             exit 1
@@ -158,7 +160,7 @@ jobs:
           require_text "ZUZU portfolio sample" "$HOME" "ZUZU Family House"
           require_text "Brush by Yuda portfolio sample" "$HOME" "Brush by Yuda"
           require_text "portfolio nav target" "$HOME" "#business-portfolio"
-          require_text "featured businesses" "$HOME" "FEATURED BUSINESSES"
+          require_text "featured businesses" "$HOME" "FEATURED BUSINESS SPOTLIGHT"
           require_text "ROAMINK preview image" "$HOME" "business-roamink.png"
           require_text "STAYINK preview image" "$HOME" "business-stayink.png"
           require_text "BWD preview image" "$HOME" "business-bwd.png"
@@ -307,3 +309,5 @@ jobs:
 # deploy marker: retry custom-domain business portfolio previews 2026-10-05
 
 # deploy marker: remove obsolete internal product portfolio, keep business samples separate 2026-10-05
+
+# deploy marker: clean separation personal vs business portfolio vs featured promotions 2026-10-05
