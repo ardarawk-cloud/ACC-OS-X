@@ -76,6 +76,8 @@ jobs:
           grep -q 'https://djkeyrin.nadmo.id/' site/index.html
           grep -q 'Oka Raditya' site/index.html
           grep -q 'https://okaraditya.nadmo.id/' site/index.html
+          grep -q 'Anya Kaizy' site/index.html
+          grep -q 'https://anyakaizy.nadmo.id/' site/index.html
           grep -q 'Personal Branding' site/index.html
           grep -q 'Arda Moron' site/index.html
           grep -q 'BBYA' site/index.html
@@ -88,7 +90,7 @@ jobs:
           grep -q "const SITE_VERSION='2.0.0'" worker-public.js
           grep -q 'Sitemap:' site/robots.txt
           grep -q '<urlset' site/sitemap.xml
-          for f in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
+          for f in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             test -s "site/portfolio/$f.png"
           done
 
@@ -125,7 +127,7 @@ jobs:
             HEALTH="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/healthz" || true)"
             HOME="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/" || true)"
             ROBOTS="$(curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/robots.txt" || true)"
-            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$HOME" == *'Oka Raditya'* ]] && [[ "$HOME" == *'https://okaraditya.nadmo.id/'* ]] && [[ "$HOME" == *'oka-raditya-shot'* ]] && [[ "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-stayink.png'* ]] && [[ "$HOME" == *'business-bwd.png'* ]] && [[ "$HOME" == *'business-amsound.png'* ]] && [[ "$HOME" == *'business-balinightlifeconnect.png'* ]] && [[ "$HOME" == *'business-originalbali.png'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
+            if [[ "$HEALTH" == *'"ok":true'* ]] && [[ "$HOME" == *'SAIXKO'* ]] && [[ "$HOME" == *'https://saixko.nadmo.id/'* ]] && [[ "$HOME" == *'Berlin Bintang'* ]] && [[ "$HOME" == *'https://berlinbintang.nadmo.id/'* ]] && [[ "$HOME" == *'DJ Keyrin'* ]] && [[ "$HOME" == *'https://djkeyrin.nadmo.id/'* ]] && [[ "$HOME" == *'Oka Raditya'* ]] && [[ "$HOME" == *'https://okaraditya.nadmo.id/'* ]] && [[ "$HOME" == *'oka-raditya-shot'* ]] && [[ "$HOME" == *'Anya Kaizy'* ]] && [[ "$HOME" == *'https://anyakaizy.nadmo.id/'* ]] && [[ "$HOME" == *'business-roamink.png'* ]] && [[ "$HOME" == *'business-stayink.png'* ]] && [[ "$HOME" == *'business-bwd.png'* ]] && [[ "$HOME" == *'business-amsound.png'* ]] && [[ "$HOME" == *'business-balinightlifeconnect.png'* ]] && [[ "$HOME" == *'business-originalbali.png'* ]] && [[ "$ROBOTS" == *'Sitemap:'* ]]; then
               break
             fi
             sleep 5
@@ -158,6 +160,8 @@ jobs:
           require_text "Oka Raditya portfolio title" "$HOME" "Oka Raditya"
           require_text "Oka Raditya portfolio link" "$HOME" "https://okaraditya.nadmo.id/"
           require_text "Oka Raditya preview framing" "$HOME" "oka-raditya-shot"
+          require_text "Anya Kaizy portfolio title" "$HOME" "Anya Kaizy"
+          require_text "Anya Kaizy portfolio link" "$HOME" "https://anyakaizy.nadmo.id/"
           require_text "robots sitemap" "$ROBOTS" "Sitemap:"
 
           CHECKOUT="$(curl --fail --location --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/checkout.html")"
@@ -166,7 +170,7 @@ jobs:
           require_text "checkout contact" "$CHECKOUT" "+62 822-4797-2288"
           require_text "checkout PT price" "$CHECKOUT" "Rp599.000"
 
-          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             curl --fail --silent --show-error --max-time 30 "${DEPLOYMENT_URL%/}/portfolio/$asset.png" -o "/tmp/$asset.png"
             SIZE="$(wc -c < "/tmp/$asset.png")"
             echo "Asset $asset.png: $SIZE bytes"
@@ -178,7 +182,7 @@ jobs:
           echo "Malformed lead bridge status: $CODE"
           [ "$CODE" = "400" ] || { echo "FAIL: malformed lead request expected HTTP 400"; exit 1; }
 
-          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
+          for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
             URL="https://nadmo.id/portfolio/$asset.png?v=20261005"
             CODE="$(curl --location --silent --show-error --output "/tmp/custom-$asset.png" --write-out '%{http_code}' --max-time 30 "$URL")"
             TYPE="$(curl --location --silent --show-error --head --max-time 30 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2); exit}')"
@@ -262,3 +266,5 @@ jobs:
 # deploy marker: improve Oka Raditya portfolio preview framing 2026-10-05
 
 # deploy marker: wait for Oka preview framing edge propagation 2026-10-05
+
+# deploy marker: Anya Kaizy personal branding portfolio 2026-10-05
