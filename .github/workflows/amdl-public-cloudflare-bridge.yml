@@ -196,10 +196,19 @@ jobs:
           [ "$CODE" = "400" ] || { echo "FAIL: malformed lead request expected HTTP 400"; exit 1; }
 
           for asset in arda-moron bbya dwp saixko berlin-bintang dj-keyrin oka-raditya anya-kaizy dekhan-good work-zuzu work-brush-by-yuda business-roamink business-stayink business-bwd business-amsound business-balinightlifeconnect business-originalbali; do
-            URL="https://nadmo.id/portfolio/$asset.png?v=20261005"
-            CODE="$(curl --location --silent --show-error --output "/tmp/custom-$asset.png" --write-out '%{http_code}' --max-time 30 "$URL")"
-            TYPE="$(curl --location --silent --show-error --head --max-time 30 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2); exit}')"
-            SIZE="$(wc -c < "/tmp/custom-$asset.png")"
+            URL="https://nadmo.id/portfolio/$asset.png?v=20261005-work"
+            CODE=""
+            TYPE=""
+            SIZE=0
+            for attempt in 1 2 3 4 5 6; do
+              CODE="$(curl --location --silent --show-error --output "/tmp/custom-$asset.png" --write-out '%{http_code}' --max-time 30 "$URL" || true)"
+              TYPE="$(curl --location --silent --show-error --head --max-time 30 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2); exit}')"
+              SIZE="$(wc -c < "/tmp/custom-$asset.png" 2>/dev/null || echo 0)"
+              if [ "$CODE" = "200" ] && [[ "$TYPE" == image/* ]] && [ "$SIZE" -gt 10000 ]; then
+                break
+              fi
+              sleep 5
+            done
             echo "Custom domain asset $asset: HTTP $CODE, type=$TYPE, bytes=$SIZE"
             [ "$CODE" = "200" ] || { echo "FAIL: custom-domain $asset HTTP $CODE"; exit 1; }
             [[ "$TYPE" == image/* ]] || { echo "FAIL: custom-domain $asset content-type $TYPE"; exit 1; }
@@ -287,3 +296,5 @@ jobs:
 # deploy marker: restore clear business portfolio label 2026-10-05
 
 # deploy marker: separate NADMO business portfolio from featured ads 2026-10-05
+
+# deploy marker: retry custom-domain business portfolio previews 2026-10-05
