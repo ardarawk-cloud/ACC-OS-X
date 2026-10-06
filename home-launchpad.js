@@ -23,7 +23,7 @@
     {key:"music-distribution", title:"AM STUDIO Music Distribution", accent:"#e879f9", fallback:"MD", native:["com.amstudio.distribution"]},
     {key:"kai-3d-free", title:"KAI 3D FREE", accent:"#22d3ee", fallback:"3D", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/kai-3d-free/icon.svg", native:["com.accbuilder.kai3dfree"]},
     {key:"oracly", title:"ORACLY", accent:"#d4af37", fallback:"O", native:["com.accbuilder.oracly"]},
-    {key:"papa-sauce-lab", title:"Papa Sauce Lab", accent:"#fb923c", fallback:"PSL", native:["com.nadmo.papasaucelab"]}
+    {key:"papa-sauce-lab", title:"Papa Sauce Lab", accent:"#fb923c", fallback:"PSL", native:["com.nadmo.papasaucelab","com.accbuilder.papasaucelab"]}
   ];
 
   function ensureStyle(){

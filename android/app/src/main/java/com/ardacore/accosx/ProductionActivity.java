@@ -108,7 +108,7 @@ public class ProductionActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setSafeBrowsingEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.1 ACCOSXAndroid/1.2.4 Build13");
+        settings.setUserAgentString(settings.getUserAgentString() + " ACCOSXNative/2.1 ACCOSXAndroid/1.2.5 Build14");
 
         nativeAssets = new AccNativeAssets(this);
 

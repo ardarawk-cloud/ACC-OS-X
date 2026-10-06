@@ -25,6 +25,7 @@ final class AccNavigationPolicy {
             "com.amstudio.distribution",
             "com.accbuilder.kai3dfree",
             "com.accbuilder.oracly",
+            "com.nadmo.papasaucelab",
             "com.accbuilder.papasaucelab",
             "com.baliweddingdj.app",
             "com.baliweddingdj.owner",
