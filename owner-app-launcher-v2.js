@@ -96,7 +96,7 @@
     },
     {
       key:"papa-sauce-lab", title:"Papa Sauce Lab", short:"PSL", accent:"#fb923c", mode:"android",
-      packages:["com.accbuilder.papasaucelab"],
+      packages:["com.nadmo.papasaucelab"],
       iconFallback:"PSL"
     }
   ];
