@@ -462,14 +462,14 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
 .supporter-panel .supporter-header small{font:800 9px Arial,sans-serif;color:var(--neon)}
 .supporter-panel p{font-size:11px;line-height:1.5;color:#c6d1bd}
 .supporter-panel .supporter-progress{font:700 12px/1.5 Arial,sans-serif;color:#d9eccb;margin:8px 0}
-.supporter-panel .supporter-levels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}
-.supporter-panel .supporter-row{border:1px solid #344634;padding:8px 7px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
-.supporter-panel .supporter-row small{font:700 9px Arial,sans-serif;color:#becbb4}
+.supporter-panel .supporter-levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,153px),1fr));gap:8px;margin:12px 0;min-width:0}
+.supporter-panel .supporter-row{border:1px solid #344634;padding:8px 7px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:5px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden}
+.supporter-panel .supporter-row small{min-width:0;flex:0 1 auto;white-space:nowrap;text-align:right;font:700 10px/1.35 Arial,sans-serif;color:#becbb4;font-variant-numeric:tabular-nums}
 .supporter-panel .supporter-privacy{display:flex;align-items:center;gap:7px;font-size:11px}
 .supporter-panel .supporter-privacy input{width:18px;height:18px}
 .supporter-panel .supporter-privacy[hidden],#supporterMyBadge[hidden]{display:none!important}
 #chat .supporter-badge{margin:0 5px 0 0;max-width:70px}
-@media(min-width:700px){.supporter-panel .supporter-levels{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(min-width:700px){.supporter-panel .supporter-levels{grid-template-columns:repeat(auto-fit,minmax(158px,1fr))}}
 
 /* NADMO LIVE public profile: user controls, not developer diagnostics. */
 #settings .page-top{margin:4px 0 17px;padding:0 0 12px;border-bottom:1px solid var(--line)}
@@ -907,6 +907,11 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   el.append(mark,n);return el;
  }
  function fmtSupporterIDR(n){return 'Rp'+new Intl.NumberFormat('id-ID').format(Number(n)||0)}
+ function fmtSupporterShortIDR(n){
+  const value=Number(n)||0,short=(v,d=1)=>new Intl.NumberFormat('id-ID',{maximumFractionDigits:d}).format(v);
+  return value>=1e9?'Rp'+short(value/1e9)+' M':value>=1e6?'Rp'+short(value/1e6,2)+' jt':
+   value>=1e3?'Rp'+short(value/1e3)+' rb':fmtSupporterIDR(value);
+ }
  function renderSupporter(){
   const panel=$('supporterLevels');panel.replaceChildren();
   if(supporterLevelsData?.tiers?.length&&Array.isArray(supporterLevelsData.thresholdsIDR)){
@@ -915,7 +920,9 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
     if(!supporterTiers.has(tier.id)||!Number.isInteger(level)||level<1||level>50)continue;
     const row=document.createElement('div');row.className='supporter-row';
     const badge=makeSupporterBadge({level,tier:tier.id,label:tier.label,mark:tier.mark});
-    const note=document.createElement('small');note.textContent=fmtSupporterIDR(supporterLevelsData.thresholdsIDR[level-1])+'+';
+    const note=document.createElement('small');const threshold=supporterLevelsData.thresholdsIDR[level-1];
+    note.textContent=fmtSupporterShortIDR(threshold)+'+';note.title=fmtSupporterIDR(threshold)+' atau lebih';
+    note.setAttribute('aria-label','Minimal dukungan '+fmtSupporterIDR(threshold));
     if(badge){row.append(badge,note);panel.append(row)}
    }
   }
