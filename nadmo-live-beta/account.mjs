@@ -9,6 +9,11 @@ const handleOK = v => /^[a-z][a-z0-9_]{2,23}$/.test(v);
 const COOKIE='nadmo_beta_session';
 const SESSION_AGE=7*86400;
 const MAX_BODY=16000;
+// Indexed, account-bound social follows: never browser-only or fabricated counts.
+const socialFollowing=(a,b)=>'social-following:'+a+':'+b;
+const socialFollower=(a,b)=>'social-follower:'+a+':'+b;
+const socialCounts=account=>({followers:Math.max(0,Number(account?.followersCount)||0),following:Math.max(0,Number(account?.followingCount)||0)});
+
 const AVATAR_MAX_BYTES=65536; // Compact profile pictures only; no raw high-resolution photo storage.
 const AVATAR_RESPONSE_HEADERS={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'};
 const clean=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
@@ -82,6 +87,22 @@ export async function accountEndpoint(storage,request){
   if(!active)return json({ok:true,authenticated:false,supporter:null,paymentsEnabled:false});
   const record=await storage.get('auth-user:'+active.id);
   return json({ok:true,authenticated:true,supporter:await getSupporterProfile(storage,active.id,record),paymentsEnabled:false});
+ }
+ if(p==='/api/social/connections'&&method==='GET'){
+  const active=await getAccount(storage,request);
+  if(!active)return fail(401,'Masuk akun untuk melihat pengikut');
+  const relation=u.searchParams.get('type')||'following';
+  if(!['followers','following'].includes(relation))return fail(400,'Tipe daftar tidak valid');
+  const prefix=(relation==='followers'?'social-follower:':'social-following:')+active.id+':';
+  const entries=await storage.list({prefix,limit:501});
+  const accounts=[];
+  for(const item of entries.values()){
+   if(!item?.id)continue;
+   const person=await storage.get('auth-user:'+item.id);
+   if(person&&!person.disabled)accounts.push({handle:person.handle,name:person.name,avatarVersion:person.avatarVersion||0});
+  }
+  const record=await storage.get('auth-user:'+active.id);
+  return json({ok:true,type:relation,counts:socialCounts(record),accounts:accounts.slice(0,500),truncated:entries.size>500});
  }
  if(p==='/api/social/feed'&&method==='GET'){
   return json({ok:true,posts:(await storage.get('social-public-feed')||[]).slice(0,80)});
@@ -191,7 +212,9 @@ export async function accountEndpoint(storage,request){
   if(!account||account.disabled)return fail(404,'Profil tidak ditemukan');
   const posts=await storage.get('auth-posts:'+id)||[];
   const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
-  return json({ok:true,profile:{handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
+  const viewer=await getAccount(storage,request);
+  const isFollowing=viewer?!!await storage.get(socialFollowing(viewer.id,id)):false;
+  return json({ok:true,isFollowing,profile:{...socialCounts(account),handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
  if(!p.startsWith('/api/account/')&&!p.startsWith('/api/messages/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
@@ -249,6 +272,34 @@ export async function accountEndpoint(storage,request){
  if(!user)return fail(401,'Login diperlukan');
  const record=await storage.get('auth-user:'+user.id);
  if(!record)return fail(401,'Login diperlukan');
+ if((p==='/api/account/follow'||p==='/api/account/unfollow')&&method==='POST'){
+  const handle=clean(payload.handle,24).replace(/^@/,'').toLowerCase();
+  if(!handleOK(handle))return fail(400,'Username tidak valid');
+  if(handle===user.handle)return fail(400,'Tidak bisa mengikuti akun sendiri');
+  const targetId=await storage.get('auth-handle:'+handle);
+  const target=targetId&&await storage.get('auth-user:'+targetId);
+  if(!target||target.disabled)return fail(404,'Akun tidak ditemukan');
+  if(await hasBlock(user.id,targetId))return fail(403,'Hubungan akun dibatasi');
+  const key=socialFollowing(user.id,targetId),existing=!!await storage.get(key);
+  const wantFollow=p==='/api/account/follow';
+  if(existing===wantFollow)return json({ok:true,following:existing,counts:socialCounts(record)});
+  if(!await throttle(storage,'social-follow:'+user.id,90,86400000))return fail(429,'Terlalu banyak perubahan mengikuti');
+  if(wantFollow&&socialCounts(record).following>=500)return fail(409,'Batas mengikuti 500 akun pada beta');
+  if(wantFollow){
+   const entry={id:targetId,createdAt:Date.now()};
+   await storage.put(key,entry);
+   await storage.put(socialFollower(targetId,user.id),{id:user.id,createdAt:entry.createdAt});
+  }else{
+   await storage.delete(key);
+   await storage.delete(socialFollower(targetId,user.id));
+  }
+  const delta=wantFollow?1:-1;
+  record.followingCount=Math.max(0,socialCounts(record).following+delta);
+  target.followersCount=Math.max(0,socialCounts(target).followers+delta);
+  await storage.put('auth-user:'+user.id,record);
+  await storage.put('auth-user:'+targetId,target);
+  return json({ok:true,following:wantFollow,counts:socialCounts(record)});
+ }
  if(p.startsWith('/api/messages/')&&method==='POST'){
   const handle=clean(payload.handle,24).toLowerCase();
   if(!handleOK(handle)||handle===user.handle)return fail(400,'Username penerima tidak valid');
@@ -257,6 +308,17 @@ export async function accountEndpoint(storage,request){
   if(!other||other.disabled)return fail(404,'Akun penerima tidak ditemukan');
   if(p==='/api/messages/block'){
    await storage.put('dm-block:'+user.id+':'+otherId,true);
+   // Blocking also severs following in either direction, no hidden social connection.
+   for(const [from,to] of [[user.id,otherId],[otherId,user.id]]){
+    if(!await storage.get(socialFollowing(from,to)))continue;
+    await storage.delete(socialFollowing(from,to));
+    await storage.delete(socialFollower(to,from));
+    const source=from===user.id?record:other,receiver=to===user.id?record:other;
+    source.followingCount=Math.max(0,socialCounts(source).following-1);
+    receiver.followersCount=Math.max(0,socialCounts(receiver).followers-1);
+   }
+   await storage.put('auth-user:'+user.id,record);
+   await storage.put('auth-user:'+otherId,other);
    await storage.delete('dm-request:'+user.id+':'+otherId);
    await storage.delete('dm-request:'+otherId+':'+user.id);
    await storage.delete('dm-outgoing:'+user.id+':'+otherId);
@@ -342,6 +404,26 @@ export async function accountEndpoint(storage,request){
    const otherId=key.split(':').at(-1);
    await storage.delete('dm-request:'+otherId+':'+user.id);
    await storage.delete(key);
+  }
+  // Delete both sides of social relationships, and correct the surviving accounts' counts.
+  for(const direction of ['social-following:','social-follower:']){
+   const prefix=direction+user.id+':';
+   for(;;){
+    const batch=await storage.list({prefix,limit:100});
+    if(batch.size===0)break;
+    for(const [key,entry] of batch){
+     const otherId=entry?.id||key.slice(prefix.length);
+     if(direction==='social-following:')await storage.delete(socialFollower(otherId,user.id));
+     else await storage.delete(socialFollowing(otherId,user.id));
+     await storage.delete(key);
+     const other=await storage.get('auth-user:'+otherId);
+     if(other&&!other.disabled){
+      if(direction==='social-following:')other.followersCount=Math.max(0,socialCounts(other).followers-1);
+      else other.followingCount=Math.max(0,socialCounts(other).following-1);
+      await storage.put('auth-user:'+otherId,other);
+     }
+    }
+   }
   }
   await storage.delete('auth-posts:'+record.id);
   await storage.delete('auth-avatar:'+record.id);

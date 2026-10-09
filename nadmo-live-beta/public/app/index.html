@@ -598,6 +598,19 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 #settings .nadmo-profile{margin:6px 0 14px}
 .me-top{display:flex;align-items:center;justify-content:space-between;margin:0 0 18px;padding:7px 0 11px;border-bottom:1px solid #33422d}
 .me-top span{font:900 20px Impact,Arial,sans-serif;letter-spacing:.7px}
+.me-social-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0 0 18px}
+.me-social-stats button{min-height:58px;display:flex;align-items:center;justify-content:center;gap:10px;background:#172018;border:1px solid #385035;border-radius:10px;padding:10px;color:#c9d5c2;font:800 11px Arial,sans-serif;letter-spacing:.3px;touch-action:manipulation}
+.me-social-stats button strong{font:900 21px Impact,Arial,sans-serif;color:var(--neon);font-variant-numeric:tabular-nums}
+.me-social-stats button:active,.social-follow-btn:active{background:#30462c;transform:translateY(1px)}
+.social-follow-btn{border:1px solid #88a969;background:#273823;color:#e3fd72;border-radius:9px;padding:9px 11px;min-height:38px;font:800 10px Arial,sans-serif;letter-spacing:.3px;touch-action:manipulation}
+.social-follow-btn[disabled]{opacity:.6;cursor:wait}
+.social-follow-btn.is-following{background:#1a241a;color:#becdb7;border-color:#465a41}
+.me-connection-row{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid #354935;min-width:0}
+.me-connection-row img,.me-connection-avatar{width:39px;height:39px;flex:0 0 39px;border-radius:50%;object-fit:cover;background:#293c29;display:grid;place-items:center;color:#e3fd72}
+.me-connection-name{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.me-connection-name strong,.me-connection-name small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me-connection-name small{color:#a0b19c}
+nav button{touch-action:manipulation}
 .me-top button{min-width:42px;height:43px;font:900 30px Arial,sans-serif;color:#e7f2d8;background:none;border:0;cursor:pointer}
 #settings .profile-hero{background:transparent;border:0;padding:8px 0 16px;gap:12px}
 #settings .profile-avatar{flex-basis:64px;width:64px;height:64px}
@@ -902,14 +915,21 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
     </div>
     <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Pilih foto profil"><div id="avatarUploadStatus" role="status" aria-live="polite"></div>
     <p id="profileDisplayBio" class="profile-bio">Tampilkan siapa kamu, bisnis dan karya yang kamu punya.</p>
-    
-
+    <div class="me-social-stats" role="group" aria-label="Pengikut dan akun yang diikuti">
+      <button type="button" id="meFollowers" aria-label="Buka daftar pengikut"><strong id="meFollowersCount">—</strong><span>FOLLOWERS</span></button>
+      <button type="button" id="meFollowing" aria-label="Buka daftar akun yang diikuti"><strong id="meFollowingCount">—</strong><span>FOLLOWING</span></button>
+    </div>
   <div class="me-profile-actions"><button type="button" id="meWalletOpen"><span>DOMPET</span><b id="meWalletBalance">Rp0</b><span aria-hidden="true">›</span></button></div>
   <div class="me-content-header"><b>POSTINGAN</b><button type="button" id="meNewPost">+ BUAT</button></div>
   <div id="profilePublishedPosts" class="profile-post-feed"></div>
   <p id="meNoPosts" class="profile-note">Belum ada postingan.</p>
   </div>
  </div>
+</section>
+<section id="socialConnectionsPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack" aria-label="Kembali ke profil">‹</button><h2 id="socialConnectionsTitle">MENGIKUTI</h2></div>
+ <p id="socialConnectionsStatus" class="profile-note" role="status" aria-live="polite"></p>
+ <div id="socialConnectionsList" aria-live="polite"></div>
 </section>
 <section id="authPage" class="hide">
  <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Masuk ke NADMO</h2></div>
@@ -1053,17 +1073,18 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 <div id="flash" class="flash hide" role="status" aria-live="polite"></div>
 <nav aria-label="Main navigation">
   <button data-tab="explore" class="active"><i>◉</i>LIVE</button>
-  <button data-tab="socialPage"><i>▦</i>SOSIAL</button>
+  <button data-tab="socialPage" aria-label="Sosial"><i>▦</i>SOSIAL</button>
   <button data-tab="studio" class="broadcast"><i>+</i>GO LIVE</button>
-  <button data-tab="messagesPage"><i>◌</i>PESAN</button>
+  <button data-tab="messagesPage" aria-label="Pesan"><i>◌</i>PESAN</button>
   <button data-tab="settings"><i>◇</i>ME</button>
 </nav>
 <script>
 (function(){
  'use strict';
- const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings','authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialPage','messagesPage'];
+ const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings','authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialPage','messagesPage','socialConnectionsPage'];
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
+ let followedHandles=new Set(),socialConnectionsKind='following';
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
@@ -1226,7 +1247,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('mastLogin').hidden=logged;
   $('messagesGuest').classList.toggle('hide',logged);
   $('messagesSigned').classList.toggle('hide',!logged);
-  if(!logged)$('meWalletBalance').textContent='Rp0';
+  if(!logged){$('meWalletBalance').textContent='Rp0';followedHandles.clear();$('meFollowersCount').textContent='—';$('meFollowingCount').textContent='—';}
   $('avatarChoose').hidden=!logged;
   $('avatarRemove').hidden=!logged||!activeAccount.avatarVersion;
   setAvatarImage('profileAvatarImage',logged?activeAccount.handle:'',logged?activeAccount.avatarVersion:0);
@@ -1248,7 +1269,82 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    syncedPosts=[];$('profileSyncedPosts').replaceChildren();
   }
   renderSyncedPosts();
+  if(logged)refreshSocialRelations().catch(error=>console.warn('Follow state not available',error));
  }
+
+ function updateFollowButtons(){
+  document.querySelectorAll('[data-follow-handle]').forEach(button=>{
+   const handle=button.dataset.followHandle,isOwn=activeAccount?.handle===handle;
+   button.hidden=isOwn;
+   const on=followedHandles.has(handle);
+   button.textContent=on?'✓ MENGIKUTI':'+ IKUTI';
+   button.classList.toggle('is-following',on);
+   button.setAttribute('aria-label',(on?'Berhenti mengikuti @':'Ikuti @')+handle);
+  });
+ }
+ async function refreshSocialRelations(){
+  if(!activeAccount)return;
+  const owner=activeAccount.id,result=await accountRequest('/api/social/connections?type=following');
+  if(activeAccount?.id!==owner)return;
+  followedHandles=new Set((result.accounts||[]).map(x=>x.handle));
+  $('meFollowersCount').textContent=Number(result.counts?.followers||0).toLocaleString('id-ID');
+  $('meFollowingCount').textContent=Number(result.counts?.following||0).toLocaleString('id-ID');
+  updateFollowButtons();
+ }
+ async function toggleSocialFollow(handle){
+  if(!activeAccount){show('authPage');return}
+  if(!/^[a-z][a-z0-9_]{2,23}$/.test(handle)||handle===activeAccount.handle)return;
+  const following=followedHandles.has(handle);
+  await accountRequest(following?'/api/account/unfollow':'/api/account/follow','POST',{handle});
+  if(following)followedHandles.delete(handle);else followedHandles.add(handle);
+  updateFollowButtons();
+  await refreshSocialRelations();
+  if(!$('socialConnectionsPage').classList.contains('hide'))await loadSocialConnections(socialConnectionsKind);
+ }
+ function makeFollowButton(handle){
+  const button=document.createElement('button');button.type='button';
+  button.className='social-follow-btn';button.dataset.followHandle=handle;
+  button.onclick=async()=>{
+   if(button.disabled)return;
+   button.disabled=true;
+   try{await toggleSocialFollow(handle)}catch(e){flash(e.message)}
+   finally{button.disabled=false}
+  };
+  button.textContent=followedHandles.has(handle)?'✓ MENGIKUTI':'+ IKUTI';
+  button.classList.toggle('is-following',followedHandles.has(handle));
+  button.setAttribute('aria-label','Ikuti @'+handle);
+  if(activeAccount?.handle===handle)button.hidden=true;
+  return button;
+ }
+ async function loadSocialConnections(type){
+  if(!activeAccount){show('authPage');return}
+  socialConnectionsKind=type==='followers'?'followers':'following';
+  $('socialConnectionsTitle').textContent=socialConnectionsKind==='followers'?'FOLLOWERS':'FOLLOWING';
+  const box=$('socialConnectionsList'),status=$('socialConnectionsStatus');box.replaceChildren();
+  status.textContent='Memuat daftar...';
+  try{
+   const owner=activeAccount.id;
+   const result=await accountRequest('/api/social/connections?type='+socialConnectionsKind);
+   if(activeAccount?.id!==owner)return;
+   const accounts=result.accounts||[];
+   for(const person of accounts){
+    const row=document.createElement('div');row.className='me-connection-row';
+    if(person.avatarVersion){
+     const avatar=document.createElement('img');avatar.alt='';avatar.src=avatarURL(person.handle,person.avatarVersion);
+     avatar.onerror=()=>{avatar.replaceWith(Object.assign(document.createElement('span'),{className:'me-connection-avatar',textContent:'N/'}))};
+     row.append(avatar);
+    }else{const avatar=document.createElement('span');avatar.className='me-connection-avatar';avatar.textContent='N/';row.append(avatar)}
+    const label=document.createElement('div');label.className='me-connection-name';
+    const name=document.createElement('strong');name.textContent=person.name||person.handle;
+    const handle=document.createElement('small');handle.textContent='@'+person.handle;
+    label.append(name,handle);row.append(label,makeFollowButton(person.handle));box.append(row);
+   }
+   status.textContent=accounts.length?(result.truncated?'Menampilkan 500 akun pertama.':''):(socialConnectionsKind==='followers'?'Belum ada pengikut.':'Belum mengikuti kreator mana pun.');
+   updateFollowButtons();
+  }catch(e){status.textContent='Daftar tidak dapat dimuat: '+e.message}
+ }
+ $('meFollowers').onclick=()=>{show('socialConnectionsPage');loadSocialConnections('followers')};
+ $('meFollowing').onclick=()=>{show('socialConnectionsPage');loadSocialConnections('following')};
 
  function makePublicPost(item){
   const card=document.createElement('article');card.className='profile-post-card';
@@ -1266,6 +1362,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   const content=document.createElement('div');content.className='profile-post-content';
   linkifyCaption(content,String(item.text||'').slice(0,2000));
   card.append(top,content);
+  if(item.handle&&/^[a-z][a-z0-9_]{2,23}$/.test(item.handle)&&activeAccount?.handle!==item.handle)
+   card.append(makeFollowButton(item.handle));
   if(activeAccount?.handle===item.handle){
    const remove=document.createElement('button');remove.type='button';
    remove.className='btn ghost';remove.textContent='HAPUS POSTINGAN';
@@ -1717,11 +1815,12 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
  function show(name){if(name==='settings'&&!activeAccount)name='authPage';
-  const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage'];
+  const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialConnectionsPage'];
   document.body.classList.toggle('page-subview',subpages.includes(name));
   if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
-  if(name==='socialPage')loadSocialFeed();
+  if(name==='socialPage'){loadSocialFeed();if(activeAccount)refreshSocialRelations().catch(()=>{});}
+  if(name==='settings'&&activeAccount)refreshSocialRelations().catch(()=>{});
   if(name==='messagesPage'&&activeAccount)loadMessageInbox();
   if(name!=='messagesPage'&&activeChatHandle)closeMessages();
   window.scrollTo(0,0);}
@@ -1735,7 +1834,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  document.querySelectorAll('[data-open-page]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.openPage)));
  document.querySelectorAll('.subBack').forEach(button=>button.addEventListener('click',()=>{
   const onPage=button.closest('section')?.id;
-  if(['authPage','preferencesPage','walletPage','supporterPage','accountPage','draftsPage'].includes(onPage))show('settings');
+  if(['authPage','preferencesPage','walletPage','supporterPage','accountPage','draftsPage','socialConnectionsPage'].includes(onPage))show('settings');
   else show('preferencesPage');
  }));
  $('adult').addEventListener('change',()=>{
