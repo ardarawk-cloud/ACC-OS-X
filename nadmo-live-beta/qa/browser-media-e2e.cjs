@@ -102,6 +102,32 @@ async function main(){
   assert.ok(evidence.tracks.some(t=>t.kind==='video'&&t.readyState==='live'),'No active remote video track');
   assert.ok(evidence.tracks.some(t=>t.kind==='audio'),'No remote audio track');
   console.log('PASS actual WebRTC video and audio media received',JSON.stringify(evidence));
+  // Simulated Android foreground return: refresh the host camera while room/viewer stay open.
+  const firstHostVideo=await host.$eval('#remote',el=>el.srcObject?.getVideoTracks()[0]?.id);
+  const firstViewerStream=await viewer.$eval('#remote',el=>el.srcObject?.id);
+  await host.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'});
+    window.dispatchEvent(new Event('focus'));
+  });
+  await host.waitForFunction(old=>{
+    const track=document.querySelector('#remote')?.srcObject?.getVideoTracks()[0];
+    return track&&track.readyState==='live'&&track.id!==old;
+  },{timeout:18000},firstHostVideo);
+  await viewer.waitForFunction(old=>{
+    const el=document.querySelector('#remote');
+    return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
+  },{timeout:25000},firstViewerStream);
+  console.log('PASS host background return restarts camera while same viewer receives refreshed video');
+  const viewerStreamAfterHostResume=await viewer.$eval('#remote',el=>el.srcObject?.id);
+  await viewer.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'});
+    window.dispatchEvent(new Event('focus'));
+  });
+  await viewer.waitForFunction(old=>{
+    const el=document.querySelector('#remote');
+    return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
+  },{timeout:25000},viewerStreamAfterHostResume);
+  console.log('PASS returning viewer requests fresh video without leaving room');
   await host.locator('#afkToggle').click();
   await waitText(host,'#watchState','AFK aktif',15000);
   await viewer.waitForFunction(()=>document.querySelector('#remote')?.srcObject?.getVideoTracks()?.[0]?.readyState==='live',{timeout:15000});
