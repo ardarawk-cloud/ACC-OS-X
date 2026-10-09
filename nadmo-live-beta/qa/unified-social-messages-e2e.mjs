@@ -18,7 +18,9 @@ try{
  assert.equal(feed.status,200);
  assert.ok(feed.body.posts.some(p=>p.id===post.body.post.id));
  // Follow is account-bound and persists cross-device. Duplicate requests do not inflate counters.
- assert.equal((await action('/api/account/follow',ca,{handle:j})).status,200);
+ const firstFollow=await action('/api/account/follow',ca,{handle:j});
+ console.log('FOLLOW DEBUG',firstFollow.status,firstFollow.body.error);
+ assert.equal(firstFollow.status,200);
  assert.equal((await action('/api/account/follow',ca,{handle:j})).status,200);
  assert.equal((await action('/api/account/follow',ca,{handle:h})).status,400);
  let links=await get('/api/social/connections?type=following',ca);
