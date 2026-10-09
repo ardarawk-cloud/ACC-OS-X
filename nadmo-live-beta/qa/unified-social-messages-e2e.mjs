@@ -35,8 +35,15 @@ try{
  assert.equal(own.status,200);
  assert.equal(own.body.reposts[0].original.id,id);
   // Unrepost is owner-only: cannot remove someone else's repost, and counters stay accurate.
-  const byOther=await action('/api/account/social/unrepost',ca,{id});
-  assert.equal(byOther.status,200);
+  // Worker/DO code can briefly be at different rollout versions immediately after deploy.
+  // Retry only an unavailable API route, then fail loudly with its real response.
+  let byOther;
+  for(let attempt=0;attempt<10;attempt++){
+   byOther=await action('/api/account/social/unrepost',ca,{id});
+   if(byOther.status!==404)break;
+   if(attempt<9)await new Promise(resolve=>setTimeout(resolve,2500));
+  }
+  assert.equal(byOther.status,200,'unrepost readiness: '+JSON.stringify(byOther.body));
   assert.equal(byOther.body.removed,false);
   assert.equal((await get('/api/social/reposts/me',cb)).body.reposts.length,1);
   const undone=await action('/api/account/social/unrepost',cb,{id});
