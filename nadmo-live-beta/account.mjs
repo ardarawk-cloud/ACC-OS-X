@@ -192,6 +192,8 @@ export async function accountEndpoint(storage,request){
  const readKey=(a,b)=>'dm-read:'+a+':'+b;
  const canDirect=async(sender,receiver)=>{
   if(await storage.get(approvalKey(sender.id,receiver.id)))return true;
+  // Existing conversations remain available after switching privacy settings.
+  if(await storage.get('dm-member:'+sender.id+':'+receiver.id))return true;
   const mode=dmPrivacy(receiver);
   return mode==='everyone'||mode==='following'&&!!await storage.get(socialFollowing(receiver.id,sender.id));
  };
