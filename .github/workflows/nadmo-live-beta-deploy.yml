@@ -53,3 +53,8 @@ jobs:
             sleep 5
           done
           exit 1
+
+      - name: Install creator ownership QA dependencies
+        run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
+      - name: Verify account-bound resume and logout revocation against deployed Worker
+        run: node nadmo-live-beta/qa/creator-ownership-smoke.cjs
