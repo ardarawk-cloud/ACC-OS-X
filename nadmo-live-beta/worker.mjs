@@ -52,7 +52,17 @@ export class RoomHub{
   const pair=new WebSocketPair(),client=pair[0],server=pair[1];
   this.ctx.acceptWebSocket(server);
   save(server,{id:crypto.randomUUID().replace(/-/g,'').slice(0,16),roomId:null,role:null,lastWindow:0,events:0,lastChat:0});
+  // A 25s server heartbeat keeps mobile network paths warm without an APK update.
+  // The alarm is scheduled only while sockets are present; no idle background loop.
+  if((await this.ctx.storage.getAlarm())===null)await this.ctx.storage.setAlarm(Date.now()+25000);
   return new Response(null,{status:101,webSocket:client});
+ }
+ async alarm(){
+  const sockets=this.sockets();
+  if(!sockets.length)return;
+  const payload=JSON.stringify({type:'heartbeat',at:Date.now()});
+  for(const socket of sockets)reply(socket,JSON.parse(payload));
+  await this.ctx.storage.setAlarm(Date.now()+25000);
  }
  async webSocketMessage(ws,input){
   if(typeof input!=='string'||input.length>MAX_MESSAGE){ws.close(1009,'message too large');return}
@@ -140,10 +150,12 @@ export class RoomHub{
   }
  }
  async webSocketClose(ws,code,reason){
+  console.log('NADMO socket close',code,String(reason||'').slice(0,80),state(ws).role||'none');
   await this.leave(ws,state(ws));
   try{ws.close(code||1000,reason||'closed')}catch(e){}
  }
  async webSocketError(ws){
+  console.log('NADMO socket error',state(ws).role||'none');
   await this.leave(ws,state(ws));
   try{ws.close(1011,'connection error')}catch(e){}
  }
