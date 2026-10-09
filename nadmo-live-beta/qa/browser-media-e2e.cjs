@@ -89,6 +89,7 @@ async function main(){
    }
    throw err;
   }
+  await viewer.waitForFunction(()=>{const v=document.querySelector('#remote');return v?.videoWidth>0&&v?.readyState>=2},{timeout:20000});
   const evidence=await viewer.$eval('#remote',el=>({
     width:el.videoWidth,height:el.videoHeight,readyState:el.readyState,
     tracks:el.srcObject?.getTracks().map(t=>({kind:t.kind,enabled:t.enabled,readyState:t.readyState}))
@@ -106,6 +107,7 @@ async function main(){
   await waitText(host,'#watchState','Room berhasil dipulihkan',25000);
   await viewer.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('RECV host-reconnected')),{timeout:25000});
   await waitText(viewer,'#watchState','Video tersambung',35000);
+  await viewer.waitForFunction(()=>{const v=document.querySelector('#remote');return v?.videoWidth>0&&v?.readyState>=2},{timeout:20000});
   const recovered=await viewer.$eval('#remote',el=>({
     width:el.videoWidth,playing:el.readyState>=2,
     tracks:el.srcObject?.getTracks().map(t=>t.kind+':'+t.readyState)
