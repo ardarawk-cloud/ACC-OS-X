@@ -24,7 +24,7 @@ jobs:
           assert(script,'inline runtime JS exists');
           new Function(script);
           console.log('PASS JavaScript syntax');
-          const ids=['explore','following','signal','studio','settings','rooms','searchLive','filters','savedRooms','privateId','privateJoin','afkToggle','hostControls','shareRoom','restartRoom','signalStatus','watchState','saveServer','serverState','adult','remote','camera','chat'];
+          const ids=['explore','following','signal','studio','settings','rooms','searchLive','filters','savedRooms','afkToggle','hostControls','shareRoom','restartRoom','signalStatus','watchState','saveServer','serverState','adult','remote','camera','chat'];
           for(const id of ids)assert(html.includes('id="'+id+'"'),'missing '+id);
           console.log('PASS '+ids.length+' essential controls');
           assert(script.includes("show('explore')"),'default live first');
@@ -37,6 +37,8 @@ jobs:
           assert(html.includes('class="panel live-chat"'),'overlay chat');
           assert(html.includes('id="modeDetails"'),'mode info');
           assert(html.includes('id="liveModeGrid"'),'broadcast modes');
+          assert(!html.includes('id="privateId"')&&!html.includes('id="privateJoin"'),'obsolete manual private join form removed');
+          assert(script.includes("get('room')")&&script.includes("get('private')"),'private invite deeplink still supported');
           assert(html.includes('id="accessQuick"')&&html.includes('id="tipQuick"'),'floating actions');
           console.log('PASS fullscreen UI, modes, bottom sheets, camera standby, following, private room');
           NODE
