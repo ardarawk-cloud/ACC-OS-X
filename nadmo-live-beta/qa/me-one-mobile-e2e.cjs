@@ -69,6 +69,24 @@ const password='NadmoMeQA!'+crypto.randomUUID();
   await page.$eval('#socialPostText',(el,v)=>el.value=v,body);
   await page.$eval('#socialPublish',el=>el.click());
   await page.waitForFunction(text=>document.querySelector('#socialPublicFeed').textContent.includes(text),{timeout:12000},body);
+  // In both posts and reposts, the creator name is plain text and ONLY avatar opens ME.
+  const cardIdentity=await page.evaluate(text=>{
+   const cards=[...document.querySelectorAll('#socialPublicFeed .profile-post-card')];
+   const card=cards.find(el=>el.textContent.includes(text));
+   if(!card)return {exists:false};
+   const imageButton=card.querySelector('.post-top button.social-avatar-open');
+   const name=card.querySelector('.post-top span.social-display-name');
+   const box=imageButton?.getBoundingClientRect();
+   return {exists:true,avatarButton:!!imageButton,plainName:!!name,
+    nameIsNotButton:name?.tagName==='SPAN',
+    avatarWidth:Math.round(box?.width||0),avatarHeight:Math.round(box?.height||0),
+    noGiantName:!card.querySelector('.post-top button.profile-open'),
+    widthOverflow:card.scrollWidth>card.clientWidth+1};
+  },body);
+  assert.deepEqual(cardIdentity,{exists:true,avatarButton:true,plainName:true,nameIsNotButton:true,
+   avatarWidth:40,avatarHeight:40,noGiantName:true,widthOverflow:false});
+  await page.$eval('#socialPublicFeed .profile-post-card .post-top button.social-avatar-open',el=>el.click());
+  assert.equal(await page.$eval('#settings',el=>!el.classList.contains('hide')),true,'Avatar opens own ME');
   await page.$eval('nav [data-tab="settings"]',el=>el.click());
   assert.ok((await page.$eval('#profilePublishedPosts',el=>el.textContent)).includes(body));
   assert.deepEqual(errors,[],'No browser JavaScript crashes');
