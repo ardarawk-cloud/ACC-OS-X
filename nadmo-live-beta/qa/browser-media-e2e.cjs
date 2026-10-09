@@ -66,6 +66,9 @@ async function main(){
   await delay(1000);
   const beforeClick=await viewer.evaluate(()=>({adult:document.querySelector('#adult')?.checked,visible:!document.querySelector('#explore')?.classList.contains('hide'),cards:document.querySelectorAll('#rooms .room').length,buttons:document.querySelectorAll('#rooms .room .btn').length}));
   console.log('VIEWER_BEFORE_CLICK '+JSON.stringify(beforeClick));
+  const coords=await viewer.$eval('#rooms .room .btn',el=>{const r=el.getBoundingClientRect();const center=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return{y:r.y,height:r.height,hitTag:center?.tagName,hitText:center?.textContent?.slice(0,45)}});
+  console.log('VIEWER_WATCH_BUTTON_GEOMETRY '+JSON.stringify(coords));
+  await viewer.$eval('#rooms .room .btn',el=>el.scrollIntoView({block:'center',behavior:'instant'}));
   await viewer.locator('#rooms .room .btn').click();
   await delay(1000);
   console.log('VIEWER_AFTER_CLICK '+JSON.stringify(await viewer.evaluate(()=>({adult:document.querySelector('#adult')?.checked,watch:!document.querySelector('#watch')?.classList.contains('hide'),log:window.__nadmoQALog?.slice(-20)}))));
