@@ -37,21 +37,27 @@ async function throttle(storage,key,limit,windowMs){
  await storage.put('auth-limit:'+key,value);
  return value.count<=limit;
 }
-async function getAccount(storage,request){
- const token=cookies(request);
- if(!/^[a-f0-9]{64}$/.test(token))return null;
- const fingerprint=await digest(token);
+async function getAccountBySessionFingerprint(storage,fingerprint){
+ if(typeof fingerprint!=='string'||!/^[a-f0-9]{64}$/.test(fingerprint))return null;
  const session=await storage.get('auth-session:'+fingerprint);
  if(!session||session.expiresAt<Date.now())return null;
  const user=await storage.get('auth-user:'+session.id);
  return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
+}
+async function getSessionFingerprint(request){
+ const token=cookies(request);
+ return /^[a-f0-9]{64}$/.test(token)?await digest(token):null;
+}
+async function getAccount(storage,request){
+ const fingerprint=await getSessionFingerprint(request);
+ return fingerprint?getAccountBySessionFingerprint(storage,fingerprint):null;
 }
 async function createSession(storage,account){
  const token=hex(crypto.getRandomValues(new Uint8Array(32)));
  await storage.put('auth-session:'+await digest(token),{id:account.id,expiresAt:Date.now()+SESSION_AGE*1000});
  return token;
 }
-export {getAccount,urlOK};
+export {getAccount,urlOK,getAccountBySessionFingerprint,getSessionFingerprint};
 export async function accountEndpoint(storage,request){
  const u=new URL(request.url),p=u.pathname,method=request.method;
  if(p==='/api/payments/status')return json({enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,state:'WAITING_LICENSED_PROVIDER'});
