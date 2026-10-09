@@ -15,7 +15,12 @@ async function main(){
   await one.locator('#accountHandle').fill(handle);
   await one.locator('#accountName').fill('NADMO QA Independent Creator');
   await one.locator('#accountPass').fill(password);
+  one.on('pageerror',e=>console.log('AUTH_PAGE_ERROR',String(e)));
+  one.on('console',m=>{if(m.type()==='error')console.log('AUTH_CONSOLE_ERROR',m.text().slice(0,300))});
   await one.locator('#accountRegister').click();
+  await new Promise(r=>setTimeout(r,3000));
+  const diag=await one.evaluate(()=>({status:document.querySelector('#accountStatus')?.textContent,signed:!document.querySelector('#accountSignedCard')?.classList.contains('hide'),url:location.href}));
+  console.log('AUTH_SIGNUP_DIAGNOSTIC',JSON.stringify(diag));
   await one.waitForFunction(()=>!document.querySelector('#accountSignedCard').classList.contains('hide'),{timeout:18000});
   assert.equal(await one.$eval('#signedAccountHandle',x=>x.textContent),'@'+handle);
   const cookieVisible=await one.evaluate(()=>document.cookie.includes('nadmo_beta_session'));
