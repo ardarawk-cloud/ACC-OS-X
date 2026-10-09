@@ -40,7 +40,11 @@ async function main(){
   assert.equal(reg.account.kycStatus,'NOT_CONFIGURED','KYC not claimed active');
   console.log('PASS registered private beta account, HttpOnly session, no fake KYC verification');
 
-  await one.locator('#editProfileBtn').click();
+  await one.$eval('#editProfileBtn',el=>{
+   if(getComputedStyle(el).display==='none'||el.getBoundingClientRect().width===0)
+    throw Error('Profile edit control is not rendered');
+   el.scrollIntoView({block:'center'});el.click();
+  });
   await one.locator('#profileName').fill('NADMO QA Creator');
   await one.locator('#profileBio').fill('Open business links under one NADMO account');
   await one.locator('#profileLinkLabel').fill('Independent Booking');
