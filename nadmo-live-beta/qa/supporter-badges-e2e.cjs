@@ -48,11 +48,11 @@ async function main(){
   });
   assert.notEqual(forged.status,200,'Browser must not be able to grant supporter level');
   await page.$eval('#supporterShowBadge',e=>e.click());
-  await page.waitForFunction(()=>document.querySelector('#supporterStatus').textContent.includes('PRATINJAU DESAIN'),{timeout:15000});
+  await page.waitForFunction(()=>document.querySelector('#supporterStatus').textContent.includes('Dukungan belum tersedia'),{timeout:15000});
   const privateResponse=await page.evaluate(async()=>await (await fetch('/api/supporter/me')).json());
   assert.equal(privateResponse.supporter.visible,false,'Hidden badge preference persists on server');
   await page.$eval('#supporterShowBadge',e=>e.click());
-  await page.waitForFunction(()=>document.querySelector('#supporterStatus').textContent.includes('PRATINJAU DESAIN'),{timeout:12000});
+  await page.waitForFunction(()=>document.querySelector('#supporterStatus').textContent.includes('Dukungan belum tersedia'),{timeout:12000});
   const visibleResponse=await page.evaluate(async()=>await(await fetch('/api/supporter/me')).json());
   assert.equal(visibleResponse.supporter.visible,true);
   assert.equal(visibleResponse.supporter.level,0);
