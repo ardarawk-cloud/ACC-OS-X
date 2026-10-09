@@ -127,10 +127,26 @@ async function main(){
     Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'});
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await viewer.waitForFunction(old=>{
-    const el=document.querySelector('#remote');
-    return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
-  },{timeout:25000},viewerStreamAfterHostResume);
+  console.log('VIEWER_RESUME_REQUEST '+JSON.stringify(await viewer.evaluate(()=>({visible:document.visibilityState,state:document.querySelector('#watchState')?.textContent,events:window.__nadmoQALog?.slice(-12)}))));
+  await delay(1300);
+  console.log('HOST_AFTER_VIEWER_RESUME '+JSON.stringify(await host.evaluate(()=>({events:window.__nadmoQALog?.slice(-18),state:document.querySelector('#watchState')?.textContent}))));
+  try{
+   await viewer.waitForFunction(old=>{
+     const el=document.querySelector('#remote');
+     return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
+   },{timeout:20000},viewerStreamAfterHostResume);
+  }catch(e){
+   for(const [page,name] of [[host,'HOST'],[viewer,'VIEWER']]){
+    console.log('FOREGROUND_DIAGNOSTIC '+name+' '+JSON.stringify(await page.evaluate(()=>({
+     status:document.querySelector('#watchState')?.textContent,
+     events:window.__nadmoQALog?.slice(-35),
+     peers:window.__nadmoPCs?.map(p=>({state:p.connectionState,ice:p.iceConnectionState,signaling:p.signalingState,closed:p.signalingState==='closed'})),
+     stream:document.querySelector('#remote')?.srcObject?.id,
+     video:document.querySelector('#remote')?.videoWidth
+    }))));
+   }
+   throw e;
+  }
   console.log('PASS returning viewer requests fresh video without leaving room');
   // The user can also force recovery in-place if Android did not emit a resume event.
   const viewerManualBefore=await viewer.$eval('#remote',el=>el.srcObject?.id);
