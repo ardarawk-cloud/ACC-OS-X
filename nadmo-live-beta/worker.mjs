@@ -1,4 +1,4 @@
-import {accountEndpoint,getAccount} from './account.mjs';
+import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFingerprint} from './account.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling, no public onboarding, no content moderation service.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
@@ -31,6 +31,7 @@ function cors(request,response){
 }
 export class RoomHub{
  constructor(ctx,env){this.ctx=ctx;this.env=env}
+ creatorVerificationRequired(){return this.env.VERIFY_CREATOR_REQUIRED==='true'||this.env.BETA_TEST_HOSTS_ENABLED!=='true'}
  sockets(){return this.ctx.getWebSockets()}
  async findRooms(){return this.ctx.storage.list({prefix:'room:'})}
  async fetch(request){
@@ -60,8 +61,9 @@ export class RoomHub{
   const pair=new WebSocketPair(),client=pair[0],server=pair[1];
   this.ctx.acceptWebSocket(server);
   const principal=await getAccount(this.ctx.storage,request);
+  const sessionFingerprint=principal?await getSessionFingerprint(request):null;
   save(server,{id:crypto.randomUUID().replace(/-/g,'').slice(0,16),roomId:null,role:null,lastWindow:0,events:0,lastChat:0,
-    accountId:principal?.id||null,handle:principal?.handle||null,displayName:principal?.name||null,
+    accountId:principal?.id||null,sessionFingerprint,handle:principal?.handle||null,displayName:principal?.name||null,
     verifiedAdult:principal?.verifiedAdult===true,kycStatus:principal?.kycStatus||'NOT_CONFIGURED'});
   // A 25s server heartbeat keeps mobile network paths warm without an APK update.
   // The alarm is scheduled only while sockets are present; no idle background loop.
@@ -72,9 +74,6 @@ export class RoomHub{
   const sockets=this.sockets(),rooms=await this.findRooms();
   const now=Date.now();
   for(const [key,room] of rooms){
-   if(this.env.VERIFY_CREATOR_REQUIRED==='true'&&
-      (!s.accountId||s.accountId!==room.hostAccountId||s.kycStatus!=='verified'||!s.verifiedAdult))
-    return failure(ws,'Pemulihan streamer memerlukan sesi akun terverifikasi yang sama');
    if(room.hostOfflineAt&&now-room.hostOfflineAt>HOST_GRACE_MS){
     await this.ctx.storage.delete(key);
     for(const socket of sockets){
@@ -105,9 +104,12 @@ export class RoomHub{
   if(type==='leave'){await this.leave(ws,s);reply(ws,{type:'left'});return}
   if(type==='create'){
    if(s.roomId)return failure(ws,'Keluar dari room sebelumnya terlebih dahulu');
-   // Public launch: configure VERIFY_CREATOR_REQUIRED=true ONLY after KYC provider, auditing
-   // and account linking have been verified. Private beta currently accepts test hosts.
-   if(this.env.VERIFY_CREATOR_REQUIRED==='true'&&(!s.accountId||s.kycStatus!=='verified'||!s.verifiedAdult))
+   // Re-read sessions on every host action: expired/revoked sessions have no creator rights.
+   const current=s.sessionFingerprint?await getAccountBySessionFingerprint(this.ctx.storage,s.sessionFingerprint):null;
+   if(s.accountId&&(!current||current.id!==s.accountId))
+    return failure(ws,'Sesi akun telah berakhir. Silakan login kembali.');
+   // Isolated private beta may opt in to anonymous test hosts; other Workers fail closed.
+   if(this.creatorVerificationRequired()&&(!current||current.kycStatus!=='verified'||!current.verifiedAdult))
     return failure(ws,'Akun streamer harus terverifikasi identitas 18+ sebelum GO LIVE.');
    const all=await this.findRooms();
    if(all.size>=ROOM_LIMIT)return failure(ws,'Room beta sudah penuh');
@@ -117,8 +119,8 @@ export class RoomHub{
    const id=crypto.randomUUID().replace(/-/g,'').slice(0,12);
    const resumeToken=crypto.randomUUID()+crypto.randomUUID();
    const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',
-    hostName:s.displayName||txt(msg.hostName,60)||'Host',hostHandle:s.handle||null,
-    hostVerified:s.kycStatus==='verified'&&s.verifiedAdult===true,hostAccountId:s.accountId||null,
+    hostName:current?.name||txt(msg.hostName,60)||'Host',hostHandle:current?.handle||null,
+    hostVerified:current?.kycStatus==='verified'&&current?.verifiedAdult===true,hostAccountId:current?.id||null,
     mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,createdAt:now};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
@@ -135,6 +137,13 @@ export class RoomHub{
    if(room.hostOfflineAt&&now-room.hostOfflineAt>HOST_GRACE_MS){
     await this.ctx.storage.delete('room:'+id);
     return failure(ws,'Waktu pemulihan 90 detik telah habis');
+   }
+   const current=s.sessionFingerprint?await getAccountBySessionFingerprint(this.ctx.storage,s.sessionFingerprint):null;
+   if(this.creatorVerificationRequired()){
+    if(!current||current.id!==room.hostAccountId||current.kycStatus!=='verified'||!current.verifiedAdult)
+     return failure(ws,'Pemulihan streamer memerlukan sesi akun terverifikasi yang sama');
+   }else if(room.hostAccountId&&(!current||current.id!==room.hostAccountId)){
+    return failure(ws,'Pemulihan ditolak: akun pemilik room tidak cocok atau sesi telah berakhir');
    }
    const peers=this.sockets();
    const old=getHost(peers,room.hostId);
@@ -355,7 +364,7 @@ export default {
     return new Response(asset.body,{status:asset.status,headers});
   }
   if(url.pathname==='/api/radio/status')return cors(request,Response.json(await radioStatus(env)));
-  if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,payments:false}));
+  if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,payments:false,creatorVerificationRequired:env.VERIFY_CREATOR_REQUIRED==='true'||env.BETA_TEST_HOSTS_ENABLED!=='true',anonymousBetaHostsEnabled:env.BETA_TEST_HOSTS_ENABLED==='true'&&env.VERIFY_CREATOR_REQUIRED!=='true'}));
   if(url.pathname==='/'){
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
