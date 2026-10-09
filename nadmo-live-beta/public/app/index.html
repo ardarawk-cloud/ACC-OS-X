@@ -702,7 +702,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings'];
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
- let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set();
+ let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null;
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
@@ -956,7 +956,16 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
  function show(name){document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
- $('adult').addEventListener('change',()=>localStorage.setItem('nadmo.adult',$('adult').checked?'yes':'no'));
+ $('adult').addEventListener('change',()=>{
+  const confirmed=$('adult').checked;
+  localStorage.setItem('nadmo.adult',confirmed?'yes':'no');
+  // A link opened on a new device must continue into the exact invited room after
+  // the viewer confirms their age; no second link click or identity upload.
+  if(confirmed&&pendingInvite){
+   const invite=pendingInvite;pendingInvite=null;
+   setTimeout(()=>join(invite.id,invite.title,invite.locked),80);
+  }
+ });
  function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Settings.');show('settings');return false}return true}
  function notice(s,id='serverState'){$(id).textContent=s;if(id==='watchState')markWatchWarning(s)}
  function markWatchWarning(s){$('watchState').classList.toggle('connection-warning',/gagal|terputus|menunggu|salah|koneksi.*hilang|host.*reconnect|belum dapat|belum tersambung|ditolak|offline|sedang dipulihkan/i.test(s))}
@@ -1442,7 +1451,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   const category=selectedLiveMode==='talk'?'Podcast':$('category').value;
   connect(()=>transmit({type:'create',title,category,mode:'public',hostName:activeAccount?.name||draftProfile.name||'Host'}));
  };
- function join(id,title,locked){if(!adult())return;let password='';if(locked){password=prompt('Kode akses room:')||'';if(!password)return}roomPassword=password;stopRetry();
+ function join(id,title,locked){if(!adult()){pendingInvite={id,title,locked};return}pendingInvite=null;let password='';if(locked){password=prompt('Kode akses room:')||'';if(!password)return}roomPassword=password;stopRetry();
  connect(()=>transmit({type:'join',id,password}));$('watchTitle').textContent='Host';$('watchRoomSubtitle').textContent=title||''}
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
