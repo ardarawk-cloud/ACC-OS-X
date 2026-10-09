@@ -26,6 +26,28 @@ async function main(){
    page.on('pageerror',err=>{faults.push(name+': '+String(err));console.log('PAGE_ERROR',name,String(err))});
    page.on('console',msg=>{if(msg.type()==='error')console.log('CONSOLE',name,msg.text().slice(0,160))});
   }
+  for(const page of [host,viewer]){
+   await page.evaluateOnNewDocument(()=>{
+    window.__nadmoQALog=[];
+    window.__nadmoPCs=[];
+    const RealWS=window.WebSocket;
+    class QASocket extends RealWS{
+     constructor(...args){
+      super(...args);
+      this.addEventListener('message',e=>{try{const m=JSON.parse(e.data);window.__nadmoQALog.push('RECV '+m.type+' '+(m.data?.description?.type||''))}catch(x){}});
+      this.addEventListener('close',e=>window.__nadmoQALog.push('CLOSE '+e.code));
+     }
+     send(str){
+      try{const m=JSON.parse(str);window.__nadmoQALog.push('SEND '+m.type+' '+(m.data?.description?.type||''))}catch(e){}
+      return super.send(str);
+     }
+    }
+    window.WebSocket=QASocket;
+    const NativePC=window.RTCPeerConnection;
+    class QAPeer extends NativePC{constructor(...args){super(...args);window.__nadmoPCs.push(this)}}
+    window.RTCPeerConnection=QAPeer;
+   });
+  }
   await readyAge(host);
   await host.locator('nav button[data-tab="studio"]').click();
   await host.locator('#preview').click();
@@ -42,7 +64,21 @@ async function main(){
   await viewer.locator('nav button[data-tab="explore"]').click();
   await viewer.waitForFunction(()=>Array.from(document.querySelectorAll('#rooms .room b')).some(x=>x.textContent==='NADMO QA Virtual Camera Stream'),{timeout:30000});
   await viewer.locator('#rooms .room .btn').click();
-  await waitText(viewer,'#watchState','Video tersambung',35000);
+  try{await waitText(viewer,'#watchState','Video tersambung',35000)}
+  catch(err){
+   for(const [p,name] of [[host,'HOST'],[viewer,'VIEWER']]){
+    const data=await p.evaluate(()=>({
+     appStatus:document.querySelector('#watchState')?.textContent,
+     socket:window.__nadmoQALog?.slice(-40),
+     peers:window.__nadmoPCs?.map(x=>({ice:x.iceConnectionState,connection:x.connectionState,signaling:x.signalingState,
+      gathering:x.iceGatheringState,localSDP:x.localDescription?.type,remoteSDP:x.remoteDescription?.type,
+      senders:x.getSenders().map(x=>x.track?.kind),receivers:x.getReceivers().map(x=>x.track?.kind)})),
+     remote:document.querySelector('#remote')?.srcObject?.getTracks().map(x=>({kind:x.kind,state:x.readyState}))||[]
+    }));
+    console.log('DIAGNOSTIC '+name+' '+JSON.stringify(data));
+   }
+   throw err;
+  }
   const evidence=await viewer.$eval('#remote',el=>({
     width:el.videoWidth,height:el.videoHeight,readyState:el.readyState,
     tracks:el.srcObject?.getTracks().map(t=>({kind:t.kind,enabled:t.enabled,readyState:t.readyState}))
