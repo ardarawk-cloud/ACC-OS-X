@@ -2,7 +2,7 @@ import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFing
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
-const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_MESSAGE=60000, HOST_GRACE_MS=90000, REPORT_LIMIT=100, REPORT_TTL=14*86400000;
+const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_MESSAGE=60000, HOST_GRACE_MS=90000, REPORT_LIMIT=100, REPORT_TTL=14*86400000, GUEST_LIMIT=9;
 
 function txt(x,max=60){return typeof x==='string'?x.trim().slice(0,max):''}
 function reply(ws,object){try{ws.send(JSON.stringify(object))}catch(e){}}
@@ -11,6 +11,14 @@ function state(ws){return ws.deserializeAttachment()||{}}
 function save(ws,meta){ws.serializeAttachment(meta)}
 function getHost(clients,id){return clients.find(x=>state(x).id===id)}
 function roomCount(clients,id){return clients.filter(x=>state(x).role==='viewer'&&state(x).roomId===id).length}
+function stageGuests(clients,id){return clients.filter(x=>state(x).role==='guest'&&state(x).roomId===id)}
+function stagePublic(clients,id){return stageGuests(clients,id).map(x=>{
+ const s=state(x);return {id:s.id,name:s.displayName||s.handle||'Tamu',mode:s.guestMode||'voice',ready:s.guestReady===true,mic:s.guestMic===true,camera:s.guestCamera===true};
+})}
+function stageBroadcast(clients,id){
+ const packet={type:'stage-updated',guests:stagePublic(clients,id),maxGuests:GUEST_LIMIT};
+ for(const ws of clients)if(state(ws).roomId===id)reply(ws,packet);
+}
 async function sha(value){
  const bytes=new TextEncoder().encode(value);
  const result=await crypto.subtle.digest('SHA-256',bytes);
@@ -181,9 +189,11 @@ export class RoomHub{
    room.hostId=s.id;room.hostOfflineAt=null;
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
-   const viewers=peers.filter(x=>state(x).roomId===id&&state(x).role==='viewer').map(x=>state(x).id);
+   const viewers=peers.filter(x=>state(x).roomId===id&&['viewer','guest'].includes(state(x).role)).map(x=>state(x).id);
    reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified});
-   for(const other of peers){if(state(other).roomId===id&&state(other).role==='viewer')reply(other,{type:'host-reconnected'})}
+   for(const other of peers){if(state(other).roomId===id&&state(other).role!=='host')reply(other,{type:'host-reconnected'})}
+    for(const other of peers){const meta=state(other);if(meta.roomId===id&&meta.pendingGuestMode)reply(ws,{type:'guest-requested',id:meta.id,name:meta.displayName||meta.handle||'Penonton',mode:meta.pendingGuestMode})}
+    stageBroadcast(peers,id);
    return;
   }
   if(type==='join'){
@@ -198,8 +208,9 @@ export class RoomHub{
    if(s.accountId&&Array.isArray(room.blockedAccounts)&&room.blockedAccounts.includes(s.accountId))
     return failure(ws,'Akses akun ke room ini telah diblokir oleh host.');
    s.roomId=id;s.role='viewer';save(ws,s);
-   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true});
+   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id)});
    reply(host,{type:'viewer-joined',id:s.id});
+    stageBroadcast(peers,id);
    return;
   }
   if(!s.roomId)return failure(ws,'Belum tergabung dalam room');
