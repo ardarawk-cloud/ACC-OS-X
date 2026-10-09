@@ -305,7 +305,7 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
  $('afkToggle').onclick=toggleAfk;
  $('shareRoom').onclick=async()=>{
   if(!currentRoom)return;
-  const url=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(currentRoom);
+  const url=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(currentRoom)+($('mode').value==='password'?'&private=1':'');
   try{await navigator.clipboard.writeText(url);$('watchState').textContent='Link undangan disalin. Kirim passcode secara terpisah jika room terkunci.'}
   catch(e){window.prompt('Salin link room',url)}
  };
@@ -314,8 +314,8 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
  function signal(to,data){transmit({type:'signal',to,data})}
  async function attachViewer(id){if(!localStream)return;const pc=rtc();peers.set(id,pc);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.onicecandidate=e=>{if(e.candidate)signal(id,{candidate:e.candidate})};const offer=await pc.createOffer();await pc.setLocalDescription(offer);signal(id,{description:pc.localDescription})}
  async function incoming(m){
-  if(m.type==='created'){currentRoom=m.id;selfId=m.selfId;host=true;$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Anda sedang siaran. Bagikan kode: '+m.id;$('remote').srcObject=localStream;show('watch');}
-  if(m.type==='joined'){currentRoom=m.id;selfId=m.selfId;host=false;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';show('watch')}
+  if(m.type==='created'){currentRoom=m.id;selfId=m.selfId;host=true;$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Anda sedang siaran. Bagikan kode: '+m.id;$('remote').muted=true;$('remote').srcObject=localStream;show('watch');}
+  if(m.type==='joined'){currentRoom=m.id;selfId=m.selfId;host=false;$('remote').muted=false;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';show('watch')}
   if(m.type==='viewer-joined'&&host){await attachViewer(m.id)}
   if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id)}
   if(m.type==='signal'){let pc;if(host)pc=peers.get(m.from);else{if(!peer){peer=rtc();peer.ontrack=e=>{$('remote').srcObject=e.streams[0];$('watchState').textContent='Video tersambung'};peer.onicecandidate=e=>{if(e.candidate)signal(m.from,{candidate:e.candidate})}}pc=peer}
@@ -344,7 +344,7 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
   if(peer){peer.close();peer=null}
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
   currentRoom='';selfId='';host=false;
-  $('remote').srcObject=null;$('chat').replaceChildren();
+  $('remote').srcObject=null;$('remote').muted=false;$('chat').replaceChildren();
   $('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');
   $('afkToggle').textContent='▤ AFK SCENE';
   $('stopCamera').click();show('explore');
@@ -352,6 +352,6 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
  $('leave').onclick=leave;window.addEventListener('pagehide',()=>{if(localStream)localStream.getTracks().forEach(t=>t.stop());});
  health();show('explore');
  const incomingRoom=new URLSearchParams(location.search).get('room');
- if(incomingRoom&&/^[a-f0-9]{12,32}$/i.test(incomingRoom))setTimeout(()=>join(incomingRoom,'Invitation room',true),450);
+ if(incomingRoom&&/^[a-f0-9]{12,32}$/i.test(incomingRoom))setTimeout(()=>join(incomingRoom,'Invitation room',new URLSearchParams(location.search).get('private')==='1'),450);
 })();
 </script></body></html>
