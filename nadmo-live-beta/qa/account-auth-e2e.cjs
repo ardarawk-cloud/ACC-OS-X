@@ -20,6 +20,7 @@ async function main(){
   await one.locator('#accountHandle').fill(handle);
   await one.locator('#accountName').fill('NADMO QA Independent Creator');
   await one.locator('#accountPass').fill(password);
+  one.on('response',async response=>{if(response.url().includes('/api/account/register')){try{console.log('AUTH_REGISTER_HTTP',JSON.stringify({status:response.status(),body:(await response.text()).slice(0,450)}))}catch(e){console.log('AUTH_REGISTER_RESPONSE_READ_ERROR',String(e))}}});
   one.on('pageerror',e=>console.log('AUTH_PAGE_ERROR',String(e)));
   one.on('console',m=>{if(m.type()==='error')console.log('AUTH_CONSOLE_ERROR',m.text().slice(0,300))});
   await one.locator('#accountRegister').click();
