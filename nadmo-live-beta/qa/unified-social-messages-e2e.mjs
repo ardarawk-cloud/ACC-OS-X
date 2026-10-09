@@ -17,6 +17,17 @@ try{
  const feed=await get('/api/social/feed');
  assert.equal(feed.status,200);
  assert.ok(feed.body.posts.some(p=>p.id===post.body.post.id));
+ // Follow is account-bound and persists cross-device. Duplicate requests do not inflate counters.
+ assert.equal((await action('/api/account/follow',ca,{handle:j})).status,200);
+ assert.equal((await action('/api/account/follow',ca,{handle:j})).status,200);
+ assert.equal((await action('/api/account/follow',ca,{handle:h})).status,400);
+ let links=await get('/api/social/connections?type=following',ca);
+ assert.equal(links.status,200);assert.equal(links.body.counts.following,1);
+ assert.ok(links.body.accounts.some(x=>x.handle===j));
+ links=await get('/api/social/connections?type=followers',cb);
+ assert.equal(links.body.counts.followers,1);assert.ok(links.body.accounts.some(x=>x.handle===h));
+ assert.equal((await get('/api/profile/'+j,ca)).body.isFollowing,true);
+ assert.equal((await get('/api/profile/'+j)).body.isFollowing,false);
  const unaccepted=await action('/api/messages/send',ca,{handle:j,text:'Must not deliver'});
  assert.equal(unaccepted.status,403,'Chat requires consent');
  const requested=await action('/api/messages/request',ca,{handle:j});assert.equal(requested.status,200);
@@ -29,9 +40,12 @@ try{
  assert.equal(history.status,200);assert.ok(history.body.messages.some(x=>x.text==='Chat after consent'));
  const blocked=await action('/api/messages/block',cb,{handle:h});assert.equal(blocked.status,200);
  assert.equal((await action('/api/messages/send',ca,{handle:j,text:'Not after block'})).status,403);
+ assert.equal((await get('/api/social/connections?type=following',ca)).body.counts.following,0,'Block must also remove follow');
+ assert.equal((await get('/api/social/connections?type=followers',cb)).body.counts.followers,0,'Block must also remove follower');
+ assert.equal((await action('/api/account/follow',ca,{handle:j})).status,403,'Blocked follow must fail');
  const remove=await action('/api/account/posts/delete',ca,{id:post.body.post.id});assert.equal(remove.status,200);
  assert.ok(!(await get('/api/social/feed')).body.posts.some(x=>x.id===post.body.post.id));
- console.log('PASS public posting/deletion, chat consent, send, receive, blocking');
+ console.log('PASS public posting/deletion, follow counts/consent, chat consent, send, receive, blocking');
 }finally{
  for(const cookie of [ca,cb].filter(Boolean)){
   const result=await action('/api/account/delete',cookie,{password});
