@@ -382,7 +382,7 @@ export class RoomHub{
      supporterBadge=await getPublicSupporterBadge(this.ctx.storage,principal.id,record);
     }
    }
-   const packet={type:'chat',from:s.id,name:s.displayName||s.handle||(s.role==='host'?room.hostName||'Host':'Viewer'),handle:s.handle||null,verified:s.kycStatus==='verified'&&s.verifiedAdult===true,supporterBadge,text};
+   const packet={type:'chat',from:s.id,name:s.displayName||s.handle||(s.role==='host'?room.hostName||'Host':'Viewer'),handle:s.handle||null,avatarVersion:s.avatarVersion||0,verified:s.kycStatus==='verified'&&s.verifiedAdult===true,supporterBadge,text};
    this.sockets().filter(x=>state(x).roomId===room.id).forEach(x=>reply(x,packet));
    return;
   }
