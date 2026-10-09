@@ -25,6 +25,9 @@ jobs:
         run: |
           node --check nadmo-live-beta/worker.mjs
           node --check nadmo-live-beta/account.mjs
+          node --check nadmo-live-beta/qa/room-safety-smoke.cjs
+          node --check nadmo-live-beta/qa/room-safety-ui-e2e.cjs
+          node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
       - name: Deploy isolated beta Worker (do not modify production apps)
         id: deploy
         uses: cloudflare/wrangler-action@v4
@@ -58,6 +61,8 @@ jobs:
         run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
       - name: Verify account-bound resume and logout revocation against deployed Worker
         run: node nadmo-live-beta/qa/creator-ownership-smoke.cjs
+      - name: Verify server enforced reports and host mute/kick/block
+        run: node nadmo-live-beta/qa/room-safety-smoke.cjs
       - name: Install browser authentication QA
         run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
       - name: Locate Chrome for real browser account tests
@@ -67,3 +72,5 @@ jobs:
           echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
       - name: Verify account registration, linked profiles and private draft posts after deploy
         run: node nadmo-live-beta/qa/account-auth-e2e.cjs
+      - name: Verify mobile viewer reports and host moderation UI
+        run: node nadmo-live-beta/qa/room-safety-ui-e2e.cjs
