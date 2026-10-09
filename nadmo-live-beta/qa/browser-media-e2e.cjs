@@ -150,6 +150,7 @@ async function main(){
       quickVisible:getComputedStyle(document.querySelector('#desktopSawerBar')).display==='flex'
     };
   });
+  console.log('PC_STAGE_DIAGNOSTIC '+JSON.stringify(pcStage));
   assert.ok(pcStage.viewerMode&&pcStage.navHidden&&pcStage.railVisible&&pcStage.quickVisible,'PC must show viewing rail, permanent theater and rupiah bar');
   assert.ok(pcStage.theater[0]>=pcStage.rail[2],'Theater must be to right of navigation rail');
   assert.ok(pcStage.chat[0]>=pcStage.theater[0]+pcStage.theater[2],'Live chat must have its own right-side column');
