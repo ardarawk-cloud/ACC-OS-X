@@ -540,6 +540,22 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 @media(max-width:360px){#guestStageGrid .stage-slot-number{top:3px;left:3px;min-width:19px;height:18px;font-size:9px}}
 #tipRecipientOptions{margin:8px 0 12px;max-height:110px;overflow-y:auto;display:flex;gap:5px;flex-wrap:wrap}
 #tipRecipientOptions button{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+
+#walletPanel[hidden]{display:none!important}
+.wallet-panel{margin:15px 0;border:1px solid #40543c;border-radius:12px;background:#141e15}
+.wallet-panel details{padding:0 14px 14px}
+.wallet-panel summary{display:flex;justify-content:space-between;cursor:pointer;gap:8px;padding:14px 0;list-style:none;color:#effce1;font:800 14px/1.3 Arial,sans-serif}
+.wallet-panel summary::-webkit-details-marker{display:none}
+.wallet-total{display:flex;flex-direction:column;gap:4px;border-top:1px solid #3b4837;padding:14px 0}
+.wallet-total small{color:#b0c0a9;font:700 10px Arial,sans-serif}
+.wallet-total strong{font:900 30px/1.15 Impact,Arial,sans-serif;color:var(--neon);font-variant-numeric:tabular-nums}
+.wallet-breakdown{display:flex;justify-content:space-between;gap:9px;color:#bfceb9;font:700 11px/1.5 Arial,sans-serif;padding:7px 0}
+.wallet-breakdown b{color:#f0f6e9;font-variant-numeric:tabular-nums}
+.wallet-destination,.wallet-panel #walletInfo{color:#abbea8;font-size:11px;line-height:1.6}
+.wallet-panel #walletWithdraw{width:100%;margin-top:10px}
+.wallet-panel #walletWithdraw:disabled{opacity:.55;cursor:not-allowed}
+.wallet-history{border-top:1px solid #40503d;padding-top:11px;font-size:11px;line-height:1.7;color:#adc0aa}
+.wallet-history>b{display:block;margin-bottom:4px;color:#e7f6da}
 </style></head>
 <body>
 <div class="app">
@@ -823,6 +839,19 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    <small id="supporterStatus" role="status">Badge diberikan berdasarkan dukungan terverifikasi.</small>
    </details>
   </section>
+  <section class="wallet-panel" id="walletPanel" hidden aria-label="Dompet dan penarikan">
+   <details id="walletDetails">
+    <summary><span>DOMPET & PENARIKAN</span><span>⌄</span></summary>
+    <div class="wallet-total"><small>SALDO TERSEDIA</small><strong id="walletAvailable">Rp0</strong></div>
+    <div class="wallet-breakdown"><span>Menunggu pencairan</span><b id="walletPending">Rp0</b></div>
+    <div class="wallet-breakdown"><span>Pendapatan bersih</span><b id="walletTotal">Rp0</b></div>
+    <div class="wallet-breakdown"><span>Sudah dicairkan</span><b id="walletPaid">Rp0</b></div>
+    <p class="wallet-destination">Rekening pencairan belum terhubung.</p>
+    <button type="button" class="btn secondary" id="walletWithdraw" disabled>TARIK SALDO</button>
+    <p id="walletInfo" role="status">Penarikan belum tersedia sampai pembayaran resmi aktif.</p>
+    <div class="wallet-history"><b>RIWAYAT</b><div id="walletHistory">Belum ada transaksi.</div></div>
+   </details>
+  </section>
   <div class="show-label"><b>PRIVASI & KEAMANAN</b></div>
   <div class="setting-line"><label for="adult">Saya berusia 18 tahun ke atas</label><input id="adult" type="checkbox"></div>
   <!-- Developer-only hooks retained for connection diagnostics and fee calculations.
@@ -925,6 +954,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   const logged=!!activeAccount;
   $('accountLoginCard').classList.toggle('hide',logged);
   $('accountSignedCard').classList.toggle('hide',!logged);
+  $('walletPanel').hidden=!logged;
   if(logged){
    $('signedAccountName').textContent=activeAccount.name;
    $('signedAccountHandle').textContent='@'+activeAccount.handle;
@@ -967,12 +997,39 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   try{const data=await accountRequest('/api/account/posts/list','POST',{});syncedPosts=data.posts||[];renderSyncedPosts()}
   catch(e){$('accountSignedStatus').textContent='Tidak dapat memuat postingan server: '+e.message}
  }
+
+ const walletCurrency=value=>'Rp'+new Intl.NumberFormat('id-ID').format(Math.max(0,Number(value)||0));
+ async function loadWallet(){
+  if(!activeAccount)return;
+  try{
+   const result=await accountRequest('/api/wallet/me'),w=result.wallet||{};
+   $('walletAvailable').textContent=walletCurrency(w.availableIDR);
+   $('walletPending').textContent=walletCurrency(w.pendingWithdrawalsIDR);
+   $('walletTotal').textContent=walletCurrency(w.totalEarningsIDR);
+   $('walletPaid').textContent=walletCurrency(w.paidOutIDR);
+   $('walletWithdraw').disabled=result.capability?.withdrawalsEnabled!==true;
+   $('walletInfo').textContent=result.capability?.withdrawalsEnabled===true
+     ?'Penarikan memerlukan verifikasi identitas dan rekening tujuan.'
+     :'Penarikan belum tersedia. Rekening dan pencairan disiapkan setelah pembayaran resmi aktif.';
+   const history=$('walletHistory');history.replaceChildren();
+   const entries=[...(w.withdrawals||[]),...(w.transactions||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,12);
+   if(!entries.length){history.textContent='Belum ada transaksi.';return}
+   for(const item of entries){
+    const line=document.createElement('div');line.className='wallet-breakdown';
+    const label=document.createElement('span');label.textContent=(item.status||item.type||'Transaksi').replaceAll('-',' ');
+    const value=document.createElement('b');value.textContent=walletCurrency(item.amountIDR);
+    line.append(label,value);history.append(line);
+   }
+  }catch(e){$('walletInfo').textContent='Dompet tidak dapat dimuat. Coba lagi nanti.'}
+ }
+ $('walletDetails').addEventListener('toggle',()=>{if($('walletDetails').open)loadWallet()});
+ $('walletWithdraw').onclick=()=>{if(!$('walletWithdraw').disabled)flash('Penarikan menunggu aktivasi layanan resmi')};
  async function sessionRestore(){
   try{
    const info=await accountRequest('/api/account/me');
    activeAccount=info.authenticated?info.account:null;
    displayAccount();
-   if(activeAccount)await loadServerPosts();
+   if(activeAccount){await loadServerPosts();await loadWallet();}
    await loadSupporter();
   }catch(e){console.warn('NADMO account session unavailable',e)}
  }
@@ -987,7 +1044,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    activeAccount=data.account;
    $('accountPass').value='';
    $('accountStatus').textContent='';
-   displayAccount();await loadServerPosts();await loadSupporter();
+   displayAccount();await loadServerPosts();await loadSupporter();await loadWallet();
    $('accountSignedStatus').textContent='Akun @'+activeAccount.handle+' berhasil masuk. Profil tersinkron di server.';
   }catch(e){$('accountStatus').textContent=e.message}
  }
@@ -1961,7 +2018,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    $('remote').srcObject=null;guestStatus('Turun panggung. Menonton kembali.');
    transmit({type:'refresh-media'});return;
   }
-  if(m.type==='stage-layout-updated'){stageLayout=normalizeLayout(m.layout);renderStageGuests();return}
+  if(m.type==='stage-layout-updated'){stageLayout=normalizeLayout(m.layout);if(!host)renderStageGuests();return}
   if(m.type==='stage-updated'){
    stageLayout=normalizeLayout(m.layout);
    stageGuestsList=Array.isArray(m.guests)?m.guests.slice(0,9):[];
