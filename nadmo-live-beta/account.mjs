@@ -1,3 +1,4 @@
+import {scrypt} from 'node:crypto';
 // NADMO LIVE authenticated profiles — PRIVATE beta, NOT government identity verification.
 // All persistent account state is in RoomHub Durable Object storage, isolated by prefix.
 // Never store KTP, NIK, passports, selfies, government ID or raw payment credentials here.
@@ -10,8 +11,15 @@ const clean=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function digest(value){return hex(await crypto.subtle.digest('SHA-256',enc.encode(value)))}
 async function passwordHash(password,salt){
- const key=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']);
- return hex(await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:210000,hash:'SHA-256'},key,256));
+ // Cloudflare production caps PBKDF2 at 100,000 rounds. Use memory-hard scrypt instead.
+ // Fixed configuration for this private beta: N=2^14, r=8, p=1, 32-byte output,
+ // with a distinct 128-bit per-account random salt. Never weaken on failure.
+ const key=await new Promise((resolve,reject)=>{
+  scrypt(password,salt,32,{N:16384,r:8,p:1,maxmem:33554432},(error,derived)=>{
+   if(error)reject(error);else resolve(derived);
+  });
+ });
+ return hex(key);
 }
 function safeCompare(a,b){if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...extra}});
@@ -103,7 +111,7 @@ export async function accountEndpoint(storage,request){
   try{passhash=await passwordHash(pw,salt)}
   catch(error){console.error('Password KDF unsupported',error?.name);return fail(503,'Secure password hashing unavailable on this server')}
   const id=crypto.randomUUID();
-  const user={id,handle,name,bio:'',links:[],salt,passhash,kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
+  const user={id,handle,name,bio:'',links:[],salt,passhash,passAlgo:'scrypt-v1',kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
   await storage.put('auth-user:'+id,user);
   await storage.put('auth-handle:'+handle,id);
   const token=await createSession(storage,user);
