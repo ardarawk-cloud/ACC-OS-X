@@ -48,3 +48,15 @@ Dari pengguna, oleh pengguna, untuk pengguna. No compulsory PK battles, tipping 
 3. Integrated report/mute/block/moderation audit and appeals.
 4. Licensed payment gateway with auditable ledger and low transparent fees; only then paid private show/tips.
 5. Controlled public pilot after safety/security/performance acceptance; no direct production/main merge or unrelated app changes without review.
+
+
+## 10 October development continuation — room safety beta (implemented 9 Oct 2026)
+
+- Server-enforced WebSocket `report`, `moderate: mute/unmute/kick/block` commands delivered on the isolated Cloudflare beta Durable Object, with current host account session revalidation on moderator actions.
+- Anonymous or signed-in viewers can report a room without government ID. The report receives a unique reference, limited to 1 per websocket session per 60 seconds.
+- Report record includes an opaque room ID, optional opaque host account ID, restricted reason code, short explanation, timestamp, and PENDING_OPERATOR_REVIEW. Reports are private Durable Object records, **not publicly queryable**. Automatic 14-day expiry via DO alarms and capped storage of 100 reports are implemented; no staff review UI or human 24/7 moderation claim.
+- Host can mute/unmute chat of a current viewer and kick anonymous viewers. Only logged-in viewers have a durable account-level room block; anonymous users can rejoin under a new connection. This must not be advertised as total anti-abuse protection.
+- Mobile/desktop live chat exposes a compact report form for viewers and moderation panel for hosts; actual WebSocket actions, not mock buttons.
+- Passed real Cloudflare backend E2E and browser mobile tests: https://github.com/ardarawk-cloud/ACC-OS-X/actions/runs/37930508394
+- Retention scheduling tightened in commit `54c56b981c9217176a2cf4637096203f3af76ae4` (subsequent deploy/retest should be checked before treating the retention change as deployed).
+- **Still blocked for public launch:** qualified ID verification vendor and KYC operator, staffed moderation/report triage dashboard, stronger anonymous abuse prevention, TURN/SFU with cross-carrier phones, payment provider and money settlement.
