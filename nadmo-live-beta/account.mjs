@@ -1,4 +1,5 @@
 import {scrypt} from 'node:crypto';
+import {SUPPORTER_THRESHOLDS,SUPPORTER_TIERS,getSupporterProfile,getPublicSupporterBadge} from './supporter-levels.mjs';
 // NADMO LIVE authenticated profiles — PRIVATE beta, NOT government identity verification.
 // All persistent account state is in RoomHub Durable Object storage, isolated by prefix.
 // Never store KTP, NIK, passports, selfies, government ID or raw payment credentials here.
@@ -68,6 +69,17 @@ async function createSession(storage,account){
 export {getAccount,urlOK,getAccountBySessionFingerprint,getSessionFingerprint};
 export async function accountEndpoint(storage,request){
  const u=new URL(request.url),p=u.pathname,method=request.method;
+ if(p==='/api/supporter/levels'&&method==='GET')return json({
+  ok:true,version:'nadmo-supporter-v1',currency:'IDR',totalLevels:50,thresholdsIDR:SUPPORTER_THRESHOLDS,
+  tiers:SUPPORTER_TIERS,paymentsEnabled:false,
+  policy:'Only verified settled rupiah tips count. No public individual spending amount, no client-generated level.'
+ });
+ if(p==='/api/supporter/me'&&method==='GET'){
+  const active=await getAccount(storage,request);
+  if(!active)return json({ok:true,authenticated:false,supporter:null,paymentsEnabled:false});
+  const record=await storage.get('auth-user:'+active.id);
+  return json({ok:true,authenticated:true,supporter:await getSupporterProfile(storage,active.id,record),paymentsEnabled:false});
+ }
  if(p==='/api/payments/status')return json({enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,state:'WAITING_LICENSED_PROVIDER'});
  if(p==='/api/streaming/capacity')return json({architecture:'P2P_WEBRTC',maxViewersPerRoom:4,turnConfigured:false,sfuConfigured:false,scaleReady:false});
  if(p.startsWith('/api/profile/')&&method==='GET'){
@@ -77,7 +89,8 @@ export async function accountEndpoint(storage,request){
   const account=id&&await storage.get('auth-user:'+id);
   if(!account||account.disabled)return fail(404,'Profil tidak ditemukan');
   const posts=await storage.get('auth-posts:'+id)||[];
-  return json({ok:true,profile:{handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],verified:account.kycStatus==='verified',posts:posts.filter(x=>x.status==='published').slice(0,20)}});
+  const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
+  return json({ok:true,profile:{handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
  if(!p.startsWith('/api/account/'))return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
@@ -135,6 +148,12 @@ export async function accountEndpoint(storage,request){
  if(!user)return fail(401,'Login diperlukan');
  const record=await storage.get('auth-user:'+user.id);
  if(!record)return fail(401,'Login diperlukan');
+ if(p==='/api/account/supporter-visibility'&&method==='PUT'){
+  if(typeof payload.visible!=='boolean')return fail(400,'Pilihan tampilan badge tidak valid');
+  record.supporterBadgeVisible=payload.visible;record.updatedAt=Date.now();
+  await storage.put('auth-user:'+user.id,record);
+  return json({ok:true,visible:record.supporterBadgeVisible});
+ }
  if(p==='/api/account/delete'&&method==='POST'){
   if(record.kycStatus==='verified')return fail(403,'Penghapusan akun terverifikasi harus melalui peninjauan retensi data.');
   const password=typeof payload.password==='string'?payload.password:'';
