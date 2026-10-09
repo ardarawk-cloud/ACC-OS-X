@@ -1,8 +1,8 @@
 import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFingerprint} from './account.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
-// No money handling, no public onboarding, no content moderation service.
+// No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
-const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_MESSAGE=60000, HOST_GRACE_MS=90000;
+const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_MESSAGE=60000, HOST_GRACE_MS=90000, REPORT_LIMIT=100, REPORT_TTL=14*86400000;
 
 function txt(x,max=60){return typeof x==='string'?x.trim().slice(0,max):''}
 function reply(ws,object){try{ws.send(JSON.stringify(object))}catch(e){}}
@@ -34,6 +34,12 @@ export class RoomHub{
  creatorVerificationRequired(){return this.env.VERIFY_CREATOR_REQUIRED==='true'||this.env.BETA_TEST_HOSTS_ENABLED!=='true'}
  sockets(){return this.ctx.getWebSockets()}
  async findRooms(){return this.ctx.storage.list({prefix:'room:'})}
+ async validHostSession(s,room){
+  if(s.role!=='host'||room.hostId!==s.id)return false;
+  if(!room.hostAccountId)return !this.creatorVerificationRequired();
+  const principal=s.sessionFingerprint?await getAccountBySessionFingerprint(this.ctx.storage,s.sessionFingerprint):null;
+  return !!principal&&principal.id===room.hostAccountId&&(!this.creatorVerificationRequired()||(principal.verifiedAdult&&principal.kycStatus==='verified'));
+ }
  async fetch(request){
   const route=new URL(request.url).pathname;
   if(route==='/rooms'){
@@ -169,6 +175,8 @@ export class RoomHub{
    if(!host||room.hostOfflineAt){return failure(ws,'Host sedang reconnect. Coba lagi beberapa detik.')}
    if(roomCount(peers,id)>=VIEWER_LIMIT)return failure(ws,'Room beta penuh (maks. 4 penonton)');
    if(room.mode==='password'&&await sha(txt(msg.password,32))!==room.passwordHash)return failure(ws,'Kode akses salah');
+   if(s.accountId&&Array.isArray(room.blockedAccounts)&&room.blockedAccounts.includes(s.accountId))
+    return failure(ws,'Akses akun ke room ini telah diblokir oleh host.');
    s.roomId=id;s.role='viewer';save(ws,s);
    reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true});
    reply(host,{type:'viewer-joined',id:s.id});
@@ -216,12 +224,59 @@ export class RoomHub{
    reply(ws,{type:'access-updated',mode,offer,displaced});
    return;
   }
+  if(type==='report'){
+   if(s.role!=='viewer')return failure(ws,'Laporan live hanya dapat dikirim oleh penonton room.');
+   if(now-(s.lastReport||0)<60000)return failure(ws,'Laporan sebelumnya baru diterima. Tunggu 60 detik.');
+   const reason=txt(msg.reason,40).toLowerCase();
+   if(!['harassment','threats','fraud','impersonation','copyright','other'].includes(reason))
+    return failure(ws,'Pilih alasan laporan yang tersedia.');
+   const description=txt(msg.description,300);
+   // No government ID, IP or raw chat transcript is stored in this private beta report.
+   const report={id:crypto.randomUUID(),roomId:room.id,reason,description,createdAt:now,status:'PENDING_OPERATOR_REVIEW'};
+   await this.ctx.storage.put('abuse-report:'+now+':'+report.id,report);
+   s.lastReport=now;save(ws,s);
+   const history=await this.ctx.storage.list({prefix:'abuse-report:'});
+   for(const [key,item] of history)if(!item||now-item.createdAt>REPORT_TTL)await this.ctx.storage.delete(key);
+   const remaining=[...(await this.ctx.storage.list({prefix:'abuse-report:'})).keys()];
+   for(const key of remaining.slice(0,Math.max(0,remaining.length-REPORT_LIMIT)))await this.ctx.storage.delete(key);
+   reply(ws,{type:'report-received',id:report.id,status:report.status});
+   return;
+  }
+  if(type==='moderate'){
+   if(!await this.validHostSession(s,room))return failure(ws,'Hanya host room dengan sesi valid yang dapat memoderasi.');
+   const action=txt(msg.action,12).toLowerCase(),targetId=txt(msg.targetId,32);
+   if(!['mute','unmute','kick','block'].includes(action))return failure(ws,'Perintah moderasi tidak dikenal.');
+   const target=this.sockets().find(x=>state(x).id===targetId&&state(x).roomId===room.id&&state(x).role==='viewer');
+   if(!target)return failure(ws,'Penonton tidak ada lagi di room.');
+   const targetState=state(target);
+   if(action==='block'&&!targetState.accountId)
+    return failure(ws,'Akun anonim tidak bisa diblokir permanen. Gunakan KICK untuk mengeluarkan sesi ini.');
+   if(!Array.isArray(room.mutedSessions))room.mutedSessions=[];
+   if(!Array.isArray(room.blockedAccounts))room.blockedAccounts=[];
+   if(action==='mute'&&!room.mutedSessions.includes(targetId))room.mutedSessions.push(targetId);
+   if(action==='unmute')room.mutedSessions=room.mutedSessions.filter(id=>id!==targetId);
+   if(action==='block'&&!room.blockedAccounts.includes(targetState.accountId)){
+    if(room.blockedAccounts.length>=100)return failure(ws,'Batas blokir room tercapai.');
+    room.blockedAccounts.push(targetState.accountId);
+   }
+   if(action==='kick'||action==='block'){
+    room.mutedSessions=room.mutedSessions.filter(id=>id!==targetId);
+    targetState.role=null;targetState.roomId=null;save(target,targetState);
+    reply(target,{type:'moderated',action,reason:action==='block'?'Akun diblokir dari room ini.':'Host mengeluarkan Anda dari room ini.'});
+    reply(ws,{type:'viewer-left',id:targetId});
+   }else reply(target,{type:'moderated',action,reason:action==='mute'?'Host membisukan chat Anda.':'Host mengaktifkan kembali chat Anda.'});
+   await this.ctx.storage.put('room:'+room.id,room);
+   reply(ws,{type:'moderation-result',action,targetId,ok:true});
+   if(action==='kick'||action==='block')try{target.close(4003,'Removed by host')}catch{}
+   return;
+  }
   if(type==='chat'){
+   if(Array.isArray(room.mutedSessions)&&room.mutedSessions.includes(s.id))return failure(ws,'Chat dibisukan oleh host.');
    const text=txt(msg.text,250);
    if(!text)return;
    if(now-(s.lastChat||0)<600)return failure(ws,'Tunggu sebelum mengirim chat');
    s.lastChat=now;save(ws,s);
-   const packet={type:'chat',name:s.displayName||s.handle||(s.role==='host'?room.hostName||'Host':'Viewer'),handle:s.handle||null,verified:s.kycStatus==='verified'&&s.verifiedAdult===true,text};
+   const packet={type:'chat',from:s.id,name:s.displayName||s.handle||(s.role==='host'?room.hostName||'Host':'Viewer'),handle:s.handle||null,verified:s.kycStatus==='verified'&&s.verifiedAdult===true,text};
    this.sockets().filter(x=>state(x).roomId===room.id).forEach(x=>reply(x,packet));
    return;
   }
