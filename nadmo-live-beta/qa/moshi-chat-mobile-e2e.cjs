@@ -46,7 +46,10 @@ async function action(path,cookie,body){return fetch(base+path,{method:'POST',he
   assert.equal(await page.$eval('#messageThreadTitle',el=>el.textContent),'MOSHI '+a);
   assert.equal(await page.$eval('#messageBubbles .message-bubble',el=>el.textContent.includes('Halo dari teman')),true);
   assert.equal(await page.$eval('#messageBubbles .message-bubble .message-bubble-time',el=>el.textContent.length>0),true);
-  assert.equal(await page.$eval('#messageUnreadBadge',el=>el.hidden),true,'opening clears badge');
+  // Opening a thread triggers a server-side read event. Wait for fresh unread count,
+  // rather than checking the badge before the asynchronous server round trip finishes.
+  await page.waitForFunction(()=>document.querySelector('#messageUnreadBadge').hidden,{timeout:12000});
+  assert.equal(await page.$eval('#messageUnreadBadge',el=>el.hidden),true,'opening clears badge after server read');
   await page.$eval('#messageBody',el=>el.value='Balasan cepat dari PESAN');
   await page.$eval('#messageSend',el=>el.click());
   await page.waitForFunction(()=>document.querySelector('#messageBubbles').textContent.includes('Balasan cepat dari PESAN'),{timeout:14000});
