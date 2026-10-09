@@ -2100,101 +2100,222 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   }catch(e){$('socialMediaStatus').textContent='Penyimpanan video belum siap.'}
  }
  refreshVideoCapability();
- let activeChatHandle='',chatRefreshTimer=null;
- async function loadMessageInbox(){
+ let activeChatHandle='',chatRefreshTimer=null,chatNotificationTimer=null,chatBusy=false,activeChatPeer=null;
+ function messageTime(value,full=false){
+  if(!value)return '';
+  const date=new Date(value),today=new Date();
+  return full?date.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):
+   date.toDateString()===today.toDateString()?date.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):
+   date.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+ }
+ function avatarNode(handle,name,version){
+  const span=document.createElement('span');span.className='message-chat-avatar';
+  span.textContent=(String(name||handle||'N').trim().charAt(0)||'N').toUpperCase();
+  const src=avatarURL(handle,version);
+  if(src){
+   const img=document.createElement('img');img.alt='';img.src=src;
+   img.onerror=()=>img.remove();
+   span.append(img);
+  }
+  return span;
+ }
+ function setUnreadBadge(number){
+  const count=Math.max(0,Number(number)||0);
+  for(const id of ['messageUnreadBadge','messageHeaderCount']){
+   const badge=$(id);badge.hidden=!count;
+   badge.textContent=count>99?'99+':count?String(count):'';
+  }
+ }
+ async function refreshMessageBadge(){
+  if(!activeAccount){setUnreadBadge(0);return}
+  try{
+   const [threads,requests]=await Promise.all([
+    accountRequest('/api/messages/threads'),accountRequest('/api/messages/requests')
+   ]);
+   setUnreadBadge((threads.totalUnread||0)+(requests.requests?.length||0));
+   if(!$('messagesPage').classList.contains('hide')&&!activeChatHandle)
+    await loadMessageInbox(threads,requests);
+  }catch(error){console.warn('Chat unread count not available',error)}
+ }
+ async function loadMessageInbox(preloadedThreads=null,preloadedRequests=null){
   if(!activeAccount)return;
   const status=$('messageInboxStatus');
   try{
-   const [reqData,threadsData]=await Promise.all([
-    accountRequest('/api/messages/requests'),accountRequest('/api/messages/threads')
-   ]);
+   const [threadsData,reqData]=await Promise.all([
+    preloadedThreads||accountRequest('/api/messages/threads'),
+    preloadedRequests||accountRequest('/api/messages/requests'),
+    accountRequest('/api/messages/settings').then(x=>{if(x.privacy)$('messagePrivacyMode').value=x.privacy}).catch(()=>{})
+   ]).then(([threads,requests])=>[threads,requests]);
+   setUnreadBadge((threadsData.totalUnread||0)+(reqData.requests?.length||0));
    const incoming=$('messageRequests');incoming.replaceChildren();
-   for(const req of reqData.requests||[]){
+   const requests=reqData.requests||[];
+   if(requests.length){
+    const title=document.createElement('div');title.className='message-request-title';
+    title.textContent='PERMINTAAN PESAN ('+requests.length+')';incoming.append(title);
+   }
+   for(const req of requests){
     const row=document.createElement('div');row.className='message-request';
-    const name=document.createElement('span');name.textContent=(req.name||req.handle)+' ingin mengobrol';
-    name.style.flex='1';
+    row.append(avatarNode(req.handle,req.name,req.avatarVersion));
+    const name=document.createElement('span');name.className='message-chat-copy';
+    name.textContent=req.name||req.handle;row.append(name);
+    const actions=document.createElement('span');actions.className='message-request-buttons';
     const accept=document.createElement('button');accept.type='button';accept.textContent='TERIMA';
     accept.onclick=async()=>{
      accept.disabled=true;
-     try{await accountRequest('/api/messages/accept','POST',{handle:req.handle});
-      status.textContent='Permintaan diterima.';await loadMessageInbox()
+     try{
+      await accountRequest('/api/messages/accept','POST',{handle:req.handle});
+      status.textContent='Permintaan diterima.';await loadMessageInbox();await openMessages(req.handle,req.name,req.avatarVersion);
      }catch(e){status.textContent=e.message;accept.disabled=false}
     };
-    const block=document.createElement('button');block.type='button';block.textContent='TOLAK';
-    block.onclick=async()=>{try{await accountRequest('/api/messages/block','POST',{handle:req.handle});await loadMessageInbox()}catch(e){status.textContent=e.message}};
-    row.append(name,accept,block);incoming.append(row);
+    const block=document.createElement('button');block.type='button';block.textContent='BLOKIR';
+    block.onclick=async()=>{
+     if(!confirm('Blokir akun '+(req.name||req.handle)+'?'))return;
+     try{await accountRequest('/api/messages/block','POST',{handle:req.handle});await loadMessageInbox()}catch(e){status.textContent=e.message}
+    };
+    actions.append(accept,block);row.append(actions);incoming.append(row);
    }
    const box=$('messageThreads');box.replaceChildren();
-   for(const item of threadsData.threads||[]){
-    const row=document.createElement('div');row.className='message-thread';
-    const open=document.createElement('button');open.type='button';open.style.flex='1';
-    open.textContent=(item.name||item.handle)+' · @'+item.handle;
-    open.onclick=()=>openMessages(item.handle,item.name);
-    row.append(open);box.append(row);
+   const threads=threadsData.threads||[];
+   for(const item of threads){
+    const row=document.createElement('button');row.type='button';
+    row.className='message-chat-row'+(item.unread?' has-unread':'');
+    row.setAttribute('aria-label','Buka percakapan dengan '+(item.name||item.handle));
+    row.append(avatarNode(item.handle,item.name,item.avatarVersion));
+    const content=document.createElement('span');content.className='message-chat-copy';
+    const name=document.createElement('span');name.className='message-chat-name';
+    name.textContent=item.name||item.handle;
+    const last=document.createElement('span');last.className='message-chat-last';
+    last.textContent=item.lastText?(item.lastFromMe?'Kamu: ':'')+item.lastText:'Mulai mengobrol';
+    content.append(name,last);row.append(content);
+    const aside=document.createElement('span');aside.className='message-chat-aside';
+    const when=document.createElement('span');when.className='message-chat-time';when.textContent=messageTime(item.updatedAt);
+    aside.append(when);
+    if(item.unread){
+     const unread=document.createElement('span');unread.className='message-unread-pill';
+     unread.textContent=item.unread>99?'99+':String(item.unread);aside.append(unread);
+    }
+    row.append(aside);row.onclick=()=>openMessages(item.handle,item.name,item.avatarVersion);
+    box.append(row);
    }
-   if(!(reqData.requests||[]).length&&!(threadsData.threads||[]).length)
-    status.textContent='Belum ada percakapan. Chat dimulai setelah penerima menyetujui permintaan.';
+   $('messageInboxEmpty').classList.toggle('hide',threads.length>0||requests.length>0);
+   if(!threads.length&&!requests.length)status.textContent='';
   }catch(error){status.textContent=error.message}
  }
- async function openMessages(handle,name){
+ async function openMessages(handle,name,avatarVersion=0){
   if(!activeAccount)return;
-  activeChatHandle=handle;
-  $('messageThreadTitle').textContent=(name||handle)+' · @'+handle;
-  $('messageConversation').classList.remove('hide');
-  $('messageRequests').classList.add('hide');$('messageThreads').classList.add('hide');$('messageBack').hidden=false;
-  await refreshConversation();
-  if(pendingSocialShare){
-   $('messageBody').value=pendingSocialShare;pendingSocialShare='';
+  const normalized=String(handle||'').replace(/^@/,'').trim().toLowerCase();
+  if(!/^[a-z][a-z0-9_]{2,23}$/.test(normalized)){ $('messageInboxStatus').textContent='Username tidak valid';return }
+  try{
+   // Opening a chat respects the recipient's own privacy and blocking decisions.
+   const data=await accountRequest('/api/messages/thread/'+encodeURIComponent(normalized));
+   activeChatHandle=normalized;activeChatPeer={handle:normalized,name:data.participant?.name||name||normalized,
+    avatarVersion:data.participant?.avatarVersion||avatarVersion||0};
+   $('messageThreadTitle').textContent=activeChatPeer.name;
+   $('messagePeerAvatar').replaceChildren(avatarNode(normalized,activeChatPeer.name,activeChatPeer.avatarVersion));
+   $('messageConversationStatus').textContent='';
+   $('messageConversation').classList.remove('hide');
+   $('messageInboxMain').classList.add('hide');
+   $('messageNewToggle').hidden=true;
+   renderConversation(data.messages||[]);
+   if(pendingSocialShare){$('messageBody').value=pendingSocialShare;pendingSocialShare=''}
+   if(chatRefreshTimer)clearInterval(chatRefreshTimer);
+   chatRefreshTimer=setInterval(()=>{
+    if(!activeChatHandle||document.visibilityState!=='visible'||$('messagesPage').classList.contains('hide'))return;
+    refreshConversation();
+   },7000);
+   await refreshMessageBadge();
+  }catch(error){
+   const status=$('messageInboxStatus');
+   if(/membatasi pesan|persetujuan/.test(error.message)){
+    try{
+     const result=await accountRequest('/api/messages/request','POST',{handle:normalized});
+     status.textContent=result.accepted?'Percakapan tersedia. Tekan kontak lagi.':'Akun ini memilih permintaan pesan. Permintaan terkirim; tunggu persetujuan.';
+    }catch(e){status.textContent=e.message}
+   }else status.textContent=error.message;
   }
-  if(chatRefreshTimer)clearInterval(chatRefreshTimer);
-  chatRefreshTimer=setInterval(()=>{
-   if(!activeChatHandle||document.visibilityState!=='visible'||$('messagesPage').classList.contains('hide'))return;
-   refreshConversation();
-  },12000);
+ }
+ function renderConversation(messages){
+  const node=$('messageBubbles'),bottom=node.scrollTop+node.clientHeight>=node.scrollHeight-50;
+  node.replaceChildren();
+  for(const msg of messages){
+   const bubble=document.createElement('div');
+   bubble.className='message-bubble'+(msg.fromHandle===activeAccount?.handle?' mine':'');
+   const text=document.createElement('span');text.textContent=msg.text;
+   const time=document.createElement('small');time.className='message-bubble-time';time.textContent=messageTime(msg.createdAt,true);
+   bubble.append(text,time);node.append(bubble);
+  }
+  if(!messages.length){
+   const empty=document.createElement('p');empty.className='message-empty';empty.textContent='Mulai obrolan dengan pesan pertama.';node.append(empty);
+  }
+  if(bottom)node.scrollTop=node.scrollHeight;
  }
  async function refreshConversation(){
   if(!activeChatHandle)return;
+  const handle=activeChatHandle;
   try{
-   const handle=activeChatHandle,data=await accountRequest('/api/messages/thread/'+encodeURIComponent(handle));
+   const data=await accountRequest('/api/messages/thread/'+encodeURIComponent(handle));
    if(handle!==activeChatHandle)return;
-   const node=$('messageBubbles'),atBottom=node.scrollTop+node.clientHeight>=node.scrollHeight-30;
-   node.replaceChildren();
-   for(const msg of data.messages||[]){
-    const bubble=document.createElement('div');
-    bubble.className='message-bubble'+(msg.fromHandle===activeAccount?.handle?' mine':'');
-    bubble.textContent=msg.text;node.append(bubble);
-   }
-   if(atBottom)node.scrollTop=node.scrollHeight;
-  }catch(error){$('messageInboxStatus').textContent=error.message}
+   renderConversation(data.messages||[]);
+   const count=await accountRequest('/api/messages/threads');
+   setUnreadBadge(count.totalUnread||0);
+  }catch(error){$('messageConversationStatus').textContent=error.message}
  }
  function closeMessages(){
-  activeChatHandle='';
+  activeChatHandle='';activeChatPeer=null;
   if(chatRefreshTimer){clearInterval(chatRefreshTimer);chatRefreshTimer=null}
   $('messageConversation').classList.add('hide');
-  $('messageRequests').classList.remove('hide');$('messageThreads').classList.remove('hide');
+  $('messageInboxMain').classList.remove('hide');
+  $('messageNewToggle').hidden=false;
+  $('messageConversationStatus').textContent='';
   loadMessageInbox();
  }
  $('messageBack').onclick=closeMessages;
+ $('messageNewToggle').onclick=()=>{
+  if(!activeAccount){show('authPage');return}
+  $('messageNewPanel').classList.toggle('hide');
+  if(!$('messageNewPanel').classList.contains('hide'))$('messageRecipient').focus();
+ };
+ $('messagePrivacyMode').onchange=async()=>{
+  try{
+   const data=await accountRequest('/api/messages/privacy','POST',{privacy:$('messagePrivacyMode').value});
+   $('messageInboxStatus').textContent='Privasi pesan: '+({everyone:'Semua akun',following:'Akun yang kamu ikuti',requests:'Persetujuan dahulu'}[data.privacy]||data.privacy);
+  }catch(error){$('messageInboxStatus').textContent=error.message}
+ };
  $('messageRequest').onclick=async()=>{
   if(!activeAccount){show('authPage');return}
   const handle=$('messageRecipient').value.trim().replace(/^@/,'').toLowerCase();
-  const status=$('messageInboxStatus');
+  if(!handle){$('messageInboxStatus').textContent='Masukkan username teman.';return}
+  $('messageRecipient').value='';
+  $('messageNewPanel').classList.add('hide');
+  await openMessages(handle);
+ };
+ $('messageOpenCreator').onclick=()=>{if(activeChatHandle)openCreatorProfile(activeChatHandle)};
+ $('messageBlockPeer').onclick=async()=>{
+  if(!activeChatHandle||!confirm('Blokir '+(activeChatPeer?.name||activeChatHandle)+'?'))return;
   try{
-   const result=await accountRequest('/api/messages/request','POST',{handle});
-   status.textContent=result.accepted?'Percakapan tersedia.':'Permintaan chat dikirim. Tunggu persetujuan penerima.';
-   $('messageRecipient').value='';await loadMessageInbox();
-  }catch(error){status.textContent=error.message}
+   await accountRequest('/api/messages/block','POST',{handle:activeChatHandle});
+   closeMessages();await refreshMessageBadge();
+  }catch(error){$('messageConversationStatus').textContent=error.message}
  };
  $('messageSend').onclick=async()=>{
-  const body=$('messageBody').value.trim();if(!activeChatHandle||!body)return;
-  const btn=$('messageSend');btn.disabled=true;
+  const text=$('messageBody').value.trim();
+  if(!activeChatHandle||!text||chatBusy)return;
+  chatBusy=true;$('messageSend').disabled=true;
   try{
-   await accountRequest('/api/messages/send','POST',{handle:activeChatHandle,text:body});
-   $('messageBody').value='';await refreshConversation();
-  }catch(error){$('messageInboxStatus').textContent=error.message}
-  finally{btn.disabled=false}
+   await accountRequest('/api/messages/send','POST',{handle:activeChatHandle,text});
+   $('messageBody').value='';
+   await refreshConversation();
+  }catch(error){$('messageConversationStatus').textContent=error.message}
+  finally{chatBusy=false;$('messageSend').disabled=false}
  };
- $('messageBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('messageSend').click()}});
+ $('messageBody').addEventListener('keydown',event=>{
+  if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();$('messageSend').click()}
+ });
+ chatNotificationTimer=setInterval(()=>{
+  if(!activeAccount||document.visibilityState!=='visible')return;
+  if(activeChatHandle&&!$('messagesPage').classList.contains('hide'))refreshConversation();
+  else refreshMessageBadge();
+ },15000);
  function updatePostEmptyState(){
   const hasSynced=!!activeAccount&&syncedPosts.some(x=>x.status!=='published');
   $('syncedPostsHeader').hidden=!hasSynced;
