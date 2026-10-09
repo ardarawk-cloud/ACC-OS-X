@@ -63,12 +63,17 @@ async function main(){
   await readyAge(viewer);
   await viewer.locator('nav button[data-tab="explore"]').click();
   await viewer.waitForFunction(()=>Array.from(document.querySelectorAll('#rooms .room b')).some(x=>x.textContent==='NADMO QA Virtual Camera Stream'),{timeout:30000});
+  await delay(1000);
+  const beforeClick=await viewer.evaluate(()=>({adult:document.querySelector('#adult')?.checked,visible:!document.querySelector('#explore')?.classList.contains('hide'),cards:document.querySelectorAll('#rooms .room').length,buttons:document.querySelectorAll('#rooms .room .btn').length}));
+  console.log('VIEWER_BEFORE_CLICK '+JSON.stringify(beforeClick));
   await viewer.locator('#rooms .room .btn').click();
+  await delay(1000);
+  console.log('VIEWER_AFTER_CLICK '+JSON.stringify(await viewer.evaluate(()=>({adult:document.querySelector('#adult')?.checked,watch:!document.querySelector('#watch')?.classList.contains('hide'),log:window.__nadmoQALog?.slice(-20)}))));
   try{await waitText(viewer,'#watchState','Video tersambung',35000)}
   catch(err){
    for(const [p,name] of [[host,'HOST'],[viewer,'VIEWER']]){
     const data=await p.evaluate(()=>({
-     appStatus:document.querySelector('#watchState')?.textContent,
+     appStatus:document.querySelector('#watchState')?.textContent,adult:document.querySelector('#adult')?.checked,view:!document.querySelector('#watch')?.classList.contains('hide'),cards:document.querySelectorAll('#rooms .room').length,
      socket:window.__nadmoQALog?.slice(-40),
      peers:window.__nadmoPCs?.map(x=>({ice:x.iceConnectionState,connection:x.connectionState,signaling:x.signalingState,
       gathering:x.iceGatheringState,localSDP:x.localDescription?.type,remoteSDP:x.remoteDescription?.type,
