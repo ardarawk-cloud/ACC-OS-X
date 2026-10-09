@@ -35,7 +35,8 @@ const password='NadmoMeQA!'+crypto.randomUUID();
   assert.equal(await page.$eval('#walletPage',el=>!el.classList.contains('hide')),true);
   assert.equal(await page.$eval('#walletWithdraw',el=>el.disabled),true,'Withdraw remains disabled');
   await page.$eval('#walletPage .subBack',el=>el.click());
-  assert.equal(await page.$eval('#preferencesPage',el=>!el.classList.contains('hide')),true);
+  assert.equal(await page.$eval('#settings',el=>!el.classList.contains('hide')),true,'Wallet back returns to ME');
+  await page.$eval('#meMore',el=>el.click());
   await page.$eval('#preferencesPage [data-open-page="supporterPage"]',el=>el.click());
   await page.waitForFunction(()=>document.querySelectorAll('#supporterLevels .supporter-row').length===10,{timeout:12000});
   const badges=await page.evaluate(()=>{
@@ -45,7 +46,6 @@ const password='NadmoMeQA!'+crypto.randomUUID();
   });
   assert.equal(badges.count,10);assert.equal(badges.overflow,false);assert.ok(badges.width<=2);
   await page.$eval('#supporterPage .subBack',el=>el.click());
-  await page.$eval('#preferencesPage .subBack',el=>el.click());
   await page.$eval('nav [data-tab="settings"]',el=>el.click());
   await page.$eval('#editProfileBtn',el=>el.click());
   const themeEditor=await page.evaluate(()=>['profileTheme','profileFont','profileCover','profileLinkLabel','profileLinkUrl','profileAddLink'].every(id=>!!document.getElementById(id)&&document.getElementById(id).getBoundingClientRect().width>0));
