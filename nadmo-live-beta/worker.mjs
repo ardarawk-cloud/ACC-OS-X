@@ -1,4 +1,5 @@
 import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFingerprint} from './account.mjs';
+import {getPublicSupporterBadge} from './supporter-levels.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
@@ -77,7 +78,7 @@ export class RoomHub{
    }
    return Response.json({rooms:list});
   }
-  if(route.startsWith('/api/account/')||route.startsWith('/api/profile/')||route==='/api/payments/status'||route==='/api/streaming/capacity'){
+  if(route.startsWith('/api/account/')||route.startsWith('/api/profile/')||route.startsWith('/api/supporter/')||route==='/api/payments/status'||route==='/api/streaming/capacity'){
    try{return await accountEndpoint(this.ctx.storage,request)}
    catch(error){
     console.error('NADMO account route',error?.name,String(error?.message||'').slice(0,150));
@@ -350,7 +351,17 @@ export class RoomHub{
    if(!text)return;
    if(now-(s.lastChat||0)<600)return failure(ws,'Tunggu sebelum mengirim chat');
    s.lastChat=now;save(ws,s);
-   const packet={type:'chat',from:s.id,name:s.displayName||s.handle||(s.role==='host'?room.hostName||'Host':'Viewer'),handle:s.handle||null,verified:s.kycStatus==='verified'&&s.verifiedAdult===true,text};
+   // A client cannot select a public level. Resolve from the authenticated account
+   // and server-stored, payment-verified total for each chat send.
+   let supporterBadge=null;
+   if(s.accountId&&s.sessionFingerprint){
+    const principal=await getAccountBySessionFingerprint(this.ctx.storage,s.sessionFingerprint);
+    if(principal?.id===s.accountId){
+     const record=await this.ctx.storage.get('auth-user:'+principal.id);
+     supporterBadge=await getPublicSupporterBadge(this.ctx.storage,principal.id,record);
+    }
+   }
+   const packet={type:'chat',from:s.id,name:s.displayName||s.handle||(s.role==='host'?room.hostName||'Host':'Viewer'),handle:s.handle||null,verified:s.kycStatus==='verified'&&s.verifiedAdult===true,supporterBadge,text};
    this.sockets().filter(x=>state(x).roomId===room.id).forEach(x=>reply(x,packet));
    return;
   }
@@ -501,7 +512,7 @@ export default {
   if(url.pathname==='/'){
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
-  const isAccountApi=url.pathname.startsWith('/api/account/')||url.pathname.startsWith('/api/profile/')||
+  const isAccountApi=url.pathname.startsWith('/api/account/')||url.pathname.startsWith('/api/profile/')||url.pathname.startsWith('/api/supporter/')||
     url.pathname==='/api/payments/status'||url.pathname==='/api/streaming/capacity';
   if(!isAccountApi&&url.pathname!=='/api/rooms'&&url.pathname!=='/ws')return new Response('Not Found',{status:404});
   if(url.pathname==='/ws'){
