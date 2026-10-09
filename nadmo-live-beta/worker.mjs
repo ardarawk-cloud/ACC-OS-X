@@ -258,6 +258,56 @@ export class RoomHub{
   await this.disconnected(ws);
  }
 }
+
+function azuraStation(value){return typeof value==='string'&&/^[a-z0-9_-]{1,64}$/i.test(value)?value:'nadmo_radio'}
+function secureOrigin(value){
+ if(typeof value!=='string'||!value.trim())return null;
+ try{
+  const u=new URL(value);
+  if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash||u.pathname!=='/')return null;
+  return u.origin;
+ }catch{return null}
+}
+async function radioStatus(env){
+ const origin=secureOrigin(env.RADIO_ORIGIN);
+ const short=azuraStation(env.RADIO_STATION);
+ const standby={ok:true,station:'NADMO RADIO',slug:short,online:false,djLive:false,
+   nowPlaying:null,listeners:0,streamUrl:null,source:'azuracast',paymentEnabled:false};
+ if(!origin)return {...standby,configured:false,state:'NOT_CONFIGURED'};
+ let response;
+ try{
+  response=await fetch(origin+'/api/nowplaying/'+encodeURIComponent(short),{
+   method:'GET',redirect:'error',signal:AbortSignal.timeout(6000),
+   headers:{'Accept':'application/json'}
+  });
+  if(!response.ok)return {...standby,configured:true,state:'UNAVAILABLE'};
+  if(Number(response.headers.get('content-length')||0)>100000)return {...standby,configured:true,state:'BAD_RESPONSE'};
+  const raw=await response.text();
+  if(raw.length>100000)return {...standby,configured:true,state:'BAD_RESPONSE'};
+  const np=JSON.parse(raw);
+  if(!np||typeof np!=='object'||!np.station)return {...standby,configured:true,state:'BAD_RESPONSE'};
+  // Station backend may return a stream URL on another hostname. For the pilot,
+  // play only verified same-origin HTTPS URLs, never arbitrary redirect targets.
+  let streamUrl=null;
+  if(np.station.listen_url&&typeof np.station.listen_url==='string'){
+   try{
+    const u=new URL(np.station.listen_url);
+    if(u.protocol==='https:'&&!u.username&&!u.password&&!u.hash&&u.origin===origin)
+     streamUrl=u.href;
+   }catch{}
+  }
+  const online=np.is_online===true&&!!streamUrl;
+  const clean=(v,limit=100)=>typeof v==='string'?v.trim().slice(0,limit):'';
+  return {ok:true,station:clean(np.station.name)||'NADMO RADIO',slug:short,
+    configured:true,state:online?'ON_AIR':'OFF_AIR',online,
+    djLive:np.live?.is_live===true,
+    nowPlaying:online?{title:clean(np.now_playing?.song?.title)||'Unknown Track',
+      artist:clean(np.now_playing?.song?.artist)||'Independent Artist'}:null,
+    listeners:online&&Number.isFinite(Number(np.listeners?.current))?
+       Math.max(0,Math.min(10000000,Math.round(Number(np.listeners.current)))):0,
+    streamUrl:online?streamUrl:null,source:'azuracast',paymentEnabled:false};
+ }catch(error){return {...standby,configured:true,state:'UNAVAILABLE'}}
+}
 export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
@@ -273,6 +323,7 @@ export default {
     headers.set('Permissions-Policy','camera=(self), microphone=(self)');
     return new Response(asset.body,{status:asset.status,headers});
   }
+  if(url.pathname==='/api/radio/status')return cors(request,Response.json(await radioStatus(env)));
   if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,payments:false}));
   if(url.pathname==='/'){
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
