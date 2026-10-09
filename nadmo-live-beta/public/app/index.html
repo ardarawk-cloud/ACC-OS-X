@@ -767,7 +767,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings'];
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
- let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null;
+ let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
@@ -780,6 +780,61 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   if(!response.ok)throw Error(result.error||'HTTP '+response.status);
   return result;
  };
+
+ const supporterTiers=new Set(['spark','mint','azure','violet','rose','gold','royal','platinum','diamond','legend']);
+ function makeSupporterBadge(b){
+  if(!b||!Number.isInteger(b.level)||b.level<1||b.level>50||!supporterTiers.has(b.tier))return null;
+  const el=document.createElement('span');el.className='supporter-badge supporter-tier-'+b.tier;
+  el.title='NADMO Supporter Lv '+b.level+' · '+(b.label||b.tier);
+  el.setAttribute('aria-label',el.title);
+  const mark=document.createElement('span');mark.className='supporter-mark';mark.textContent=String(b.mark||'◆').slice(0,2);
+  const n=document.createElement('span');n.textContent=String(b.level);
+  el.append(mark,n);return el;
+ }
+ function fmtSupporterIDR(n){return 'Rp'+new Intl.NumberFormat('id-ID').format(Number(n)||0)}
+ function renderSupporter(){
+  const panel=$('supporterLevels');panel.replaceChildren();
+  if(supporterLevelsData?.tiers?.length&&Array.isArray(supporterLevelsData.thresholdsIDR)){
+   for(const tier of supporterLevelsData.tiers){
+    const level=tier.minimumLevel;
+    if(!supporterTiers.has(tier.id)||!Number.isInteger(level)||level<1||level>50)continue;
+    const row=document.createElement('div');row.className='supporter-row';
+    const badge=makeSupporterBadge({level,tier:tier.id,label:tier.label,mark:tier.mark});
+    const note=document.createElement('small');note.textContent=fmtSupporterIDR(supporterLevelsData.thresholdsIDR[level-1])+'+';
+    if(badge){row.append(badge,note);panel.append(row)}
+   }
+  }
+  $('supporterPrivacy').hidden=!activeAccount;
+  $('supporterShowBadge').checked=supporterData?.visible!==false;
+  const holder=$('supporterMyBadge');holder.replaceChildren();holder.hidden=true;
+  if(!activeAccount){$('supporterProgress').textContent='Login untuk melihat level penyawer milikmu.'}
+  else if(supporterData){
+   const total=Number(supporterData.totalVerifiedIDR)||0;
+   $('supporterProgress').textContent=total>0
+    ?'Dukungan terverifikasi '+fmtSupporterIDR(total)+(supporterData.nextThresholdIDR?' · Ke level '+supporterData.nextLevel+': '+fmtSupporterIDR(supporterData.remainingIDR)+' lagi':' · LEVEL MAKSIMUM')
+    :'Level 0 · Belum ada saweran terverifikasi.';
+   if(supporterData.visible&&supporterData.badge){
+    const earned=makeSupporterBadge(supporterData.badge);
+    if(earned){holder.append(earned);holder.hidden=false}
+   }
+  }else $('supporterProgress').textContent='Status supporter belum tersedia.';
+  $('supporterStatus').textContent='PRATINJAU DESAIN · Pembayaran belum aktif. Hanya transaksi rupiah terverifikasi yang menambah level.';
+ }
+ async function loadSupporter(){
+  try{
+   if(!supporterLevelsData)supporterLevelsData=await accountRequest('/api/supporter/levels');
+   supporterData=activeAccount?(await accountRequest('/api/supporter/me')).supporter:null;
+  }catch(error){console.warn('Supporter unavailable',error);supporterData=null}
+  renderSupporter();
+ }
+ $('supporterShowBadge').addEventListener('change',async()=>{
+  if(!activeAccount)return;
+  const target=$('supporterShowBadge').checked;$('supporterStatus').textContent='Menyimpan privasi...';
+  try{
+   const result=await accountRequest('/api/account/supporter-visibility','PUT',{visible:target});
+   if(supporterData)supporterData.visible=result.visible;renderSupporter();
+  }catch(error){$('supporterShowBadge').checked=!target;$('supporterStatus').textContent='Gagal menyimpan: '+error.message}
+ });
  function displayAccount(){
   const logged=!!activeAccount;
   $('accountLoginCard').classList.toggle('hide',logged);
@@ -832,6 +887,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
    activeAccount=info.authenticated?info.account:null;
    displayAccount();
    if(activeAccount)await loadServerPosts();
+   await loadSupporter();
   }catch(e){console.warn('NADMO account session unavailable',e)}
  }
  async function authAction(action){
@@ -845,7 +901,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
    activeAccount=data.account;
    $('accountPass').value='';
    $('accountStatus').textContent='';
-   displayAccount();await loadServerPosts();
+   displayAccount();await loadServerPosts();await loadSupporter();
    $('accountSignedStatus').textContent='Akun @'+activeAccount.handle+' berhasil masuk. Profil tersinkron di server.';
   }catch(e){$('accountStatus').textContent=e.message}
  }
@@ -854,7 +910,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  $('accountLogout').onclick=async()=>{
   try{
    await accountRequest('/api/account/logout','POST',{});
-   activeAccount=null;displayAccount();
+   activeAccount=null;supporterData=null;displayAccount();await loadSupporter();
    $('accountStatus').textContent='Keluar dari akun. Draf lokal di HP ini tetap tersimpan.';
   }catch(e){$('accountSignedStatus').textContent=e.message}
  };
@@ -1695,7 +1751,12 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     if(m.action==='unmute')mutedViewerIds.delete(m.targetId);
     renderHostModeration();flash('Moderasi '+m.action.toUpperCase()+' berhasil');return
    }
-   if(m.type==='chat'){let div=document.createElement('div'),b=document.createElement('b');b.textContent=(m.name||'Viewer')+': ';div.append(b,document.createTextNode(m.text));$('chat').append(div);$('chat').scrollTop=$('chat').scrollHeight}
+   if(m.type==='chat'){
+    const div=document.createElement('div'),b=document.createElement('b'),badge=makeSupporterBadge(m.supporterBadge);
+    if(badge)div.append(badge);
+    b.textContent=(m.name||'Viewer')+': ';
+    div.append(b,document.createTextNode(m.text||''));$('chat').append(div);$('chat').scrollTop=$('chat').scrollHeight;
+   }
   if(m.type==='error'){if(!$('reportPanel').classList.contains('hide'))$('reportStatus').textContent=m.message||'Gagal mengirim laporan';notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
  $('createRoom').onclick=async()=>{
