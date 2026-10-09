@@ -371,6 +371,17 @@ body.live-immersive #watch .sheet-close:focus-visible{
 .post-external-link{color:#e3fd72;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 .profile-composer button{margin-top:9px}
 
+
+/* Private beta account/profile UI and restrained host identity overlay. */
+.account-card{margin:10px 0 15px}.account-card input{margin:5px 0 10px}
+.account-card .actions{display:flex;gap:9px;flex-wrap:wrap}.account-card .actions button{flex:1;min-width:115px}
+.account-title{align-items:center;justify-content:space-between;flex-wrap:wrap}
+.account-title b{font-size:19px}.account-title small{color:var(--neon)}
+#accountKycNote{font-size:11px;margin:12px 0}
+.room-subtitle{font:600 11px/1.35 Arial,sans-serif;color:#d6dccc;margin:5px 0 0;max-width:195px;text-shadow:0 1px 3px #000}
+body.live-immersive #watch .room-subtitle{font-size:10px}
+body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+
 </style></head>
 <body>
 <div class="app">
@@ -445,7 +456,7 @@ body.live-immersive #watch .sheet-close:focus-visible{
     <button type="button" id="pcBack" title="Kembali ke daftar LIVE" aria-label="Kembali ke daftar LIVE">←</button>
     <span>NADMO LIVE</span>
   </aside>
-  <div class="page-top"><div><span class="onair-label">● LIVE</span><h1 id="watchTitle">NADMO LIVE</h1></div></div>
+  <div class="page-top"><div><span class="onair-label">● LIVE</span><h1 id="watchTitle">HOST</h1><div id="watchRoomSubtitle" class="room-subtitle"></div></div></div>
   <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
@@ -545,6 +556,27 @@ body.live-immersive #watch .sheet-close:focus-visible{
   <p class="deck">Ini masih fondasi kanal SIGNAL. Sistem pemberitahuan terverifikasi, arsip offline, relai cadangan dan persetujuan editor belum dibangun.</p>
 </section>
 <section id="settings" class="hide">
+  <div class="show-label"><b>AKUN NADMO</b><small>SERVER ACCOUNT · PRIVATE BETA</small></div>
+  <div class="panel account-card" id="accountLoginCard">
+    <p>Daftarkan akun beta untuk menyimpan profil di server dan memakai username yang sama saat masuk dari HP atau PC. Ini <b>bukan</b> verifikasi identitas KTP.</p>
+    <label for="accountHandle">USERNAME</label>
+    <input class="field" id="accountHandle" autocomplete="username" maxlength="24" placeholder="username unik">
+    <label for="accountName">NAMA PANGGUNG (untuk daftar baru)</label>
+    <input class="field" id="accountName" maxlength="60" placeholder="Nama tampilan">
+    <label for="accountPass">KATA SANDI</label>
+    <input class="field" id="accountPass" type="password" autocomplete="current-password" minlength="12" maxlength="128" placeholder="Minimal 12 karakter">
+    <div class="actions">
+      <button class="btn secondary" type="button" id="accountLogin">MASUK</button>
+      <button class="btn" type="button" id="accountRegister">DAFTAR AKUN BETA</button>
+    </div>
+    <div class="status" role="status" id="accountStatus">Belum masuk akun. Password recovery belum tersedia dalam beta ini; simpan kata sandi dengan aman.</div>
+  </div>
+  <div class="panel account-card hide" id="accountSignedCard">
+    <div class="row account-title"><b id="signedAccountName"></b><small id="signedAccountHandle"></small></div>
+    <div class="notice" id="accountKycNote">IDENTITAS BELUM TERVERIFIKASI — bukan akun streamer KYC.</div>
+    <button class="btn secondary" type="button" id="accountLogout">KELUAR AKUN</button>
+    <div class="status" id="accountSignedStatus">Profil tersimpan di server NADMO.</div>
+  </div>
   <div class="page-top"><div><span class="eyebrow">ME / PERSONAL SPACE</span><h1>MY NADMO<span style="color:var(--neon)">.</span></h1></div><span class="edition">PROFILE BETA</span></div>
     <div id="betaSocialProfile" class="nadmo-profile">
     <div class="show-label"><b>PROFIL & LINK BISNIS</b><small>PRATINJAU LOKAL · BELUM DIPUBLIKASIKAN</small></div>
@@ -578,6 +610,8 @@ body.live-immersive #watch .sheet-close:focus-visible{
       <p class="profile-note">Belum terbit untuk pengguna lain. Perlu sistem login dan penyimpanan akun sebelum tombol PUBLIKASIKAN bisa diaktifkan.</p>
       <div id="profilePostStatus" class="status" role="status"></div>
     </div>
+    <div class="show-label" id="syncedPostsHeader" hidden><b>POSTINGAN TERSIMPAN DI SERVER</b><small>DRAF BELUM PUBLIK</small></div>
+    <div id="profileSyncedPosts" class="profile-post-feed"></div>
     <div id="profilePostFeed" class="profile-post-feed"></div>
   </div>
 
@@ -616,10 +650,97 @@ body.live-immersive #watch .sheet-close:focus-visible{
  const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings'];
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
+ let activeAccount=null, syncedPosts=[];
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
  // No user-controlled URL is ever injected into HTML; all content uses textContent + DOM nodes.
+
+ const accountRequest=async(path,method='GET',data)=>{
+  const response=await fetch(api(path),{method,credentials:'include',headers:data?{'Content-Type':'application/json'}:{},body:data?JSON.stringify(data):undefined,cache:'no-store'});
+  const result=await response.json().catch(()=>({error:'Server tidak merespons JSON'}));
+  if(!response.ok)throw Error(result.error||'HTTP '+response.status);
+  return result;
+ };
+ function displayAccount(){
+  const logged=!!activeAccount;
+  $('accountLoginCard').classList.toggle('hide',logged);
+  $('accountSignedCard').classList.toggle('hide',!logged);
+  $('syncedPostsHeader').hidden=!logged;
+  if(logged){
+   $('signedAccountName').textContent=activeAccount.name;
+   $('signedAccountHandle').textContent='@'+activeAccount.handle;
+   $('accountKycNote').textContent=activeAccount.kycStatus==='verified'&&activeAccount.verifiedAdult
+    ?'Identitas streamer diverifikasi.':'KYC belum aktif — akun belum diverifikasi sebagai streamer.';
+   draftProfile.handle=activeAccount.handle;
+   draftProfile.name=activeAccount.name;
+   draftProfile.bio=activeAccount.bio||'';
+   draftProfile.links=Array.isArray(activeAccount.links)?activeAccount.links:[];
+   saveProfileDraft();renderProfileDraft();
+   $('profileHandle').readOnly=true;
+   $('profileHandle').title='Username permanen setelah pendaftaran.';
+  }else{
+   $('profileHandle').readOnly=false;
+   syncedPosts=[];$('profileSyncedPosts').replaceChildren();
+  }
+  renderSyncedPosts();
+ }
+ function renderSyncedPosts(){
+  $('profileSyncedPosts').replaceChildren();
+  if(!activeAccount)return;
+  if(!syncedPosts.length){
+   const hint=document.createElement('p');hint.className='profile-note';
+   hint.textContent='Belum ada postingan server. Postingan baru akan tersimpan sebagai draf pribadi.';
+   $('profileSyncedPosts').appendChild(hint);return;
+  }
+  for(const item of syncedPosts){
+   const card=document.createElement('article');card.className='profile-post-card';
+   const head=document.createElement('div');head.className='post-top';
+   const label=document.createElement('b');label.textContent='@'+activeAccount.handle;
+   const state=document.createElement('small');state.textContent='DRAF SERVER · '+new Date(item.createdAt).toLocaleDateString('id-ID');
+   head.append(label,state);
+   const text=document.createElement('div');text.className='profile-post-content';linkifyCaption(text,item.text);
+   card.append(head,text);$('profileSyncedPosts').appendChild(card);
+  }
+ }
+ async function loadServerPosts(){
+  if(!activeAccount)return;
+  try{const data=await accountRequest('/api/account/posts/list','POST',{});syncedPosts=data.posts||[];renderSyncedPosts()}
+  catch(e){$('accountSignedStatus').textContent='Tidak dapat memuat postingan server: '+e.message}
+ }
+ async function sessionRestore(){
+  try{
+   const info=await accountRequest('/api/account/me');
+   activeAccount=info.authenticated?info.account:null;
+   displayAccount();
+   if(activeAccount)await loadServerPosts();
+  }catch(e){console.warn('NADMO account session unavailable',e)}
+ }
+ async function authAction(action){
+  $('accountStatus').textContent='Menghubungkan akun...';
+  const handle=$('accountHandle').value.trim().replace(/^@/,'').toLowerCase();
+  const pw=$('accountPass').value;
+  const name=$('accountName').value.trim();
+  try{
+   const data=await accountRequest(action==='register'?'/api/account/register':'/api/account/login','POST',
+    action==='register'?{handle,name,password:pw}:{handle,password:pw});
+   activeAccount=data.account;
+   $('accountPass').value='';
+   $('accountStatus').textContent='';
+   displayAccount();await loadServerPosts();
+   $('accountSignedStatus').textContent='Akun @'+activeAccount.handle+' berhasil masuk. Profil tersinkron di server.';
+  }catch(e){$('accountStatus').textContent=e.message}
+ }
+ $('accountRegister').onclick=()=>authAction('register');
+ $('accountLogin').onclick=()=>authAction('login');
+ $('accountLogout').onclick=async()=>{
+  try{
+   await accountRequest('/api/account/logout','POST',{});
+   activeAccount=null;displayAccount();
+   $('accountStatus').textContent='Keluar dari akun. Draf lokal di HP ini tetap tersimpan.';
+  }catch(e){$('accountSignedStatus').textContent=e.message}
+ };
+
  const PROFILE_KEY='nadmo.beta.profile.draft.v1';
  const POST_KEY='nadmo.beta.post.drafts.v1';
  function readDraft(key,fallback){
@@ -714,17 +835,25 @@ body.live-immersive #watch .sheet-close:focus-visible{
   $('profileLinkLabel').value='';$('profileLinkUrl').value='';
   $('profileEditStatus').textContent='Link disimpan dan bisa dibuka langsung dari profil pratinjau.';
  };
- $('profileSave').onclick=()=>{
+ $('profileSave').onclick=async()=>{
   const handle=$('profileHandle').value.trim().toLowerCase().replace(/^@/,'');
   if(handle&&!/^[a-z0-9_]{3,24}$/.test(handle)){$('profileEditStatus').textContent='Username 3–24 karakter: huruf kecil, angka, atau garis bawah.';return}
   draftProfile.name=$('profileName').value.trim().slice(0,60);
   draftProfile.handle=handle;
   draftProfile.bio=$('profileBio').value.trim().slice(0,300);
-  if(saveProfileDraft()){
+  if(!saveProfileDraft())return;
+  if(activeAccount){
+   try{
+    const result=await accountRequest('/api/account/profile','PUT',
+     {name:draftProfile.name||activeAccount.name,bio:draftProfile.bio,links:draftProfile.links});
+    activeAccount=result.account;displayAccount();
+    $('profileEditStatus').textContent='Profil tersimpan di server. Bisa diakses lewat HP dan PC.';
+   }catch(e){$('profileEditStatus').textContent='Tersimpan di perangkat saja, gagal sync: '+e.message;return}
+  }else{
    renderProfileDraft();
-   $('profileEditStatus').textContent='Profil disimpan pada perangkat ini. Belum dipublikasi sebagai akun NADMO.';
-   $('profileEditBox').classList.add('hide');$('editProfileBtn').textContent='EDIT';
+   $('profileEditStatus').textContent='Draf tersimpan di HP ini. Masuk akun agar profil tersinkron.';
   }
+  $('profileEditBox').classList.add('hide');$('editProfileBtn').textContent='EDIT';
  };
  function renderDraftPosts(){
   $('profilePostFeed').replaceChildren();
@@ -748,9 +877,18 @@ body.live-immersive #watch .sheet-close:focus-visible{
   try{localStorage.setItem(POST_KEY,JSON.stringify(draftPosts));return true}
   catch(error){$('profilePostStatus').textContent='Penyimpanan perangkat penuh / tidak tersedia';return false}
  }
- $('profilePostSave').onclick=()=>{
+ $('profilePostSave').onclick=async()=>{
   const text=$('profilePostText').value.trim();
   if(!text||text.length>2000){$('profilePostStatus').textContent='Postingan harus berisi 1 sampai 2.000 karakter.';return}
+  if(activeAccount){
+   try{
+    const saved=await accountRequest('/api/account/posts','POST',{text});
+    syncedPosts.unshift(saved.post);renderSyncedPosts();
+    $('profilePostText').value='';
+    $('profilePostStatus').textContent='Draf tersimpan di server. Belum terbit publik.';
+   }catch(e){$('profilePostStatus').textContent='Gagal menyimpan ke server: '+e.message}
+   return;
+  }
   if(draftPosts.length>=30){$('profilePostStatus').textContent='Maksimal 30 draf di perangkat ini.';return}
   const entry={id:crypto.randomUUID(),text,at:Date.now()};
   draftPosts.unshift(entry);
@@ -945,7 +1083,7 @@ body.live-immersive #watch .sheet-close:focus-visible{
  $('preview').onclick=preview;
  $('stopCamera').onclick=()=>{if(host&&currentRoom){notice('Sedang LIVE. Gunakan KAMERA OFF untuk menyembunyikan gambar sementara tanpa mengakhiri siaran.','camState');return}if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;stopTalkVisual();$('camera').srcObject=null;notice('Sumber siaran dimatikan.','camState')};
  function emptyMessage(message){const box=document.createElement('div');box.className='no-signal';const h=document.createElement('strong');h.textContent='NO SIGNAL';const d=document.createElement('small');d.textContent=message;box.append(h,d);return box}
- function roomCard(x){const card=document.createElement('div');card.className='room';card.dataset.roomId=x.id;const art=document.createElement('div');art.className='room-art';art.textContent='N/';const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');title.textContent=x.title;const sub=document.createElement('small');sub.textContent=(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
+ function roomCard(x){const card=document.createElement('div');card.className='room';card.dataset.roomId=x.id;const art=document.createElement('div');art.className='room-art';art.textContent='N/';const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');title.textContent=x.hostHandle?'@'+x.hostHandle:(x.hostName||'Host');const sub=document.createElement('small');sub.textContent=x.title+' · '+(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
  function renderRooms(){const q=$('searchLive').value.trim().toLocaleLowerCase('id');const items=cachedRooms.filter(x=>(selectedFilter==='all'||x.category===selectedFilter)&&(x.title+' '+x.category).toLocaleLowerCase('id').includes(q));$('rooms').replaceChildren();$('liveCount').textContent=items.length+' LIVE ROOMS';if(!items.length){$('rooms').append(emptyMessage(cachedRooms.length?'NO MATCHES':'NO PUBLIC LIVE BROADCASTS'));return}items.forEach(x=>$('rooms').append(roomCard(x)))}
  function renderSaved(){$('savedRooms').replaceChildren();const items=cachedRooms.filter(x=>savedIds.has(x.id));if(!items.length){$('savedRooms').append(emptyMessage('NO SAVED LIVE SESSIONS ON THIS DEVICE'));return}items.forEach(x=>$('savedRooms').append(roomCard(x)))}
  async function loadRooms(){try{const response=await fetch(api('/api/rooms'),{cache:'no-store',signal:AbortSignal.timeout(7000)});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();cachedRooms=Array.isArray(data.rooms)?data.rooms:[];renderRooms();renderSaved()}catch(e){$('rooms').replaceChildren(emptyMessage('NETWORK UNAVAILABLE / RETRY'));$('liveCount').textContent='NETWORK ERROR'}}
@@ -1137,10 +1275,11 @@ body.live-immersive #watch .sheet-close:focus-visible{
   if(peers.get(id)===pc)signal(id,{description:pc.localDescription,reset:true});
 }
  async function incoming(m){
-  if(m.type==='created'){mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
-  if(m.type==='joined'){closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
+  if(m.type==='created'){mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='joined'){closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
   if(m.type==='resumed'){
     mirrorBroadcast=m.mirrorBroadcast===true;applyMirroring();
+    $('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');
     stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('net').textContent='SERVER ONLINE';
     for(const pc of peers.values())pc.close();peers.clear();pendingIce.clear();
     $('restartRoom').classList.add('hide');
@@ -1209,10 +1348,10 @@ body.live-immersive #watch .sheet-close:focus-visible{
   if(!localStream)await preview();if(!localStream)return;
   const title=$('title').value.trim()||'NADMO LIVE';
   const category=selectedLiveMode==='talk'?'Podcast':$('category').value;
-  connect(()=>transmit({type:'create',title,category,mode:'public'}));
+  connect(()=>transmit({type:'create',title,category,mode:'public',hostName:activeAccount?.name||draftProfile.name||'Host'}));
  };
  function join(id,title,locked){if(!adult())return;let password='';if(locked){password=prompt('Kode akses room:')||'';if(!password)return}roomPassword=password;stopRetry();
- connect(()=>transmit({type:'join',id,password}));$('watchTitle').textContent=title}
+ connect(()=>transmit({type:'join',id,password}));$('watchTitle').textContent='Host';$('watchRoomSubtitle').textContent=title||''}
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
@@ -1247,7 +1386,7 @@ body.live-immersive #watch .sheet-close:focus-visible{
  $('leave').onclick=()=>{if(host&&currentRoom)showEndConfirm();else leave()};
  // Do not stop camera/microphone on pagehide: Android WebView can suspend/resume.
  // An explicit Leave button stops media; foreground recovery reacquires camera if needed.
- health();show('explore');
+ health();sessionRestore();show('explore');
  const incomingRoom=new URLSearchParams(location.search).get('room');
  if(incomingRoom&&/^[a-f0-9]{12,32}$/i.test(incomingRoom))setTimeout(()=>join(incomingRoom,'Invitation room',new URLSearchParams(location.search).get('private')==='1'),450);
 })();
