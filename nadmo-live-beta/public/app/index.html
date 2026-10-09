@@ -100,6 +100,8 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 @media(prefers-reduced-motion:reduce){.stage-core .circle:before{animation:none}}
 
 /* v0.5 live-first research implementation */
+.flash{position:fixed;top:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:30;background:#e3fd72;color:#141915;border:1px solid #a7b968;max-width:min(92vw,460px);width:max-content;padding:12px 18px;text-align:center;font:800 12px/1.35 Arial,sans-serif;box-shadow:0 8px 20px #0009}
+
 #explore .page-top{padding-top:12px;margin-top:4px}
 #explore>.deck{display:none}
 #explore .show-label{margin:13px 0 10px;padding-top:10px}
@@ -228,6 +230,7 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
   </div>
 </section>
 </div>
+<div id="flash" class="flash hide" role="status" aria-live="polite"></div>
 <nav aria-label="Main navigation">
   <button data-tab="explore" class="active"><i>◉</i>LIVE</button>
   <button data-tab="following"><i>☆</i>FOLLOW</button>
@@ -248,6 +251,8 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
  $('adult').addEventListener('change',()=>localStorage.setItem('nadmo.adult',$('adult').checked?'yes':'no'));
  function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Settings.');show('settings');return false}return true}
  function notice(s,id='serverState'){$(id).textContent=s}
+ let flashTimer=null;
+ function flash(message){const el=$('flash');el.textContent=message;el.classList.remove('hide');if(flashTimer)clearTimeout(flashTimer);flashTimer=setTimeout(()=>el.classList.add('hide'),5500)}
  const api=p=>server.replace(/\/$/,'')+p;
  function validURL(x){try{const u=new URL(x);return u.protocol==='https:' && !u.username && !u.password && !u.hash}catch(e){return false}}
  async function health(){
@@ -401,7 +406,8 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
    $('watchState').textContent='Host kembali online. Menyambungkan ulang video...';
   }
   if(m.type==='room-ended'){
-   stopRetry();alert(m.reason||'Room berakhir.');leave();return;
+   const why=m.reason||'Siaran berakhir.';
+   leave();flash(why);return;
   }
   if(m.type==='viewer-joined'&&host){await attachViewer(m.id)}
   if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id)}
