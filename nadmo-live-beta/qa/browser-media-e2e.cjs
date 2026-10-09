@@ -302,8 +302,9 @@ async function main(){
   assert.deepEqual(talkTracks,['audio','video'],'Talk mode needs real mic and canvas visualization');
   await host.locator('#title').fill('NADMO QA TALK '+Date.now());
   await host.locator('#createRoom').click();
-  await waitText(host,'#liveState','Bagikan kode room',16000);
-  assert.equal(await host.$eval('#watch',el=>el.getBoundingClientRect().height>700),true);
+  await host.waitForFunction(()=>!document.querySelector('#watch').classList.contains('hide')&&
+    document.body.classList.contains('live-immersive')&&document.querySelector('#watch').getBoundingClientRect().height>700,{timeout:20000});
+  assert.equal(await host.$eval('#watchState',el=>getComputedStyle(el).display),'none');
   console.log('PASS Ngobrol mode starts real microphone audio live with fullscreen visual');
   await host.locator('#leave').click();
   await host.locator('#confirmEndLive').click();
