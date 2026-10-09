@@ -14,7 +14,30 @@ const socialFollowing=(a,b)=>'social-following:'+a+':'+b;
 const socialFollower=(a,b)=>'social-follower:'+a+':'+b;
 const socialCounts=account=>({followers:Math.max(0,Number(account?.followersCount)||0),following:Math.max(0,Number(account?.followingCount)||0)});
 
-const AVATAR_MAX_BYTES=65536; // Compact profile pictures only; no raw high-resolution photo storage.
+const AVATAR_MAX_BYTES=65536;
+// Creator-first social interactions. Counts and permissions come from durable server state.
+const postIdOK=id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(id)&&id.length===36;
+const socialLikesKey=(postId,id)=>'social-like:'+postId+':'+id;
+const socialUserLike=(id,postId)=>'social-user-like:'+id+':'+postId;
+const repostsKey=id=>'social-user-reposts:'+id;
+// Whitelisted creator profile visual options: scoped to a profile, never to app dashboard.
+const THEME_IDS=new Set(['nadmo','noir','retro','electric']);
+const FONT_IDS=new Set(['system','mono','editorial']);
+const COVER_IDS=new Set(['grid','waves','dots']);
+const profileVisual=a=>({themeId:THEME_IDS.has(a?.themeId)?a.themeId:'nadmo',
+ fontId:FONT_IDS.has(a?.fontId)?a.fontId:'system',
+ coverId:COVER_IDS.has(a?.coverId)?a.coverId:'grid'});
+
+const commentsKey=id=>'social-post-comments:'+id;
+const lookupOriginal=(feed,id)=>feed.find(p=>p.id===id&&p.status==='published'&&p.type!=='repost');
+const isBlockedSocialURL=(label,url)=>{
+ try{
+  const u=new URL(url),text=(String(label||'')+' '+decodeURIComponent(u.hostname+u.pathname+u.search)).toLowerCase();
+  return /(?:^|[^a-z0-9])(judol|judi\s*online|slot\s*gacor|togel\s*online|kasino\s*online|casino\s*online|taruhan\s*online)(?:$|[^a-z0-9])/.test(text)
+   ||/^(?:judol|slotgacor|judionline|togelonline|casinoonline)[a-z0-9-]*\./.test(u.hostname);
+ }catch{return true}
+};
+ // Compact profile pictures only; no raw high-resolution photo storage.
 const AVATAR_RESPONSE_HEADERS={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'};
 const clean=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -43,7 +66,7 @@ function urlOK(raw){
   const u=new URL(raw.trim());
   if(u.protocol!=='https:'||!u.hostname.includes('.')||u.username||u.password||u.hostname==='localhost'||u.port)return null;
   if(/^(?:127\.|10\.|192\.168\.|169\.254\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(u.hostname))return null;
-  return u.href;
+  return isBlockedSocialURL('',u.href)?null:u.href;
  }catch{return null}
 }
 async function throttle(storage,key,limit,windowMs){
@@ -59,7 +82,7 @@ async function getAccountBySessionFingerprint(storage,fingerprint){
  const session=await storage.get('auth-session:'+fingerprint);
  if(!session||session.expiresAt<Date.now())return null;
  const user=await storage.get('auth-user:'+session.id);
- return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],avatarVersion:user.avatarVersion||0,verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
+ return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
 }
 async function getSessionFingerprint(request){
  const token=cookies(request);
@@ -105,8 +128,40 @@ export async function accountEndpoint(storage,request){
   return json({ok:true,type:relation,counts:socialCounts(record),accounts:accounts.slice(0,500),truncated:entries.size>500});
  }
  if(p==='/api/social/feed'&&method==='GET'){
-  return json({ok:true,posts:(await storage.get('social-public-feed')||[]).slice(0,80)});
+  const viewer=await getAccount(storage,request);
+  const feed=await storage.get('social-public-feed')||[];
+  let liked=new Set();
+  if(viewer){
+   const entries=await storage.list({prefix:'social-user-like:'+viewer.id+':',limit:501});
+   liked=new Set([...entries.keys()].map(key=>key.slice(('social-user-like:'+viewer.id+':').length)));
+  }
+  return json({ok:true,posts:feed.slice(0,80).map(post=>({...post,likedByMe:liked.has(post.originalId||post.id)}))});
  }
+ if(p==='/api/social/post'&&method==='GET'){
+  const id=u.searchParams.get('id')||'';
+  if(!postIdOK(id))return fail(400,'Postingan tidak valid');
+  const feed=await storage.get('social-public-feed')||[];
+  const post=feed.find(x=>x.id===id&&x.status==='published');
+  return post?json({ok:true,post}):fail(404,'Postingan tidak ditemukan');
+ }
+ if(p==='/api/social/engagement'&&method==='GET'){
+  const id=u.searchParams.get('id')||'';
+  if(!postIdOK(id))return fail(400,'Postingan tidak valid');
+  const feed=await storage.get('social-public-feed')||[];
+  const post=lookupOriginal(feed,id);
+  if(!post)return fail(404,'Postingan sudah tidak tersedia');
+  const viewer=await getAccount(storage,request);
+  return json({ok:true,counts:{likes:post.likesCount||0,comments:post.commentsCount||0,reposts:post.repostsCount||0},
+   liked:viewer?!!await storage.get(socialLikesKey(id,viewer.id)):false,comments:(await storage.get(commentsKey(id))||[]).slice(-50)});
+ }
+ if(p==='/api/social/reposts/me'&&method==='GET'){
+  const viewer=await getAccount(storage,request);
+  if(!viewer)return fail(401,'Masuk akun untuk melihat repost');
+  const own=await storage.get(repostsKey(viewer.id))||[];
+  const feed=await storage.get('social-public-feed')||[];
+  return json({ok:true,reposts:own.slice(-50).reverse().map(x=>({id:x.id,createdAt:x.createdAt,original:lookupOriginal(feed,x.originalId)})).filter(x=>x.original)});
+ }
+
  if(p==='/api/payments/status'&&method==='GET')return json({
   enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,
   recipientPayoutsEnabled:false,state:'WAITING_LICENSED_PROVIDER'
@@ -214,7 +269,7 @@ export async function accountEndpoint(storage,request){
   const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
   const viewer=await getAccount(storage,request);
   const isFollowing=viewer?!!await storage.get(socialFollowing(viewer.id,id)):false;
-  return json({ok:true,isFollowing,profile:{...socialCounts(account),handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
+  return json({ok:true,isFollowing,profile:{...socialCounts(account),handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],...profileVisual(account),avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
  if(!p.startsWith('/api/account/')&&!p.startsWith('/api/messages/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
@@ -248,11 +303,11 @@ export async function accountEndpoint(storage,request){
   try{passhash=await passwordHash(pw,salt)}
   catch(error){console.error('Password KDF failure',error?.name,error?.code);return fail(503,'Secure password hashing unavailable on this server')}
   const id=crypto.randomUUID();
-  const user={id,handle,name,bio:'',links:[],salt,passhash,passAlgo:'scrypt-v1',kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
+  const user={id,handle,name,bio:'',links:[],themeId:'nadmo',fontId:'system',coverId:'grid',salt,passhash,passAlgo:'scrypt-v1',kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
   await storage.put('auth-user:'+id,user);
   await storage.put('auth-handle:'+handle,id);
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle,name,bio:'',links:[],avatarVersion:0,kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle,name,bio:'',links:[],...profileVisual(user),avatarVersion:0,kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/login'&&method==='POST'){
   const handle=clean(payload.handle,24).toLowerCase(),pw=payload.password;
@@ -261,7 +316,7 @@ export async function accountEndpoint(storage,request){
   const id=await storage.get('auth-handle:'+handle),user=id&&await storage.get('auth-user:'+id);
   if(!user||user.disabled||!safeCompare(await passwordHash(pw,user.salt),user.passhash))return fail(401,'Username atau kata sandi salah');
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],avatarVersion:user.avatarVersion||0,kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/logout'&&method==='POST'){
   const token=cookies(request);
@@ -383,7 +438,36 @@ export async function accountEndpoint(storage,request){
   await storage.delete('auth-handle:'+record.handle);
   // Erase social posts and pending messaging state before revoking this identity.
   const feed=await storage.get('social-public-feed')||[];
-  await storage.put('social-public-feed',feed.filter(post=>post.accountId!==user.id));
+  // Remove creator-owned posts and reposts; do not leave orphaned public repost copies.
+  const owned=new Set(feed.filter(post=>post.accountId===user.id&&post.type!=='repost').map(post=>post.id));
+  const ownReposted=new Set((await storage.get(repostsKey(user.id))||[]).map(x=>x.originalId));
+  for(const id of ownReposted){const original=lookupOriginal(feed,id);if(original)original.repostsCount=Math.max(0,(original.repostsCount||0)-1)}
+  const retained=feed.filter(post=>post.accountId!==user.id&&!owned.has(post.originalId));
+  for(const original of retained.filter(post=>post.type!=='repost')){
+   const comments=await storage.get(commentsKey(original.id))||[];
+   if(comments.some(x=>x.accountId===user.id)){
+    const cleanComments=comments.filter(x=>x.accountId!==user.id);
+    original.commentsCount=Math.max(0,(original.commentsCount||0)-(comments.length-cleanComments.length));
+    await storage.put(commentsKey(original.id),cleanComments);
+   }
+  }
+  const liked=await storage.list({prefix:'social-user-like:'+user.id+':',limit:501});
+  for(const key of liked.keys()){
+   const id=key.slice(('social-user-like:'+user.id+':').length);
+   await storage.delete(socialLikesKey(id,user.id));await storage.delete(key);
+   const original=lookupOriginal(retained,id);
+   if(original)original.likesCount=Math.max(0,(original.likesCount||0)-1);
+  }
+  for(const id of owned){
+   await storage.delete(commentsKey(id));
+   const otherLikes=await storage.list({prefix:'social-like:'+id+':',limit:501});
+   for(const key of otherLikes.keys()){
+    const otherId=key.slice(('social-like:'+id+':').length);
+    await storage.delete(socialUserLike(otherId,id));await storage.delete(key);
+   }
+  }
+  await storage.delete(repostsKey(user.id));
+  await storage.put('social-public-feed',retained);
   const ownConnections=await storage.list({prefix:'dm-member:'+user.id+':',limit:100});
   for(const item of ownConnections.values()){
    if(!item?.otherId)continue;
@@ -440,19 +524,83 @@ export async function accountEndpoint(storage,request){
   const validated=[];
   for(const entry of links){
    const label=clean(entry?.label,40),url=urlOK(entry?.url);
-   if(!label||!url||validated.some(x=>x.url===url))return fail(400,'Terdapat link tidak valid atau duplikat');
+   if(!label||!url||isBlockedSocialURL(label,url)||validated.some(x=>x.url===url))return fail(400,'Link tidak valid, judi online, atau duplikat');
    validated.push({label,url});
   }
-  record.name=name;record.bio=bio;record.links=validated;record.updatedAt=Date.now();
+  const themeId=payload.themeId===undefined?profileVisual(record).themeId:payload.themeId;
+  const fontId=payload.fontId===undefined?profileVisual(record).fontId:payload.fontId;
+  const coverId=payload.coverId===undefined?profileVisual(record).coverId:payload.coverId;
+  if(!THEME_IDS.has(themeId)||!FONT_IDS.has(fontId)||!COVER_IDS.has(coverId))return fail(400,'Pilihan tema, font atau cover tidak valid');
+  record.name=name;record.bio=bio;record.links=validated;record.themeId=themeId;record.fontId=fontId;record.coverId=coverId;record.updatedAt=Date.now();
   await storage.put('auth-user:'+user.id,record);
-  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
+  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,...profileVisual(record),avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
+ }
+ if(p==='/api/account/social/upload-allowed'&&method==='POST'){
+  // File storage is a separate optional R2 dependency. Limit allocations per user.
+  if(!await throttle(storage,'social-media-upload:'+user.id,8,86400000))return fail(429,'Batas upload harian beta tercapai');
+  return json({ok:true,allowed:true});
+ }
+ if(p==='/api/account/social/like'&&method==='POST'){
+  const id=payload.id,want=payload.liked===true;
+  if(!postIdOK(id)||typeof payload.liked!=='boolean')return fail(400,'Pilihan like tidak valid');
+  const feed=await storage.get('social-public-feed')||[],post=lookupOriginal(feed,id);
+  if(!post)return fail(404,'Postingan tidak tersedia');
+  const key=socialLikesKey(id,user.id),old=!!await storage.get(key);
+  if(old!==want){
+   if(!await throttle(storage,'social-like-rate:'+user.id,100,3600000))return fail(429,'Terlalu sering menyukai postingan');
+   if(want){await storage.put(key,true);await storage.put(socialUserLike(user.id,id),true)}
+   else{await storage.delete(key);await storage.delete(socialUserLike(user.id,id))}
+   post.likesCount=Math.max(0,(post.likesCount||0)+(want?1:-1));
+   await storage.put('social-public-feed',feed);
+  }
+  return json({ok:true,liked:want,likes:post.likesCount||0});
+ }
+ if(p==='/api/account/social/comment'&&method==='POST'){
+  const id=payload.id,text=clean(payload.text,500);
+  if(!postIdOK(id)||!text||typeof payload.text!=='string'||payload.text.length>500)return fail(400,'Komentar harus 1–500 karakter');
+  const feed=await storage.get('social-public-feed')||[],post=lookupOriginal(feed,id);
+  if(!post)return fail(404,'Postingan tidak tersedia');
+  if(!await throttle(storage,'social-comment:'+user.id,25,3600000))return fail(429,'Terlalu sering berkomentar');
+  const previous=await storage.get(commentsKey(id))||[];
+  if(previous.length>=200)return fail(409,'Batas komentar beta tercapai untuk postingan ini');
+  const comment={id:crypto.randomUUID(),accountId:user.id,handle:user.handle,name:record.name,text,createdAt:Date.now()};
+  await storage.put(commentsKey(id),[...previous,comment]);
+  post.commentsCount=Math.max(0,(post.commentsCount||0)+1);
+  await storage.put('social-public-feed',feed);
+  return json({ok:true,comment,counts:{comments:post.commentsCount}},201);
+ }
+ if(p==='/api/account/social/repost'&&method==='POST'){
+  const id=payload.id;
+  if(!postIdOK(id))return fail(400,'Postingan tidak valid');
+  const feed=await storage.get('social-public-feed')||[],post=lookupOriginal(feed,id);
+  if(!post)return fail(404,'Postingan tidak tersedia');
+  if(post.accountId===user.id)return fail(400,'Tidak perlu repost postingan sendiri');
+  const list=await storage.get(repostsKey(user.id))||[];
+  const existing=list.find(x=>x.originalId===id);
+  if(existing)return json({ok:true,reposted:true,repostId:existing.id,counts:{reposts:post.repostsCount||0}});
+  if(!await throttle(storage,'social-repost:'+user.id,15,86400000))return fail(429,'Terlalu banyak repost hari ini');
+  const repost={id:crypto.randomUUID(),originalId:id,createdAt:Date.now()};
+  await storage.put(repostsKey(user.id),[...list,repost].slice(-100));
+  post.repostsCount=(post.repostsCount||0)+1;
+  const entry={id:repost.id,accountId:user.id,handle:user.handle,name:record.name,avatarVersion:record.avatarVersion||0,
+   originalId:id,type:'repost',text:'',createdAt:repost.createdAt,status:'published'};
+  await storage.put('social-public-feed',[entry,...feed].slice(0,200));
+  return json({ok:true,reposted:true,repostId:repost.id,counts:{reposts:post.repostsCount}},201);
  }
  if(p==='/api/account/posts/publish'&&method==='POST'){
   const text=clean(payload.text,2000);
-  if(!text||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Postingan tidak valid');
+  const videoUrl=payload.videoUrl?urlOK(payload.videoUrl):null;
+  if(payload.videoUrl&&!videoUrl)return fail(400,'URL video harus HTTPS yang aman dan bukan judi online');
+  if(videoUrl){
+   const videoHost=new URL(videoUrl).hostname.toLowerCase().replace(/^www\./,'');
+   const videoPath=new URL(videoUrl).pathname.toLowerCase();
+   if(!(['youtube.com','m.youtube.com','youtu.be','vimeo.com','player.vimeo.com'].includes(videoHost)
+     ||/\.(mp4|webm)$/.test(videoPath)))return fail(400,'Gunakan link video YouTube, Vimeo, MP4, atau WebM yang valid');
+  }
+  if((!text&&!videoUrl)||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Postingan atau video tidak valid');
   if(!await throttle(storage,'publish:'+user.id,8,3600000))return fail(429,'Terlalu banyak postingan');
   const post={id:crypto.randomUUID(),accountId:user.id,handle:user.handle,name:record.name,
-   avatarVersion:record.avatarVersion||0,text,createdAt:Date.now(),status:'published'};
+   avatarVersion:record.avatarVersion||0,text,videoUrl:videoUrl||null,likesCount:0,commentsCount:0,repostsCount:0,createdAt:Date.now(),status:'published'};
   const previous=await storage.get('auth-posts:'+user.id)||[];
   await storage.put('auth-posts:'+user.id,[post,...previous].slice(0,80));
   const feed=await storage.get('social-public-feed')||[];
@@ -466,7 +614,13 @@ export async function accountEndpoint(storage,request){
   if(!previous.some(post=>post.id===id))return fail(404,'Postingan tidak ditemukan');
   await storage.put('auth-posts:'+user.id,previous.filter(post=>post.id!==id));
   const feed=await storage.get('social-public-feed')||[];
-  await storage.put('social-public-feed',feed.filter(post=>post.id!==id));
+  await storage.put('social-public-feed',feed.filter(post=>post.id!==id&&post.originalId!==id));
+  const likes=await storage.list({prefix:'social-like:'+id+':',limit:501});
+  for(const key of likes.keys()){
+   const otherId=key.slice(('social-like:'+id+':').length);
+   await storage.delete(socialUserLike(otherId,id));await storage.delete(key);
+  }
+  await storage.delete(commentsKey(id));
   return json({ok:true,deleted:true});
  }
  if(p==='/api/account/posts'&&method==='POST'){
