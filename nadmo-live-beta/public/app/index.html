@@ -100,7 +100,7 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 @media(prefers-reduced-motion:reduce){.stage-core .circle:before{animation:none}}
 
 /* v0.5 live-first research implementation */
-#hostAccessPanel[hidden]{display:none!important}#hostAccessPanel{margin-top:14px}.flash{position:fixed;top:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:30;background:#e3fd72;color:#141915;border:1px solid #a7b968;max-width:min(92vw,460px);width:max-content;padding:12px 18px;text-align:center;font:800 12px/1.35 Arial,sans-serif;box-shadow:0 8px 20px #0009}
+#hostAccessPanel[hidden],#viewerTipPanel[hidden]{display:none!important}#hostAccessPanel{margin-top:14px}.flash{position:fixed;top:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:30;background:#e3fd72;color:#141915;border:1px solid #a7b968;max-width:min(92vw,460px);width:max-content;padding:12px 18px;text-align:center;font:800 12px/1.35 Arial,sans-serif;box-shadow:0 8px 20px #0009}
 
 #explore .page-top{padding-top:12px;margin-top:4px}
 #explore>.deck{display:none}
@@ -196,6 +196,19 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
     </div>
   </div>
   <p class="deck" id="afkHint" hidden>AFK = tampilan standby sementara mikrofon tetap aktif. Tidak otomatis memutar Spotify atau musik berhak cipta. Tetap buka aplikasi saat siaran.</p>
+  <div class="panel" id="viewerTipPanel" hidden>
+    <div class="show-label"><b>SAWERAN RUPIAH</b><small>PREVIEW / BELUM AKTIF</small></div>
+    <p>Kirim dukungan sesuai kemampuanmu. Tidak ada koin, berlian atau hadiah virtual.</p>
+    <div class="filterstrip" id="tipPresets">
+      <button data-tip="5000">Rp5.000</button><button data-tip="10000" class="active">Rp10.000</button>
+      <button data-tip="20000">Rp20.000</button><button data-tip="50000">Rp50.000</button>
+    </div>
+    <label for="tipCustom">NOMINAL CUSTOM (RUPIAH)</label>
+    <input class="field" type="number" inputmode="numeric" id="tipCustom" min="1000" max="10000000" step="1000" value="10000">
+    <div class="setting-line"><span>Usulan bagian kreator (93%)*</span><strong id="tipEstimate">Rp9.300</strong></div>
+    <p class="deck">*Sebelum biaya gateway, pajak, dan biaya lain yang wajib diperlihatkan. Pembayaran belum aktif — tidak ada dana yang diproses.</p>
+    <button class="btn ghost" type="button" disabled style="width:100%">SAWERAN TERSEDIA SETELAH GATEWAY AKTIF</button>
+  </div>
   <div class="actions"><button class="btn ghost" id="leave">← LEAVE ROOM</button><button class="btn secondary hide" id="restartRoom">RESTART BROADCAST</button></div></div>
   <div class="panel"><div class="show-label"><b>BACKCHANNEL</b><small>LIVE CHAT</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button></div></div>
 </section>
@@ -306,6 +319,14 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
  }
  $('applyPrivate').onclick=()=>setAccess('password');
  $('restorePublic').onclick=()=>setAccess('public');
+ function updateTipPreview(){
+  const amount=Number($('tipCustom').value);
+  document.querySelectorAll('#tipPresets button').forEach(b=>b.classList.toggle('active',Number(b.dataset.tip)===amount));
+  const valid=Number.isSafeInteger(amount)&&amount>=1000&&amount<=10000000;
+  $('tipEstimate').textContent=valid?new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(amount-Math.round(amount*.07)):'Nominal Rp1.000–Rp10.000.000';
+ }
+ document.querySelectorAll('#tipPresets button').forEach(b=>b.onclick=()=>{$('tipCustom').value=b.dataset.tip;updateTipPreview()});
+ $('tipCustom').addEventListener('input',updateTipPreview);updateTipPreview();
  async function preview(){
   try{if(!navigator.mediaDevices?.getUserMedia)throw Error('Browser belum mendukung kamera');if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720}},audio:{echoCancellation:true}});$('camera').srcObject=localStream;notice('Kamera dan mikrofon siap.','camState');}
   catch(e){notice('Gagal membuka kamera: '+e.message,'camState')}
@@ -420,8 +441,8 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
  function signal(to,data){transmit({type:'signal',to,data})}
  async function attachViewer(id){if(!localStream)return;const pc=rtc();peers.set(id,pc);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.onicecandidate=e=>{if(e.candidate)signal(id,{candidate:e.candidate})};const offer=await pc.createOffer();await pc.setLocalDescription(offer);signal(id,{description:pc.localDescription})}
  async function incoming(m){
-  if(m.type==='created'){stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Anda sedang siaran. Bagikan kode: '+m.id;$('remote').muted=true;$('remote').srcObject=localStream;show('watch');}
-  if(m.type==='joined'){stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';show('watch')}
+  if(m.type==='created'){stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Anda sedang siaran. Bagikan kode: '+m.id;$('remote').muted=true;$('remote').srcObject=localStream;show('watch');}
+  if(m.type==='joined'){stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';show('watch')}
   if(m.type==='resumed'){
     stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('net').textContent='SERVER ONLINE';
     for(const pc of peers.values())pc.close();peers.clear();pendingIce.clear();
@@ -482,7 +503,7 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';
   $('remote').srcObject=null;$('remote').muted=false;$('chat').replaceChildren();
-  $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';
+  $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';
   $('afkToggle').textContent='▤ AFK SCENE';
   $('stopCamera').click();show('explore');manuallyLeaving=false;
 }
