@@ -48,14 +48,14 @@ async function main(){
   console.log('PROFILE_EDIT_VISIBILITY',JSON.stringify(await one.$eval('#profileEditBox',e=>({hidden:e.classList.contains('hide'),rect:e.getBoundingClientRect().toJSON()}))));
   const fillOffscreen=async(selector,value)=>one.$eval(selector,(el,text)=>{el.value=text;el.dispatchEvent(new Event('input',{bubbles:true}))},value);
   await fillOffscreen('#profileName','NADMO QA Creator');
-  await one.locator('#profileBio').fill('Open business links under one NADMO account');
-  await one.locator('#profileLinkLabel').fill('Independent Booking');
-  await one.locator('#profileLinkUrl').fill('https://bookbwd.nadmo.id/');
-  await one.locator('#profileAddLink').click();
-  await one.locator('#profileSave').click();
+  await fillOffscreen('#profileBio','Open business links under one NADMO account');
+  await fillOffscreen('#profileLinkLabel','Independent Booking');
+  await fillOffscreen('#profileLinkUrl','https://bookbwd.nadmo.id/');
+  await one.$eval('#profileAddLink',el=>el.click());
+  await one.$eval('#profileSave',el=>el.click());
   await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('tersinkron'),{timeout:10000});
-  await one.locator('#profilePostText').fill('Book directly https://bookbwd.nadmo.id/ without walled gardens');
-  await one.locator('#profilePostSave').click();
+  await fillOffscreen('#profilePostText','Book directly https://bookbwd.nadmo.id/ without walled gardens');
+  await one.$eval('#profilePostSave',el=>el.click());
   await one.waitForFunction(()=>document.querySelector('#profileSyncedPosts').querySelectorAll('a').length===1,{timeout:10000});
 
   await two.locator('nav [data-tab="settings"]').click();
