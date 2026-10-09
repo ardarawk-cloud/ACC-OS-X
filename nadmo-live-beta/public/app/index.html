@@ -649,6 +649,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 .message-request,.message-thread{padding:15px 12px;border-bottom:1px solid #344936;color:#f1f6e9;display:flex;align-items:center;gap:9px}
 .message-request button,.message-thread button{background:#30472d;border:1px solid #69835b;color:#e9f8df;padding:9px;border-radius:9px;font-weight:800}
 .mast-login{border:1px solid #8fad63;border-radius:17px;background:#192519;color:#e7faaf;padding:7px 11px;font:900 10px Arial;cursor:pointer}.mast-login[hidden]{display:none!important}
+body.page-subview nav{display:none!important}body.page-subview #app{padding-bottom:22px}
 </style></head>
 <body>
 <div class="app">
@@ -1715,7 +1716,10 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
  renderDraftPosts();
 
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){if(name==='settings'&&!activeAccount)name='authPage';if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
+ function show(name){if(name==='settings'&&!activeAccount)name='authPage';
+  const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage'];
+  document.body.classList.toggle('page-subview',subpages.includes(name));
+  if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
   if(name==='socialPage')loadSocialFeed();
   if(name==='messagesPage'&&activeAccount)loadMessageInbox();
