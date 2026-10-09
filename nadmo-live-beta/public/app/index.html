@@ -1625,6 +1625,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('mastLogin').hidden=logged;
   $('messagesGuest').classList.toggle('hide',logged);
   $('messagesSigned').classList.toggle('hide',!logged);
+  if(logged)refreshMessageBadge().catch(()=>{});
+  else setUnreadBadge(0);
   if(!logged){followedHandles.clear();$('meFollowersCount').textContent='—';$('meFollowingCount').textContent='—';}
   $('avatarChoose').hidden=!logged;
   $('avatarRemove').hidden=!logged||!activeAccount.avatarVersion;
