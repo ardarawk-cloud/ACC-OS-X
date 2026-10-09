@@ -1,0 +1,61 @@
+name: NADMO LIVE v0.5 research implementation QA
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/public/app/index.html'
+      - '.github/workflows/nadmo-live-research-v05-qa.yml'
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Check UI script parse and actual controls
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),assert=require('assert');
+          const html=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8');
+          const script=html.split('<script>')[1]?.split('</script>')[0];
+          assert(script,'inline runtime JS exists');
+          new Function(script);
+          console.log('PASS JavaScript syntax');
+          const ids=['explore','following','signal','studio','settings','rooms','searchLive','filters','savedRooms','privateId','privateJoin','afkToggle','hostControls','shareRoom','restartRoom','signalStatus','watchState','saveServer','serverState','adult','remote','camera','chat'];
+          for(const id of ids)assert(html.includes('id="'+id+'"'),'missing '+id);
+          console.log('PASS '+ids.length+' essential controls');
+          assert(script.includes("show('explore')"),'default live first');
+          assert(script.includes('canvas.captureStream'),'AFK media scene');
+          assert(script.includes('replaceTrack(track)'),'AFK swaps outgoing video');
+          assert(script.includes('localStorage.setItem'),'following bookmarks');
+          assert(html.includes('AUTO-CONNECT / ACTIVE'),'server auto-config');
+          assert(!html.includes('BACKEND HTTPS ENDPOINT'),'no manual input');
+          console.log('PASS live-first, AFK, following, private room, no-copy backend');
+          NODE
+      - name: Verify HTML local rendering in headless Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then echo "Chrome not installed";exit 1;fi
+          "$CHROME" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --window-size=420,950 --virtual-time-budget=2500 \
+            --dump-dom "file://$GITHUB_WORKSPACE/nadmo-live-beta/public/app/index.html" > /tmp/nadmo-dom.html
+          grep -q 'LIVE FEED' /tmp/nadmo-dom.html
+          grep -q 'GO LIVE' /tmp/nadmo-dom.html
+          echo 'PASS mobile rendering shell'
+      - name: Verify HTTPS deployed page
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://nadmo-live-beta-20261009.ardarawk.workers.dev/app/'
+          for i in {1..6}; do
+            curl -fsS --max-time 15 "$URL" -o /tmp/remote.html || true
+            if grep -q 'AFK SCENE' /tmp/remote.html && grep -q 'INVITATION ACCESS' /tmp/remote.html;then
+              echo 'PASS remote v0.5 live-first and AFK controls';exit 0
+            fi
+            sleep 7
+          done
+          echo 'FAIL remote v0.5 did not appear within propagation window';exit 1
