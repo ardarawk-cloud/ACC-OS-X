@@ -316,7 +316,7 @@ export async function accountEndpoint(storage,request){
   const id=await storage.get('auth-handle:'+handle),user=id&&await storage.get('auth-user:'+id);
   if(!user||user.disabled||!safeCompare(await passwordHash(pw,user.salt),user.passhash))return fail(401,'Username atau kata sandi salah');
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],avatarVersion:user.avatarVersion||0,kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/logout'&&method==='POST'){
   const token=cookies(request);
