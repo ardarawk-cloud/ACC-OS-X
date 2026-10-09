@@ -1321,6 +1321,99 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   $('socialPostText').value='';show('draftsPage');
   $('profilePostSave').click();
  };
+
+ let activeChatHandle='',chatRefreshTimer=null;
+ async function loadMessageInbox(){
+  if(!activeAccount)return;
+  const status=$('messageInboxStatus');
+  try{
+   const [reqData,threadsData]=await Promise.all([
+    accountRequest('/api/messages/requests'),accountRequest('/api/messages/threads')
+   ]);
+   const incoming=$('messageRequests');incoming.replaceChildren();
+   for(const req of reqData.requests||[]){
+    const row=document.createElement('div');row.className='message-request';
+    const name=document.createElement('span');name.textContent=(req.name||req.handle)+' ingin mengobrol';
+    name.style.flex='1';
+    const accept=document.createElement('button');accept.type='button';accept.textContent='TERIMA';
+    accept.onclick=async()=>{
+     accept.disabled=true;
+     try{await accountRequest('/api/messages/accept','POST',{handle:req.handle});
+      status.textContent='Permintaan diterima.';await loadMessageInbox()
+     }catch(e){status.textContent=e.message;accept.disabled=false}
+    };
+    const block=document.createElement('button');block.type='button';block.textContent='TOLAK';
+    block.onclick=async()=>{try{await accountRequest('/api/messages/block','POST',{handle:req.handle});await loadMessageInbox()}catch(e){status.textContent=e.message}};
+    row.append(name,accept,block);incoming.append(row);
+   }
+   const box=$('messageThreads');box.replaceChildren();
+   for(const item of threadsData.threads||[]){
+    const row=document.createElement('div');row.className='message-thread';
+    const open=document.createElement('button');open.type='button';open.style.flex='1';
+    open.textContent=(item.name||item.handle)+' · @'+item.handle;
+    open.onclick=()=>openMessages(item.handle,item.name);
+    row.append(open);box.append(row);
+   }
+   if(!(reqData.requests||[]).length&&!(threadsData.threads||[]).length)
+    status.textContent='Belum ada percakapan. Chat dimulai setelah penerima menyetujui permintaan.';
+  }catch(error){status.textContent=error.message}
+ }
+ async function openMessages(handle,name){
+  if(!activeAccount)return;
+  activeChatHandle=handle;
+  $('messageThreadTitle').textContent=(name||handle)+' · @'+handle;
+  $('messageConversation').classList.remove('hide');
+  $('messageRequests').classList.add('hide');$('messageThreads').classList.add('hide');$('messageBack').hidden=false;
+  await refreshConversation();
+  if(chatRefreshTimer)clearInterval(chatRefreshTimer);
+  chatRefreshTimer=setInterval(()=>{
+   if(!activeChatHandle||document.visibilityState!=='visible'||$('messagesPage').classList.contains('hide'))return;
+   refreshConversation();
+  },12000);
+ }
+ async function refreshConversation(){
+  if(!activeChatHandle)return;
+  try{
+   const handle=activeChatHandle,data=await accountRequest('/api/messages/thread/'+encodeURIComponent(handle));
+   if(handle!==activeChatHandle)return;
+   const node=$('messageBubbles'),atBottom=node.scrollTop+node.clientHeight>=node.scrollHeight-30;
+   node.replaceChildren();
+   for(const msg of data.messages||[]){
+    const bubble=document.createElement('div');
+    bubble.className='message-bubble'+(msg.fromHandle===activeAccount?.handle?' mine':'');
+    bubble.textContent=msg.text;node.append(bubble);
+   }
+   if(atBottom)node.scrollTop=node.scrollHeight;
+  }catch(error){$('messageInboxStatus').textContent=error.message}
+ }
+ function closeMessages(){
+  activeChatHandle='';
+  if(chatRefreshTimer){clearInterval(chatRefreshTimer);chatRefreshTimer=null}
+  $('messageConversation').classList.add('hide');
+  $('messageRequests').classList.remove('hide');$('messageThreads').classList.remove('hide');
+  loadMessageInbox();
+ }
+ $('messageBack').onclick=closeMessages;
+ $('messageRequest').onclick=async()=>{
+  if(!activeAccount){show('authPage');return}
+  const handle=$('messageRecipient').value.trim().replace(/^@/,'').toLowerCase();
+  const status=$('messageInboxStatus');
+  try{
+   const result=await accountRequest('/api/messages/request','POST',{handle});
+   status.textContent=result.accepted?'Percakapan tersedia.':'Permintaan chat dikirim. Tunggu persetujuan penerima.';
+   $('messageRecipient').value='';await loadMessageInbox();
+  }catch(error){status.textContent=error.message}
+ };
+ $('messageSend').onclick=async()=>{
+  const body=$('messageBody').value.trim();if(!activeChatHandle||!body)return;
+  const btn=$('messageSend');btn.disabled=true;
+  try{
+   await accountRequest('/api/messages/send','POST',{handle:activeChatHandle,text:body});
+   $('messageBody').value='';await refreshConversation();
+  }catch(error){$('messageInboxStatus').textContent=error.message}
+  finally{btn.disabled=false}
+ };
+ $('messageBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('messageSend').click()}});
  function updatePostEmptyState(){
   const hasSynced=!!activeAccount&&syncedPosts.some(x=>x.status!=='published');
   $('syncedPostsHeader').hidden=!hasSynced;
@@ -1605,6 +1698,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
   if(name==='socialPage')loadSocialFeed();
   if(name==='messagesPage'&&activeAccount)loadMessageInbox();
+  if(name!=='messagesPage'&&activeChatHandle)closeMessages();
   window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
  $('meMore').onclick=()=>show('preferencesPage');
