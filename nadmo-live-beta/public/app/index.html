@@ -1362,6 +1362,126 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  window.addEventListener('pageshow',event=>{if(event.persisted)restoreForeground()});
   function rtc(){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});pc.oniceconnectionstatechange=()=>{if(pc.iceConnectionState==='failed')notice('Video belum tersambung. Koneksi ini mungkin membutuhkan relay TURN; uji jaringan lain atau tunggu peningkatan SFU.','watchState')};return pc}
  function signal(to,data){transmit({type:'signal',to,data})}
+ function guestStatus(message){
+  $('guestJoinStatus').hidden=!message;
+  $('guestJoinStatus').textContent=message||'';
+ }
+ function renderStageGuests(){
+  const panel=$('guestStageGrid');panel.replaceChildren();
+  for(const guest of stageGuestsList){
+   const tile=document.createElement('div');tile.className='stage-guest-tile';tile.dataset.camera=guest.camera?'on':'off';
+   const stream=guest.id===selfId&&guestOnStage?guestStream:guestRemoteStreams.get(guest.streamId);
+   if(stream){
+    const player=document.createElement('video');
+    player.autoplay=true;player.playsInline=true;player.muted=guest.id===selfId;
+    player.srcObject=stream;player.play().catch(()=>{});
+    tile.append(player);
+   }
+   const fallback=document.createElement('div');fallback.className='stage-fallback';fallback.textContent=guest.camera?'●':'♫';
+   const title=document.createElement('small');title.className='stage-tag';
+   title.textContent=(guest.id===selfId?'ANDA':guest.name||'Tamu')+' · '+(guest.mic?'MIC ON':'MIC OFF')+' · '+(guest.camera?'CAM':'VOICE');
+   tile.append(fallback,title);panel.append(tile);
+  }
+ }
+ function renderGuestRequests(){
+  const panel=$('guestRequestPanel');panel.replaceChildren();
+  const info=document.createElement('small');
+  info.textContent='Persetujuan wajib. Hingga 9 kursi tamu beta; kestabilan 9 kamera tergantung jaringan dan belum memakai SFU.';
+  panel.append(info);
+  if(!guestRequests.size){const line=document.createElement('p');line.textContent='Belum ada permintaan tampil.';panel.append(line)}
+  for(const [id,guest] of guestRequests){
+   const row=document.createElement('div');row.className='guest-invite';
+   const name=document.createElement('small');name.textContent=(guest.name||'Penonton')+' · '+(guest.mode==='camera'?'KAMERA':'VOICE');
+   for(const [accepted,text] of [[true,'TERIMA'],[false,'TOLAK']]){
+    const btn=document.createElement('button');btn.type='button';btn.textContent=text;
+    btn.onclick=()=>transmit({type:'guest-answer',id,accept:accepted});
+    row.append(btn);
+   }
+   row.prepend(name);panel.append(row);
+  }
+ }
+ function refreshGuestButtons(){
+  $('hostGuestRequests').hidden=!host;
+  $('hostGuestRequests').textContent='TAMU '+stageGuestsList.length+'/9'+(guestRequests.size?' · '+guestRequests.size+' MINTA':'');
+  $('hostMicToggle').hidden=!host;
+  const canAsk=!host&&!guestOnStage&&!guestPending&&!!currentRoom;
+  $('joinGuestVoice').hidden=!canAsk;$('joinGuestCamera').hidden=!canAsk;
+  $('guestMicToggle').hidden=!guestOnStage;
+  $('guestCameraToggle').hidden=!guestOnStage;
+  $('guestLeaveStage').hidden=!guestOnStage;
+  const mic=guestStream?.getAudioTracks()[0];
+  const cam=guestStream?.getVideoTracks()[0];
+  $('guestMicToggle').textContent=mic?.enabled?'MIC ON':'MIC OFF';
+  $('guestCameraToggle').textContent=cam?.enabled?'KAMERA ON':'KAMERA OFF';
+  const hm=localStream?.getAudioTracks()[0];
+  $('hostMicToggle').textContent=hm?.enabled?'MIC ON':'MIC OFF';
+ }
+ function stopGuestCapture(){
+  if(guestStream){guestStream.getTracks().forEach(t=>t.stop());guestStream=null}
+  guestOnStage=false;guestPending=false;guestMode='voice';
+  refreshGuestButtons();renderStageGuests();
+ }
+ function announceGuestMedia(renegotiate=false){
+  const mic=guestStream?.getAudioTracks()[0]?.enabled===true;
+  const camera=guestStream?.getVideoTracks()[0]?.enabled===true;
+  transmit({type:renegotiate?'guest-ready':'guest-media-state',mic,camera,...(renegotiate?{streamId:guestStream?.id||''}:{})});
+  refreshGuestButtons();renderStageGuests();
+ }
+ function refreshGuestAudience(exceptId){
+  if(!host)return;
+  if(stageRefreshTimer)clearTimeout(stageRefreshTimer);
+  stageRefreshTimer=setTimeout(async()=>{
+   stageRefreshTimer=null;
+   for(const id of [...peers.keys()]){
+    if(id===exceptId)continue;
+    try{await attachViewer(id)}catch(error){console.warn('Guest relay refresh',error)}
+   }
+  },380);
+ }
+ async function guestBegin(mode){
+  guestMode=mode;guestOnStage=true;guestPending=false;
+  guestStatus('Host menyetujui. Meminta izin '+(mode==='camera'?'kamera & mikrofon':'mikrofon')+'...');
+  try{
+   let stream;
+   try{stream=await navigator.mediaDevices.getUserMedia({
+    audio:{echoCancellation:true,noiseSuppression:true},
+    video:mode==='camera'?{facingMode:'user',width:{ideal:360},height:{ideal:640}}:false
+   })}
+   catch(error){
+    if(mode!=='camera')throw error;
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true},video:false});
+    guestStatus('Izin kamera gagal, lanjutkan sebagai tamu voice. Kamera bisa dinyalakan nanti.');
+   }
+   if(!guestOnStage||!currentRoom){stream.getTracks().forEach(t=>t.stop());return}
+   guestStream=stream;
+   announceGuestMedia(true);
+   guestStatus('Di panggung. MIC dan KAMERA bisa ON/OFF kapan saja.');
+  }catch(error){
+   guestStatus('Tidak bisa membuka media: '+error.message+'. Keluar dari panggung.');
+   transmit({type:'guest-exit'});stopGuestCapture();
+  }
+ }
+ $('joinGuestVoice').onclick=()=>{if(!host&&currentRoom){guestPending=true;guestStatus('Meminta izin host untuk JOIN VOICE...');refreshGuestButtons();transmit({type:'guest-request',mode:'voice'})}};
+ $('joinGuestCamera').onclick=()=>{if(!host&&currentRoom){guestPending=true;guestStatus('Meminta izin host untuk JOIN KAMERA...');refreshGuestButtons();transmit({type:'guest-request',mode:'camera'})}};
+ $('hostGuestRequests').onclick=()=>{const panel=$('guestRequestPanel'),open=panel.classList.contains('hide');renderGuestRequests();panel.classList.toggle('hide',!open);$('moderationPanel').classList.add('hide')};
+ $('guestMicToggle').onclick=()=>{const track=guestStream?.getAudioTracks()[0];if(!track)return;track.enabled=!track.enabled;announceGuestMedia(false)};
+ $('guestCameraToggle').onclick=async()=>{
+  if(!guestOnStage)return;
+  let track=guestStream?.getVideoTracks()[0];
+  if(track){track.enabled=!track.enabled;announceGuestMedia(false);return}
+  try{
+   const media=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:360}},audio:false});
+   if(!guestOnStage||!guestStream){media.getTracks().forEach(t=>t.stop());return}
+   track=media.getVideoTracks()[0];guestStream.addTrack(track);
+   announceGuestMedia(true);guestStatus('Kamera aktif. Host menyambungkan ulang panggung...');
+  }catch(error){guestStatus('Kamera gagal menyala: '+error.message)}
+ };
+ $('guestLeaveStage').onclick=()=>{if(guestOnStage)transmit({type:'guest-exit'})};
+ $('hostMicToggle').onclick=()=>{
+  if(!host||!localStream)return;
+  const mic=localStream.getAudioTracks()[0];if(!mic)return;
+  mic.enabled=!mic.enabled;hostMute=!mic.enabled;refreshGuestButtons();
+ };
  function renderHostModeration(){
   const panel=$('moderationPanel');panel.replaceChildren();
   if(!host||!currentRoom)return;
