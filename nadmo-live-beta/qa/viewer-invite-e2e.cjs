@@ -42,7 +42,7 @@ async function main(){
    });
    const link=base+'/app/?room='+encodeURIComponent(room.id)+(config.mode==='password'?'&private=1':'');
    await page.goto(link,{waitUntil:'domcontentloaded',timeout:30000});
-   await page.waitForFunction(()=>!document.querySelector('#settings').classList.contains('hide'),{timeout:15000});
+   await page.waitForFunction(()=>!document.querySelector('#privacyPage').classList.contains('hide'),{timeout:15000});
    assert.equal(await page.$eval('#adult',node=>node.checked),false,'New viewer must explicitly confirm age');
    assert.ok(dialogs.some(s=>s.includes('Konfirmasi usia')),'Age confirmation expected for new viewer');
    const joinedHost=awaitType(host,'viewer-joined');
