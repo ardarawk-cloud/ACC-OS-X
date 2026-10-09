@@ -249,6 +249,18 @@ export async function accountEndpoint(storage,request){
   await storage.put('auth-user:'+user.id,record);
   return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
  }
+ if(p==='/api/account/posts/publish'&&method==='POST'){
+  const text=clean(payload.text,2000);
+  if(!text||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Postingan tidak valid');
+  if(!await throttle(storage,'publish:'+user.id,8,3600000))return fail(429,'Terlalu banyak postingan');
+  const post={id:crypto.randomUUID(),accountId:user.id,handle:user.handle,name:record.name,
+   avatarVersion:record.avatarVersion||0,text,createdAt:Date.now(),status:'published'};
+  const previous=await storage.get('auth-posts:'+user.id)||[];
+  await storage.put('auth-posts:'+user.id,[post,...previous].slice(0,80));
+  const feed=await storage.get('social-public-feed')||[];
+  await storage.put('social-public-feed',[post,...feed].slice(0,200));
+  return json({ok:true,post},201);
+ }
  if(p==='/api/account/posts'&&method==='POST'){
   const text=clean(payload.text,2000);
   if(!text)return fail(400,'Caption kosong');
