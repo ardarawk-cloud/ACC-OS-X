@@ -495,6 +495,45 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
 #settings .account-card{margin:8px 0 13px}
 #settings .account-card>p:first-child{font-size:12px;line-height:1.6;margin:0 0 12px}
 @media(max-width:380px){#settings .show-label b{font-size:15px}#settings .profile-hero{gap:9px}}
+
+/* Public LIVE identity and freeform guest stage. Synchronized rectangles are % of stage. */
+body.live-immersive #watch .page-top{max-width:calc(100% - 64px);padding:calc(env(safe-area-inset-top) + 11px) 0 20px 12px}
+#hostProfileCard{display:flex;align-items:center;gap:8px;max-width:min(69vw,290px);min-height:43px;padding:5px 10px 5px 5px;border:1px solid #6074598f;border-radius:28px;background:#071007dc;color:#fff;text-align:left;pointer-events:auto;backdrop-filter:blur(9px)}
+#hostProfileCard .host-avatar{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid #b8d666;border-radius:50%;background:#293b21;color:var(--neon);font:900 14px Arial,sans-serif}
+#hostProfileCard .host-details{display:flex;min-width:0;flex:1;flex-direction:column;gap:1px}
+body.live-immersive #watch #watchTitle{display:block;margin:0;max-width:100%;font:800 12px/1.25 Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hostProfileCard #hostIdentityHandle{color:#c1cbb9;font:700 9px/1.25 Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hostProfileCard .onair-label{font-size:10px;white-space:nowrap;color:#ff8a76}
+#hostProfileCard:focus-visible,.stage-guest-tile button:focus-visible,#stageLayoutReset:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+body.live-immersive #watch #watchRoomSubtitle{margin:5px 0 0 7px;max-width:65vw}
+#hostProfilePanel{display:none}
+#hostProfilePanel.sheet-open{position:fixed;z-index:13;left:0;right:0;bottom:0;max-height:74dvh;overflow:auto;padding:20px 18px calc(24px + env(safe-area-inset-bottom));border:1px solid #556b4f;border-radius:20px 20px 0 0;background:#111b12;box-shadow:0 -12px 48px #000b;display:block;pointer-events:auto}
+#hostProfilePanel h3{font-size:19px;margin:5px 0 4px}
+#hostProfilePanel .host-public-links{display:flex;flex-direction:column;gap:7px}
+#hostProfilePanel .host-public-links a{color:var(--neon);padding:10px 12px;border:1px solid #50684e;border-radius:9px;overflow-wrap:anywhere}
+@media(min-width:800px){#hostProfilePanel.sheet-open{left:calc(50% - 200px);right:auto;width:400px;border-radius:18px;bottom:20px}}
+body.live-immersive #watch #guestStageGrid{position:absolute;z-index:7;left:12px;right:83px;top:26%;bottom:29%;width:auto;height:auto;max-height:none;display:block;overflow:visible;pointer-events:none}
+body.live-immersive #watch #guestStageGrid:empty{display:none}
+#guestStageGrid .stage-guest-tile{position:absolute;min-width:0;min-height:0;aspect-ratio:auto;display:flex;border-radius:12px;touch-action:none;overflow:hidden}
+#guestStageGrid .stage-guest-tile video{pointer-events:none}
+#guestStageGrid .stage-guest-tile .stage-tag{font-size:9px;padding:3px 5px;right:2px;bottom:2px}
+body.live-immersive.watch-host #watch #guestStageGrid .stage-guest-tile{pointer-events:auto;cursor:move}
+#guestStageGrid .stage-guest-tile.stage-selected{border:2px solid var(--neon);box-shadow:0 0 0 1px #192e15,0 0 18px #adf25955}
+#guestStageGrid .stage-guest-resize{display:none;position:absolute;z-index:4;top:0;right:0;width:28px;height:28px;padding:0;border:0;border-radius:0 10px 0 9px;background:#d5fd77;color:#0f180d;font-size:15px;touch-action:none;cursor:nwse-resize}
+body.live-immersive.watch-host #watch #guestStageGrid .stage-guest-resize{display:block}
+#guestStageGrid .stage-guest-tip{position:absolute;z-index:4;right:3px;bottom:24px;border:1px solid #b7e47c;border-radius:15px;background:#182319e8;color:#eaffc8;min-height:27px;padding:3px 8px;font:800 10px Arial,sans-serif;pointer-events:auto}
+body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
+#stageLayoutReset{font-size:10px}
+@media(min-width:800px){body.live-immersive.watch-viewer #watch #guestStageGrid{left:calc(var(--pc-stage-left) + 14px);right:calc(var(--pc-stage-right) + 14px);top:22%;bottom:17%;width:auto;max-height:none;grid-template-columns:none}}
+@media(max-width:360px){body.live-immersive #watch #guestStageGrid{right:76px;left:7px}}
+/* Gaming face camera is a real local camera preview, not a simulated game broadcast. */
+#gameOverlayPreview{position:relative;min-height:245px;margin:12px 0 9px;border:1px solid #536850;border-radius:13px;background:linear-gradient(140deg,#121d15,#080b0a);overflow:hidden}
+#gameOverlayPreview .game-canvas-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#8fa58a;font:700 12px/1.5 Arial,sans-serif}
+#gameOverlayPreview .game-face-frame{position:absolute;top:15px;right:15px;width:76px;height:76px;border:2px solid var(--neon);border-radius:50%;overflow:hidden;background:#233623;box-shadow:0 5px 19px #0009;touch-action:none;cursor:grab;display:none}
+#gameOverlayPreview .game-face-frame.active{display:block}
+#gameFaceCam{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);pointer-events:none}
+#gameSetup .face-actions{display:flex;gap:7px;flex-wrap:wrap}
+#gameSetup .face-actions button{flex:1;min-width:75px;font:800 10px Arial,sans-serif;min-height:38px;padding:8px}
 </style></head>
 <body>
 <div class="app">
@@ -545,7 +584,13 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
 <button type="button" data-live-mode="gaming"><span class="mode-icon">▣</span>GAMING</button>
 <button type="button" data-live-mode="studio"><span class="mode-icon">⌘</span>STUDIO PC</button></div>
 <div class="mode-details" id="modeDetails">Kamera dan mikrofon HP. Saat LIVE, video memenuhi layar dengan chat overlay.</div>
-<div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select><p>Capture layar game Android memerlukan MediaProjection native, belum tersedia di APK sekarang.</p></div>
+<div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select>
+ <div id="gameOverlayPreview" aria-label="Pratinjau posisi kamera saat bermain">
+  <div class="game-canvas-note">Pratinjau posisi kamera<br>Rekaman layar game belum tersedia.</div>
+  <div class="game-face-frame" id="gameFaceFrame"><video id="gameFaceCam" autoplay muted playsinline></video></div>
+ </div>
+ <div class="face-actions"><button type="button" class="btn secondary" id="gameFaceToggle">KAMERA ON</button><button type="button" class="btn secondary" id="gameFaceSize">UKURAN</button><button type="button" class="btn ghost" id="gameFaceHide">SEMBUNYIKAN</button></div>
+ <p id="gameCaptureStatus" class="profile-note">Mode GAME belum dapat siaran sampai perekaman layar Android siap.</p></div>
 <div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
   <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
   <div class="status" id="camState">CAMERA / STANDBY</div>
@@ -566,8 +611,17 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     <button type="button" id="pcBack" title="Kembali ke daftar LIVE" aria-label="Kembali ke daftar LIVE">←</button>
     <span>NADMO LIVE</span>
   </aside>
-  <div class="page-top"><div><span class="onair-label">● LIVE</span><h1 id="watchTitle">HOST</h1><div id="watchRoomSubtitle" class="room-subtitle"></div></div></div>
-   <div id="guestStageGrid" aria-label="Tamu di panggung live"></div>
+  <div class="page-top"><div>
+  <button id="hostProfileCard" type="button" aria-label="Lihat profil host">
+   <span class="host-avatar" aria-hidden="true">N/</span><span class="host-details"><b id="watchTitle">HOST</b><small id="hostIdentityHandle">PROFIL HOST</small></span><span class="onair-label">● LIVE</span>
+  </button><div id="watchRoomSubtitle" class="room-subtitle"></div>
+ </div></div>
+ <div id="guestStageGrid" aria-label="Tamu di panggung live"></div>
+ <div id="hostProfilePanel" class="panel" role="dialog" aria-label="Profil host" aria-modal="true">
+  <button type="button" class="sheet-close" id="closeHostProfile" aria-label="Tutup profil host">✕</button>
+  <h3 id="hostPublicName">Host</h3><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
+  <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
+ </div>
   <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
@@ -593,7 +647,8 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   <p class="deck" id="afkHint" hidden>KAMERA OFF hanya menyembunyikan gambar, mikrofon masih aktif. Ini BUKAN Radio 24/7. Untuk musik otomatis saat HP ditinggal, NADMO sedang menyiapkan sistem Radio AutoDJ di server.</p>
   <div class="panel" id="viewerTipPanel" hidden>
     <button type="button" class="sheet-close" id="closeTipSheet" title="Tutup saweran" aria-label="Tutup saweran">✕</button>
-    <div class="show-label"><b>SAWERAN RUPIAH</b><small>PREVIEW / BELUM AKTIF</small></div>
+    <div class="show-label"><b>SAWERAN UNTUK</b><small id="tipRecipientName">HOST</small></div>
+    <div id="tipRecipientOptions" class="filterstrip" aria-label="Penerima saweran"></div>
     <p>Kirim dukungan sesuai kemampuanmu. Tidak ada koin, berlian atau hadiah virtual.</p>
     <div class="filterstrip" id="tipPresets">
       <button data-tip="5000">Rp5.000</button><button data-tip="10000" class="active">Rp10.000</button>
@@ -645,6 +700,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     <button id="reportLive" type="button" hidden>LAPORKAN LIVE</button>
     <button id="hostModeration" type="button" hidden>MODERASI PENONTON</button>
     <button id="hostGuestRequests" type="button" hidden>TAMU 0/9</button>
+    <button id="stageLayoutReset" type="button" hidden>RESET POSISI</button>
     <button id="joinGuestVoice" type="button" hidden>JOIN VOICE</button>
     <button id="joinGuestCamera" type="button" hidden>JOIN KAMERA</button>
     <button id="guestMicToggle" type="button" hidden>MIC ON</button>
