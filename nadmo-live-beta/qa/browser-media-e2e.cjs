@@ -106,8 +106,10 @@ async function main(){
   const firstHostVideo=await host.$eval('#remote',el=>el.srcObject?.getVideoTracks()[0]?.id);
   const firstViewerStream=await viewer.$eval('#remote',el=>el.srcObject?.id);
   await host.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});
+    document.dispatchEvent(new Event('visibilitychange'));
     Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'});
-    window.dispatchEvent(new Event('focus'));
+    document.dispatchEvent(new Event('visibilitychange'));
   });
   await host.waitForFunction(old=>{
     const track=document.querySelector('#remote')?.srcObject?.getVideoTracks()[0];
@@ -120,14 +122,24 @@ async function main(){
   console.log('PASS host background return restarts camera while same viewer receives refreshed video');
   const viewerStreamAfterHostResume=await viewer.$eval('#remote',el=>el.srcObject?.id);
   await viewer.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});
+    document.dispatchEvent(new Event('visibilitychange'));
     Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'});
-    window.dispatchEvent(new Event('focus'));
+    document.dispatchEvent(new Event('visibilitychange'));
   });
   await viewer.waitForFunction(old=>{
     const el=document.querySelector('#remote');
     return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
   },{timeout:25000},viewerStreamAfterHostResume);
   console.log('PASS returning viewer requests fresh video without leaving room');
+  // The user can also force recovery in-place if Android did not emit a resume event.
+  const viewerManualBefore=await viewer.$eval('#remote',el=>el.srcObject?.id);
+  await viewer.locator('#refreshVideo').click();
+  await viewer.waitForFunction(old=>{
+    const el=document.querySelector('#remote');
+    return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
+  },{timeout:25000},viewerManualBefore);
+  console.log('PASS manual refresh-video button restores viewer media without rejoining');
   await host.locator('#afkToggle').click();
   await waitText(host,'#watchState','AFK aktif',15000);
   await viewer.waitForFunction(()=>document.querySelector('#remote')?.srcObject?.getVideoTracks()?.[0]?.readyState==='live',{timeout:15000});
