@@ -7,8 +7,8 @@ const reg=async handle=>{
  const r=await fetch(base+'/api/account/register',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({handle,name:'One QA '+handle,password})});
  assert.equal(r.status,201);return r.headers.get('set-cookie').split(';')[0];
 };
-const action=(route,cookie,data)=>json(fetch(base+route,{method:'POST',headers:{Origin:base,'Content-Type':'application/json',Cookie:cookie},body:JSON.stringify(data)}));
-const get=(route,cookie)=>json(fetch(base+route,{headers:cookie?{Cookie:cookie}:{}}));
+const action=async(route,cookie,data)=>json(await fetch(base+route,{method:'POST',headers:{Origin:base,'Content-Type':'application/json',Cookie:cookie},body:JSON.stringify(data)}));
+const get=async(route,cookie)=>json(await fetch(base+route,{headers:cookie?{Cookie:cookie}:{}}));
 let ca,cb;
 try{
  ca=await reg(h);cb=await reg(j);
