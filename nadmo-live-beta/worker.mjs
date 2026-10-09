@@ -34,6 +34,22 @@ export class RoomHub{
  creatorVerificationRequired(){return this.env.VERIFY_CREATOR_REQUIRED==='true'||this.env.BETA_TEST_HOSTS_ENABLED!=='true'}
  sockets(){return this.ctx.getWebSockets()}
  async findRooms(){return this.ctx.storage.list({prefix:'room:'})}
+ async scheduleHeartbeat(){
+  const now=Date.now(),scheduled=await this.ctx.storage.getAlarm();
+  if(scheduled===null||scheduled>now+25000)await this.ctx.storage.setAlarm(now+25000);
+ }
+ async pruneReports(now=Date.now()){
+  const entries=[...(await this.ctx.storage.list({prefix:'abuse-report:'})).entries()];
+  const current=[];
+  for(const [key,report] of entries){
+   if(!report||!Number.isFinite(report.createdAt)||now-report.createdAt>=REPORT_TTL)await this.ctx.storage.delete(key);
+   else current.push({key,expiresAt:report.createdAt+REPORT_TTL});
+  }
+  current.sort((a,b)=>a.expiresAt-b.expiresAt);
+  const extra=Math.max(0,current.length-REPORT_LIMIT);
+  for(const item of current.slice(0,extra))await this.ctx.storage.delete(item.key);
+  return current.length>extra?current[extra].expiresAt:null;
+ }
  async validHostSession(s,room){
   if(s.role!=='host'||room.hostId!==s.id)return false;
   if(!room.hostAccountId)return !this.creatorVerificationRequired();
@@ -73,7 +89,7 @@ export class RoomHub{
     verifiedAdult:principal?.verifiedAdult===true,kycStatus:principal?.kycStatus||'NOT_CONFIGURED'});
   // A 25s server heartbeat keeps mobile network paths warm without an APK update.
   // The alarm is scheduled only while sockets are present; no idle background loop.
-  if((await this.ctx.storage.getAlarm())===null)await this.ctx.storage.setAlarm(Date.now()+25000);
+  await this.scheduleHeartbeat();
   return new Response(null,{status:101,webSocket:client});
  }
  async alarm(){
@@ -95,6 +111,10 @@ export class RoomHub{
    for(const socket of sockets)reply(socket,heartbeat);
   }
   if(sockets.length||(await this.findRooms()).size)await this.ctx.storage.setAlarm(now+25000);
+  else{
+   const nextExpiry=await this.pruneReports(now);
+   if(nextExpiry!==null)await this.ctx.storage.setAlarm(Math.max(now+1000,nextExpiry));
+  }
  }
  async webSocketMessage(ws,input){
   if(typeof input!=='string'||input.length>MAX_MESSAGE){ws.close(1009,'message too large');return}
@@ -232,13 +252,10 @@ export class RoomHub{
     return failure(ws,'Pilih alasan laporan yang tersedia.');
    const description=txt(msg.description,300);
    // No government ID, IP or raw chat transcript is stored in this private beta report.
-   const report={id:crypto.randomUUID(),roomId:room.id,reason,description,createdAt:now,status:'PENDING_OPERATOR_REVIEW'};
+   const report={id:crypto.randomUUID(),roomId:room.id,creatorAccountId:room.hostAccountId||null,reason,description,createdAt:now,status:'PENDING_OPERATOR_REVIEW'};
    await this.ctx.storage.put('abuse-report:'+now+':'+report.id,report);
    s.lastReport=now;save(ws,s);
-   const history=await this.ctx.storage.list({prefix:'abuse-report:'});
-   for(const [key,item] of history)if(!item||now-item.createdAt>REPORT_TTL)await this.ctx.storage.delete(key);
-   const remaining=[...(await this.ctx.storage.list({prefix:'abuse-report:'})).keys()];
-   for(const key of remaining.slice(0,Math.max(0,remaining.length-REPORT_LIMIT)))await this.ctx.storage.delete(key);
+   await this.pruneReports(now);
    reply(ws,{type:'report-received',id:report.id,status:report.status});
    return;
   }
@@ -341,7 +358,7 @@ export class RoomHub{
   for(const other of this.sockets()){
    if(other!==ws&&state(other).roomId===room.id&&state(other).role==='viewer')reply(other,{type:'host-reconnecting',seconds:90});
   }
-  if((await this.ctx.storage.getAlarm())===null)await this.ctx.storage.setAlarm(Date.now()+25000);
+  await this.scheduleHeartbeat();
  }
  async webSocketClose(ws,code,reason){
   console.log('NADMO socket close',code,String(reason||'').slice(0,80),state(ws).role||'none');
