@@ -46,7 +46,8 @@ async function main(){
    el.scrollIntoView({block:'center'});el.click();
   });
   console.log('PROFILE_EDIT_VISIBILITY',JSON.stringify(await one.$eval('#profileEditBox',e=>({hidden:e.classList.contains('hide'),rect:e.getBoundingClientRect().toJSON()}))));
-  await one.locator('#profileName').fill('NADMO QA Creator');
+  const fillOffscreen=async(selector,value)=>one.$eval(selector,(el,text)=>{el.value=text;el.dispatchEvent(new Event('input',{bubbles:true}))},value);
+  await fillOffscreen('#profileName','NADMO QA Creator');
   await one.locator('#profileBio').fill('Open business links under one NADMO account');
   await one.locator('#profileLinkLabel').fill('Independent Booking');
   await one.locator('#profileLinkUrl').fill('https://bookbwd.nadmo.id/');
