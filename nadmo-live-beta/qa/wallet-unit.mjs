@@ -40,5 +40,5 @@ const storage={
 const snapshot=await walletSnapshot(storage,'account-01');
 assert.equal(snapshot.availableIDR,70000);
 assert.equal((await walletSnapshot(storage,null)).availableIDR,0);
-assert.equal(deriveWallet([{id:'id-too-short',type:'tip-settled',amountIDR:1,currency:'IDR',providerVerified:true}]).availableIDR,0);
+assert.equal(deriveWallet([{id:'bad',type:'tip-settled',amountIDR:1,currency:'IDR',providerVerified:true}]).availableIDR,0);
 console.log('NADMO wallet zero balance, provider verification, dedupe, refund, reserve and payout calculations: PASS');
