@@ -14,7 +14,7 @@ function getHost(clients,id){return clients.find(x=>state(x).id===id)}
 function roomCount(clients,id){return clients.filter(x=>state(x).role==='viewer'&&state(x).roomId===id).length}
 function stageGuests(clients,id){return clients.filter(x=>state(x).role==='guest'&&state(x).roomId===id)}
 function stagePublic(clients,id){return stageGuests(clients,id).map(x=>{
- const s=state(x);return {id:s.id,name:s.displayName||s.handle||'Tamu',mode:s.guestMode||'voice',ready:s.guestReady===true,mic:s.guestMic===true,camera:s.guestCamera===true,streamId:s.guestStreamId||null};
+ const s=state(x);return {id:s.id,name:s.displayName||s.handle||'Tamu',handle:s.handle||null,avatarVersion:s.avatarVersion||0,mode:s.guestMode||'voice',ready:s.guestReady===true,mic:s.guestMic===true,camera:s.guestCamera===true,streamId:s.guestStreamId||null};
 })}
 function stageBroadcast(clients,id,layout=[]){
  const packet={type:'stage-updated',guests:stagePublic(clients,id),layout,maxGuests:GUEST_LIMIT};
