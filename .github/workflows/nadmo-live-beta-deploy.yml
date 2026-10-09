@@ -25,6 +25,9 @@ jobs:
         run: |
           node --check nadmo-live-beta/worker.mjs
           node --check nadmo-live-beta/account.mjs
+          node --check nadmo-live-beta/supporter-levels.mjs
+          node --check nadmo-live-beta/qa/supporter-levels-unit.mjs
+          node --check nadmo-live-beta/qa/supporter-badges-e2e.cjs
           node --check nadmo-live-beta/qa/room-safety-smoke.cjs
           node --check nadmo-live-beta/qa/room-safety-ui-e2e.cjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
@@ -32,6 +35,8 @@ jobs:
           node --check nadmo-live-beta/qa/viewer-invite-e2e.cjs
           node --check nadmo-live-beta/qa/guest-stage-media-e2e.cjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
+      - name: Verify all supporter level and privacy calculation boundaries
+        run: node nadmo-live-beta/qa/supporter-levels-unit.mjs
       - name: Deploy isolated beta Worker (do not modify production apps)
         id: deploy
         uses: cloudflare/wrangler-action@v4
@@ -76,6 +81,8 @@ jobs:
           echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
       - name: Verify account registration, linked profiles and private draft posts after deploy
         run: node nadmo-live-beta/qa/account-auth-e2e.cjs
+      - name: Verify supporter badge tier preview and immutable verified balances in real mobile browser
+        run: node nadmo-live-beta/qa/supporter-badges-e2e.cjs
       - name: Verify mobile viewer reports and host moderation UI
         run: node nadmo-live-beta/qa/room-safety-ui-e2e.cjs
       - name: Verify LIVE discovery compact on mobile and PC (screenshots)
