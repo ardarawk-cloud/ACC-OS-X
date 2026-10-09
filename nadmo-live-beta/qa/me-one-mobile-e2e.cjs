@@ -22,19 +22,19 @@ const password='NadmoMeQA!'+crypto.randomUUID();
   created=true;
   const state=await page.evaluate(()=>{
    const me=document.querySelector('#settings'),wallet=me.querySelector('#meWalletOpen');
-   return {hasWallet:!!wallet&&wallet.getBoundingClientRect().width>0,
+   return {walletNotOnMe:!wallet,postsNotOnMe:!me.querySelector('#profilePublishedPosts'),hasProfileLinks:!!me.querySelector('#profileBusinessLinks'),
     loginInside:!!me.querySelector('#accountLoginCard'),
     technicalSettings:!!me.querySelector('#developerOnlySettings'),
     supporterInside:!!me.querySelector('#supporterPanel'),
     composerInside:!!me.querySelector('#profilePostText'),
     horizontalOverflow:document.documentElement.scrollWidth>innerWidth+2};
   });
-  assert.deepEqual(state,{hasWallet:true,loginInside:false,technicalSettings:false,supporterInside:false,composerInside:false,horizontalOverflow:false});
-  await page.$eval('#meWalletOpen',el=>el.click());
+  assert.deepEqual(state,{walletNotOnMe:true,postsNotOnMe:true,hasProfileLinks:true,loginInside:false,technicalSettings:false,supporterInside:false,composerInside:false,horizontalOverflow:false});
+  await page.$eval('#meMore',el=>el.click());
+  await page.$eval('#preferencesPage [data-open-page="walletPage"]',el=>el.click());
   assert.equal(await page.$eval('#walletPage',el=>!el.classList.contains('hide')),true);
   assert.equal(await page.$eval('#walletWithdraw',el=>el.disabled),true,'Withdraw remains disabled');
   await page.$eval('#walletPage .subBack',el=>el.click());
-  await page.$eval('#meMore',el=>el.click());
   assert.equal(await page.$eval('#preferencesPage',el=>!el.classList.contains('hide')),true);
   await page.$eval('#preferencesPage [data-open-page="supporterPage"]',el=>el.click());
   await page.waitForFunction(()=>document.querySelectorAll('#supporterLevels .supporter-row').length===10,{timeout:12000});
@@ -46,6 +46,23 @@ const password='NadmoMeQA!'+crypto.randomUUID();
   assert.equal(badges.count,10);assert.equal(badges.overflow,false);assert.ok(badges.width<=2);
   await page.$eval('#supporterPage .subBack',el=>el.click());
   await page.$eval('#preferencesPage .subBack',el=>el.click());
+  await page.$eval('nav [data-tab="settings"]',el=>el.click());
+  await page.$eval('#editProfileBtn',el=>el.click());
+  const themeEditor=await page.evaluate(()=>['profileTheme','profileFont','profileCover','profileLinkLabel','profileLinkUrl','profileAddLink'].every(id=>!!document.getElementById(id)&&document.getElementById(id).getBoundingClientRect().width>0));
+  assert.equal(themeEditor,true,'Creator theme/font and external link editor must be visible');
+  await page.$eval('#profileTheme',el=>{el.value='electric';el.dispatchEvent(new Event('change',{bubbles:true}))});
+  await page.$eval('#profileFont',el=>{el.value='mono';el.dispatchEvent(new Event('change',{bubbles:true}))});
+  await page.$eval('#profileCover',el=>{el.value='dots';el.dispatchEvent(new Event('change',{bubbles:true}))});
+  await page.$eval('#profileLinkLabel',el=>el.value='My YouTube');
+  await page.$eval('#profileLinkUrl',el=>el.value='https://youtube.com/@nadmolive');
+  await page.$eval('#profileAddLink',el=>el.click());
+  await page.$eval('#profileSave',el=>el.click());
+  await page.waitForFunction(()=>document.querySelector('#profileEditStatus')?.textContent.includes('tersimpan'),{timeout:10000});
+  await page.$eval('nav [data-tab="settings"]',el=>el.click());
+  assert.equal(await page.$eval('#betaSocialProfile',el=>el.dataset.theme),'electric');
+  assert.equal(await page.$eval('#betaSocialProfile',el=>el.dataset.font),'mono');
+  assert.equal(await page.$eval('#betaSocialProfile',el=>el.dataset.cover),'dots');
+  assert.equal(await page.$eval('#profileBusinessLinks',el=>el.querySelectorAll('a').length),1);
   await page.$eval('nav [data-tab="socialPage"]',el=>el.click());
   await page.$eval('#socialCompose',el=>el.click());
   const body='NADMO ONE public mobile profile smoke '+name;
