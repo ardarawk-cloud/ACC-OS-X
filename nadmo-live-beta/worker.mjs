@@ -216,6 +216,47 @@ export class RoomHub{
   if(!s.roomId)return failure(ws,'Belum tergabung dalam room');
   const room=await this.ctx.storage.get('room:'+s.roomId);
   if(!room)return failure(ws,'Room sudah tidak aktif');
+  if(type==='guest-request'){
+   if(s.role!=='viewer'||s.pendingGuestMode)return failure(ws,'Permintaan panggung hanya untuk penonton yang belum mengajukan.');
+   if(stageGuests(this.sockets(),room.id).length>=GUEST_LIMIT)return failure(ws,'Sembilan kursi tamu sudah terisi.');
+   const mode=msg.mode==='camera'?'camera':msg.mode==='voice'?'voice':null;
+   if(!mode)return failure(ws,'Pilih kamera atau suara.');
+   const host=getHost(this.sockets(),room.hostId);
+   if(!host||room.hostOfflineAt)return failure(ws,'Host sedang tidak tersedia.');
+   s.pendingGuestMode=mode;save(ws,s);reply(ws,{type:'guest-request-pending',mode});
+   reply(host,{type:'guest-requested',id:s.id,name:s.displayName||s.handle||'Penonton',mode});
+   return;
+  }
+  if(type==='guest-answer'){
+   if(!await this.validHostSession(s,room))return failure(ws,'Hanya host yang dapat menerima tamu.');
+   const id=txt(msg.id,32),guest=this.sockets().find(x=>state(x).id===id&&state(x).roomId===room.id);
+   if(!guest||state(guest).role!=='viewer'||!state(guest).pendingGuestMode)return failure(ws,'Permintaan tamu tidak aktif.');
+   if(typeof msg.accept!=='boolean')return failure(ws,'Persetujuan tidak valid.');
+   if(msg.accept&&stageGuests(this.sockets(),room.id).length>=GUEST_LIMIT)return failure(ws,'Kursi tamu penuh.');
+   const gs=state(guest),mode=gs.pendingGuestMode;gs.pendingGuestMode=null;
+   if(msg.accept){gs.role='guest';gs.guestMode=mode;gs.guestReady=false;gs.guestMic=false;gs.guestCamera=false}
+   save(guest,gs);reply(guest,{type:msg.accept?'guest-approved':'guest-rejected',mode});
+   reply(ws,{type:'guest-request-resolved',id,accepted:msg.accept});
+   stageBroadcast(this.sockets(),room.id);return;
+  }
+  if(type==='guest-ready'||type==='guest-media-state'){
+   if(s.role!=='guest')return failure(ws,'Belum diberi akses panggung.');
+   if(typeof msg.mic!=='boolean'||typeof msg.camera!=='boolean')return failure(ws,'Status media tidak valid.');
+   if(type==='guest-media-state'&&!s.guestReady)return failure(ws,'Media belum siap.');
+   s.guestReady=true;s.guestMic=msg.mic;s.guestCamera=msg.camera;save(ws,s);
+   if(type==='guest-ready'){
+    const host=getHost(this.sockets(),room.hostId);
+    if(host)reply(host,{type:'guest-ready',id:s.id});
+   }
+   stageBroadcast(this.sockets(),room.id);return;
+  }
+  if(type==='guest-exit'){
+   if(s.role!=='guest')return failure(ws,'Tidak berada di panggung.');
+   if(roomCount(this.sockets(),room.id)>=VIEWER_LIMIT)return failure(ws,'Penonton penuh. Keluar dari room untuk turun panggung.');
+   s.role='viewer';s.guestReady=false;s.guestMode=null;s.guestCamera=false;s.guestMic=false;save(ws,s);
+   const host=getHost(this.sockets(),room.hostId);if(host)reply(host,{type:'guest-left',id:s.id});
+   reply(ws,{type:'guest-exited'});stageBroadcast(this.sockets(),room.id);return;
+  }
   if(type==='set-mirror'){
    if(s.role!=='host'||room.hostId!==s.id)return failure(ws,'Hanya host boleh mengubah mirror siaran');
    if(typeof msg.mirrored!=='boolean')return failure(ws,'Nilai mirror tidak valid');
@@ -256,7 +297,7 @@ export class RoomHub{
    return;
   }
   if(type==='report'){
-   if(s.role!=='viewer')return failure(ws,'Laporan live hanya dapat dikirim oleh penonton room.');
+   if(!['viewer','guest'].includes(s.role))return failure(ws,'Laporan live hanya dapat dikirim oleh peserta room.');
    if(now-(s.lastReport||0)<60000)return failure(ws,'Laporan sebelumnya baru diterima. Tunggu 60 detik.');
    const reason=txt(msg.reason,40).toLowerCase();
    if(!['harassment','threats','fraud','impersonation','copyright','other'].includes(reason))
@@ -274,7 +315,7 @@ export class RoomHub{
    if(!await this.validHostSession(s,room))return failure(ws,'Hanya host room dengan sesi valid yang dapat memoderasi.');
    const action=txt(msg.action,12).toLowerCase(),targetId=txt(msg.targetId,32);
    if(!['mute','unmute','kick','block'].includes(action))return failure(ws,'Perintah moderasi tidak dikenal.');
-   const target=this.sockets().find(x=>state(x).id===targetId&&state(x).roomId===room.id&&state(x).role==='viewer');
+   const target=this.sockets().find(x=>state(x).id===targetId&&state(x).roomId===room.id&&['viewer','guest'].includes(state(x).role));
    if(!target)return failure(ws,'Penonton tidak ada lagi di room.');
    const targetState=state(target);
    if(action==='block'&&!targetState.accountId)
@@ -289,7 +330,10 @@ export class RoomHub{
    }
    if(action==='kick'||action==='block'){
     room.mutedSessions=room.mutedSessions.filter(id=>id!==targetId);
+    const wasGuest=targetState.role==='guest';
     targetState.role=null;targetState.roomId=null;save(target,targetState);
+    if(wasGuest)reply(ws,{type:'guest-left',id:targetId});
+    stageBroadcast(this.sockets(),room.id);
     reply(target,{type:'moderated',action,reason:action==='block'?'Akun diblokir dari room ini.':'Host mengeluarkan Anda dari room ini.'});
     reply(ws,{type:'viewer-left',id:targetId});
    }else reply(target,{type:'moderated',action,reason:action==='mute'?'Host membisukan chat Anda.':'Host mengaktifkan kembali chat Anda.'});
@@ -312,14 +356,14 @@ export class RoomHub{
    if(s.role!=='host'||room.hostId!==s.id)return failure(ws,'Hanya host yang dapat memberi status siaran');
    const status=msg.status==='background'?'background':'active';
    for(const viewer of this.sockets()){
-    if(state(viewer).role==='viewer'&&state(viewer).roomId===s.roomId)reply(viewer,{type:'host-visibility',status});
+    if(['viewer','guest'].includes(state(viewer).role)&&state(viewer).roomId===s.roomId)reply(viewer,{type:'host-visibility',status});
    }
    return;
   }
   if(type==='refresh-media'){
    // A viewer returning from mobile background can request fresh WebRTC negotiation.
    // Refresh only within its joined room; never expose the host's recovery token.
-   if(s.role!=='viewer')return failure(ws,'Hanya penonton yang dapat meminta pemulihan video');
+   if(!['viewer','guest'].includes(s.role))return failure(ws,'Hanya penonton yang dapat meminta pemulihan video');
    const host=getHost(this.sockets(),room.hostId);
    if(!host||room.hostOfflineAt)return failure(ws,'Host belum kembali online');
    reply(host,{type:'media-refresh-request',id:s.id});
@@ -355,7 +399,11 @@ export class RoomHub{
    }
   }else{
    const room=await this.ctx.storage.get('room:'+roomId);
-   if(room){const host=getHost(peers,room.hostId);if(host)reply(host,{type:'viewer-left',id:s.id})}
+   if(room){
+    const host=getHost(peers,room.hostId);
+    if(host){reply(host,{type:'viewer-left',id:s.id});if(role==='guest')reply(host,{type:'guest-left',id:s.id})}
+    stageBroadcast(peers,roomId);
+   }
   }
  }
  async disconnected(ws){
@@ -367,7 +415,7 @@ export class RoomHub{
   room.hostOfflineAt=Date.now();
   await this.ctx.storage.put('room:'+room.id,room);
   for(const other of this.sockets()){
-   if(other!==ws&&state(other).roomId===room.id&&state(other).role==='viewer')reply(other,{type:'host-reconnecting',seconds:90});
+   if(other!==ws&&state(other).roomId===room.id&&['viewer','guest'].includes(state(other).role))reply(other,{type:'host-reconnecting',seconds:90});
   }
   await this.scheduleHeartbeat();
  }
@@ -447,7 +495,7 @@ export default {
     return new Response(asset.body,{status:asset.status,headers});
   }
   if(url.pathname==='/api/radio/status')return cors(request,Response.json(await radioStatus(env)));
-  if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,payments:false,creatorVerificationRequired:env.VERIFY_CREATOR_REQUIRED==='true'||env.BETA_TEST_HOSTS_ENABLED!=='true',anonymousBetaHostsEnabled:env.BETA_TEST_HOSTS_ENABLED==='true'&&env.VERIFY_CREATOR_REQUIRED!=='true'}));
+  if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,maxGuestSeats:GUEST_LIMIT,guestMediaArchitecture:'BETA_HOST_RELAY_P2P',payments:false,creatorVerificationRequired:env.VERIFY_CREATOR_REQUIRED==='true'||env.BETA_TEST_HOSTS_ENABLED!=='true',anonymousBetaHostsEnabled:env.BETA_TEST_HOSTS_ENABLED==='true'&&env.VERIFY_CREATOR_REQUIRED!=='true'}));
   if(url.pathname==='/'){
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
