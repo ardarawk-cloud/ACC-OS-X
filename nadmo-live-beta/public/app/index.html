@@ -573,6 +573,25 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 .wallet-payout-form .field:disabled{opacity:.65;cursor:not-allowed}
 .wallet-panel .wallet-history{margin-top:15px}
 .wallet-panel #walletInfo{margin:10px 0 0}
+
+/* Real circular profile photos with a harmless N/ fallback. */
+#settings .profile-avatar{position:relative;overflow:hidden;flex:0 0 48px;width:48px;height:48px}
+#settings .profile-avatar img,#hostProfileCard .host-avatar img,.host-public-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
+#settings .profile-avatar img[hidden],#hostProfileCard .host-avatar img[hidden],.host-public-photo img[hidden]{display:none!important}
+#settings #avatarChoose{min-width:40px;min-height:34px;padding:6px;font-size:10px}
+#settings .profile-hero{gap:8px}
+#settings .profile-hero button{flex-shrink:0}
+#avatarChoose[hidden],#avatarRemove[hidden]{display:none!important}
+#avatarUploadStatus{font:700 10px/1.5 Arial,sans-serif;color:#d1e2c9;margin:5px 2px}
+#avatarUploadStatus:empty{display:none}
+#profileEditBox #avatarRemove{display:block;margin:0 0 16px;width:100%}
+#hostProfileCard .host-avatar{position:relative;overflow:hidden}
+.host-public-header{display:flex;gap:12px;align-items:center;margin-bottom:7px}
+.host-public-photo{position:relative;flex:0 0 54px;height:54px;display:grid;place-items:center;overflow:hidden;border:1px solid #b8d666;border-radius:50%;background:#293b21;color:var(--neon);font:900 18px Arial}
+.room .room-art{position:relative;overflow:hidden}
+.room .room-art .room-avatar-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.stage-guest-tile .stage-guest-fallback-avatar{position:absolute;width:58px;height:58px;max-width:75%;max-height:65%;aspect-ratio:1;object-fit:cover;border-radius:50%;border:1px solid #c1e6a7;pointer-events:none}
+#chat .chat-user-avatar{display:inline-block;width:19px;height:19px;object-fit:cover;border-radius:50%;vertical-align:middle;margin:0 5px 0 0;border:1px solid #d3e6b1}
 </style></head>
 <body>
 <div class="app">
