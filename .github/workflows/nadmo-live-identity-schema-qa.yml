@@ -1,0 +1,22 @@
+name: NADMO LIVE Identity Foundation QA
+on:
+  push:
+    branches:
+      - feat/nadmo-live-beta-worker-20261009
+    paths:
+      - nadmo-live-beta/migrations/**
+      - nadmo-live-beta/qa/identity-schema-test.py
+      - .github/workflows/nadmo-live-identity-schema-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sqlite-identity-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check identity schema rules without KYC data
+        run: python3 nadmo-live-beta/qa/identity-schema-test.py
