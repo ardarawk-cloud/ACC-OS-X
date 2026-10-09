@@ -186,6 +186,14 @@ export class RoomHub{
    this.sockets().filter(x=>state(x).roomId===room.id).forEach(x=>reply(x,packet));
    return;
   }
+  if(type==='host-visibility'){
+   if(s.role!=='host'||room.hostId!==s.id)return failure(ws,'Hanya host yang dapat memberi status siaran');
+   const status=msg.status==='background'?'background':'active';
+   for(const viewer of this.sockets()){
+    if(state(viewer).role==='viewer'&&state(viewer).roomId===s.roomId)reply(viewer,{type:'host-visibility',status});
+   }
+   return;
+  }
   if(type==='refresh-media'){
    // A viewer returning from mobile background can request fresh WebRTC negotiation.
    // Refresh only within its joined room; never expose the host's recovery token.
