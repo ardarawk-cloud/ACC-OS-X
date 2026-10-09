@@ -20,6 +20,14 @@ const postIdOK=id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(id)
 const socialLikesKey=(postId,id)=>'social-like:'+postId+':'+id;
 const socialUserLike=(id,postId)=>'social-user-like:'+id+':'+postId;
 const repostsKey=id=>'social-user-reposts:'+id;
+// Whitelisted creator profile visual options: scoped to a profile, never to app dashboard.
+const THEME_IDS=new Set(['nadmo','noir','retro','electric']);
+const FONT_IDS=new Set(['system','mono','editorial']);
+const COVER_IDS=new Set(['grid','waves','dots']);
+const profileVisual=a=>({themeId:THEME_IDS.has(a?.themeId)?a.themeId:'nadmo',
+ fontId:FONT_IDS.has(a?.fontId)?a.fontId:'system',
+ coverId:COVER_IDS.has(a?.coverId)?a.coverId:'grid'});
+
 const commentsKey=id=>'social-post-comments:'+id;
 const lookupOriginal=(feed,id)=>feed.find(p=>p.id===id&&p.status==='published'&&p.type!=='repost');
 const isBlockedSocialURL=(label,url)=>{
@@ -74,7 +82,7 @@ async function getAccountBySessionFingerprint(storage,fingerprint){
  const session=await storage.get('auth-session:'+fingerprint);
  if(!session||session.expiresAt<Date.now())return null;
  const user=await storage.get('auth-user:'+session.id);
- return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],avatarVersion:user.avatarVersion||0,verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
+ return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
 }
 async function getSessionFingerprint(request){
  const token=cookies(request);
@@ -261,7 +269,7 @@ export async function accountEndpoint(storage,request){
   const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
   const viewer=await getAccount(storage,request);
   const isFollowing=viewer?!!await storage.get(socialFollowing(viewer.id,id)):false;
-  return json({ok:true,isFollowing,profile:{...socialCounts(account),handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
+  return json({ok:true,isFollowing,profile:{...socialCounts(account),handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],...profileVisual(account),avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
  if(!p.startsWith('/api/account/')&&!p.startsWith('/api/messages/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
@@ -295,11 +303,11 @@ export async function accountEndpoint(storage,request){
   try{passhash=await passwordHash(pw,salt)}
   catch(error){console.error('Password KDF failure',error?.name,error?.code);return fail(503,'Secure password hashing unavailable on this server')}
   const id=crypto.randomUUID();
-  const user={id,handle,name,bio:'',links:[],salt,passhash,passAlgo:'scrypt-v1',kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
+  const user={id,handle,name,bio:'',links:[],themeId:'nadmo',fontId:'system',coverId:'grid',salt,passhash,passAlgo:'scrypt-v1',kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
   await storage.put('auth-user:'+id,user);
   await storage.put('auth-handle:'+handle,id);
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle,name,bio:'',links:[],avatarVersion:0,kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle,name,bio:'',links:[],...profileVisual(user),avatarVersion:0,kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/login'&&method==='POST'){
   const handle=clean(payload.handle,24).toLowerCase(),pw=payload.password;
@@ -519,9 +527,13 @@ export async function accountEndpoint(storage,request){
    if(!label||!url||isBlockedSocialURL(label,url)||validated.some(x=>x.url===url))return fail(400,'Link tidak valid, judi online, atau duplikat');
    validated.push({label,url});
   }
-  record.name=name;record.bio=bio;record.links=validated;record.updatedAt=Date.now();
+  const themeId=payload.themeId===undefined?profileVisual(record).themeId:payload.themeId;
+  const fontId=payload.fontId===undefined?profileVisual(record).fontId:payload.fontId;
+  const coverId=payload.coverId===undefined?profileVisual(record).coverId:payload.coverId;
+  if(!THEME_IDS.has(themeId)||!FONT_IDS.has(fontId)||!COVER_IDS.has(coverId))return fail(400,'Pilihan tema, font atau cover tidak valid');
+  record.name=name;record.bio=bio;record.links=validated;record.themeId=themeId;record.fontId=fontId;record.coverId=coverId;record.updatedAt=Date.now();
   await storage.put('auth-user:'+user.id,record);
-  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
+  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,...profileVisual(record),avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
  }
  if(p==='/api/account/social/upload-allowed'&&method==='POST'){
   // File storage is a separate optional R2 dependency. Limit allocations per user.
