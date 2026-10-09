@@ -1,4 +1,4 @@
-name: NADMO LIVE v0.5 research implementation QA
+name: NADMO LIVE Fullscreen UX QA
 on:
   workflow_dispatch:
   push:
@@ -28,12 +28,17 @@ jobs:
           for(const id of ids)assert(html.includes('id="'+id+'"'),'missing '+id);
           console.log('PASS '+ids.length+' essential controls');
           assert(script.includes("show('explore')"),'default live first');
-          assert(script.includes('canvas.captureStream'),'AFK media scene');
+          assert(script.includes('canvas.captureStream'),'standby and talk audio visual scene');
           assert(script.includes('replaceTrack(track)'),'AFK swaps outgoing video');
           assert(script.includes('localStorage.setItem'),'following bookmarks');
           assert(html.includes('AUTO-CONNECT / ACTIVE'),'server auto-config');
           assert(!html.includes('BACKEND HTTPS ENDPOINT'),'no manual input');
-          console.log('PASS live-first, AFK, following, private room, no-copy backend');
+          assert(html.includes('body.live-immersive #watch'),'immersive full viewport');
+          assert(html.includes('class="panel live-chat"'),'overlay chat');
+          assert(html.includes('id="modeDetails"'),'mode info');
+          assert(html.includes('id="liveModeGrid"'),'broadcast modes');
+          assert(html.includes('id="accessQuick"')&&html.includes('id="tipQuick"'),'floating actions');
+          console.log('PASS fullscreen UI, modes, bottom sheets, camera standby, following, private room');
           NODE
       - name: Verify HTML local rendering in headless Chrome
         shell: bash
@@ -53,9 +58,9 @@ jobs:
           URL='https://nadmo-live-beta-20261009.ardarawk.workers.dev/app/'
           for i in {1..6}; do
             curl -fsS --max-time 15 "$URL" -o /tmp/remote.html || true
-            if grep -q 'AFK SCENE' /tmp/remote.html && grep -q 'INVITATION ACCESS' /tmp/remote.html;then
-              echo 'PASS remote v0.5 live-first and AFK controls';exit 0
+            if grep -q 'live-immersive #watch' /tmp/remote.html && grep -q 'id="liveModeGrid"' /tmp/remote.html && grep -q 'class="panel live-chat"' /tmp/remote.html;then
+              echo 'PASS remote full-screen live, mode picker and overlay chat';exit 0
             fi
             sleep 7
           done
-          echo 'FAIL remote v0.5 did not appear within propagation window';exit 1
+          echo 'FAIL remote fullscreen live UI did not appear within propagation window';exit 1
