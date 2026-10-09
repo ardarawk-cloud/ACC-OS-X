@@ -1,0 +1,30 @@
+name: NADMO LIVE Account Authentication E2E
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/account.mjs'
+      - 'nadmo-live-beta/qa/account-auth-e2e.cjs'
+      - '.github/workflows/nadmo-live-account-auth-qa.yml'
+permissions: {contents: read}
+concurrency:
+  group: nadmo-live-account-auth
+  cancel-in-progress: true
+jobs:
+  account:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install browser automation
+        run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+      - name: Locate Chromium
+        shell: bash
+        run: |
+          command -v google-chrome || command -v google-chrome-stable || command -v chromium
+          echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
+      - name: Verify two-device account and profile persistence
+        run: node nadmo-live-beta/qa/account-auth-e2e.cjs
