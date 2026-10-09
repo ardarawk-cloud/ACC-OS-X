@@ -1,0 +1,27 @@
+name: NADMO LIVE auto-connect web QA
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - '.github/workflows/nadmo-live-beta-browser-smoke.yml'
+permissions: {contents: read}
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify no-copy web client hosted on HTTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOST='https://nadmo-live-beta-20261009.ardarawk.workers.dev'
+          curl --retry 4 --retry-delay 3 --fail --silent --show-error --max-time 20 "$HOST/app/" -o /tmp/nadmo-live-app.html
+          test "$(wc -c < /tmp/nadmo-live-app.html)" -gt 15000
+          grep -q 'DEFAULT_BACKEND' /tmp/nadmo-live-app.html
+          grep -q 'AUTO-CONNECT / ACTIVE' /tmp/nadmo-live-app.html
+          if grep -q 'BACKEND HTTPS ENDPOINT' /tmp/nadmo-live-app.html; then echo 'Manual server input still present';exit 1;fi
+          echo 'PASS: public mobile web app available with auto-connected backend'
+          curl --fail --silent --show-error "$HOST/health" | grep -q '"ok":true'
+          curl --fail --silent --show-error "$HOST/api/rooms" | grep -q '"rooms"'
+          echo 'PASS: Worker health and public room list respond'
