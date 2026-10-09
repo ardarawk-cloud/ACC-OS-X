@@ -11,9 +11,14 @@ assert.ok(html.includes('data-tab="studio" class="broadcast"'));
 // Repost is content-first: no avatar enlargement in ME, no duplicate heading.
 assert.match(html,/#meRepostedFeed \.post-top img\{width:28px;height:28px/);
 assert.match(html,/\.profile-post-card \.social-action-row\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-assert.ok(html.includes("const card=makePublicPost({...item.original,repostMe:true,repostId:item.id});"));
+assert.ok(html.includes("const card=makePublicPost({...item.original,repostMe:true,repostId:item.id,repostCaption:item.caption||''});"));
 assert.ok(html.includes("/api/account/social/unrepost"));
 assert.ok(html.includes("if(item.originalId&&!item.repostMe)"));
+assert.ok(html.includes("id=\"socialShareSheet\""));
+assert.ok(html.includes("const stats=document.createElement('div');stats.className='social-stats'"));
+assert.ok(html.includes("actions.append(like,comment,share);"));
+assert.ok(html.includes("id=\"socialShareCaption\""));
+assert.ok(html.includes("Selengkapnya"));
 // Card author identity: only a compact avatar is interactive, name remains plain text.
 assert.ok(html.includes("const avatarButton=document.createElement('button');avatarButton.type='button';avatarButton.className='social-avatar-open'"));
 assert.ok(html.includes("avatarButton.onclick=()=>openCreatorProfile(entry.handle)"));
