@@ -48,7 +48,7 @@ export class RoomHub{
    return Response.json({rooms:list});
   }
   if(route.startsWith('/api/account/')||route.startsWith('/api/profile/')||route==='/api/payments/status'||route==='/api/streaming/capacity'){
-   try{return await accountEndpoint(this.ctx.storage,request)}
+   try{return await accountEndpoint(this.ctx.storage,request,this.env)}
    catch(error){
     console.error('NADMO account route',error?.name,String(error?.message||'').slice(0,150));
     return Response.json({ok:false,error:'Account temporarily unavailable',errorType:error?.name||'ServerError'},{status:500});
