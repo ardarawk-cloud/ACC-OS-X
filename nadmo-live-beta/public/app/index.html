@@ -1578,6 +1578,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 
 
  const socialPostCache=new Map();
+ let pendingSocialShare='';
  const socialPostLink=id=>DEFAULT_BACKEND+'/app/?post='+encodeURIComponent(id);
  const socialNum=value=>new Intl.NumberFormat('id-ID').format(Number(value)||0);
  function playableSocialVideo(url){
@@ -1744,8 +1745,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   addShare('KE TEMAN (PESAN)',()=>{
    if(!activeAccount){show('authPage');return}
    show('messagesPage');
-   $('messageBody').value='Lihat postingan @'+entry.handle+' di NADMO LIVE: '+socialPostLink(id);
-   $('messageInboxStatus').textContent='Pilih percakapan yang sudah disetujui untuk mengirim tautan. Pesan tidak dikirim otomatis.';
+   pendingSocialShare='Lihat postingan '+(entry.name||'kreator')+' di NADMO LIVE: '+socialPostLink(id);
+   $('messageInboxStatus').textContent='Pilih teman dari percakapan yang disetujui. Tautan akan dimasukkan sebagai draf, tidak terkirim otomatis.';
   });
   addShare('KELUAR APLIKASI',()=>shareOutside(entry));
   share.onclick=()=>menu.classList.toggle('hide');
@@ -1876,6 +1877,9 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('messageConversation').classList.remove('hide');
   $('messageRequests').classList.add('hide');$('messageThreads').classList.add('hide');$('messageBack').hidden=false;
   await refreshConversation();
+  if(pendingSocialShare){
+   $('messageBody').value=pendingSocialShare;pendingSocialShare='';
+  }
   if(chatRefreshTimer)clearInterval(chatRefreshTimer);
   chatRefreshTimer=setInterval(()=>{
    if(!activeChatHandle||document.visibilityState!=='visible'||$('messagesPage').classList.contains('hide'))return;
