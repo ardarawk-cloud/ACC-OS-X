@@ -159,7 +159,7 @@ export class RoomHub{
     mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
-   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,layout:[]});
+   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,layout:[]});
    return;
   }
   if(type==='resume'){
@@ -191,7 +191,7 @@ export class RoomHub{
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
    const viewers=peers.filter(x=>state(x).roomId===id&&['viewer','guest'].includes(state(x).role)).map(x=>state(x).id);
-   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,layout:room.stageLayout||[]});
+   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,layout:room.stageLayout||[]});
    for(const other of peers){if(state(other).roomId===id&&state(other).role!=='host')reply(other,{type:'host-reconnected'})}
     for(const other of peers){const meta=state(other);if(meta.roomId===id&&meta.pendingGuestMode)reply(ws,{type:'guest-requested',id:meta.id,name:meta.displayName||meta.handle||'Penonton',mode:meta.pendingGuestMode})}
     stageBroadcast(peers,id,room.stageLayout||[]);
@@ -209,7 +209,7 @@ export class RoomHub{
    if(s.accountId&&Array.isArray(room.blockedAccounts)&&room.blockedAccounts.includes(s.accountId))
     return failure(ws,'Akses akun ke room ini telah diblokir oleh host.');
    s.roomId=id;s.role='viewer';save(ws,s);
-   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id),layout:room.stageLayout||[]});
+   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id),layout:room.stageLayout||[]});
    reply(host,{type:'viewer-joined',id:s.id});
     stageBroadcast(peers,id,room.stageLayout||[]);
    return;
