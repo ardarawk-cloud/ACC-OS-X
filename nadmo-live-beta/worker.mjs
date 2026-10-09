@@ -98,10 +98,10 @@ export class RoomHub{
    if(mode==='password'&&password.length<4)return failure(ws,'Kode private room minimal 4 karakter');
    const id=crypto.randomUUID().replace(/-/g,'').slice(0,12);
    const resumeToken=crypto.randomUUID()+crypto.randomUUID();
-   const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,createdAt:now};
+   const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,createdAt:now};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
-   reply(ws,{type:'created',id,selfId:s.id,resumeToken});
+   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false});
    return;
   }
   if(type==='resume'){
@@ -126,7 +126,7 @@ export class RoomHub{
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
    const viewers=peers.filter(x=>state(x).roomId===id&&state(x).role==='viewer').map(x=>state(x).id);
-   reply(ws,{type:'resumed',id,selfId:s.id,viewers});
+   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true});
    for(const other of peers){if(state(other).roomId===id&&state(other).role==='viewer')reply(other,{type:'host-reconnected'})}
    return;
   }
@@ -140,13 +140,22 @@ export class RoomHub{
    if(roomCount(peers,id)>=VIEWER_LIMIT)return failure(ws,'Room beta penuh (maks. 4 penonton)');
    if(room.mode==='password'&&await sha(txt(msg.password,32))!==room.passwordHash)return failure(ws,'Kode akses salah');
    s.roomId=id;s.role='viewer';save(ws,s);
-   reply(ws,{type:'joined',id,title:room.title,selfId:s.id,hostId:room.hostId});
+   reply(ws,{type:'joined',id,title:room.title,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true});
    reply(host,{type:'viewer-joined',id:s.id});
    return;
   }
   if(!s.roomId)return failure(ws,'Belum tergabung dalam room');
   const room=await this.ctx.storage.get('room:'+s.roomId);
   if(!room)return failure(ws,'Room sudah tidak aktif');
+  if(type==='set-mirror'){
+   if(s.role!=='host'||room.hostId!==s.id)return failure(ws,'Hanya host boleh mengubah mirror siaran');
+   if(typeof msg.mirrored!=='boolean')return failure(ws,'Nilai mirror tidak valid');
+   room.mirrorBroadcast=msg.mirrored;
+   await this.ctx.storage.put('room:'+room.id,room);
+   const packet={type:'mirror-updated',mirrorBroadcast:room.mirrorBroadcast};
+   for(const receiver of this.sockets())if(state(receiver).roomId===room.id)reply(receiver,packet);
+   return;
+  }
   if(type==='set-access'){
    if(s.role!=='host'||room.hostId!==s.id)return failure(ws,'Hanya host yang dapat mengubah akses siaran');
    const mode=msg.mode==='password'?'password':msg.mode==='public'?'public':null;
