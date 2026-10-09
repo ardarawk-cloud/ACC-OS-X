@@ -19,7 +19,8 @@ jobs:
           curl --retry 4 --retry-delay 3 --fail --silent --show-error --max-time 20 "$HOST/app/" -o /tmp/nadmo-live-app.html
           test "$(wc -c < /tmp/nadmo-live-app.html)" -gt 15000
           grep -q 'DEFAULT_BACKEND' /tmp/nadmo-live-app.html
-          grep -q 'AUTO-CONNECT / ACTIVE' /tmp/nadmo-live-app.html
+          grep -q 'id="developerOnlySettings" aria-hidden="true"' /tmp/nadmo-live-app.html
+          if grep -q 'AUTO-CONNECT / ACTIVE' /tmp/nadmo-live-app.html; then echo 'Developer diagnostics leaked into public UI';exit 1;fi
           if grep -q 'BACKEND HTTPS ENDPOINT' /tmp/nadmo-live-app.html; then echo 'Manual server input still present';exit 1;fi
           echo 'PASS: public mobile web app available with auto-connected backend'
           curl --fail --silent --show-error "$HOST/health" | grep -q '"ok":true'
