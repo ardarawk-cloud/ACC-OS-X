@@ -223,6 +223,26 @@ async function main(){
     console.log('ROOM_END_DIAGNOSTIC '+JSON.stringify(status));throw e;
   }
   console.log('PASS explicit end shows viewer Explore without useless reconnect attempts');
+  // Mode picker must never pretend Android game capture or PC ingest is operational.
+  await host.locator('nav button[data-tab="studio"]').click();
+  await host.locator('#liveModeGrid [data-live-mode="gaming"]').click();
+  assert.equal(await host.$eval('#createRoom',b=>b.disabled),true,'Gaming capture must be blocked until native MediaProjection is ready');
+  assert.ok(await host.$eval('#gameSetup',el=>!el.classList.contains('hide')));
+  await host.locator('#liveModeGrid [data-live-mode="studio"]').click();
+  assert.equal(await host.$eval('#createRoom',b=>b.disabled),true,'PC Studio ingest must be blocked until ready');
+  console.log('PASS Gaming and Studio clearly gated with separate mode-specific menus');
+  await host.locator('#liveModeGrid [data-live-mode="talk"]').click();
+  assert.equal(await host.$eval('#createRoom',b=>b.disabled),false);
+  await host.locator('#preview').click();
+  await waitText(host,'#camState','Mikrofon siap',14000);
+  const talkTracks=await host.$eval('#camera',el=>el.srcObject?.getTracks().map(t=>t.kind).sort());
+  assert.deepEqual(talkTracks,['audio','video'],'Talk mode needs real mic and canvas visualization');
+  await host.locator('#title').fill('NADMO QA TALK '+Date.now());
+  await host.locator('#createRoom').click();
+  await waitText(host,'#watchState','Bagikan kode',16000);
+  assert.equal(await host.$eval('#watch',el=>el.getBoundingClientRect().height>700),true);
+  console.log('PASS Ngobrol mode starts real microphone audio live with fullscreen visual');
+  await host.locator('#leave').click();
   assert.equal(faults.length,0,'Browser uncaught exceptions: '+faults.join('; '));
   console.log('ALL HEADLESS WEBRTC BROADCAST TESTS PASSED');
  }finally{await browser.close();}
