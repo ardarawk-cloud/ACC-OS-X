@@ -123,7 +123,20 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 .fee-table{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:10px 0 14px}.fee-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #313a2f;color:var(--ink);font-size:12px}.fee-row:last-child{border:0;color:var(--neon)}.fee-row b{color:var(--paper);white-space:nowrap}.fee-row:last-child b{color:var(--neon)}
 .filterstrip{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 0 14px}.filterstrip::-webkit-scrollbar{display:none}
 .filterstrip button{flex:none;background:#151a14;border:1px solid #454d40;color:#afb7a8;padding:9px 12px;font:800 10px Arial,sans-serif;letter-spacing:.45px}.filterstrip button.active{background:var(--neon);color:#10140c;border-color:var(--neon)}
-html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:105px}.room{position:relative;gap:12px;align-items:flex-start}.room .room-art{width:70px;height:86px;background:repeating-linear-gradient(115deg,#233122 0px,#233122 8px,#111711 9px,#111711 19px);border:1px solid #43513a;flex:none;display:grid;place-items:center;color:var(--neon);font:900 27px Impact,sans-serif}.room .room-main{flex:1;min-width:0}.room .room-main b{font-size:20px;word-break:break-word}.room .room-main small{display:block;font-size:11px}.room .room-actions{display:flex;align-items:center;gap:7px;margin-top:8px}.room .room-actions .btn{padding:8px 10px;min-height:35px;font-size:11px}.room .bookmark{min-height:35px;width:35px;background:transparent;border:1px solid var(--line);color:var(--neon);font-size:17px}
+html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:105px}.room{position:relative;gap:12px;align-items:flex-start}.room .room-art{width:70px;height:86px;background:repeating-linear-gradient(115deg,#233122 0px,#233122 8px,#111711 9px,#111711 19px);border:1px solid #43513a;flex:none;display:grid;place-items:center;color:var(--neon);font:900 27px Impact,sans-serif}.room .room-main{flex:1;min-width:0}.room .room-main b{
+ font-size:clamp(14px,3.7vw,17px);line-height:1.12;letter-spacing:.1px;
+ max-width:100%;min-width:0;overflow:hidden;white-space:normal;
+ overflow-wrap:anywhere;word-break:break-word;
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+}
+.room .room-main b.name-long{font-size:14px;line-height:1.18}
+.room .room-main b.name-very-long{font-size:12px;line-height:1.2}
+.room .room-main small{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+ font-size:11px;line-height:1.35;max-width:100%;overflow:hidden;overflow-wrap:anywhere;
+}
+.room .room-actions{flex-wrap:wrap;min-width:0}
+@media(max-width:375px){.room .room-art{width:56px;height:76px}.room{gap:9px}}.room .room-actions{display:flex;align-items:center;gap:7px;margin-top:8px}.room .room-actions .btn{padding:8px 10px;min-height:35px;font-size:11px}.room .bookmark{min-height:35px;width:35px;background:transparent;border:1px solid var(--line);color:var(--neon);font-size:17px}
 #hostControls[hidden],#afkHint[hidden]{display:none!important}#hostControls{margin:14px 0}#afkHint{margin:8px 0;font-size:11px}
 #signalStatus{font-size:11px;letter-spacing:1px;color:var(--neon)}
 
@@ -394,7 +407,15 @@ body.live-immersive #watch .sheet-close:focus-visible{
 #accountKycNote{font-size:11px;margin:12px 0}
 .room-subtitle{font:600 11px/1.35 Arial,sans-serif;color:#d6dccc;margin:5px 0 0;max-width:195px;text-shadow:0 1px 3px #000}
 body.live-immersive #watch .room-subtitle{font-size:10px}
-body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+body.live-immersive #watch .page-top>div{min-width:0;max-width:100%}
+body.live-immersive #watch #watchTitle{
+ display:block;width:min(100%,220px);max-width:100%;min-width:0;
+ font-size:15px;line-height:1.25;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;
+}
+body.live-immersive #watch #watchTitle.name-long{font-size:13px}
+body.live-immersive #watch #watchTitle.name-very-long{font-size:12px}
+@media(min-width:800px){body.live-immersive.watch-viewer #watch #watchTitle.name-long{font-size:16px}
+body.live-immersive.watch-viewer #watch #watchTitle.name-very-long{font-size:14px}}
 
 .room-safety{margin:4px 0;color:#a8bca1;font:700 10px Arial,sans-serif;pointer-events:auto}
 .room-safety .safety-toolbar{display:flex;gap:5px;flex-wrap:wrap}
@@ -1114,7 +1135,14 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  $('preview').onclick=preview;
  $('stopCamera').onclick=()=>{if(host&&currentRoom){notice('Sedang LIVE. Gunakan KAMERA OFF untuk menyembunyikan gambar sementara tanpa mengakhiri siaran.','camState');return}if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;stopTalkVisual();$('camera').srcObject=null;notice('Sumber siaran dimatikan.','camState')};
  function emptyMessage(message){const box=document.createElement('div');box.className='no-signal';const h=document.createElement('strong');h.textContent='NO SIGNAL';const d=document.createElement('small');d.textContent=message;box.append(h,d);return box}
- function roomCard(x){const card=document.createElement('div');card.className='room';card.dataset.roomId=x.id;const art=document.createElement('div');art.className='room-art';art.textContent='N/';const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');title.textContent=x.hostHandle?'@'+x.hostHandle:(x.hostName||'Host');const sub=document.createElement('small');sub.textContent=x.title+' · '+(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
+ function setStreamerName(node,name){
+  const label=String(name||'Host').trim()||'Host';
+  node.textContent=label;
+  node.title=label;
+  node.classList.toggle('name-long',Array.from(label).length>14);
+  node.classList.toggle('name-very-long',Array.from(label).length>23);
+ }
+ function roomCard(x){const card=document.createElement('div');card.className='room';card.dataset.roomId=x.id;const art=document.createElement('div');art.className='room-art';art.textContent='N/';const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');setStreamerName(title,x.hostHandle?'@'+x.hostHandle:(x.hostName||'Host'));const sub=document.createElement('small');sub.textContent=x.title+' · '+(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
  function renderRooms(){const q=$('searchLive').value.trim().toLocaleLowerCase('id');const items=cachedRooms.filter(x=>(selectedFilter==='all'||x.category===selectedFilter)&&(x.title+' '+x.category).toLocaleLowerCase('id').includes(q));$('rooms').replaceChildren();$('liveCount').textContent=items.length+' LIVE ROOMS';if(!items.length){$('rooms').append(emptyMessage(cachedRooms.length?'NO MATCHES':'NO PUBLIC LIVE BROADCASTS'));return}items.forEach(x=>$('rooms').append(roomCard(x)))}
  function renderSaved(){$('savedRooms').replaceChildren();const items=cachedRooms.filter(x=>savedIds.has(x.id));if(!items.length){$('savedRooms').append(emptyMessage('NO SAVED LIVE SESSIONS ON THIS DEVICE'));return}items.forEach(x=>$('savedRooms').append(roomCard(x)))}
  async function loadRooms(){try{const response=await fetch(api('/api/rooms'),{cache:'no-store',signal:AbortSignal.timeout(7000)});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();cachedRooms=Array.isArray(data.rooms)?data.rooms:[];renderRooms();renderSaved()}catch(e){$('rooms').replaceChildren(emptyMessage('NETWORK UNAVAILABLE / RETRY'));$('liveCount').textContent='NETWORK ERROR'}}
@@ -1331,12 +1359,12 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   if(peers.get(id)===pc)signal(id,{description:pc.localDescription,reset:true});
 }
  async function incoming(m){
-  if(m.type==='created'){$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
-  if(m.type==='joined'){$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
+  if(m.type==='created'){$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='joined'){$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
   if(m.type==='resumed'){
     $('reportLive').hidden=true;$('hostModeration').hidden=false;
     mirrorBroadcast=m.mirrorBroadcast===true;applyMirroring();
-    $('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');
+    setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));
     stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('net').textContent='SERVER ONLINE';
     for(const pc of peers.values())pc.close();peers.clear();pendingIce.clear();
     $('restartRoom').classList.add('hide');
