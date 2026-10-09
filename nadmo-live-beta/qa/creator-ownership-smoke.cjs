@@ -61,8 +61,8 @@ async function main(){
   send(crossAccount,{type:'resume',id:room.id,token:room.resumeToken});
   assert.match((await denied).message,/pemilik room|akun pemilik|terverifikasi|ditolak/i);
   console.log('PASS second account cannot hijack room even with host recovery token');
-  host.terminate();
   const hostOffline=waitFor(viewer,'host-reconnecting');
+  host.terminate();
   await hostOffline;
   recovered=await connect(a.cookie);
   const resumed=waitFor(recovered,'resumed');
@@ -71,6 +71,11 @@ async function main(){
   console.log('PASS same account can recover streaming room');
   const logout=await action('/api/account/logout',{},a.cookie);
   assert.equal(logout.status,200);
+  const retry=await connect(a.cookie);
+  const revokedResume=waitFor(retry,'error');
+  send(retry,{type:'resume',id:room.id,token:room.resumeToken});
+  assert.match((await revokedResume).message,/ditolak|pemulihan|pemilik/i);
+  console.log('PASS revoked session cannot take over active room');
   const leave=waitFor(recovered,'left');
   send(recovered,{type:'leave'});
   await leave;
@@ -78,11 +83,6 @@ async function main(){
   send(recovered,{type:'create',title:'Must reject expired session',mode:'public'});
   assert.match((await revoked).message,/sesi akun|login/i);
   console.log('PASS logged-out account loses GO LIVE privileges on existing WebSocket');
-  const retry=await connect(a.cookie);
-  const revokedResume=waitFor(retry,'error');
-  send(retry,{type:'resume',id:room.id,token:room.resumeToken});
-  assert.match((await revokedResume).message,/ditolak|pemulihan/i);
-  console.log('PASS revoked session cannot recover a room');
   console.log('ALL CREATOR OWNERSHIP REGRESSION TESTS PASSED');
  }finally{
   for(const ws of opened)try{ws.terminate()}catch{}
