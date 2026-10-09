@@ -137,24 +137,32 @@ async function main(){
   // screen-wide 'cover' crop that stretches the camera across the monitor.
   await viewer.setViewport({width:1280,height:800,deviceScaleFactor:1,isMobile:false,hasTouch:false});
   const pcStage=await viewer.evaluate(()=>{
-    const screen=document.querySelector('#watch').getBoundingClientRect();
-    const stage=document.querySelector('#watch .live-stage').getBoundingClientRect();
-    const vid=document.querySelector('#remote').getBoundingClientRect();
-    const chat=document.querySelector('#message').getBoundingClientRect();
-    const sheet=window.getComputedStyle(document.querySelector('#viewerTipPanel'));
-    return {viewport:[innerWidth,innerHeight],screen:[screen.width,screen.height],
-      stage:[stage.left,stage.top,stage.width,stage.height],
-      video:[vid.width,vid.height],chat:[chat.left,chat.width,chat.bottom],
+    const rect=sel=>{const r=document.querySelector(sel).getBoundingClientRect();return [r.left,r.top,r.width,r.height]};
+    return {
+      viewport:[innerWidth,innerHeight],
+      theater:rect('#watch .live-stage'),
+      video:rect('#remote'),chat:rect('#watch .live-chat'),
+      chatInput:rect('#message'),quickBar:rect('#desktopSawerBar'),
+      rail:rect('#pcWatchRail'),
       viewerMode:document.body.classList.contains('watch-viewer'),
       navHidden:getComputedStyle(document.querySelector('nav')).display==='none',
-      tipHidden:sheet.display==='none'};
+      railVisible:getComputedStyle(document.querySelector('#pcWatchRail')).display==='flex',
+      quickVisible:getComputedStyle(document.querySelector('#desktopSawerBar')).display==='flex'
+    };
   });
-  assert.ok(pcStage.viewerMode&&pcStage.navHidden,'Desktop should retain the immersive viewer controls');
-  assert.ok(Math.abs(pcStage.stage[2]/pcStage.stage[3]-9/16)<0.03,'Desktop camera stage must be phone-proportioned');
-  assert.ok(Math.abs(pcStage.stage[0]+pcStage.stage[2]/2-pcStage.viewport[0]/2)<3,'Desktop stage must be centered');
-  assert.ok(pcStage.video[2]===undefined&&pcStage.video[0]===pcStage.stage[2]&&pcStage.video[1]===pcStage.stage[3],'Remote video must fill centered stage instead of monitor');
-  assert.ok(pcStage.chat[0]>=pcStage.stage[0]&&pcStage.chat[0]+pcStage.chat[1]<=pcStage.stage[0]+pcStage.stage[2],'Chat must stay inside portrait stage');
-  console.log('PASS desktop viewer portrait-centered media instead of full-width crop',JSON.stringify(pcStage));
+  assert.ok(pcStage.viewerMode&&pcStage.navHidden&&pcStage.railVisible&&pcStage.quickVisible,'PC must show viewing rail, permanent theater and rupiah bar');
+  assert.ok(pcStage.theater[0]>=pcStage.rail[2],'Theater must be to right of navigation rail');
+  assert.ok(pcStage.chat[0]>=pcStage.theater[0]+pcStage.theater[2],'Live chat must have its own right-side column');
+  assert.ok(Math.abs(pcStage.video[2]/pcStage.video[3]-9/16)<0.04,'Desktop embedded camera must display portrait aspect ratio');
+  assert.ok(pcStage.video[2]<pcStage.theater[2]*0.85,'PC must not stretch portrait image across widescreen theater');
+  assert.ok(pcStage.video[0]>=pcStage.theater[0],'Video must be inside its theater');
+  assert.ok(pcStage.chatInput[0]>=pcStage.chat[0],'Comment entry must sit in chat sidebar');
+  assert.ok(pcStage.quickBar[0]>=pcStage.theater[0]&&pcStage.quickBar[0]+pcStage.quickBar[2]<=pcStage.chat[0],'Rupiah presets must sit under theater, not chat');
+  await viewer.locator('#desktopSawerBar [data-pc-sawer="2000"]').click();
+  assert.equal(await viewer.$eval('#tipCustom',el=>el.value),'2000');
+  assert.equal(await viewer.$eval('#viewerTipPanel',el=>el.classList.contains('sheet-open')),true);
+  await viewer.locator('#closeTipSheet').click();
+  console.log('PASS PC viewer: portrait live theater, right chat, left rail, quick rupiah support preview',JSON.stringify(pcStage));
   await viewer.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   await viewer.waitForFunction(()=>document.querySelector('#watch .live-stage').getBoundingClientRect().width>=innerWidth-2,{timeout:6000});
   console.log('PASS mobile view returns to full-bleed video after desktop resizing');
