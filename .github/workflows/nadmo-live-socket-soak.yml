@@ -1,0 +1,49 @@
+name: NADMO LIVE WebSocket Soak Diagnostics
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - '.github/workflows/nadmo-live-socket-soak.yml'
+permissions:
+  contents: read
+jobs:
+  soak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install WebSocket client
+        run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
+      - name: Verify idle connection survives 90 seconds
+        run: |
+          node <<'NODE'
+          const {WebSocket}=require('./nadmo-live-beta/qa/node_modules/ws');
+          const url='wss://nadmo-live-beta-20261009.ardarawk.workers.dev/ws';
+          const origin='https://appassets.androidplatform.net';
+          const delay=t=>new Promise(r=>setTimeout(r,t));
+          (async()=>{
+            const ws=new WebSocket(url,{headers:{Origin:origin},handshakeTimeout:15000});
+            const logs=[];
+            ws.on('open',()=>console.log('WS_OPEN '+new Date().toISOString()));
+            ws.on('close',(code,reason)=>console.log('WS_CLOSE '+code+' '+String(reason)+' '+new Date().toISOString()));
+            ws.on('error',(error)=>console.log('WS_ERROR '+error.message));
+            ws.on('message',raw=>{const m=JSON.parse(String(raw));logs.push(m);console.log('WS_MSG '+m.type+' '+JSON.stringify(m).slice(0,120))});
+            await new Promise((resolve,reject)=>{ws.once('open',resolve);ws.once('error',reject)});
+            ws.send(JSON.stringify({type:'create',title:'Socket Stability Diagnostics',mode:'public'}));
+            for(let i=0;i<30;i++){if(logs.some(x=>x.type==='created'))break;await delay(100)}
+            if(!logs.some(x=>x.type==='created'))throw Error('room not created');
+            for(let secs=15;secs<=90;secs+=15){
+              await delay(15000);
+              console.log('T+ '+secs+'s socketState='+ws.readyState);
+              if(ws.readyState!==WebSocket.OPEN)throw Error('SOCKET_CLOSED_AFTER_'+secs+'_SECONDS');
+            }
+            ws.send(JSON.stringify({type:'chat',text:'still alive after 90 secs'}));
+            for(let i=0;i<30;i++){if(logs.some(x=>x.type==='chat'))break;await delay(100)}
+            if(!logs.some(x=>x.type==='chat'))throw Error('ROOM_STALE_AFTER_IDLE');
+            console.log('PASS: websocket and room held 90s without client heartbeat, chat works');
+            ws.close(1000,'QA finished');
+          })().catch(e=>{console.error('SOAK_FAIL '+e.stack);process.exit(1)});
+          NODE
