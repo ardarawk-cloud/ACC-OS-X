@@ -1724,15 +1724,76 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    window.prompt('Salin tautan postingan',url);
   }catch(e){if(e.name!=='AbortError')flash('Tidak bisa berbagi dari perangkat ini.');}
  }
- async function doSocialRepost(item){
-  if(!activeAccount){show('authPage');return}
-  if(activeAccount.handle===item.handle){flash('Ini postinganmu sendiri.');return}
+ async function doSocialRepost(item,caption=''){
+  if(!activeAccount){closeSocialShareSheet();show('authPage');return false}
+  if(activeAccount.handle===item.handle){$('socialShareStatus').textContent='Postingan sendiri tidak perlu direpost.';return false}
   try{
-   const data=await accountRequest('/api/account/social/repost','POST',{id:item.id});
-   flash(data.reposted?'Tersimpan sebagai repost di ME.':'Gagal membagikan ulang');
+   const data=await accountRequest('/api/account/social/repost','POST',{id:item.id,caption:String(caption).slice(0,500)});
+   flash(data.reposted?'Dibagikan ke SOSIAL dan ME.':'Gagal membagikan ulang');
    await Promise.all([loadMyReposts(),loadSocialFeed()]);
-  }catch(e){flash(e.message)}
+   return true;
+  }catch(e){$('socialShareStatus').textContent=e.message;return false}
  }
+ let selectedSocialPost=null,shareReturnFocus=null;
+ function closeSocialShareSheet(){
+  const sheet=$('socialShareSheet');
+  sheet.classList.add('hide');document.body.classList.remove('social-share-open');
+  selectedSocialPost=null;
+  if(shareReturnFocus?.isConnected)shareReturnFocus.focus({preventScroll:true});
+  shareReturnFocus=null;
+ }
+ function openSocialShareSheet(post,trigger){
+  selectedSocialPost=post;shareReturnFocus=trigger||null;
+  $('socialShareAuthor').textContent=post.name||post.handle||'Kreator NADMO';
+  $('socialShareExcerpt').textContent=(post.text||'Postingan video di NADMO LIVE').slice(0,180);
+  $('socialShareCaption').value='';
+  $('socialShareStatus').textContent='Postingan yang direpost tampil di SOSIAL dan bagian Dibagikan Ulang pada ME.';
+  $('socialShareToFeed').disabled=false;
+  $('socialShareToFeed').querySelector('small').textContent=activeAccount?.handle===post.handle?'Tidak bisa repost postingan sendiri':'Repost ke feed & ME kamu';
+  $('socialShareSheet').classList.remove('hide');document.body.classList.add('social-share-open');
+  $('socialShareClose').focus({preventScroll:true});
+ }
+ $('socialShareClose').onclick=closeSocialShareSheet;
+ $('socialShareSheet').addEventListener('click',event=>{
+  if(event.target===$('socialShareSheet'))closeSocialShareSheet();
+ });
+ document.addEventListener('keydown',event=>{
+  if($('socialShareSheet').classList.contains('hide'))return;
+  if(event.key==='Escape'){event.preventDefault();closeSocialShareSheet();return}
+  if(event.key==='Tab'){
+   const nodes=[...$('socialShareSheet').querySelectorAll('button:not([disabled]),textarea')];
+   const first=nodes[0],last=nodes[nodes.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+  }
+ });
+ $('socialShareToFeed').onclick=async()=>{
+  if(!selectedSocialPost)return;
+  const button=$('socialShareToFeed');button.disabled=true;
+  const success=await doSocialRepost(selectedSocialPost,$('socialShareCaption').value.trim());
+  if(success)closeSocialShareSheet();
+  else button.disabled=false;
+ };
+ $('socialShareToFriend').onclick=()=>{
+  if(!selectedSocialPost)return;
+  if(!activeAccount){closeSocialShareSheet();show('authPage');return}
+  const entry=selectedSocialPost;
+  pendingSocialShare='Lihat postingan '+(entry.name||'kreator')+' di NADMO LIVE: '+socialPostLink(entry.id);
+  closeSocialShareSheet();show('messagesPage');
+  $('messageInboxStatus').textContent='Pilih percakapan yang disetujui. Link disiapkan sebagai draf, tidak terkirim otomatis.';
+ };
+ $('socialShareExternal').onclick=()=>{
+  if(!selectedSocialPost)return;
+  const entry=selectedSocialPost;closeSocialShareSheet();shareOutside(entry);
+ };
+ $('socialShareCopy').onclick=async()=>{
+  if(!selectedSocialPost)return;
+  const url=socialPostLink(selectedSocialPost.id);
+  try{
+   if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);$('socialShareStatus').textContent='Tautan disalin.'}
+   else{$('socialShareStatus').textContent='Salin tautan dari kolom berikut.';window.prompt('Salin tautan',url)}
+  }catch(e){$('socialShareStatus').textContent='Tautan: '+url}
+ };
  async function loadMyReposts(){
   const holder=$('meRepostArea'),feed=$('meRepostedFeed');
   holder.classList.add('hide');feed.replaceChildren();
@@ -1741,7 +1802,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    const data=await accountRequest('/api/social/reposts/me');
    if(!data.reposts?.length)return;
    for(const item of data.reposts.slice(0,20)){
-    const card=makePublicPost({...item.original,repostMe:true,repostId:item.id});
+    const card=makePublicPost({...item.original,repostMe:true,repostId:item.id,repostCaption:item.caption||''});
     feed.append(card);
    }
    holder.classList.remove('hide');
