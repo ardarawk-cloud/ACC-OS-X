@@ -426,6 +426,22 @@ body.live-immersive.watch-viewer #watch #watchTitle.name-very-long{font-size:14p
 .room-safety .safety-panel .safety-guest{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #374936;gap:5px;padding:5px 0;flex-wrap:wrap}
 .room-safety .safety-panel .safety-guest .actions{display:flex;gap:4px;flex-wrap:wrap}
 body.live-immersive #watch .room-safety{pointer-events:auto}
+
+/* Nine-seat guest stage — lightweight beta controls, not an SFU. */
+#guestStageGrid{position:absolute;z-index:7;left:12px;right:82px;top:28%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;max-height:28dvh;overflow-y:auto;pointer-events:none}
+#guestStageGrid:empty{display:none}
+.stage-guest-tile{position:relative;min-width:0;min-height:54px;aspect-ratio:1.28;overflow:hidden;border:1px solid #8c9e70a8;border-radius:8px;background:#142015d9;box-shadow:0 2px 15px #0007;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px}
+.stage-guest-tile video{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-height:none;object-fit:cover}
+.stage-guest-tile .stage-fallback{font:800 10px Arial,sans-serif;color:var(--neon)}
+.stage-guest-tile .stage-tag{position:absolute;bottom:2px;left:3px;right:3px;z-index:1;background:#0a0e0cae;color:#ecf5e4;font:700 9px/1.25 Arial,sans-serif;padding:3px 4px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;text-align:left}
+.stage-guest-tile[data-camera="off"] video{opacity:0;pointer-events:none}
+#guestRequestPanel{max-height:23dvh}
+#guestRequestPanel .guest-invite{display:flex;gap:7px;justify-content:space-between;align-items:center;padding:7px 2px;border-bottom:1px solid #3b4739}
+#guestRequestPanel .guest-invite small{flex:1;min-width:80px;overflow-wrap:anywhere}
+.room-safety button[hidden]{display:none!important}
+#guestJoinStatus{font-size:10px;line-height:1.3;margin:3px 0}
+@media(min-width:800px){body.live-immersive.watch-viewer #watch #guestStageGrid{left:calc(var(--pc-stage-left) + 18px);right:calc(var(--pc-stage-right) + 20px);top:30%;width:auto;max-height:30dvh;grid-template-columns:repeat(3,minmax(0,120px))}}
+@media(max-width:360px){#guestStageGrid{right:73px;gap:4px;top:27%}.stage-guest-tile .stage-tag{font-size:8px}}
 </style></head>
 <body>
 <div class="app">
@@ -498,6 +514,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     <span>NADMO LIVE</span>
   </aside>
   <div class="page-top"><div><span class="onair-label">● LIVE</span><h1 id="watchTitle">HOST</h1><div id="watchRoomSubtitle" class="room-subtitle"></div></div></div>
+   <div id="guestStageGrid" aria-label="Tamu di panggung live"></div>
   <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
@@ -571,7 +588,19 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   </div>
   <div class="panel live-chat"><div class="show-label"><b>BACKCHANNEL</b><small>LIVE CHAT</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button><button type="button" class="live-bar-button" id="giftQuick" aria-label="Saweran rupiah" title="Sawer">🎁</button><button type="button" class="live-bar-button" id="moreQuick" aria-label="Pengaturan live" title="Pengaturan">⚙</button></div>
 <div class="room-safety">
- <div class="safety-toolbar"><button id="reportLive" type="button" hidden>LAPORKAN LIVE</button><button id="hostModeration" type="button" hidden>MODERASI PENONTON</button></div>
+ <div class="safety-toolbar">
+    <button id="reportLive" type="button" hidden>LAPORKAN LIVE</button>
+    <button id="hostModeration" type="button" hidden>MODERASI PENONTON</button>
+    <button id="hostGuestRequests" type="button" hidden>TAMU 0/9</button>
+    <button id="joinGuestVoice" type="button" hidden>JOIN VOICE</button>
+    <button id="joinGuestCamera" type="button" hidden>JOIN KAMERA</button>
+    <button id="guestMicToggle" type="button" hidden>MIC ON</button>
+    <button id="guestCameraToggle" type="button" hidden>KAMERA ON</button>
+    <button id="guestLeaveStage" type="button" hidden>TURUN</button>
+    <button id="hostMicToggle" type="button" hidden>MIC ON</button>
+   </div>
+   <p id="guestJoinStatus" role="status" aria-live="polite" hidden></p>
+   <div id="guestRequestPanel" class="safety-panel hide" aria-label="Permintaan naik panggung"></div>
  <div id="reportPanel" class="safety-panel hide">
   <label for="reportReason">ALASAN LAPORAN</label>
   <select id="reportReason"><option value="harassment">Pelecehan</option><option value="threats">Ancaman</option><option value="fraud">Penipuan</option><option value="impersonation">Penyamaran identitas</option><option value="copyright">Hak cipta</option><option value="other">Lainnya</option></select>
@@ -703,6 +732,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null;
+  let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),stageRefreshTimer=null,hostMute=false;
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
