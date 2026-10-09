@@ -4,6 +4,19 @@
 ### Purpose
 NADMO LIVE is an independent, adult-oriented social broadcasting network for creators, DJs, gamers, esports communities, talk shows, entertainment, community information and future public-interest alerts. The project optimizes for creator agency, low operating cost, fair revenue shares, audience choice, useful public information, and reliable access — not coercive engagement or maximal commission. "Underground" means independent editorial identity, not a promise of legal immunity or unmoderated harmful content.
 
+### Founding principle — dari pengguna, oleh pengguna, untuk pengguna
+
+**Founder statement:** "NADMO besar itu bonus. Yang terpenting pengguna mendapat manfaat, bisa mencari rezeki; yang punya rezeki lebih bisa membantu sekaligus mendapatkan hiburan. Dari pengguna, oleh pengguna, untuk pengguna."
+
+- **User benefit precedes company scale.** Growth, investor interest and brand size are outcomes rather than the end goal. Evaluate roadmaps using creator earning opportunity, audience satisfaction, community utility, access and trust.
+- **Creators keep the greater share.** Keep the platform share low and transparent, while openly accounting for unavoidable bandwidth, payment, tax, moderation and operational costs. Revisit revenue splits transparently instead of silently changing terms.
+- **Voluntary support, no coercion.** Supporters can tip and purchase permitted exclusive experiences without deceptive virtual-currency conversion, artificial urgency, mandatory gifts or pay-to-be-heard practices.
+- **Governance accountable to users.** Publish clear conduct rules, contextual and proportional moderation, accessible appeals, feedback processes and transparency reporting; apply rules consistently regardless of political viewpoint, audience size or commercial influence.
+- **Creator independence.** Allow lawful AFK sessions, gaming, music with appropriate rights, independent discussion, criticism and mutual aid without arbitrary punishments.
+- **Useful even before profitable.** Optimize the free beta for reliability and accessible community information; scale hosting expenses in line with usage, without promising cost-free operations indefinitely.
+- **Future community voice.** Explore genuine creator and viewer participation in product decisions, not token voting or unverifiable claims that users own the platform.
+- **No false promises.** Don't advertise features, privacy protections, payouts, guaranteed uptime or crisis resilience before they're implemented and tested.
+
 ### Independent civic speech — not a party or anti-government platform
 - Mission: serve people, not power. NADMO LIVE is independent of parties, governments, corporate labels and organized harassment campaigns. Independence is not a declaration of hostility to any government or lawful institution.
 - People may criticize governments, officials, political parties, corporations, media, powerful communities and NADMO itself; support viewpoints across the spectrum, subject to laws and rights of others.
