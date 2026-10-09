@@ -43,7 +43,10 @@ jobs:
             ws.send(JSON.stringify({type:'chat',text:'still alive after 90 secs'}));
             for(let i=0;i<30;i++){if(logs.some(x=>x.type==='chat'))break;await delay(100)}
             if(!logs.some(x=>x.type==='chat'))throw Error('ROOM_STALE_AFTER_IDLE');
-            console.log('PASS: websocket and room held 90s without client heartbeat, chat works');
+            const count=logs.filter(x=>x.type==='heartbeat').length;
+            console.log('SERVER_HEARTBEATS '+count);
+            if(count<2)throw Error('Expected at least 2 Cloudflare server-side heartbeats');
+            console.log('PASS: websocket held 90s, chat works, server sent keepalive without APK changes');
             ws.close(1000,'QA finished');
           })().catch(e=>{console.error('SOAK_FAIL '+e.stack);process.exit(1)});
           NODE
