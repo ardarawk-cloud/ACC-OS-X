@@ -42,12 +42,12 @@ async function main(){
    assert.equal(layout.filterCount,6,'Category filters must remain available');
    assert.equal(layout.horizontalOverflow,false,'LIVE viewport has horizontal overflow');
    if(layout.emptyStateHeight!==null)assert.ok(layout.emptyStateHeight<=130,'Empty live feed must not have a giant placeholder');
-   await page.$eval('#searchLive',el=>{el.value='NADMO_TEST_NOT_FOUND';el.dispatchEvent(new Event('input',{bubbles:true}))});
-   const filtered=await page.$eval('#liveCount',el=>el.textContent);
-   assert.ok(filtered.includes('0 LIVE ROOMS'),'Live search must remain functional');
    const out=path.join('nadmo-live-beta','qa','screenshots');
    fs.mkdirSync(out,{recursive:true});
    await page.screenshot({path:path.join(out,'live-compact-'+device.name+'.png')});
+   await page.$eval('#searchLive',el=>{el.value='NADMO_TEST_NOT_FOUND';el.dispatchEvent(new Event('input',{bubbles:true}))});
+   const filtered=await page.$eval('#liveCount',el=>el.textContent);
+   assert.ok(filtered.includes('0 LIVE ROOMS'),'Live search must remain functional');
    console.log('PASS compact '+device.name+' layout, visible rooms, live search, six categories and screenshot');
    assert.deepEqual(faults,[],'No browser JS exceptions');
    await page.close();
