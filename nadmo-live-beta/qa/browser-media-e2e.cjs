@@ -30,10 +30,12 @@ async function main(){
    await page.evaluateOnNewDocument(()=>{
     window.__nadmoQALog=[];
     window.__nadmoPCs=[];
+    window.__nadmoSockets=[];
     const RealWS=window.WebSocket;
     class QASocket extends RealWS{
      constructor(...args){
       super(...args);
+      window.__nadmoSockets.push(this);
       this.addEventListener('message',e=>{try{const m=JSON.parse(e.data);window.__nadmoQALog.push('RECV '+m.type+' '+(m.data?.description?.type||''))}catch(x){}});
       this.addEventListener('close',e=>window.__nadmoQALog.push('CLOSE '+e.code));
      }
@@ -99,8 +101,21 @@ async function main(){
   await waitText(host,'#watchState','AFK aktif',15000);
   await viewer.waitForFunction(()=>document.querySelector('#remote')?.srcObject?.getVideoTracks()?.[0]?.readyState==='live',{timeout:15000});
   console.log('PASS host AFK media switch without closing viewer stream');
+  await host.evaluate(()=>window.__nadmoSockets[0].close(1001,'QA network switch'));
+  await host.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('SEND resume')),{timeout:25000});
+  await waitText(host,'#watchState','Room berhasil dipulihkan',25000);
+  await viewer.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('RECV host-reconnected')),{timeout:25000});
+  await waitText(viewer,'#watchState','Video tersambung',35000);
+  const recovered=await viewer.$eval('#remote',el=>({
+    width:el.videoWidth,playing:el.readyState>=2,
+    tracks:el.srcObject?.getTracks().map(t=>t.kind+':'+t.readyState)
+  }));
+  assert.ok(recovered.width>0&&recovered.playing,'Recovered video must actually play');
+  assert.ok(recovered.tracks?.includes('audio:live')&&recovered.tracks?.includes('video:live'));
+  console.log('PASS video and audio resumed after host WebSocket network switch',JSON.stringify(recovered));
   await host.locator('#leave').click();
-  console.log('PASS host can end stream cleanly');
+  await viewer.waitForFunction(()=>document.querySelector('#explore')&&!document.querySelector('#explore').classList.contains('hide'),{timeout:12000});
+  console.log('PASS explicit end shows viewer Explore without useless reconnect attempts');
   assert.equal(faults.length,0,'Browser uncaught exceptions: '+faults.join('; '));
   console.log('ALL HEADLESS WEBRTC BROADCAST TESTS PASSED');
  }finally{await browser.close();}
