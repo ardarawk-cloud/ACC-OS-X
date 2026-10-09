@@ -160,9 +160,9 @@ async function main(){
   },{timeout:25000},viewerManualPCBefore);
   console.log('PASS manual refresh-video button restores viewer media without rejoining');
   await host.locator('#afkToggle').click();
-  await waitText(host,'#watchState','AFK aktif',15000);
+  await waitText(host,'#watchState','Kamera OFF',15000);
   await viewer.waitForFunction(()=>document.querySelector('#remote')?.srcObject?.getVideoTracks()?.[0]?.readyState==='live',{timeout:15000});
-  console.log('PASS host AFK media switch without closing viewer stream');
+  console.log('PASS host camera-standby media switch without closing viewer stream');
   await host.evaluate(()=>window.__nadmoSockets[0].close(4001,'QA network switch'));
   await host.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('SEND resume')),{timeout:25000});
   await waitText(host,'#watchState','Room berhasil dipulihkan',25000);
