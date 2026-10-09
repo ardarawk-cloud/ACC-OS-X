@@ -382,6 +382,15 @@ body.live-immersive #watch .sheet-close:focus-visible{
 body.live-immersive #watch .room-subtitle{font-size:10px}
 body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 
+.room-safety{margin:4px 0;color:#a8bca1;font:700 10px Arial,sans-serif;pointer-events:auto}
+.room-safety .safety-toolbar{display:flex;gap:5px;flex-wrap:wrap}
+.room-safety button{background:#19241b;color:#e8f5e2;border:1px solid #53654e;padding:6px 8px;min-height:28px;font:700 10px Arial,sans-serif}
+.room-safety .safety-panel{background:#101b13ee;border:1px solid #405040;border-radius:7px;padding:8px;max-height:180px;overflow:auto;margin-top:5px}
+.room-safety .safety-panel label{display:block;margin:4px 0}
+.room-safety select,.room-safety textarea{display:block;width:100%;box-sizing:border-box;background:#121e14;color:#eaffdf;border:1px solid #53654e;padding:7px;font:12px Arial,sans-serif;margin-bottom:6px}
+.room-safety .safety-panel .safety-guest{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #374936;gap:5px;padding:5px 0;flex-wrap:wrap}
+.room-safety .safety-panel .safety-guest .actions{display:flex;gap:4px;flex-wrap:wrap}
+body.live-immersive #watch .room-safety{pointer-events:auto}
 </style></head>
 <body>
 <div class="app">
@@ -528,7 +537,18 @@ body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-o
     <button type="button" data-pc-sawer="custom">CUSTOM</button>
     <small>PREVIEW · BELUM AKTIF</small>
   </div>
-  <div class="panel live-chat"><div class="show-label"><b>BACKCHANNEL</b><small>LIVE CHAT</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button><button type="button" class="live-bar-button" id="giftQuick" aria-label="Saweran rupiah" title="Sawer">🎁</button><button type="button" class="live-bar-button" id="moreQuick" aria-label="Pengaturan live" title="Pengaturan">⚙</button></div></div>
+  <div class="panel live-chat"><div class="show-label"><b>BACKCHANNEL</b><small>LIVE CHAT</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button><button type="button" class="live-bar-button" id="giftQuick" aria-label="Saweran rupiah" title="Sawer">🎁</button><button type="button" class="live-bar-button" id="moreQuick" aria-label="Pengaturan live" title="Pengaturan">⚙</button></div>
+<div class="room-safety">
+ <div class="safety-toolbar"><button id="reportLive" type="button" hidden>LAPORKAN LIVE</button><button id="hostModeration" type="button" hidden>MODERASI PENONTON</button></div>
+ <div id="reportPanel" class="safety-panel hide">
+  <label for="reportReason">ALASAN LAPORAN</label>
+  <select id="reportReason"><option value="harassment">Pelecehan</option><option value="threats">Ancaman</option><option value="fraud">Penipuan</option><option value="impersonation">Penyamaran identitas</option><option value="copyright">Hak cipta</option><option value="other">Lainnya</option></select>
+  <label for="reportDetails">KETERANGAN (OPSIONAL)</label>
+  <textarea id="reportDetails" rows="2" maxlength="300" placeholder="Jelaskan kejadian, jangan unggah data identitas."></textarea>
+  <button type="button" id="submitLiveReport">KIRIM LAPORAN</button><p id="reportStatus" role="status">Disimpan untuk peninjauan. Operator belum aktif 24 jam.</p>
+ </div>
+ <div id="moderationPanel" class="safety-panel hide" aria-label="Moderasi penonton"></div>
+</div></div>
 </section>
 <section id="tv" class="hide">
   <div class="page-top"><div><span class="eyebrow">FREQUENCY / 03</span><h1>NADMO TV<span style="color:var(--neon)">.</span></h1></div><span class="edition">BROADCAST</span></div>
@@ -650,7 +670,7 @@ body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-o
  const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings'];
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
- let activeAccount=null, syncedPosts=[];
+ let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set();
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
@@ -1264,20 +1284,46 @@ body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-o
  window.addEventListener('pageshow',event=>{if(event.persisted)restoreForeground()});
   function rtc(){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});pc.oniceconnectionstatechange=()=>{if(pc.iceConnectionState==='failed')notice('Video belum tersambung. Koneksi ini mungkin membutuhkan relay TURN; uji jaringan lain atau tunggu peningkatan SFU.','watchState')};return pc}
  function signal(to,data){transmit({type:'signal',to,data})}
+ function renderHostModeration(){
+  const panel=$('moderationPanel');panel.replaceChildren();
+  if(!host||!currentRoom)return;
+  const note=document.createElement('small');
+  note.textContent='Mute berlaku pada sesi ini; block hanya untuk akun login. Penonton anonim dapat kembali setelah kick.';
+  panel.append(note);
+  if(!peers.size){const empty=document.createElement('p');empty.textContent='Belum ada penonton terhubung.';panel.append(empty)}
+  for(const id of peers.keys()){
+   const line=document.createElement('div');line.className='safety-guest';
+   const name=document.createElement('small');name.textContent='VIEWER '+id.slice(-6);
+   const actions=document.createElement('span');actions.className='actions';
+   for(const action of [mutedViewerIds.has(id)?'unmute':'mute','kick','block']){
+    const btn=document.createElement('button');btn.type='button';btn.textContent=action.toUpperCase();
+    btn.setAttribute('aria-label',action+' '+id.slice(-6));btn.onclick=()=>transmit({type:'moderate',action,targetId:id});actions.append(btn);
+   }
+   line.append(name,actions);panel.append(line);
+  }
+ }
+ $('reportLive').onclick=()=>{$('reportPanel').classList.toggle('hide');$('moderationPanel').classList.add('hide')};
+ $('hostModeration').onclick=()=>{const open=$('moderationPanel').classList.contains('hide');renderHostModeration();$('moderationPanel').classList.toggle('hide',!open);$('reportPanel').classList.add('hide')};
+ $('submitLiveReport').onclick=()=>{
+  if(!currentRoom||host)return;
+  $('reportStatus').textContent='Mengirim laporan...';
+  transmit({type:'report',reason:$('reportReason').value,description:$('reportDetails').value.trim().slice(0,300)});
+ };
  async function attachViewer(id){
   if(!localStream||!currentRoom||!host)return;
   const old=peers.get(id);
   if(old){old.close();peers.delete(id);pendingIce.delete(id)}
-  const pc=rtc();peers.set(id,pc);
+  const pc=rtc();peers.set(id,pc);renderHostModeration();
   localStream.getTracks().filter(t=>t.readyState==='live').forEach(t=>pc.addTrack(t,localStream));
   pc.onicecandidate=e=>{if(e.candidate&&peers.get(id)===pc)signal(id,{candidate:e.candidate})};
   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
   if(peers.get(id)===pc)signal(id,{description:pc.localDescription,reset:true});
 }
  async function incoming(m){
-  if(m.type==='created'){mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
-  if(m.type==='joined'){closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
+  if(m.type==='created'){$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='joined'){$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
   if(m.type==='resumed'){
+    $('reportLive').hidden=true;$('hostModeration').hidden=false;
     mirrorBroadcast=m.mirrorBroadcast===true;applyMirroring();
     $('watchTitle').textContent=m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host');
     stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('net').textContent='SERVER ONLINE';
@@ -1324,7 +1370,7 @@ body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-o
   if(m.type==='host-visibility'&&!host&&m.status==='background'){
     $('watchState').textContent='Host pindah ke background. Android mungkin menjeda video; menunggu siaran kembali.';
   }
-  if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id)}
+  if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id);mutedViewerIds.delete(m.id);renderHostModeration()}
   if(m.type==='signal'){
    if(!host&&m.data?.description?.type==='offer'&&m.data.reset&&peer){
      peer.close();peer=null;pendingIce.delete(m.from);$('remote').srcObject=null;
@@ -1339,8 +1385,15 @@ body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-o
    }
    if(m.data.candidate){if(!pc.remoteDescription){const q=pendingIce.get(m.from)||[];if(q.length<30)q.push(m.data.candidate);pendingIce.set(m.from,q)}else{try{await pc.addIceCandidate(m.data.candidate)}catch(e){console.warn(e)}}}
   }
-  if(m.type==='chat'){let div=document.createElement('div'),b=document.createElement('b');b.textContent=(m.name||'Viewer')+': ';div.append(b,document.createTextNode(m.text));$('chat').append(div);$('chat').scrollTop=$('chat').scrollHeight}
-  if(m.type==='error'){notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
+  if(m.type==='report-received'){$('reportStatus').textContent='Laporan '+m.id.slice(0,8)+' diterima. Menunggu peninjauan operator.';$('reportDetails').value='';flash('Laporan diterima');return}
+   if(m.type==='moderated'){if(m.action==='kick'||m.action==='block'){const reason=m.reason||'Dikeluarkan host';leave();flash(reason);return}flash(m.reason||'Status chat diperbarui');return}
+   if(m.type==='moderation-result'){
+    if(m.action==='mute')mutedViewerIds.add(m.targetId);
+    if(m.action==='unmute')mutedViewerIds.delete(m.targetId);
+    renderHostModeration();flash('Moderasi '+m.action.toUpperCase()+' berhasil');return
+   }
+   if(m.type==='chat'){let div=document.createElement('div'),b=document.createElement('b');b.textContent=(m.name||'Viewer')+': ';div.append(b,document.createTextNode(m.text));$('chat').append(div);$('chat').scrollTop=$('chat').scrollHeight}
+  if(m.type==='error'){if(!$('reportPanel').classList.contains('hide'))$('reportStatus').textContent=m.message||'Gagal mengirim laporan';notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
  $('createRoom').onclick=async()=>{
   if(!['camera','talk'].includes(selectedLiveMode)){notice('Mode '+selectedLiveMode+' belum memiliki source live resmi.','liveState');return}
@@ -1355,6 +1408,8 @@ body.live-immersive #watch #watchTitle{max-width:220px;white-space:nowrap;text-o
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
+  $('reportLive').hidden=true;$('hostModeration').hidden=true;
+  $('reportPanel').classList.add('hide');$('moderationPanel').classList.add('hide');mutedViewerIds.clear();
   closeLiveSheets();$('viewerTools').hidden=true;
   manuallyLeaving=true;stopRetry();
   if(socket){
