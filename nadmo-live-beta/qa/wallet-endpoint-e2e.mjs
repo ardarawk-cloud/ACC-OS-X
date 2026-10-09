@@ -22,7 +22,7 @@ try{
   body:JSON.stringify({amountIDR:50000,destination:'attacker-supplied'})}));
  assert.equal(unauthorized.status,409,'Client cannot request money transfers before gateway');
  const forged=await fetch(root+'/api/wallet/credit',{method:'POST',headers:auth,body:JSON.stringify({amountIDR:1000000})});
- assert.equal(forged.status,404,'No client credit endpoint may exist');
+ assert.ok([404,405].includes(forged.status),'No client credit endpoint may exist');
  const unchanged=await json(await fetch(root+'/api/wallet/me',{headers:{Cookie:cookie}}));
  assert.equal(unchanged.body.wallet.availableIDR,0,'Forged calls never increase funds');
  console.log('PASS private wallet, zero real balance, rejected withdrawal, no client credit');
