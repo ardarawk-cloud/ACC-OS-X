@@ -1,3 +1,4 @@
+import {accountEndpoint,getAccount} from './account.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling, no public onboarding, no content moderation service.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
@@ -41,17 +42,22 @@ export class RoomHub{
    for(const [key,room] of rooms){
     if(room.mode!=='public')continue;
     if(room.hostOfflineAt||!getHost(peers,room.hostId))continue;
-    list.push({id:room.id,title:room.title,category:room.category,viewers:roomCount(peers,room.id)});
+    list.push({id:room.id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,category:room.category,viewers:roomCount(peers,room.id)});
    }
    return Response.json({rooms:list});
   }
+  if(route.startsWith('/api/account/')||route.startsWith('/api/profile/')||route==='/api/payments/status'||route==='/api/streaming/capacity')
+   return accountEndpoint(this.ctx.storage,request);
   if(route!=='/ws'||request.headers.get('Upgrade')?.toLowerCase()!=='websocket'){
    return new Response('WebSocket upgrade required',{status:426});
   }
   if(this.sockets().length>=120)return new Response('Beta is at capacity',{status:503});
   const pair=new WebSocketPair(),client=pair[0],server=pair[1];
   this.ctx.acceptWebSocket(server);
-  save(server,{id:crypto.randomUUID().replace(/-/g,'').slice(0,16),roomId:null,role:null,lastWindow:0,events:0,lastChat:0});
+  const principal=await getAccount(this.ctx.storage,request);
+  save(server,{id:crypto.randomUUID().replace(/-/g,'').slice(0,16),roomId:null,role:null,lastWindow:0,events:0,lastChat:0,
+    accountId:principal?.id||null,handle:principal?.handle||null,displayName:principal?.name||null,
+    verifiedAdult:principal?.verifiedAdult===true,kycStatus:principal?.kycStatus||'NOT_CONFIGURED'});
   // A 25s server heartbeat keeps mobile network paths warm without an APK update.
   // The alarm is scheduled only while sockets are present; no idle background loop.
   if((await this.ctx.storage.getAlarm())===null)await this.ctx.storage.setAlarm(Date.now()+25000);
@@ -61,6 +67,9 @@ export class RoomHub{
   const sockets=this.sockets(),rooms=await this.findRooms();
   const now=Date.now();
   for(const [key,room] of rooms){
+   if(this.env.VERIFY_CREATOR_REQUIRED==='true'&&
+      (!s.accountId||s.accountId!==room.hostAccountId||s.kycStatus!=='verified'||!s.verifiedAdult))
+    return failure(ws,'Pemulihan streamer memerlukan sesi akun terverifikasi yang sama');
    if(room.hostOfflineAt&&now-room.hostOfflineAt>HOST_GRACE_MS){
     await this.ctx.storage.delete(key);
     for(const socket of sockets){
@@ -91,6 +100,10 @@ export class RoomHub{
   if(type==='leave'){await this.leave(ws,s);reply(ws,{type:'left'});return}
   if(type==='create'){
    if(s.roomId)return failure(ws,'Keluar dari room sebelumnya terlebih dahulu');
+   // Public launch: configure VERIFY_CREATOR_REQUIRED=true ONLY after KYC provider, auditing
+   // and account linking have been verified. Private beta currently accepts test hosts.
+   if(this.env.VERIFY_CREATOR_REQUIRED==='true'&&(!s.accountId||s.kycStatus!=='verified'||!s.verifiedAdult))
+    return failure(ws,'Akun streamer harus terverifikasi identitas 18+ sebelum GO LIVE.');
    const all=await this.findRooms();
    if(all.size>=ROOM_LIMIT)return failure(ws,'Room beta sudah penuh');
    const mode=msg.mode==='password'?'password':'public';
@@ -98,10 +111,13 @@ export class RoomHub{
    if(mode==='password'&&password.length<4)return failure(ws,'Kode private room minimal 4 karakter');
    const id=crypto.randomUUID().replace(/-/g,'').slice(0,12);
    const resumeToken=crypto.randomUUID()+crypto.randomUUID();
-   const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,createdAt:now};
+   const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',
+    hostName:s.displayName||txt(msg.hostName,60)||'Host',hostHandle:s.handle||null,
+    hostVerified:s.kycStatus==='verified'&&s.verifiedAdult===true,hostAccountId:s.accountId||null,
+    mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,createdAt:now};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
-   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false});
+   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified});
    return;
   }
   if(type==='resume'){
@@ -126,7 +142,7 @@ export class RoomHub{
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
    const viewers=peers.filter(x=>state(x).roomId===id&&state(x).role==='viewer').map(x=>state(x).id);
-   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true});
+   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified});
    for(const other of peers){if(state(other).roomId===id&&state(other).role==='viewer')reply(other,{type:'host-reconnected'})}
    return;
   }
@@ -140,7 +156,7 @@ export class RoomHub{
    if(roomCount(peers,id)>=VIEWER_LIMIT)return failure(ws,'Room beta penuh (maks. 4 penonton)');
    if(room.mode==='password'&&await sha(txt(msg.password,32))!==room.passwordHash)return failure(ws,'Kode akses salah');
    s.roomId=id;s.role='viewer';save(ws,s);
-   reply(ws,{type:'joined',id,title:room.title,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true});
+   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true});
    reply(host,{type:'viewer-joined',id:s.id});
    return;
   }
@@ -191,7 +207,7 @@ export class RoomHub{
    if(!text)return;
    if(now-(s.lastChat||0)<600)return failure(ws,'Tunggu sebelum mengirim chat');
    s.lastChat=now;save(ws,s);
-   const packet={type:'chat',name:s.role==='host'?'Host':'Viewer',text};
+   const packet={type:'chat',name:s.displayName||s.handle||(s.role==='host'?room.hostName||'Host':'Viewer'),handle:s.handle||null,verified:s.kycStatus==='verified'&&s.verifiedAdult===true,text};
    this.sockets().filter(x=>state(x).roomId===room.id).forEach(x=>reply(x,packet));
    return;
   }
@@ -321,7 +337,8 @@ export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
-  if(request.method!=='GET')return new Response('Method Not Allowed',{status:405});
+  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/'))
+    return new Response('Method Not Allowed',{status:405});
   if(url.pathname==='/app')return Response.redirect(url.origin+'/app/',308);
   if(url.pathname==='/app/'||url.pathname==='/app/index.html'){
     const asset=await env.ASSETS.fetch(new Request(url.origin+'/app/index.html'));
@@ -337,7 +354,9 @@ export default {
   if(url.pathname==='/'){
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
-  if(url.pathname!=='/api/rooms'&&url.pathname!=='/ws')return new Response('Not Found',{status:404});
+  const isAccountApi=url.pathname.startsWith('/api/account/')||url.pathname.startsWith('/api/profile/')||
+    url.pathname==='/api/payments/status'||url.pathname==='/api/streaming/capacity';
+  if(!isAccountApi&&url.pathname!=='/api/rooms'&&url.pathname!=='/ws')return new Response('Not Found',{status:404});
   if(url.pathname==='/ws'){
    const origin=request.headers.get('Origin');
    if(origin!==ALLOWED_ORIGIN&&origin!==url.origin)return new Response('Origin not allowed',{status:403});
@@ -345,6 +364,13 @@ export default {
   }
   const hub=env.ROOM_HUB.get(env.ROOM_HUB.idFromName('nadmo-beta-v1'));
   if(url.pathname==='/ws')return hub.fetch(request);
+  if(isAccountApi){
+   // Same-origin mutating requests only; never trust a spoofed visitor IP header.
+   const headers=new Headers(request.headers);
+   headers.set('x-nadmo-client-ip',request.headers.get('CF-Connecting-IP')||'unknown');
+   const r=await hub.fetch(new Request(request,{headers}));
+   return cors(request,r);
+  }
   const r=await hub.fetch(new Request('https://rooms-internal/rooms'));
   return cors(request,r);
  }
