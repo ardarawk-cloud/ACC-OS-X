@@ -652,13 +652,13 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   </aside>
   <div class="page-top"><div>
   <button id="hostProfileCard" type="button" aria-label="Lihat profil host">
-   <span class="host-avatar" aria-hidden="true">N/</span><span class="host-details"><b id="watchTitle">HOST</b><small id="hostIdentityHandle">PROFIL HOST</small></span><span class="onair-label">● LIVE</span>
+   <span class="host-avatar" aria-hidden="true"><span>N/</span><img id="hostAvatarImage" alt="" hidden></span><span class="host-details"><b id="watchTitle">HOST</b><small id="hostIdentityHandle">PROFIL HOST</small></span><span class="onair-label">● LIVE</span>
   </button><div id="watchRoomSubtitle" class="room-subtitle"></div>
  </div></div>
  <div id="guestStageGrid" aria-label="Tamu di panggung live"></div>
  <div id="hostProfilePanel" class="panel" role="dialog" aria-label="Profil host" aria-modal="true">
   <button type="button" class="sheet-close" id="closeHostProfile" aria-label="Tutup profil host">✕</button>
-  <h3 id="hostPublicName">Host</h3><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
+  <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
   <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
@@ -813,11 +813,12 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
     <div class="profile-hero">
       <div class="profile-avatar" aria-hidden="true"><span>N/</span><img id="profileAvatarImage" alt="" hidden></div>
       <div><b id="profileDisplayName">Profil NADMO</b><small id="profileDisplayHandle">@username</small></div>
-      <button type="button" class="btn secondary" id="editProfileBtn">EDIT</button>
+      <button type="button" class="btn secondary" id="avatarChoose" hidden>FOTO</button><button type="button" class="btn secondary" id="editProfileBtn">EDIT</button>
     </div>
+    <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Pilih foto profil"><div id="avatarUploadStatus" role="status" aria-live="polite"></div>
     <p id="profileDisplayBio" class="profile-bio">Tampilkan siapa kamu, bisnis dan karya yang kamu punya.</p>
     <div id="profileBusinessLinks" class="profile-links"></div>
-    <div id="profileEditBox" class="panel hide">
+    <div id="profileEditBox" class="panel hide"><button type="button" class="btn ghost" id="avatarRemove" hidden>HAPUS FOTO PROFIL</button>
       <label for="profileName">NAMA TAMPILAN</label>
       <input class="field" id="profileName" maxlength="60" placeholder="Nama kreator / bisnis">
       <label for="profileHandle">USERNAME</label>
