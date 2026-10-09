@@ -119,7 +119,15 @@ async function main(){
   assert.ok(recovered.width>0&&recovered.playing,'Recovered video must actually play');
   assert.ok(recovered.tracks?.includes('audio:live')&&recovered.tracks?.includes('video:live'));
   console.log('PASS video and audio resumed after host WebSocket network switch',JSON.stringify(recovered));
+  await host.$eval('#leave',el=>el.scrollIntoView({block:'center',behavior:'instant'}));
+  console.log('LEAVE_BUTTON_GEOMETRY '+JSON.stringify(await host.$eval('#leave',el=>{
+    const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    return{y:r.y,height:r.height,hit:hit?.tagName,hitId:hit?.id,text:hit?.textContent?.slice(0,35)}
+  })));
   await host.locator('#leave').click();
+  const sentLeave=await host.evaluate(()=>window.__nadmoQALog?.some(x=>x.startsWith('SEND leave')));
+  console.log('HOST_LEAVE_SENT '+JSON.stringify({sentLeave,events:await host.evaluate(()=>window.__nadmoQALog?.slice(-12))}));
+  assert.ok(sentLeave,'Actual Leave command must be sent');
   try{
     await viewer.waitForFunction(()=>document.querySelector('#explore')&&!document.querySelector('#explore').classList.contains('hide'),{timeout:12000});
   }catch(e){
