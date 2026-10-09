@@ -135,7 +135,7 @@ async function main(){
 
   // A PC viewer must see the phone-shaped image in the center, not a
   // screen-wide 'cover' crop that stretches the camera across the monitor.
-  await viewer.setViewport({width:1280,height:800,deviceScaleFactor:1,isMobile:false,hasTouch:false});
+  await viewer.setViewport({width:1280,height:800,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   const pcStage=await viewer.evaluate(()=>{
     const rect=sel=>{const r=document.querySelector(sel).getBoundingClientRect();return [r.left,r.top,r.width,r.height]};
     return {
