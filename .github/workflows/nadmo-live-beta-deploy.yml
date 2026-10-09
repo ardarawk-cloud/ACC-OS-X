@@ -94,6 +94,8 @@ jobs:
         run: node nadmo-live-beta/qa/account-auth-e2e.cjs
       - name: Verify supporter badge tier preview and immutable verified balances in real mobile browser
         run: node nadmo-live-beta/qa/supporter-badges-e2e.cjs
+      - name: Verify mobile ME, direct wallet and public social post flow
+        run: node nadmo-live-beta/qa/me-one-mobile-e2e.cjs
       - name: Verify mobile viewer reports and host moderation UI
         run: node nadmo-live-beta/qa/room-safety-ui-e2e.cjs
       - name: Verify LIVE discovery compact on mobile and PC (screenshots)
