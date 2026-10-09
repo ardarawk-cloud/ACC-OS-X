@@ -147,6 +147,36 @@ export class RoomHub{
   if(!s.roomId)return failure(ws,'Belum tergabung dalam room');
   const room=await this.ctx.storage.get('room:'+s.roomId);
   if(!room)return failure(ws,'Room sudah tidak aktif');
+  if(type==='set-access'){
+   if(s.role!=='host'||room.hostId!==s.id)return failure(ws,'Hanya host yang dapat mengubah akses siaran');
+   const mode=msg.mode==='password'?'password':msg.mode==='public'?'public':null;
+   if(!mode)return failure(ws,'Mode akses tidak dikenal');
+   let passwordHash=null,offer=null;
+   if(mode==='password'){
+    const code=txt(msg.password,32);
+    if(code.length<4)return failure(ws,'Kode private minimal 4 karakter');
+    const amount=Number(msg.amount),minutes=Number(msg.minutes);
+    if(!Number.isSafeInteger(amount)||amount<1000||amount>10000000||![10,30,60].includes(minutes))return failure(ws,'Tarif atau durasi tidak valid');
+    passwordHash=await sha(code);
+    // PRICE LABEL ONLY: never claim a real transaction or time entitlement without payment validation.
+    offer={amount,minutes,currency:'IDR',paymentEnabled:false};
+   }
+   room.mode=mode;room.passwordHash=passwordHash;room.offer=offer;
+   await this.ctx.storage.put('room:'+room.id,room);
+   let displaced=0;
+   if(mode==='password'){
+    for(const viewer of this.sockets()){
+     const meta=state(viewer);
+     if(meta.role!=='viewer'||meta.roomId!==room.id)continue;
+     const id=meta.id;meta.role=null;meta.roomId=null;save(viewer,meta);
+     reply(viewer,{type:'access-revoked',reason:'Host mengubah siaran menjadi privat. Akses ulang membutuhkan kode undangan. Pembayaran belum aktif.'});
+     reply(ws,{type:'viewer-left',id});
+     displaced++;
+    }
+   }
+   reply(ws,{type:'access-updated',mode,offer,displaced});
+   return;
+  }
   if(type==='chat'){
    const text=txt(msg.text,250);
    if(!text)return;
