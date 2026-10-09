@@ -592,6 +592,26 @@ export async function accountEndpoint(storage,request){
   const listed=lookupOriginal(feed,id);if(listed){listed.commentsCount=post.commentsCount;await storage.put('social-public-feed',feed)}
   return json({ok:true,comment,counts:{comments:post.commentsCount}},201);
  }
+ if(p==='/api/account/social/unrepost'&&method==='POST'){
+  const id=payload.id;
+  if(!postIdOK(id))return fail(400,'Postingan tidak valid');
+  const key=repostsKey(user.id),list=await storage.get(key)||[];
+  const owned=list.find(item=>item.originalId===id);
+  if(!owned)return json({ok:true,removed:false});
+  // Only the reposting account may remove its own entry.
+  await storage.put(key,list.filter(item=>item.originalId!==id));
+  const feed=await storage.get('social-public-feed')||[];
+  const original=await getOriginalPost(storage,id);
+  if(original){
+   original.repostsCount=Math.max(0,(original.repostsCount||0)-1);
+   await storage.put('social-post:'+id,original);
+  }
+  const kept=feed.filter(item=>!(item.id===owned.id&&item.accountId===user.id&&item.type==='repost'));
+  const listed=lookupOriginal(kept,id);
+  if(original&&listed)listed.repostsCount=original.repostsCount;
+  await storage.put('social-public-feed',kept);
+  return json({ok:true,removed:true,counts:{reposts:original?.repostsCount||0}});
+ }
  if(p==='/api/account/social/repost'&&method==='POST'){
   const id=payload.id;
   if(!postIdOK(id))return fail(400,'Postingan tidak valid');
