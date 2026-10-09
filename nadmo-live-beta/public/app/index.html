@@ -534,6 +534,12 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 #gameFaceCam{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);pointer-events:none}
 #gameSetup .face-actions{display:flex;gap:7px;flex-wrap:wrap}
 #gameSetup .face-actions button{flex:1;min-width:75px;font:800 10px Arial,sans-serif;min-height:38px;padding:8px}
+
+#guestStageGrid .stage-slot-number{position:absolute;z-index:3;top:4px;left:4px;min-width:21px;height:20px;display:grid;place-items:center;border-radius:11px;border:1px solid #b4dc8b;background:#0a130edc;color:#e5ffc7;padding:0 4px;font:800 10px/1 Arial,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none}
+#guestStageGrid .stage-guest-resize{touch-action:none}
+@media(max-width:360px){#guestStageGrid .stage-slot-number{top:3px;left:3px;min-width:19px;height:18px;font-size:9px}}
+#tipRecipientOptions{margin:8px 0 12px;max-height:110px;overflow-y:auto;display:flex;gap:5px;flex-wrap:wrap}
+#tipRecipientOptions button{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
 </style></head>
 <body>
 <div class="app">
@@ -847,6 +853,8 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
+ let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
+ let gameFaceStream=null,gameFaceDiameter=76;
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
@@ -1192,7 +1200,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
  updateFairFee();
  $('openPrivateControls').onclick=()=>$('privateControls').classList.toggle('hide');
  function closeLiveSheets(){
-  $('hostAccessPanel').classList.remove('sheet-open');$('viewerTipPanel').classList.remove('sheet-open');$('liveSettingsPanel').classList.remove('sheet-open');
+  $('hostAccessPanel').classList.remove('sheet-open');$('viewerTipPanel').classList.remove('sheet-open');$('liveSettingsPanel').classList.remove('sheet-open');$('hostProfilePanel').classList.remove('sheet-open');
   $('liveSheetBackdrop').classList.add('hide');
  }
  function applyMirroring(){
@@ -1217,7 +1225,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   transmit({type:'set-mirror',mirrored:enabled});
   $('mirrorStatus').textContent='Mengirim pengaturan mirror ke penonton...';
  };
- $('giftQuick').onclick=()=>{if(!host)openLiveSheet($('viewerTipPanel'))};
+ $('giftQuick').onclick=()=>{if(!host){setTipRecipient('host',hostPublicIdentity.name);openLiveSheet($('viewerTipPanel'))}};
  $('moreQuick').onclick=()=>{
   $('mirrorSettings').hidden=!host;
   $('settingsCamera').hidden=!host;
@@ -1245,7 +1253,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   $('liveSheetBackdrop').classList.remove('hide');
  }
  $('accessQuick').onclick=()=>{if(!host)return;openLiveSheet($('hostAccessPanel'));$('privateControls').classList.remove('hide')};
- $('tipQuick').onclick=()=>{if(host)return;openLiveSheet($('viewerTipPanel'))};
+ $('tipQuick').onclick=()=>{if(host)return;setTipRecipient('host',hostPublicIdentity.name);openLiveSheet($('viewerTipPanel'))};
  $('pcBack').onclick=()=>{$('leave').click()};
  document.querySelectorAll('#desktopSawerBar [data-pc-sawer]').forEach(button=>{
   button.onclick=()=>{
@@ -1292,6 +1300,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   for(const b of document.querySelectorAll('#liveModeGrid button')){
    const selected=b.dataset.liveMode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))
   }
+  if(mode!=='gaming'&&gameFaceStream){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON'}
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
   const copy={
@@ -1311,6 +1320,48 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   if(localStream&&!host){localStream.getTracks().forEach(t=>t.stop());localStream=null;stopTalkVisual();$('camera').srcObject=null}
  }
  document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>chooseMode(b.dataset.liveMode));
+
+ function gameFaceStop(){
+  if(gameFaceStream){gameFaceStream.getTracks().forEach(track=>track.stop());gameFaceStream=null}
+  $('gameFaceCam').srcObject=null;$('gameFaceFrame').classList.remove('active');
+ }
+ $('gameFaceToggle').onclick=async()=>{
+  if(gameFaceStream){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON';return}
+  try{
+   const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:480},height:{ideal:480}}});
+   if(selectedLiveMode!=='gaming'){stream.getTracks().forEach(track=>track.stop());return}
+   gameFaceStream=stream;$('gameFaceCam').srcObject=stream;
+   $('gameFaceFrame').classList.add('active');$('gameFaceToggle').textContent='KAMERA OFF';
+   $('gameCaptureStatus').textContent='Kamera siap untuk tata letak. Siaran layar game belum tersedia di Android.';
+  }catch(err){$('gameCaptureStatus').textContent='Kamera tidak tersedia: '+(err?.message||'izin ditolak')}
+ };
+ $('gameFaceSize').onclick=()=>{
+  gameFaceDiameter=gameFaceDiameter===76?104:gameFaceDiameter===104?64:76;
+  $('gameFaceFrame').style.width=gameFaceDiameter+'px';$('gameFaceFrame').style.height=gameFaceDiameter+'px';
+ };
+ $('gameFaceHide').onclick=()=>{
+  gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON';
+ };
+ $('gameFaceFrame').addEventListener('pointerdown',event=>{
+  if(event.button!==0)return;
+  event.preventDefault();
+  const target=$('gameFaceFrame'),parent=$('gameOverlayPreview'),bounds=parent.getBoundingClientRect();
+  const first={x:target.offsetLeft,y:target.offsetTop,clientX:event.clientX,clientY:event.clientY};
+  target.setPointerCapture?.(event.pointerId);
+  const move=e=>{
+   const x=Math.max(0,Math.min(bounds.width-target.offsetWidth,first.x+e.clientX-first.clientX));
+   const y=Math.max(0,Math.min(bounds.height-target.offsetHeight,first.y+e.clientY-first.clientY));
+   target.style.left=x+'px';target.style.top=y+'px';target.style.right='auto';
+  };
+  const finish=()=>{
+   target.removeEventListener('pointermove',move);
+   target.removeEventListener('pointerup',finish);target.removeEventListener('pointercancel',finish);
+  };
+  target.addEventListener('pointermove',move);
+  target.addEventListener('pointerup',finish,{once:true});
+  target.addEventListener('pointercancel',finish,{once:true});
+ });
+
  async function preview(){
   try{
    if(!navigator.mediaDevices?.getUserMedia)throw Error('Browser tidak mendukung media capture');
@@ -1534,10 +1585,74 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   $('guestJoinStatus').hidden=!message;
   $('guestJoinStatus').textContent=message||'';
  }
+ function normalizedRect(item){
+  if(!item||typeof item.id!=='string'||![item.x,item.y,item.w,item.h].every(n=>typeof n==='number'&&Number.isFinite(n)))return null;
+  if(item.x<0||item.y<0||item.w<18||item.h<15||item.x+item.w>100.01||item.y+item.h>100.01)return null;
+  return {id:item.id,x:item.x,y:item.y,w:item.w,h:item.h};
+ }
+ function normalizeLayout(value){
+  return Array.isArray(value)?value.map(normalizedRect).filter(Boolean).slice(0,9):[];
+ }
+ function stageDefaultRect(index,count){
+  const cols=count<=2?count:count<=4?2:3;
+  const rows=Math.ceil(count/cols),gap=1.3;
+  const w=(100-gap*(cols-1))/cols,h=(100-gap*(rows-1))/rows;
+  return {x:(index%cols)*(w+gap),y:Math.floor(index/cols)*(h+gap),w,h};
+ }
+ function stageRectFor(id){
+  const index=stageGuestsList.findIndex(g=>g.id===id);
+  return stageLayout.find(item=>item.id===id)||stageDefaultRect(Math.max(0,index),Math.max(1,stageGuestsList.length));
+ }
+ function paintStageRect(tile,rect){
+  for(const [key,value] of [['left',rect.x],['top',rect.y],['width',rect.w],['height',rect.h]])tile.style[key]=value+'%';
+ }
+ function publishStageLayout(){
+  if(!host||!currentRoom)return;
+  const roomIds=new Set(stageGuestsList.map(g=>g.id));
+  stageLayout=stageLayout.filter(r=>roomIds.has(r.id));
+  transmit({type:'stage-layout',layout:stageLayout});
+ }
+ function stageDrag(tile,id,event,isResize=false){
+  if(!host||event.button!==0||!currentRoom)return;
+  event.preventDefault();event.stopPropagation();selectedStageGuest=id;
+  document.querySelectorAll('#guestStageGrid .stage-guest-tile').forEach(e=>e.classList.toggle('stage-selected',e.dataset.id===id));
+  const parent=$('guestStageGrid'),bounds=parent.getBoundingClientRect();
+  if(bounds.width<30||bounds.height<30)return;
+  const initial=stageRectFor(id),x=event.clientX,y=event.clientY;
+  const rect={id,...initial},target=event.currentTarget;
+  target.setPointerCapture?.(event.pointerId);
+  let lastSent=0;
+  const move=e=>{
+   const dx=(e.clientX-x)/bounds.width*100,dy=(e.clientY-y)/bounds.height*100;
+   if(isResize){
+    rect.w=Math.round(Math.min(100-rect.x,Math.max(18,initial.w+dx))*10)/10;
+    rect.h=Math.round(Math.min(100-rect.y,Math.max(15,initial.h+dy))*10)/10;
+   }else{
+    rect.x=Math.round(Math.min(100-rect.w,Math.max(0,initial.x+dx))*10)/10;
+    rect.y=Math.round(Math.min(100-rect.h,Math.max(0,initial.y+dy))*10)/10;
+   }
+   paintStageRect(tile,rect);
+   stageLayout=stageLayout.filter(r=>r.id!==id).concat([rect]);
+   if(performance.now()-lastSent>=230){publishStageLayout();lastSent=performance.now()}
+  };
+  const finish=()=>{
+   target.removeEventListener('pointermove',move);
+   target.removeEventListener('pointerup',finish);
+   target.removeEventListener('pointercancel',finish);
+   publishStageLayout();
+  };
+  target.addEventListener('pointermove',move);
+  target.addEventListener('pointerup',finish,{once:true});
+  target.addEventListener('pointercancel',finish,{once:true});
+ }
  function renderStageGuests(){
   const panel=$('guestStageGrid');panel.replaceChildren();
-  for(const guest of stageGuestsList){
-   const tile=document.createElement('div');tile.className='stage-guest-tile';tile.dataset.camera=guest.camera?'on':'off';
+  for(const [index,guest] of stageGuestsList.entries()){
+   const tile=document.createElement('div');tile.className='stage-guest-tile';tile.dataset.id=guest.id;
+   tile.dataset.camera=guest.camera?'on':'off';tile.tabIndex=host?0:-1;
+   tile.setAttribute('aria-label','Tamu '+(guest.name||index+1));
+   paintStageRect(tile,stageRectFor(guest.id));
+   tile.classList.toggle('stage-selected',host&&selectedStageGuest===guest.id);
    const stream=guest.id===selfId&&guestOnStage?guestStream:guestRemoteStreams.get(guest.streamId);
    if(stream){
     const player=document.createElement('video');
@@ -1546,11 +1661,84 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
     tile.append(player);
    }
    const fallback=document.createElement('div');fallback.className='stage-fallback';fallback.textContent=guest.camera?'●':'♫';
+   const number=document.createElement('span');number.className='stage-slot-number';number.textContent=String(index+1).padStart(2,'0');
    const title=document.createElement('small');title.className='stage-tag';
    title.textContent=(guest.id===selfId?'ANDA':guest.name||'Tamu')+' · '+(guest.mic?'MIC ON':'MIC OFF')+' · '+(guest.camera?'CAM':'VOICE');
-   tile.append(fallback,title);panel.append(tile);
+   tile.append(fallback,number,title);
+   if(host){
+    tile.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;stageDrag(tile,guest.id,e)});
+    tile.addEventListener('keydown',e=>{
+     if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+     e.preventDefault();const rect={id:guest.id,...stageRectFor(guest.id)},delta=e.shiftKey?2:1;
+     if(e.shiftKey){if(e.key==='ArrowRight')rect.w=Math.min(100-rect.x,rect.w+delta);
+      if(e.key==='ArrowLeft')rect.w=Math.max(18,rect.w-delta);
+      if(e.key==='ArrowDown')rect.h=Math.min(100-rect.y,rect.h+delta);
+      if(e.key==='ArrowUp')rect.h=Math.max(15,rect.h-delta);
+     }else{if(e.key==='ArrowRight')rect.x=Math.min(100-rect.w,rect.x+delta);
+      if(e.key==='ArrowLeft')rect.x=Math.max(0,rect.x-delta);
+      if(e.key==='ArrowDown')rect.y=Math.min(100-rect.h,rect.y+delta);
+      if(e.key==='ArrowUp')rect.y=Math.max(0,rect.y-delta)}
+     stageLayout=stageLayout.filter(r=>r.id!==guest.id).concat([rect]);paintStageRect(tile,rect);publishStageLayout();
+    });
+    const grip=document.createElement('button');grip.type='button';grip.className='stage-guest-resize';
+    grip.textContent='⤡';grip.setAttribute('aria-label','Ubah ukuran '+(guest.name||'Tamu'));
+    grip.addEventListener('pointerdown',e=>stageDrag(tile,guest.id,e,true));
+    tile.append(grip);
+   }else if(guest.id!==selfId){
+    const tip=document.createElement('button');tip.type='button';tip.className='stage-guest-tip';
+    tip.textContent='Rp';tip.setAttribute('aria-label','Sawer '+(guest.name||'tamu'));
+    tip.onclick=()=>{setTipRecipient(guest.id,guest.name||'Tamu');openLiveSheet($('viewerTipPanel'))};
+    tile.append(tip);
+   }
+   panel.append(tile);
+  }
+  $('stageLayoutReset').hidden=!host||stageGuestsList.length===0;
+ }
+
+ function setTipRecipient(id,name){
+  tipRecipient={id,name:String(name||'Host').slice(0,60)};
+  $('tipRecipientName').textContent=tipRecipient.name.toUpperCase();
+  const target=$('tipRecipientOptions');target.replaceChildren();
+  const options=[{id:'host',name:hostPublicIdentity.name||'Host'}].concat(
+   stageGuestsList.map(g=>({id:g.id,name:g.name||'Tamu'})));
+  for(const option of options){
+   const button=document.createElement('button');button.type='button';
+   button.className=option.id===id?'active':'';button.textContent=option.name.slice(0,18);
+   button.onclick=()=>setTipRecipient(option.id,option.name);
+   target.append(button);
   }
  }
+ function updateHostCard(room){
+  const name=String(room.hostName||'Host').slice(0,60),handle=room.hostHandle||'';
+  hostPublicIdentity={name,handle};
+  $('hostIdentityHandle').textContent=handle?'@'+handle:'KREATOR NADMO';
+  $('hostPublicName').textContent=name;
+  $('hostPublicBio').textContent='';
+  $('hostPublicLinks').replaceChildren();
+  setTipRecipient('host',name);
+  if(!handle)return;
+  accountRequest('/api/profile/'+encodeURIComponent(handle)).then(result=>{
+   if(hostPublicIdentity.handle!==handle||!currentRoom)return;
+   const profile=result.profile;
+   if(!profile)return;
+   $('hostPublicBio').textContent=profile.bio||'';
+   for(const item of profile.links||[]){
+    const link=directLink(item.url,item.label,'profile-business-link');
+    if(link)$('hostPublicLinks').append(link);
+   }
+  }).catch(()=>{});
+ }
+ $('hostProfileCard').onclick=()=>openLiveSheet($('hostProfilePanel'));
+ $('closeHostProfile').onclick=closeLiveSheets;
+ $('hostProfileTip').onclick=()=>{
+  if(host)return;
+  setTipRecipient('host',hostPublicIdentity.name);
+  openLiveSheet($('viewerTipPanel'));
+ };
+ $('stageLayoutReset').onclick=()=>{
+  if(!host)return;
+  stageLayout=[];selectedStageGuest=null;renderStageGuests();publishStageLayout();
+ };
  function renderGuestRequests(){
   const panel=$('guestRequestPanel');panel.replaceChildren();
   const info=document.createElement('small');
@@ -1700,12 +1888,12 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   if(peers.get(id)===pc)signal(id,{description:pc.localDescription,reset:true});
  }
  async function incoming(m){
-  if(m.type==='created'){stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
-  if(m.type==='joined'){stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
-  if(m.type==='resumed'){refreshGuestButtons();renderStageGuests();
+  if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='joined'){stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
+  if(m.type==='resumed'){stageLayout=normalizeLayout(m.layout);refreshGuestButtons();renderStageGuests();
     $('reportLive').hidden=true;$('hostModeration').hidden=false;
     mirrorBroadcast=m.mirrorBroadcast===true;applyMirroring();
-    setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));
+    setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);
     stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('net').textContent='SERVER ONLINE';
     for(const pc of peers.values())pc.close();peers.clear();pendingIce.clear();
     $('restartRoom').classList.add('hide');
@@ -1773,7 +1961,9 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    $('remote').srcObject=null;guestStatus('Turun panggung. Menonton kembali.');
    transmit({type:'refresh-media'});return;
   }
+  if(m.type==='stage-layout-updated'){stageLayout=normalizeLayout(m.layout);renderStageGuests();return}
   if(m.type==='stage-updated'){
+   stageLayout=normalizeLayout(m.layout);
    stageGuestsList=Array.isArray(m.guests)?m.guests.slice(0,9):[];
    renderStageGuests();refreshGuestButtons();return;
   }
@@ -1849,7 +2039,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
   if(stageRefreshTimer){clearTimeout(stageRefreshTimer);stageRefreshTimer=null}
-  stopGuestCapture();stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();
+  stopGuestCapture();stageLayout=[];selectedStageGuest=null;stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();
   $('guestRequestPanel').classList.add('hide');guestStatus('');renderStageGuests();refreshGuestButtons();
   $('reportLive').hidden=true;$('hostModeration').hidden=true;
   $('reportPanel').classList.add('hide');$('moderationPanel').classList.add('hide');mutedViewerIds.clear();
@@ -1876,7 +2066,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   if(peer){peer.close();peer=null}
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
-  $('remote').srcObject=null;$('remote').muted=false;$('chat').replaceChildren();
+  $('remote').srcObject=null;$('remote').muted=false;$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
   $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';mirrorBroadcast=false;$('giftQuick').hidden=false;$('endLiveConfirm').classList.add('hide');applyMirroring();
   $('afkToggle').textContent='▤ KAMERA OFF';
   $('stopCamera').click();show('explore');manuallyLeaving=false;
