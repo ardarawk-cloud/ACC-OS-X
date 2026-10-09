@@ -592,6 +592,62 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 .room .room-art .room-avatar-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .stage-guest-tile .stage-guest-fallback-avatar{position:absolute;width:58px;height:58px;max-width:75%;max-height:65%;aspect-ratio:1;object-fit:cover;border-radius:50%;border:1px solid #c1e6a7;pointer-events:none}
 #chat .chat-user-avatar{display:inline-block;width:19px;height:19px;object-fit:cover;border-radius:50%;vertical-align:middle;margin:0 5px 0 0;border:1px solid #d3e6b1}
+
+/* One NADMO identity: profile first, full-page destinations behind the three-dot menu. */
+#settings{max-width:720px;margin:0 auto}
+#settings .nadmo-profile{margin:6px 0 14px}
+.me-top{display:flex;align-items:center;justify-content:space-between;margin:0 0 18px;padding:7px 0 11px;border-bottom:1px solid #33422d}
+.me-top span{font:900 20px Impact,Arial,sans-serif;letter-spacing:.7px}
+.me-top button{min-width:42px;height:43px;font:900 30px Arial,sans-serif;color:#e7f2d8;background:none;border:0;cursor:pointer}
+#settings .profile-hero{background:transparent;border:0;padding:8px 0 16px;gap:12px}
+#settings .profile-avatar{flex-basis:64px;width:64px;height:64px}
+#settings .profile-hero b{font-size:19px}
+#settings #profileDisplayBio{font-size:13px;color:#c5d2bd;margin:0 0 13px}
+.me-guest{padding:20px 10px;text-align:center}
+.me-guest .profile-avatar{margin:0 auto 16px}
+.me-guest h2{font-size:22px}
+.me-guest p{font-size:13px;color:#bbc4b7;margin:14px 0}
+.me-profile-actions{display:grid;grid-template-columns:1fr;gap:9px;margin:10px 0 20px}
+.me-profile-actions button{display:flex;align-items:center;justify-content:space-between;width:100%;border-radius:12px;border:1px solid #43593f;padding:15px;background:#1b261e;color:#eaf3e3;font:800 12px Arial;cursor:pointer}
+.me-profile-actions button b{margin-left:auto;padding:0 12px;color:#e4fd85;font-variant-numeric:tabular-nums;font-size:15px}
+.me-profile-actions button span:last-child{font-size:20px;color:#a7b3a4}
+.me-content-header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #40553e;margin:22px 0 13px;padding-bottom:10px}
+.me-content-header b{font:900 15px Arial,sans-serif;letter-spacing:.4px}
+.me-content-header h2{font-size:24px}
+.me-content-header button{border:1px solid #6e8b55;border-radius:8px;color:#d9f2c3;background:#263625;padding:9px 13px;font-weight:800;cursor:pointer}
+.subpage-top{display:flex;align-items:center;gap:12px;margin:6px 0 22px}
+.subpage-top h2{font-size:clamp(18px,5vw,24px);line-height:1.2}
+.subpage-top .subBack{width:45px;height:45px;flex:0 0 45px;background:transparent;color:#fff;border:0;font:400 35px Arial;cursor:pointer}
+.me-menu-label{color:#9ca89c;margin:24px 6px 10px;font:700 12px Arial}
+.me-menu{border-radius:14px;background:#202220;overflow:hidden;margin:8px 0 16px}
+.me-menu button{display:flex;align-items:center;gap:13px;min-height:60px;padding:14px 18px;width:100%;border:0;border-bottom:1px solid #343734;color:#b1b8b0;background:transparent;text-align:left;font:900 16px Arial;cursor:pointer}
+.me-menu button:last-child{border-bottom:0}
+.me-menu button span{flex:1;color:#f3f4f1}
+.me-menu button b{color:#848c83;font-size:24px;font-weight:400}
+.me-menu button:active{background:#2d342d}
+#profilePublishedPosts .profile-post-card,#socialPublicFeed .profile-post-card{background:#151f17;border:1px solid #344b35;border-radius:10px;padding:13px;margin:9px 0;overflow-wrap:anywhere}
+#socialPublicFeed .post-top{margin-bottom:9px}
+#socialPublicFeed .post-top img{width:29px;height:29px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:8px}
+#accountPage #profileEditBox{margin-top:17px}
+#accountPage #profileBusinessLinks{display:none}
+#accountPage #profileEditBox .show-label,#accountPage #profileEditBox .profile-edit-row,
+#accountPage #profileEditLinks,#accountPage #profileAddLink{display:none!important}
+#accountPage .account-card{margin-bottom:14px}
+#walletPage,#supporterPage,#authPage,#accountPage,#preferencesPage,#draftsPage,#privacyPage,#socialPage,#messagesPage{max-width:720px;margin:0 auto;padding:0 1px 32px}
+#walletPage .wallet-panel{margin:8px 0}
+#walletPage #walletDetails>summary{display:none}
+#walletPage .wallet-panel details{padding-top:9px}
+#socialComposer{border:1px solid #3b5537;border-radius:12px;padding:13px;margin:14px 0}
+#socialPage .me-menu{margin-top:10px}
+.me-beta-tag{font:800 11px Arial;color:var(--neon)}
+.me-message-search{border:1px solid #405640;border-radius:13px;padding:14px;margin-top:10px}
+.me-message-search label{display:block;color:#c2d4b9;font:800 10px Arial;margin-bottom:9px}
+.me-message-search .field{margin-bottom:10px}
+.message-bubbles{min-height:230px;max-height:49dvh;overflow:auto;display:flex;flex-direction:column;gap:9px;border-top:1px solid #3c4e3a;padding:12px 0}
+.message-bubble{max-width:85%;background:#253127;color:#e4efe0;border-radius:12px;padding:10px 12px;font:12px/1.6 Arial;overflow-wrap:anywhere}
+.message-bubble.mine{align-self:flex-end;background:#3a562f}
+.message-request,.message-thread{padding:15px 12px;border-bottom:1px solid #344936;color:#f1f6e9;display:flex;align-items:center;gap:9px}
+.message-request button,.message-thread button{background:#30472d;border:1px solid #69835b;color:#e9f8df;padding:9px;border-radius:9px;font-weight:800}
 </style></head>
 <body>
 <div class="app">
