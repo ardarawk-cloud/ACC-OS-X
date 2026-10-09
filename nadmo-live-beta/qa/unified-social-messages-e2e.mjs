@@ -34,6 +34,23 @@ try{
  const own=await get('/api/social/reposts/me',cb);
  assert.equal(own.status,200);
  assert.equal(own.body.reposts[0].original.id,id);
+  // Unrepost is owner-only: cannot remove someone else's repost, and counters stay accurate.
+  const byOther=await action('/api/account/social/unrepost',ca,{id});
+  assert.equal(byOther.status,200);
+  assert.equal(byOther.body.removed,false);
+  assert.equal((await get('/api/social/reposts/me',cb)).body.reposts.length,1);
+  const undone=await action('/api/account/social/unrepost',cb,{id});
+  assert.equal(undone.status,200);
+  assert.equal(undone.body.removed,true);
+  assert.equal(undone.body.counts.reposts,0);
+  assert.equal((await get('/api/social/reposts/me',cb)).body.reposts.length,0);
+  assert.equal((await get('/api/social/engagement?id='+id)).body.counts.reposts,0);
+  assert.ok(!(await get('/api/social/feed')).body.posts.some(p=>p.id===repost.body.repostId));
+  assert.equal((await action('/api/account/social/unrepost',cb,{id})).body.removed,false);
+  // A removed repost may be shared again by its owner without stale duplicate state.
+  const againRepost=await action('/api/account/social/repost',cb,{id});
+  assert.equal(againRepost.status,201);
+  assert.equal((await get('/api/social/reposts/me',cb)).body.reposts.length,1);
 
  // Follow is account-bound and persists cross-device. Duplicate requests do not inflate counters.
  const firstFollow=await action('/api/account/follow',ca,{handle:j});

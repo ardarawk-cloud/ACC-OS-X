@@ -8,4 +8,10 @@ for(const [tab,label] of [['socialPage','SOSIAL'],['messagesPage','PESAN']]){
 for(const id of ['meFollowers','meFollowing','meFollowersCount','meFollowingCount','socialConnectionsPage'])assert.ok(html.includes('id="'+id+'"'));
 assert.ok(html.includes('transform:skew(-10deg)'));
 assert.ok(html.includes('data-tab="studio" class="broadcast"'));
-console.log('PASS navigation signature and follow UI static contract');
+// Repost is content-first: no avatar enlargement in ME, no duplicate heading.
+assert.match(html,/#meRepostedFeed \.post-top img\{width:28px;height:28px/);
+assert.match(html,/\.profile-post-card \.social-action-row\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+assert.ok(html.includes("const card=makePublicPost({...item.original,repostMe:true,repostId:item.id});"));
+assert.ok(html.includes("/api/account/social/unrepost"));
+assert.ok(html.includes("if(item.originalId&&!item.repostMe)"));
+console.log('PASS navigation signature, tiny avatar, compact social controls and repost removal static contract');
