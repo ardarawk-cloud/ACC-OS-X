@@ -603,6 +603,7 @@ export async function accountEndpoint(storage,request){
    avatarVersion:record.avatarVersion||0,text,videoUrl:videoUrl||null,likesCount:0,commentsCount:0,repostsCount:0,createdAt:Date.now(),status:'published'};
   const previous=await storage.get('auth-posts:'+user.id)||[];
   await storage.put('auth-posts:'+user.id,[post,...previous].slice(0,80));
+  await storage.put('social-post:'+post.id,post);
   const feed=await storage.get('social-public-feed')||[];
   await storage.put('social-public-feed',[post,...feed].slice(0,200));
   return json({ok:true,post},201);
