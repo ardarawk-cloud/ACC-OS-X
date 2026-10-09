@@ -556,6 +556,23 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 .wallet-panel #walletWithdraw:disabled{opacity:.55;cursor:not-allowed}
 .wallet-history{border-top:1px solid #40503d;padding-top:11px;font-size:11px;line-height:1.7;color:#adc0aa}
 .wallet-history>b{display:block;margin-bottom:4px;color:#e7f6da}
+
+/* Creator wallet; no bank details accepted until secure payout destination verification exists. */
+.wallet-panel{min-width:0;overflow:hidden}
+.wallet-panel[hidden]{display:none!important}
+.wallet-panel details[open]>summary{border-bottom:1px solid #354934}
+.wallet-panel .wallet-total strong{max-width:100%;font-size:clamp(25px,6vw,34px);overflow-wrap:anywhere}
+.wallet-panel .wallet-breakdown{min-width:0;align-items:center}
+.wallet-panel .wallet-breakdown>span{min-width:0}
+.wallet-panel .wallet-breakdown b{min-width:0;text-align:right;overflow-wrap:anywhere}
+.wallet-payout-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0 8px;padding:11px 0 0;border-top:1px solid #354934;font:800 12px/1.4 Arial,sans-serif}
+.wallet-payout-head span{border:1px solid #726b48;color:#e2d3a2;border-radius:20px;padding:4px 8px;white-space:nowrap;font:800 9px Arial,sans-serif}
+.wallet-payout-form{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;min-width:0}
+.wallet-payout-form label{font:800 10px/1.4 Arial,sans-serif;color:#b5c5af;margin-top:8px}
+.wallet-payout-form .field{width:100%;min-width:0;box-sizing:border-box;font-size:12px}
+.wallet-payout-form .field:disabled{opacity:.65;cursor:not-allowed}
+.wallet-panel .wallet-history{margin-top:15px}
+.wallet-panel #walletInfo{margin:10px 0 0}
 </style></head>
 <body>
 <div class="app">
@@ -839,17 +856,29 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    <small id="supporterStatus" role="status">Badge diberikan berdasarkan dukungan terverifikasi.</small>
    </details>
   </section>
-  <section class="wallet-panel" id="walletPanel" hidden aria-label="Dompet dan penarikan">
+  <section class="wallet-panel" id="walletPanel" hidden aria-label="Dompet dan tarik saldo kreator">
    <details id="walletDetails">
-    <summary><span>DOMPET & PENARIKAN</span><span>⌄</span></summary>
-    <div class="wallet-total"><small>SALDO TERSEDIA</small><strong id="walletAvailable">Rp0</strong></div>
-    <div class="wallet-breakdown"><span>Menunggu pencairan</span><b id="walletPending">Rp0</b></div>
-    <div class="wallet-breakdown"><span>Pendapatan bersih</span><b id="walletTotal">Rp0</b></div>
+    <summary><span>DOMPET KREATOR</span><span aria-hidden="true">⌄</span></summary>
+    <div class="wallet-total"><small>SALDO BISA DITARIK</small><strong id="walletAvailable">Rp0</strong></div>
+    <div class="wallet-breakdown"><span>Dalam proses pencairan</span><b id="walletPending">Rp0</b></div>
+    <div class="wallet-breakdown"><span>Penghasilan terverifikasi</span><b id="walletTotal">Rp0</b></div>
     <div class="wallet-breakdown"><span>Sudah dicairkan</span><b id="walletPaid">Rp0</b></div>
-    <p class="wallet-destination">Rekening pencairan belum terhubung.</p>
+    <div class="wallet-breakdown"><span>Pengembalian dana</span><b id="walletRefunded">Rp0</b></div>
+    <div class="wallet-payout-head"><b>TARIK SALDO</b><span id="walletPayoutBadge">BELUM AKTIF</span></div>
+    <p class="wallet-destination" id="walletBankStatus">Rekening pencairan belum terhubung.</p>
+    <div class="wallet-payout-form" aria-label="Persiapan rekening pencairan">
+     <label for="walletBankName">BANK TUJUAN</label>
+     <select id="walletBankName" class="field" disabled><option>Hubungkan rekening saat layanan tersedia</option></select>
+     <label for="walletAccountNo">NOMOR REKENING</label>
+     <input class="field" id="walletAccountNo" type="text" inputmode="numeric" autocomplete="off" disabled placeholder="Belum dapat diisi">
+     <label for="walletAccountHolder">NAMA PEMILIK REKENING</label>
+     <input class="field" id="walletAccountHolder" type="text" autocomplete="off" disabled placeholder="Menunggu verifikasi identitas">
+     <label for="walletAmount">JUMLAH PENARIKAN (RUPIAH)</label>
+     <input class="field" id="walletAmount" type="number" inputmode="numeric" min="1" step="1" disabled placeholder="Rp0">
+    </div>
     <button type="button" class="btn secondary" id="walletWithdraw" disabled>TARIK SALDO</button>
     <p id="walletInfo" role="status">Penarikan belum tersedia sampai pembayaran resmi aktif.</p>
-    <div class="wallet-history"><b>RIWAYAT</b><div id="walletHistory">Belum ada transaksi.</div></div>
+    <div class="wallet-history"><b>RIWAYAT SAWERAN & PENARIKAN</b><div id="walletHistory">Belum ada transaksi.</div></div>
    </details>
   </section>
   <div class="show-label"><b>PRIVASI & KEAMANAN</b></div>
@@ -1006,31 +1035,52 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
  }
 
  const walletCurrency=value=>'Rp'+new Intl.NumberFormat('id-ID').format(Math.max(0,Number(value)||0));
+ const walletStatusName={requested:'Diajukan',processing:'Diproses',paid:'Berhasil dicairkan',rejected:'Ditolak',
+  'tip-settled':'Saweran terverifikasi','tip-refunded':'Pengembalian dana','payout-settled':'Dana dicairkan'};
  async function loadWallet(){
   if(!activeAccount)return;
   try{
-   const result=await accountRequest('/api/wallet/me'),w=result.wallet||{};
+   const result=await accountRequest('/api/wallet/me'),w=result.wallet||{},cap=result.capability||{};
    $('walletAvailable').textContent=walletCurrency(w.availableIDR);
    $('walletPending').textContent=walletCurrency(w.pendingWithdrawalsIDR);
    $('walletTotal').textContent=walletCurrency(w.totalEarningsIDR);
    $('walletPaid').textContent=walletCurrency(w.paidOutIDR);
-   $('walletWithdraw').disabled=result.capability?.withdrawalsEnabled!==true;
-   $('walletInfo').textContent=result.capability?.withdrawalsEnabled===true
-     ?'Penarikan memerlukan verifikasi identitas dan rekening tujuan.'
-     :'Penarikan belum tersedia. Rekening dan pencairan disiapkan setelah pembayaran resmi aktif.';
+   $('walletRefunded').textContent=walletCurrency(w.refundedIDR);
+   // No payment endpoint, payout provider, or secure bank token vault is active in beta.
+   // Disable all sensitive data entry until proper bank verification is integrated.
+   const unlocked=cap.withdrawalsEnabled===true&&cap.providerConfigured===true
+    &&cap.bankDestinationEnabled===true&&result.identityVerified===true&&Number(w.availableIDR)>0;
+   $('walletWithdraw').disabled=!unlocked;
+   $('walletPayoutBadge').textContent=cap.withdrawalsEnabled?'VERIFIKASI DIPERLUKAN':'BELUM AKTIF';
+   $('walletBankStatus').textContent=cap.bankDestinationEnabled
+    ?'Rekening tujuan perlu verifikasi penyedia pembayaran.'
+    :'Rekening pencairan belum bisa ditambahkan.';
+   $('walletInfo').textContent=!cap.withdrawalsEnabled
+    ?'Pencairan menunggu pembayaran resmi. Tidak ada rekening atau permintaan tarik saldo yang diproses.'
+    :!result.identityVerified
+     ?'Verifikasi identitas kreator diperlukan sebelum tarik saldo.'
+     :'Penarikan hanya ke rekening yang terverifikasi dan dari saldo yang telah masuk.';
    const history=$('walletHistory');history.replaceChildren();
-   const entries=[...(w.withdrawals||[]),...(w.transactions||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,12);
-   if(!entries.length){history.textContent='Belum ada transaksi.';return}
+   const entries=[...(w.withdrawals||[]),...(w.transactions||[])]
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,20);
+   if(!entries.length){history.textContent='Belum ada saweran terverifikasi atau penarikan.';return}
    for(const item of entries){
     const line=document.createElement('div');line.className='wallet-breakdown';
-    const label=document.createElement('span');label.textContent=(item.status||item.type||'Transaksi').replaceAll('-',' ');
+    const label=document.createElement('span');label.textContent=walletStatusName[item.status||item.type]||'Transaksi';
+    if(item.createdAt){
+     const date=document.createElement('small');
+     date.textContent=' · '+new Date(item.createdAt).toLocaleDateString('id-ID');
+     label.append(date);
+    }
     const value=document.createElement('b');value.textContent=walletCurrency(item.amountIDR);
     line.append(label,value);history.append(line);
    }
-  }catch(e){$('walletInfo').textContent='Dompet tidak dapat dimuat. Coba lagi nanti.'}
+  }catch(e){$('walletWithdraw').disabled=true;$('walletInfo').textContent='Dompet tidak dapat dimuat. Coba lagi nanti.'}
  }
  $('walletDetails').addEventListener('toggle',()=>{if($('walletDetails').open)loadWallet()});
- $('walletWithdraw').onclick=()=>{if(!$('walletWithdraw').disabled)flash('Penarikan menunggu aktivasi layanan resmi')};
+ $('walletWithdraw').onclick=()=>{
+  $('walletInfo').textContent='Penarikan uang memerlukan rekening terverifikasi dan layanan pembayaran resmi.';
+ };
  async function sessionRestore(){
   try{
    const info=await accountRequest('/api/account/me');
