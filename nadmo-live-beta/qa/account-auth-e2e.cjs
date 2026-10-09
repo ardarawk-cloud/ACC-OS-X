@@ -12,6 +12,11 @@ async function main(){
   const one=await a.newPage(),two=await b.newPage();
   for(const p of [one,two])await p.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
   await one.locator('nav [data-tab="settings"]').click();
+  const routeProbe=await one.evaluate(async()=>{
+   const r=await fetch('/api/account/me',{credentials:'include'});
+   return {status:r.status,body:(await r.text()).slice(0,160)};
+  });
+  console.log('AUTH_ROUTE_PROBE',JSON.stringify(routeProbe));
   await one.locator('#accountHandle').fill(handle);
   await one.locator('#accountName').fill('NADMO QA Independent Creator');
   await one.locator('#accountPass').fill(password);
