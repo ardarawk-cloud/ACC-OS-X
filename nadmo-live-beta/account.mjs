@@ -1,5 +1,6 @@
 import {scrypt} from 'node:crypto';
 import {SUPPORTER_THRESHOLDS,SUPPORTER_TIERS,getSupporterProfile,getPublicSupporterBadge} from './supporter-levels.mjs';
+import {walletSnapshot,payoutCapability} from './wallet.mjs';
 // NADMO LIVE authenticated profiles — PRIVATE beta, NOT government identity verification.
 // All persistent account state is in RoomHub Durable Object storage, isolated by prefix.
 // Never store KTP, NIK, passports, selfies, government ID or raw payment credentials here.
@@ -80,7 +81,17 @@ export async function accountEndpoint(storage,request){
   const record=await storage.get('auth-user:'+active.id);
   return json({ok:true,authenticated:true,supporter:await getSupporterProfile(storage,active.id,record),paymentsEnabled:false});
  }
- if(p==='/api/payments/status')return json({enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,state:'WAITING_LICENSED_PROVIDER'});
+ if(p==='/api/payments/status'&&method==='GET')return json({
+  enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,
+  recipientPayoutsEnabled:false,state:'WAITING_LICENSED_PROVIDER'
+ });
+ if(p==='/api/wallet/me'&&method==='GET'){
+  const owner=await getAccount(storage,request);
+  if(!owner)return fail(401,'Masuk akun untuk melihat dompet');
+  const balances=await walletSnapshot(storage,owner.id);
+  return json({ok:true,wallet:balances,capability:payoutCapability(),identityVerified:owner.kycStatus==='verified'&&owner.verifiedAdult});
+ }
+ if(p==='/api/wallet/withdraw'&&method!=='POST')return fail(405,'Method not allowed');
  if(p==='/api/streaming/capacity')return json({architecture:'P2P_WEBRTC',maxViewersPerRoom:4,turnConfigured:false,sfuConfigured:false,scaleReady:false});
  if(p.startsWith('/api/profile/')&&method==='GET'){
   const handle=decodeURIComponent(p.slice('/api/profile/'.length)).toLowerCase();
@@ -92,7 +103,7 @@ export async function accountEndpoint(storage,request){
   const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
   return json({ok:true,profile:{handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
- if(!p.startsWith('/api/account/'))return fail(404,'Not Found');
+ if(!p.startsWith('/api/account/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
   const user=await getAccount(storage,request);
   return json({ok:true,authenticated:!!user,account:user});
@@ -148,6 +159,11 @@ export async function accountEndpoint(storage,request){
  if(!user)return fail(401,'Login diperlukan');
  const record=await storage.get('auth-user:'+user.id);
  if(!record)return fail(401,'Login diperlukan');
+ if(p==='/api/wallet/withdraw'){
+  // Never accept bank details or queue a real payout without a licensed provider,
+  // reconciled ledger, verified account, and secured payout-destination vault.
+  return fail(409,'Penarikan belum tersedia. Saldo dan pencairan aktif setelah pembayaran resmi diluncurkan.');
+ }
  if(p==='/api/account/supporter-visibility'&&method==='PUT'){
   if(typeof payload.visible!=='boolean')return fail(400,'Pilihan tampilan badge tidak valid');
   record.supporterBadgeVisible=payload.visible;record.updatedAt=Date.now();
@@ -155,6 +171,9 @@ export async function accountEndpoint(storage,request){
   return json({ok:true,visible:record.supporterBadgeVisible});
  }
  if(p==='/api/account/delete'&&method==='POST'){
+  const wallet=await walletSnapshot(storage,user.id);
+  if(wallet.transactions.length||wallet.withdrawals.length)
+   return fail(409,'Akun memiliki riwayat keuangan dan memerlukan proses penghapusan sesuai kewajiban pencatatan.');
   if(record.kycStatus==='verified')return fail(403,'Penghapusan akun terverifikasi harus melalui peninjauan retensi data.');
   const password=typeof payload.password==='string'?payload.password:'';
   if(!password||!safeCompare(await passwordHash(password,record.salt),record.passhash))
