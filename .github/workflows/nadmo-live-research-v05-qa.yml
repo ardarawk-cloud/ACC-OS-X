@@ -31,7 +31,7 @@ jobs:
           assert(script.includes('canvas.captureStream'),'standby and talk audio visual scene');
           assert(script.includes('replaceTrack(track)'),'AFK swaps outgoing video');
           assert(script.includes('localStorage.setItem'),'following bookmarks');
-          assert(html.includes('AUTO-CONNECT / ACTIVE'),'server auto-config');
+          assert(script.includes('const DEFAULT_BACKEND=')&&html.includes('id="developerOnlySettings" aria-hidden="true"'),'automatic server configuration remains private');
           assert(!html.includes('BACKEND HTTPS ENDPOINT'),'no manual input');
           assert(html.includes('body.live-immersive #watch'),'immersive full viewport');
           assert(html.includes('class="panel live-chat"'),'overlay chat');
