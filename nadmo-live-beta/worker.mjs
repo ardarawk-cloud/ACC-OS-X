@@ -516,7 +516,7 @@ export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
-  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/'))
+  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST'))
     return new Response('Method Not Allowed',{status:405});
   if(url.pathname==='/app')return Response.redirect(url.origin+'/app/',308);
   if(url.pathname==='/app/'||url.pathname==='/app/index.html'){
