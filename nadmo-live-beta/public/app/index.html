@@ -470,6 +470,31 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
 .supporter-panel .supporter-privacy[hidden],#supporterMyBadge[hidden]{display:none!important}
 #chat .supporter-badge{margin:0 5px 0 0;max-width:70px}
 @media(min-width:700px){.supporter-panel .supporter-levels{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* NADMO LIVE public profile: user controls, not developer diagnostics. */
+#settings .page-top{margin:4px 0 17px;padding:0 0 12px;border-bottom:1px solid var(--line)}
+#settings .page-top h1{font-size:clamp(29px,8vw,40px);line-height:1}
+#settings .show-label{margin:17px 0 10px;padding:0 0 9px;min-width:0;border-bottom:1px solid #344237}
+#settings .show-label b{font-size:clamp(15px,4.1vw,18px);line-height:1.2;letter-spacing:.2px;white-space:normal;overflow-wrap:anywhere}
+#settings .show-label small{display:none}
+#settings .profile-hero{padding:12px;border-radius:12px}
+#settings .profile-avatar{flex-basis:46px;width:46px;height:46px;font-size:22px}
+#settings .profile-hero b{font-size:15px}
+#settings .profile-hero button{min-height:36px;padding:8px 10px}
+#settings .profile-links:empty,#settings .profile-post-feed:empty{display:none}
+#settings .profile-composer{margin-bottom:6px}
+#settings .profile-empty{margin:7px 0 14px;color:#9cac98}
+#settings .supporter-panel{margin:19px 0 16px;padding:12px;border-radius:12px}
+#settings .supporter-guide{margin-top:10px;border-top:1px solid #40503b}
+#settings .supporter-guide summary{cursor:pointer;list-style:none;padding:11px 0 5px;color:var(--neon);font:700 11px/1.5 Arial,sans-serif}
+#settings .supporter-guide summary::-webkit-details-marker{display:none}
+#settings .supporter-guide summary:after{content:"⌄";float:right}
+#settings .supporter-guide[open] summary:after{content:"⌃"}
+#settings .supporter-guide .supporter-levels{margin:8px 0}
+#settings .setting-line{padding:12px 0}
+#settings .account-card{margin:8px 0 13px}
+#settings .account-card>p:first-child{font-size:12px;line-height:1.6;margin:0 0 12px}
+@media(max-width:380px){#settings .show-label b{font-size:15px}#settings .profile-hero{gap:9px}}
 </style></head>
 <body>
 <div class="app">
@@ -665,9 +690,10 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   <p class="deck">Ini masih fondasi kanal SIGNAL. Sistem pemberitahuan terverifikasi, arsip offline, relai cadangan dan persetujuan editor belum dibangun.</p>
 </section>
 <section id="settings" class="hide">
-  <div class="show-label"><b>AKUN NADMO</b><small>SERVER ACCOUNT · PRIVATE BETA</small></div>
+  <div class="page-top"><div><h1>AKUN SAYA<span style="color:var(--neon)">.</span></h1></div></div>
+  <div class="show-label"><b>AKUN</b></div>
   <div class="panel account-card" id="accountLoginCard">
-    <p>Daftarkan akun beta untuk menyimpan profil di server dan memakai username yang sama saat masuk dari HP atau PC. Ini <b>bukan</b> verifikasi identitas KTP.</p>
+    <p>Masuk atau daftar untuk menggunakan profil yang sama di HP dan PC.</p>
     <label for="accountHandle">USERNAME</label>
     <input class="field" id="accountHandle" autocomplete="username" maxlength="24" placeholder="username unik">
     <label for="accountName">NAMA PANGGUNG (untuk daftar baru)</label>
@@ -676,27 +702,19 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     <input class="field" id="accountPass" type="password" autocomplete="current-password" minlength="12" maxlength="128" placeholder="Minimal 12 karakter">
     <div class="actions">
       <button class="btn secondary" type="button" id="accountLogin">MASUK</button>
-      <button class="btn" type="button" id="accountRegister">DAFTAR AKUN BETA</button>
+      <button class="btn" type="button" id="accountRegister">DAFTAR AKUN</button>
     </div>
-    <div class="status" role="status" id="accountStatus">Belum masuk akun. Password recovery belum tersedia dalam beta ini; simpan kata sandi dengan aman.</div>
+    <div class="status" role="status" id="accountStatus">Pemulihan kata sandi belum tersedia. Simpan kata sandi dengan aman.</div>
   </div>
   <div class="panel account-card hide" id="accountSignedCard">
     <div class="row account-title"><b id="signedAccountName"></b><span id="supporterMyBadge" hidden></span><small id="signedAccountHandle"></small></div>
-    <div class="notice" id="accountKycNote">IDENTITAS BELUM TERVERIFIKASI — bukan akun streamer KYC.</div>
+    <div class="notice" id="accountKycNote">Identitas belum diverifikasi.</div>
     <button class="btn secondary" type="button" id="accountLogout">KELUAR AKUN</button>
-    <div class="status" id="accountSignedStatus">Profil tersimpan di server NADMO.</div>
+    <div class="status" id="accountSignedStatus" role="status"></div>
   </div>
-  <section class="supporter-panel" id="supporterPanel" aria-label="NADMO Supporter level">
-   <div class="supporter-header"><b>NADMO SUPPORTER LEVEL</b><small>LEVEL 01–50 · IDR</small></div>
-   <p id="supporterMessage">Badge terlihat di samping nama setelah saweran rupiah terverifikasi. Pembayaran NADMO belum aktif.</p>
-   <div class="supporter-progress" id="supporterProgress">Belum ada saweran terverifikasi.</div>
-   <label class="supporter-privacy" id="supporterPrivacy" hidden><input type="checkbox" id="supporterShowBadge" checked> Tampilkan badge saya di chat dan profil</label>
-   <div class="supporter-levels" id="supporterLevels" aria-label="Pratinjau tier supporter"></div>
-   <small id="supporterStatus" role="status">PREVIEW BADGE — tidak menunjukkan uang yang telah dibayarkan.</small>
-  </section>
-  <div class="page-top"><div><span class="eyebrow">ME / PERSONAL SPACE</span><h1>MY NADMO<span style="color:var(--neon)">.</span></h1></div><span class="edition">PROFILE BETA</span></div>
+
     <div id="betaSocialProfile" class="nadmo-profile">
-    <div class="show-label"><b>PROFIL & LINK BISNIS</b><small>PRATINJAU LOKAL · BELUM DIPUBLIKASIKAN</small></div>
+    <div class="show-label"><b>PROFIL SAYA</b></div>
     <div class="profile-hero">
       <div class="profile-avatar" aria-hidden="true">N/</div>
       <div><b id="profileDisplayName">Profil NADMO</b><small id="profileDisplayHandle">@username</small></div>
@@ -704,7 +722,6 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     </div>
     <p id="profileDisplayBio" class="profile-bio">Tampilkan siapa kamu, bisnis dan karya yang kamu punya.</p>
     <div id="profileBusinessLinks" class="profile-links"></div>
-    <div class="profile-note">Link luar dibuka langsung, tanpa dialihkan ke halaman penghalang NADMO. Saat ini profil dan postingan contoh ini hanya tersimpan di perangkat ini; akun publik lintas perangkat belum aktif.</div>
     <div id="profileEditBox" class="panel hide">
       <label for="profileName">NAMA TAMPILAN</label>
       <input class="field" id="profileName" maxlength="60" placeholder="Nama kreator / bisnis">
@@ -719,37 +736,42 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
       <div id="profileEditLinks" class="profile-edit-links"></div>
       <div class="status" id="profileEditStatus" role="status"></div>
     </div>
-    <div class="show-label"><b>POSTINGAN</b><small>LINK LANGSUNG AKTIF · PRATINJAU LOKAL</small></div>
+    <div class="show-label"><b>POSTINGAN</b></div>
     <div class="panel profile-composer">
       <label for="profilePostText">TULIS POSTINGAN</label>
-      <textarea class="field profile-textarea" id="profilePostText" rows="4" maxlength="2000" placeholder="Promosikan bisnis, jadwal DJ, website, produk atau acara. Tempel link https://... — langsung bisa diketuk."></textarea>
-      <button type="button" class="btn secondary" id="profilePostSave">SIMPAN DRAF POSTINGAN</button>
-      <p class="profile-note">Belum terbit untuk pengguna lain. Perlu sistem login dan penyimpanan akun sebelum tombol PUBLIKASIKAN bisa diaktifkan.</p>
+      <textarea class="field profile-textarea" id="profilePostText" rows="4" maxlength="2000" placeholder="Bagikan aktivitas, karya, bisnis, atau tautan kamu..."></textarea>
+      <button type="button" class="btn secondary" id="profilePostSave">SIMPAN DRAF</button>
+      <p class="profile-note">Draf hanya bisa dilihat olehmu.</p>
       <div id="profilePostStatus" class="status" role="status"></div>
     </div>
-    <div class="show-label" id="syncedPostsHeader" hidden><b>POSTINGAN TERSIMPAN DI SERVER</b><small>DRAF BELUM PUBLIK</small></div>
+    <div class="show-label" id="syncedPostsHeader" hidden><b>DRAF TERSIMPAN</b></div>
     <div id="profileSyncedPosts" class="profile-post-feed"></div>
     <div id="profilePostFeed" class="profile-post-feed"></div>
+    <p id="postsEmptyState" class="profile-note profile-empty" hidden>Belum ada draf. Buat postingan pertamamu.</p>
   </div>
 
-  <div class="show-label"><b>PENGATURAN SISTEM</b><small>BETA / TEKNIS</small></div><div class="notice">Saweran: belum aktif · Tiket room: belum aktif · Penarikan: belum aktif. Tidak ada uang yang diproses dalam beta ini.</div>
-  <div class="show-label"><b>NETWORK</b><small>SERVER LINK</small></div>
-  <div class="panel"><input id="server" type="hidden"><div class="eyebrow">AUTO-CONNECT / ACTIVE</div><div class="status" id="serverState">Memeriksa koneksi server NADMO...</div><button class="btn secondary" id="saveServer">↻ CEK KONEKSI</button><p>Server diatur otomatis oleh NADMO. Tidak ada alamat yang harus diisi pengguna.</p></div>
-  <div class="show-label"><b>ACCESS & AGE</b><small>18+ POLICY</small></div>
+
+    <section class="supporter-panel" id="supporterPanel" aria-label="NADMO Supporter level">
+   <div class="supporter-header"><b>LEVEL PENDUKUNG</b><small>LEVEL 1–50</small></div>
+   <p id="supporterMessage">Badge akan tampil saat dukungan berhasil diverifikasi.</p>
+   <div class="supporter-progress" id="supporterProgress">Level 0</div>
+   <label class="supporter-privacy" id="supporterPrivacy" hidden><input type="checkbox" id="supporterShowBadge" checked> Tampilkan badge saya di chat dan profil</label>
+   <details class="supporter-guide"><summary>Lihat tingkatan badge</summary>
+   <div class="supporter-levels" id="supporterLevels" aria-label="Tingkatan badge pendukung"></div>
+   <small id="supporterStatus" role="status">Badge diberikan berdasarkan dukungan terverifikasi.</small>
+   </details>
+  </section>
+  <div class="show-label"><b>PRIVASI & KEAMANAN</b></div>
   <div class="setting-line"><label for="adult">Saya berusia 18 tahun ke atas</label><input id="adult" type="checkbox"></div>
-  <p>Beta menggunakan konfirmasi mandiri. Peluncuran publik memerlukan verifikasi usia dan moderasi.</p>
-  <div class="show-label"><b>FAIR CREATOR ECONOMY</b><small>TRANSPARENT / SIMULATION</small></div>
-  <div class="notice">Saweran, tiket dan penarikan belum aktif. Perhitungan ini hanya simulasi usulan komisi NADMO — tidak menerima atau memproses uang.</div>
-  <div class="panel">
-    <label for="feeType">ESTIMASI JENIS PENDAPATAN</label>
-    <select class="field" id="feeType">
-      <option value="tip">SAWERAN • Usulan biaya platform 7%</option>
-      <option value="ticket">TIKET PRIVATE • Usulan biaya platform 10%</option>
-    </select>
-    <label for="feeAmount">SIMULASI DUKUNGAN (RUPIAH)</label>
-    <input class="field" id="feeAmount" inputmode="numeric" type="number" min="1000" max="10000000" step="1000" value="100000" aria-label="Simulasi nominal dukungan">
-    <div id="feeBreakdown" class="fee-table" aria-live="polite"></div>
-    <p>Nilai untuk kreator di atas adalah <b>perkiraan sebelum biaya payment gateway, pajak, pembatalan, dan kewajiban lain</b>. Biaya aktual wajib ditampilkan sebelum transaksi ketika pembayaran resmi tersedia.</p>
+  <!-- Developer-only hooks retained for connection diagnostics and fee calculations.
+       They must never be presented as public profile settings. -->
+  <div class="hide" id="developerOnlySettings" aria-hidden="true">
+    <input id="server" type="hidden">
+    <div class="status" id="serverState"></div>
+    <button type="button" id="saveServer">Periksa koneksi</button>
+    <select id="feeType"><option value="tip">SAWERAN</option><option value="ticket">TIKET</option></select>
+    <input id="feeAmount" type="number" value="100000">
+    <div id="feeBreakdown"></div>
   </div>
 </section>
 </div>
@@ -818,7 +840,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     if(earned){holder.append(earned);holder.hidden=false}
    }
   }else $('supporterProgress').textContent='Status supporter belum tersedia.';
-  $('supporterStatus').textContent='PRATINJAU DESAIN · Pembayaran belum aktif. Hanya transaksi rupiah terverifikasi yang menambah level.';
+  $('supporterStatus').textContent='Dukungan belum tersedia. Badge akan aktif setelah pembayaran resmi tersedia.';
  }
  async function loadSupporter(){
   try{
@@ -839,12 +861,11 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   const logged=!!activeAccount;
   $('accountLoginCard').classList.toggle('hide',logged);
   $('accountSignedCard').classList.toggle('hide',!logged);
-  $('syncedPostsHeader').hidden=!logged;
   if(logged){
    $('signedAccountName').textContent=activeAccount.name;
    $('signedAccountHandle').textContent='@'+activeAccount.handle;
    $('accountKycNote').textContent=activeAccount.kycStatus==='verified'&&activeAccount.verifiedAdult
-    ?'Identitas streamer diverifikasi.':'KYC belum aktif — akun belum diverifikasi sebagai streamer.';
+    ?'Identitas kreator terverifikasi.':'Identitas belum diverifikasi. Verifikasi kreator diperlukan untuk siaran publik.';
    draftProfile.handle=activeAccount.handle;
    draftProfile.name=activeAccount.name;
    draftProfile.bio=activeAccount.bio||'';
@@ -858,23 +879,24 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   }
   renderSyncedPosts();
  }
+ function updatePostEmptyState(){
+  const hasSynced=!!activeAccount&&syncedPosts.length>0;
+  $('syncedPostsHeader').hidden=!hasSynced;
+  $('postsEmptyState').hidden=hasSynced||draftPosts.length>0;
+ }
  function renderSyncedPosts(){
   $('profileSyncedPosts').replaceChildren();
-  if(!activeAccount)return;
-  if(!syncedPosts.length){
-   const hint=document.createElement('p');hint.className='profile-note';
-   hint.textContent='Belum ada postingan server. Postingan baru akan tersimpan sebagai draf pribadi.';
-   $('profileSyncedPosts').appendChild(hint);return;
-  }
+  if(!activeAccount||!syncedPosts.length){updatePostEmptyState();return}
   for(const item of syncedPosts){
    const card=document.createElement('article');card.className='profile-post-card';
    const head=document.createElement('div');head.className='post-top';
    const label=document.createElement('b');label.textContent='@'+activeAccount.handle;
-   const state=document.createElement('small');state.textContent='DRAF SERVER · '+new Date(item.createdAt).toLocaleDateString('id-ID');
+   const state=document.createElement('small');state.textContent='DRAF · '+new Date(item.createdAt).toLocaleDateString('id-ID');
    head.append(label,state);
    const text=document.createElement('div');text.className='profile-post-content';linkifyCaption(text,item.text);
    card.append(head,text);$('profileSyncedPosts').appendChild(card);
   }
+  updatePostEmptyState();
  }
  async function loadServerPosts(){
   if(!activeAccount)return;
@@ -1021,7 +1043,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     const result=await accountRequest('/api/account/profile','PUT',
      {name:draftProfile.name||activeAccount.name,bio:draftProfile.bio,links:draftProfile.links});
     activeAccount=result.account;displayAccount();
-    $('profileEditStatus').textContent='Profil tersimpan di server. Bisa diakses lewat HP dan PC.';
+    $('profileEditStatus').textContent='Profil tersimpan dan tersinkron di perangkatmu.';
    }catch(e){$('profileEditStatus').textContent='Tersimpan di perangkat saja, gagal sync: '+e.message;return}
   }else{
    renderProfileDraft();
@@ -1035,7 +1057,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
    const card=document.createElement('article');card.className='profile-post-card';
    const top=document.createElement('div');top.className='post-top';
    const label=document.createElement('b');label.textContent=draftProfile.name||'Profil NADMO';
-   const details=document.createElement('small');details.textContent='DRAF · '+(entry.at?new Date(entry.at).toLocaleDateString('id-ID'):'LOKAL');
+   const details=document.createElement('small');details.textContent='DRAF · '+(entry.at?new Date(entry.at).toLocaleDateString('id-ID'):'BARU');
    top.append(label,details);
    const text=document.createElement('div');text.className='profile-post-content';
    linkifyCaption(text,entry.text);
@@ -1043,9 +1065,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
    del.onclick=()=>{draftPosts=draftPosts.filter(x=>x.id!==entry.id);storePosts();renderDraftPosts()};
    card.append(top,text,del);$('profilePostFeed').appendChild(card);
   }
-  if(!draftPosts.length){
-   const blank=document.createElement('div');blank.className='profile-note';blank.textContent='Belum ada postingan draf. Link dalam caption akan bisa diketuk seperti link biasa.';$('profilePostFeed').appendChild(blank);
-  }
+  updatePostEmptyState();
  }
  function storePosts(){
   try{localStorage.setItem(POST_KEY,JSON.stringify(draftPosts));return true}
@@ -1059,8 +1079,8 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
     const saved=await accountRequest('/api/account/posts','POST',{text});
     syncedPosts.unshift(saved.post);renderSyncedPosts();
     $('profilePostText').value='';
-    $('profilePostStatus').textContent='Draf tersimpan di server. Belum terbit publik.';
-   }catch(e){$('profilePostStatus').textContent='Gagal menyimpan ke server: '+e.message}
+    $('profilePostStatus').textContent='Draf tersimpan. Hanya kamu yang bisa melihatnya.';
+   }catch(e){$('profilePostStatus').textContent='Gagal menyimpan: '+e.message}
    return;
   }
   if(draftPosts.length>=30){$('profilePostStatus').textContent='Maksimal 30 draf di perangkat ini.';return}
@@ -1068,7 +1088,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   draftPosts.unshift(entry);
   if(storePosts()){
    $('profilePostText').value='';
-   $('profilePostStatus').textContent='Draf disimpan. Link dalam postingan bisa langsung dibuka; belum dipublikasi.';
+   $('profilePostStatus').textContent='Draf tersimpan. Hanya kamu yang bisa melihatnya.';
    renderDraftPosts();
   }else draftPosts.shift();
  };
