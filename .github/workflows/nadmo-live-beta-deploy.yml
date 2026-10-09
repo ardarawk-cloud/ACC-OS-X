@@ -75,6 +75,8 @@ jobs:
         run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
       - name: Verify wallet authentication and reject unverified cashout
         run: node nadmo-live-beta/qa/wallet-endpoint-e2e.mjs
+      - name: Verify secure account photo upload, public avatar and deletion
+        run: node nadmo-live-beta/qa/avatar-upload-e2e.mjs
       - name: Verify account-bound resume and logout revocation against deployed Worker
         run: node nadmo-live-beta/qa/creator-ownership-smoke.cjs
       - name: Verify server enforced reports and host mute/kick/block
