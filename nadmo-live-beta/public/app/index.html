@@ -102,9 +102,23 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 /* v0.5 live-first research implementation */
 #hostAccessPanel[hidden],#viewerTipPanel[hidden]{display:none!important}#hostAccessPanel{margin-top:14px}.flash{position:fixed;top:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:30;background:#e3fd72;color:#141915;border:1px solid #a7b968;max-width:min(92vw,460px);width:max-content;padding:12px 18px;text-align:center;font:800 12px/1.35 Arial,sans-serif;box-shadow:0 8px 20px #0009}
 
-#explore .page-top{padding-top:12px;margin-top:4px}
-#explore>.deck{display:none}
-#explore .show-label{margin:13px 0 10px;padding-top:10px}
+/* LIVE feed v0.8.1 — content first, without billboard headings. */
+#explore .explore-head{border-top:1px solid var(--line);display:flex;align-items:end;justify-content:space-between;gap:12px;margin:4px 0 12px;padding-top:13px}
+#explore .explore-head .eyebrow{display:block;font-size:9px;letter-spacing:1.45px;margin-bottom:5px}
+#explore .explore-head h2{font:900 28px/.96 Impact,"Arial Narrow",sans-serif;letter-spacing:.35px}
+#explore .explore-count{font:800 10px/1.3 Arial,sans-serif;letter-spacing:.7px;color:#c1cab5;white-space:nowrap;padding-bottom:2px}
+#explore #searchLive{min-height:40px;height:40px;margin:0 0 10px;padding:9px 12px;background:#131a14;font-size:12px;border-color:#425041}
+#explore #filters{margin:0 0 11px;padding:0 0 2px;gap:6px}
+#explore #filters button{padding:8px 10px;font-size:10px;min-height:32px}
+#explore #rooms{margin:0 0 12px}
+#explore #rooms .no-signal{min-height:112px;margin-bottom:4px;border:1px dashed #374834;gap:4px;padding:18px 12px;background:#111612}
+#explore #rooms .no-signal strong{font-size:23px;color:#82966b}
+#explore #rooms .no-signal small{font-size:10px;letter-spacing:.6px}
+#explore #rooms .room:first-child{border-top:1px solid var(--line)}
+#explore #rooms .room{padding:12px 0}
+#explore>.actions{margin:10px 0 12px}
+#explore>.notice{margin-top:12px}
+@media(max-width:380px){#explore .explore-head h2{font-size:25px}#explore #filters button{font-size:9px;padding:7px 9px}}
 
 .fee-table{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:10px 0 14px}.fee-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #313a2f;color:var(--ink);font-size:12px}.fee-row:last-child{border:0;color:var(--neon)}.fee-row b{color:var(--paper);white-space:nowrap}.fee-row:last-child b{color:var(--neon)}
 .filterstrip{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 0 14px}.filterstrip::-webkit-scrollbar{display:none}
@@ -417,15 +431,12 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   <div class="section"><div class="notice">PRIVATE BETA / Tampilan dan preview kamera tersedia secara lokal. Live publik, saweran, dan tiket belum aktif sampai server serta pembayaran terhubung.</div></div>
 </section>
 <section id="explore" class="hide">
-  <div class="page-top"><div><span class="eyebrow">LIVE / FREQUENCIES</span><h1>ON THE AIR<span style="color:var(--neon)">.</span></h1></div><span class="edition">LIVE FEED</span></div>
-  <p class="deck">Langsung ke siaran, tanpa banner pembuka yang menghalangi. Public room yang aktif muncul di sini.</p>
-  <label class="eyebrow" for="searchLive">FIND YOUR FREQUENCY</label>
-  <input class="field" id="searchLive" placeholder="Cari judul siaran atau genre..." maxlength="70" autocomplete="off">
-  <div class="filterstrip" id="filters">
+  <div class="explore-head"><div><span class="eyebrow">NADMO / LIVE</span><h2>LIVE SEKARANG<span style="color:var(--neon)">.</span></h2></div><small class="explore-count" id="liveCount">0 ROOMS</small></div>
+  <input class="field" id="searchLive" type="search" aria-label="Cari siaran langsung" placeholder="Cari siaran atau kategori..." maxlength="70" autocomplete="off">
+  <div class="filterstrip" id="filters" aria-label="Filter kategori siaran">
     <button data-filter="all" class="active">ALL</button><button data-filter="Social">SOCIAL</button><button data-filter="DJ & Music">DJ / MUSIC</button><button data-filter="Podcast">PODCAST</button><button data-filter="Nightlife">NIGHTLIFE</button><button data-filter="Gaming">GAMING</button>
   </div>
-  <div class="show-label"><b>LIVE NOW</b><small id="liveCount">0 ROOMS</small></div>
-  <div id="rooms" class="no-signal"><strong>SEARCHING</strong><small>CONNECTING TO BROADCAST NETWORK</small></div>
+  <div id="rooms" aria-live="polite"><div class="no-signal"><strong>MEMUAT SIARAN</strong><small>MENYAMBUNG KE SERVER</small></div></div>
   <div class="actions"><button class="btn secondary" id="refresh">↻ REFRESH LIVE</button><button class="btn" data-tab="studio">● BROADCAST</button></div>
   <div class="notice">GAMING LIVE: pilih kategori Gaming untuk siaran kamera dan obrolan. Capture layar game/OBS dan suara internal game belum tersedia di beta ini.</div>
 </section>
