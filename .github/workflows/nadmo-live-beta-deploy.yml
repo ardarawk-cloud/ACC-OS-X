@@ -25,6 +25,8 @@ jobs:
         run: |
           node --check nadmo-live-beta/worker.mjs
           node --check nadmo-live-beta/account.mjs
+          node --check nadmo-live-beta/wallet.mjs
+          node --check nadmo-live-beta/qa/wallet-unit.mjs
           node --check nadmo-live-beta/supporter-levels.mjs
           node --check nadmo-live-beta/qa/supporter-levels-unit.mjs
           node --check nadmo-live-beta/qa/supporter-badges-e2e.cjs
@@ -37,6 +39,8 @@ jobs:
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
       - name: Verify all supporter level and privacy calculation boundaries
         run: node nadmo-live-beta/qa/supporter-levels-unit.mjs
+      - name: Verify wallet ledger and withdrawal safety
+        run: node nadmo-live-beta/qa/wallet-unit.mjs
       - name: Deploy isolated beta Worker (do not modify production apps)
         id: deploy
         uses: cloudflare/wrangler-action@v4
