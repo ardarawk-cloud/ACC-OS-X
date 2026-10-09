@@ -741,6 +741,47 @@ nav button{touch-action:manipulation}
 .social-comment-box button{margin-top:7px;padding:10px 16px;border:1px solid #718c59;border-radius:8px;background:#263d22;font-weight:800}
 .social-share-panel{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}
 .social-share-panel button{flex:1}
+/* Content-first social cards, inspired by proven interaction patterns but NADMO branded. */
+#socialPublicFeed{gap:12px}
+#socialPublicFeed .profile-post-card{padding:12px 12px 10px;border-radius:10px;background:#101813}
+.profile-post-card .social-author-meta{min-width:0;display:flex;flex:1;flex-direction:column;gap:3px}
+.profile-post-card .post-top .social-display-name{font-size:13px;color:#eaf3e4;line-height:1.25;flex:none}
+.profile-post-card .social-post-time{font:500 10px Arial,sans-serif;color:#9cad98}
+.profile-post-card .post-top .social-follow-btn{flex:0 0 auto;min-height:32px;padding:5px 8px;font:800 10px Arial,sans-serif;max-width:105px;overflow:hidden;text-overflow:ellipsis}
+.profile-post-card .profile-post-content{font:400 13px/1.55 Arial,sans-serif;margin:10px 0 7px;color:#f0f3ef;overflow-wrap:anywhere}
+.profile-post-card .social-caption-more{display:inline;background:transparent;color:var(--neon);border:0;padding:4px 6px;min-height:32px;font:800 11px Arial,sans-serif;text-align:left}
+.profile-post-card .social-stats{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px 8px;font:500 11px Arial,sans-serif;color:#aebca9;font-variant-numeric:tabular-nums}
+.profile-post-card .social-stats span{white-space:nowrap}
+.profile-post-card .social-stats .social-stats-right{display:flex;gap:12px;justify-content:end;flex-wrap:wrap;min-width:0}
+#socialPublicFeed .social-action-row{grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-top:1px solid #394738;gap:3px;padding-top:5px}
+#socialPublicFeed .social-action-row button{min-height:40px;background:transparent;border:0;border-radius:7px;color:#becab8;font-size:11px}
+#socialPublicFeed .social-action-row button:active{background:#243927}
+#socialPublicFeed .social-action-row button.social-liked{color:var(--neon)}
+#meRepostedFeed .social-action-row{grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border-top:1px solid #394738;gap:3px;padding-top:5px}
+#meRepostedFeed .social-action-row button{background:transparent;border:0;min-height:40px;color:#c1cfb9;font-size:10px}
+#meRepostedFeed .social-action-row button.social-remove-repost{color:#ffcfbb}
+.profile-post-card .social-repost-note{border-left:2px solid var(--neon);margin:8px 0;padding:5px 9px;font:12px/1.45 Arial,sans-serif;color:#e1e9d9;overflow-wrap:anywhere}
+#socialPublicFeed .social-video,#meRepostedFeed .social-video{display:block;width:calc(100% + 24px);max-width:calc(100% + 24px);max-height:520px;margin:10px -12px 3px;border:0;border-radius:0;aspect-ratio:16/9;object-fit:contain;background:#050705}
+#socialPublicFeed .social-video-link,#meRepostedFeed .social-video-link{display:block;font-size:12px;margin:10px 0}
+.social-share-sheet{position:fixed;inset:0;z-index:110;display:flex;align-items:flex-end;justify-content:center;background:#000a;overscroll-behavior:contain}
+.social-share-dialog{width:min(100%,560px);max-height:min(88dvh,820px);overflow-y:auto;background:#18211b;border:1px solid #42533e;border-radius:17px 17px 0 0;padding:12px 15px calc(15px + env(safe-area-inset-bottom));box-shadow:0 -12px 48px #000b}
+.social-share-grip{width:40px;height:4px;margin:0 auto 13px;background:#788b73;border-radius:9px}
+.social-share-top{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.social-share-top h3{font:900 17px Impact,Arial,sans-serif;letter-spacing:.4px;margin:0;color:#f1f6ea}
+.social-share-top button{width:37px;height:37px;border:1px solid #566e50;background:#253226;color:#e8f6df;border-radius:50%;font-size:20px}
+.social-share-preview{margin:10px 0;background:#111812;border:1px solid #334931;border-radius:10px;padding:11px}
+.social-share-preview b{font-size:12px;color:var(--neon)}
+.social-share-preview p{margin:5px 0 0;color:#bdcab7;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.social-share-dialog label{display:block;margin:10px 0 6px;font-size:11px;font-weight:800;color:#c7d6c0}
+.social-share-dialog textarea{display:block;width:100%;max-height:105px;resize:vertical;min-height:65px;border:1px solid #465943;border-radius:9px;background:#0f180f;color:#f2f8ef;padding:10px;font:13px/1.4 Arial,sans-serif}
+.social-share-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.social-share-choices button{display:flex;flex-direction:column;align-items:start;gap:3px;min-height:58px;padding:12px;border:1px solid #52684a;border-radius:10px;background:#243225;color:#f0f6eb;text-align:left;font:800 12px Arial,sans-serif}
+.social-share-choices button small{font:500 10px/1.35 Arial,sans-serif;color:#a9bca1}
+.social-share-choices button:active{background:#314a2b}
+.social-share-choices button:disabled{opacity:.55}
+.social-share-status{font:500 11px/1.5 Arial,sans-serif;color:#d8e9c9;min-height:17px;margin:4px 0}
+body.social-share-open{overflow:hidden}
+@media(max-width:340px){.social-share-choices{gap:5px}.social-share-choices button{padding:9px;font-size:11px}}
 .social-video{width:100%;aspect-ratio:16/9;max-height:370px;border:1px solid #385137;border-radius:10px;margin:8px 0;background:#050705}
 .social-video-link{display:block;padding:10px 0;color:var(--neon);overflow-wrap:anywhere}
 .social-video-input{display:flex;flex-direction:column;gap:7px;padding:8px 0}
@@ -1205,6 +1246,22 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   <button data-tab="messagesPage" aria-label="Pesan"><i>◌</i>PESAN</button>
   <button data-tab="settings"><i>◇</i>ME</button>
 </nav>
+<div id="socialShareSheet" class="social-share-sheet hide" role="dialog" aria-modal="true" aria-labelledby="socialShareTitle">
+ <div class="social-share-dialog">
+  <div class="social-share-grip" aria-hidden="true"></div>
+  <div class="social-share-top"><h3 id="socialShareTitle">BAGIKAN POSTINGAN</h3><button type="button" id="socialShareClose" aria-label="Tutup berbagi">×</button></div>
+  <div class="social-share-preview"><b id="socialShareAuthor"></b><p id="socialShareExcerpt"></p></div>
+  <label for="socialShareCaption">TAMBAHKAN KATA-KATA (OPSIONAL UNTUK REPOST)</label>
+  <textarea id="socialShareCaption" maxlength="500" placeholder="Apa pendapatmu tentang postingan ini?"></textarea>
+  <div class="social-share-choices">
+   <button id="socialShareToFeed" type="button">↗ Bagikan ke SOSIAL<small>Repost ke feed &amp; ME kamu</small></button>
+   <button id="socialShareToFriend" type="button">◌ Kirim lewat PESAN<small>Pilih teman yang menyetujui chat</small></button>
+   <button id="socialShareExternal" type="button">↗ Aplikasi lain<small>WhatsApp, Instagram, dan lainnya</small></button>
+   <button id="socialShareCopy" type="button">⧉ Salin tautan<small>Bagikan kapan saja</small></button>
+  </div>
+  <p id="socialShareStatus" class="social-share-status" role="status" aria-live="polite"></p>
+ </div>
+</div>
 <div id="avatarCropModal" class="avatar-crop-modal hide" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitle" aria-describedby="avatarCropHelp">
  <div class="avatar-crop-panel">
   <h2 id="avatarCropTitle">ATUR FOTO PROFIL</h2>
@@ -1667,15 +1724,76 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    window.prompt('Salin tautan postingan',url);
   }catch(e){if(e.name!=='AbortError')flash('Tidak bisa berbagi dari perangkat ini.');}
  }
- async function doSocialRepost(item){
-  if(!activeAccount){show('authPage');return}
-  if(activeAccount.handle===item.handle){flash('Ini postinganmu sendiri.');return}
+ async function doSocialRepost(item,caption=''){
+  if(!activeAccount){closeSocialShareSheet();show('authPage');return false}
+  if(activeAccount.handle===item.handle){$('socialShareStatus').textContent='Postingan sendiri tidak perlu direpost.';return false}
   try{
-   const data=await accountRequest('/api/account/social/repost','POST',{id:item.id});
-   flash(data.reposted?'Tersimpan sebagai repost di ME.':'Gagal membagikan ulang');
+   const data=await accountRequest('/api/account/social/repost','POST',{id:item.id,caption:String(caption).slice(0,500)});
+   flash(data.reposted?'Dibagikan ke SOSIAL dan ME.':'Gagal membagikan ulang');
    await Promise.all([loadMyReposts(),loadSocialFeed()]);
-  }catch(e){flash(e.message)}
+   return true;
+  }catch(e){$('socialShareStatus').textContent=e.message;return false}
  }
+ let selectedSocialPost=null,shareReturnFocus=null;
+ function closeSocialShareSheet(){
+  const sheet=$('socialShareSheet');
+  sheet.classList.add('hide');document.body.classList.remove('social-share-open');
+  selectedSocialPost=null;
+  if(shareReturnFocus?.isConnected)shareReturnFocus.focus({preventScroll:true});
+  shareReturnFocus=null;
+ }
+ function openSocialShareSheet(post,trigger){
+  selectedSocialPost=post;shareReturnFocus=trigger||null;
+  $('socialShareAuthor').textContent=post.name||post.handle||'Kreator NADMO';
+  $('socialShareExcerpt').textContent=(post.text||'Postingan video di NADMO LIVE').slice(0,180);
+  $('socialShareCaption').value='';
+  $('socialShareStatus').textContent='Postingan yang direpost tampil di SOSIAL dan bagian Dibagikan Ulang pada ME.';
+  $('socialShareToFeed').disabled=false;
+  $('socialShareToFeed').querySelector('small').textContent=activeAccount?.handle===post.handle?'Tidak bisa repost postingan sendiri':'Repost ke feed & ME kamu';
+  $('socialShareSheet').classList.remove('hide');document.body.classList.add('social-share-open');
+  $('socialShareClose').focus({preventScroll:true});
+ }
+ $('socialShareClose').onclick=closeSocialShareSheet;
+ $('socialShareSheet').addEventListener('click',event=>{
+  if(event.target===$('socialShareSheet'))closeSocialShareSheet();
+ });
+ document.addEventListener('keydown',event=>{
+  if($('socialShareSheet').classList.contains('hide'))return;
+  if(event.key==='Escape'){event.preventDefault();closeSocialShareSheet();return}
+  if(event.key==='Tab'){
+   const nodes=[...$('socialShareSheet').querySelectorAll('button:not([disabled]),textarea')];
+   const first=nodes[0],last=nodes[nodes.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+  }
+ });
+ $('socialShareToFeed').onclick=async()=>{
+  if(!selectedSocialPost)return;
+  const button=$('socialShareToFeed');button.disabled=true;
+  const success=await doSocialRepost(selectedSocialPost,$('socialShareCaption').value.trim());
+  if(success)closeSocialShareSheet();
+  else button.disabled=false;
+ };
+ $('socialShareToFriend').onclick=()=>{
+  if(!selectedSocialPost)return;
+  if(!activeAccount){closeSocialShareSheet();show('authPage');return}
+  const entry=selectedSocialPost;
+  pendingSocialShare='Lihat postingan '+(entry.name||'kreator')+' di NADMO LIVE: '+socialPostLink(entry.id);
+  closeSocialShareSheet();show('messagesPage');
+  $('messageInboxStatus').textContent='Pilih percakapan yang disetujui. Link disiapkan sebagai draf, tidak terkirim otomatis.';
+ };
+ $('socialShareExternal').onclick=()=>{
+  if(!selectedSocialPost)return;
+  const entry=selectedSocialPost;closeSocialShareSheet();shareOutside(entry);
+ };
+ $('socialShareCopy').onclick=async()=>{
+  if(!selectedSocialPost)return;
+  const url=socialPostLink(selectedSocialPost.id);
+  try{
+   if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);$('socialShareStatus').textContent='Tautan disalin.'}
+   else{$('socialShareStatus').textContent='Salin tautan dari kolom berikut.';window.prompt('Salin tautan',url)}
+  }catch(e){$('socialShareStatus').textContent='Tautan: '+url}
+ };
  async function loadMyReposts(){
   const holder=$('meRepostArea'),feed=$('meRepostedFeed');
   holder.classList.add('hide');feed.replaceChildren();
@@ -1684,7 +1802,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    const data=await accountRequest('/api/social/reposts/me');
    if(!data.reposts?.length)return;
    for(const item of data.reposts.slice(0,20)){
-    const card=makePublicPost({...item.original,repostMe:true,repostId:item.id});
+    const card=makePublicPost({...item.original,repostMe:true,repostId:item.id,repostCaption:item.caption||''});
     feed.append(card);
    }
    holder.classList.remove('hide');
@@ -1727,6 +1845,11 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    label.textContent='↗ '+(item.name||'Kreator')+' membagikan ulang';
    label.style.color='#c7d7a4';card.append(label);
   }
+  const repostNote=item.repostMe?String(item.repostCaption||''):String(item.caption||'');
+  if(repostNote){
+   const note=document.createElement('p');note.className='social-repost-note';
+   note.textContent=repostNote.slice(0,500);card.append(note);
+  }
   if(!entry||!entry.id){card.append(document.createTextNode('Postingan asli tidak lagi tersedia.'));return card}
   const top=document.createElement('div');top.className='post-top';
   // Only the compact circular avatar opens ME; display name is plain text, not a giant button.
@@ -1746,17 +1869,48 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   }
   const author=document.createElement('span');author.className='social-display-name';
   author.textContent=displayName;
-  const date=document.createElement('small');date.textContent=entry.createdAt?new Date(entry.createdAt).toLocaleDateString('id-ID'):'';
-  top.append(avatarButton,author,date);
-  const content=document.createElement('div');content.className='profile-post-content';
-  linkifyCaption(content,String(entry.text||'').slice(0,2000));card.append(top,content);
-  if(entry.videoUrl){const video=playableSocialVideo(entry.videoUrl);if(video)card.append(video)}
+  const date=document.createElement('small');date.className='social-post-time';
+  date.textContent=entry.createdAt?new Date(entry.createdAt).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})+' · Publik':'Publik';
+  const meta=document.createElement('div');meta.className='social-author-meta';meta.append(author,date);
+  top.append(avatarButton,meta);
   if(entry.handle&&/^[a-z][a-z0-9_]{2,23}$/.test(entry.handle)&&activeAccount?.handle!==entry.handle)
-   card.append(makeFollowButton(entry.handle));
+   top.append(makeFollowButton(entry.handle));
+  card.append(top);
+  const fullText=String(entry.text||'').slice(0,2000);
+  if(fullText){
+   const content=document.createElement('div');content.className='profile-post-content';
+   let expanded=false;
+   const threshold=190;
+   const drawCaption=()=>{
+    content.replaceChildren();
+    const clipped=fullText.length>threshold&&!expanded;
+    linkifyCaption(content,clipped?fullText.slice(0,threshold).trimEnd()+'…':fullText);
+    if(fullText.length>threshold){
+     const more=document.createElement('button');more.type='button';more.className='social-caption-more';
+     more.textContent=expanded?'Lebih sedikit':'Selengkapnya';
+     more.setAttribute('aria-expanded',String(expanded));
+     more.onclick=()=>{expanded=!expanded;drawCaption()};
+     content.append(more);
+    }
+   };
+   drawCaption();card.append(content);
+  }
+  if(entry.videoUrl){const video=playableSocialVideo(entry.videoUrl);if(video)card.append(video)}
+  const stats=document.createElement('div');stats.className='social-stats';
+  const statsLikes=document.createElement('span');
+  const statsRight=document.createElement('div');statsRight.className='social-stats-right';
+  const statsComments=document.createElement('span'),statsShares=document.createElement('span');
+  statsRight.append(statsComments,statsShares);stats.append(statsLikes,statsRight);card.append(stats);
+  const updateStats=()=>{
+   statsLikes.textContent='♥ '+socialNum(entry.likesCount||0);
+   statsComments.textContent=socialNum(entry.commentsCount||0)+' komentar';
+   statsShares.textContent=socialNum(entry.repostsCount||0)+' repost';
+  };
+  updateStats();
   const actions=document.createElement('div');actions.className='social-action-row';
   const like=document.createElement('button');like.type='button';let liked=entry.likedByMe===true;
-  const likeLabel=()=>{like.textContent=(liked?'♥':'♡')+' '+socialNum(entry.likesCount);like.classList.toggle('social-liked',liked);
-   like.title=liked?'Batal suka':'Suka';like.setAttribute('aria-label',socialNum(entry.likesCount)+' suka. '+(liked?'Batal suka':'Suka'))};
+  const likeLabel=()=>{like.textContent=liked?'♥ Disukai':'♡ Suka';like.classList.toggle('social-liked',liked);
+   like.title=liked?'Batal suka':'Suka';like.setAttribute('aria-label',socialNum(entry.likesCount)+' suka. '+(liked?'Batal suka':'Suka'));updateStats()};
   likeLabel();
   like.onclick=async()=>{
    if(!activeAccount){show('authPage');return}
@@ -1766,46 +1920,30 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
     liked=state.liked;entry.likesCount=state.likes;likeLabel();
    }catch(e){flash(e.message)}finally{like.disabled=false}
   };
-  const comment=document.createElement('button');comment.type='button';comment.textContent='◌ '+socialNum(entry.commentsCount);
+  const comment=document.createElement('button');comment.type='button';comment.textContent='◌ Komentar';
   comment.title='Komentar';comment.setAttribute('aria-label',socialNum(entry.commentsCount)+' komentar. Buka komentar');
   const comments=document.createElement('div');comments.className='social-comment-box hide';
   comment.onclick=()=>{comments.classList.toggle('hide');if(!comments.classList.contains('hide'))showSocialComments(id,comments)};
-  const repost=document.createElement('button');repost.type='button';
-  if(item.repostMe){
-   repost.className='social-remove-repost';
-   repost.textContent='✕ HAPUS';
-   repost.title='Hapus repost dari ME';
-   repost.setAttribute('aria-label','Hapus repost '+(entry.name||'kreator')+' dari ME');
-   repost.onclick=async()=>{
-    if(repost.disabled||!confirm('Hapus repost ini dari ME?'))return;
-    repost.disabled=true;
-    try{
-     const result=await accountRequest('/api/account/social/unrepost','POST',{id});
-     if(!result.removed)flash('Repost sudah tidak ada.');
-     else flash('Repost dihapus dari ME.');
-     await Promise.all([loadMyReposts(),loadSocialFeed()]);
-    }catch(error){flash(error.message);repost.disabled=false}
-   };
-  }else{
-   repost.textContent='↗ '+socialNum(entry.repostsCount);
-   repost.title='Bagikan ulang';
-   repost.setAttribute('aria-label',socialNum(entry.repostsCount)+' repost. Bagikan ulang postingan');
-   repost.onclick=()=>doSocialRepost(entry);
-  }
-  const share=document.createElement('button');share.type='button';share.textContent='↗ BAGI';
+  const share=document.createElement('button');share.type='button';share.textContent='↗ Bagikan';
   share.title='Bagikan postingan';share.setAttribute('aria-label','Bagikan postingan');
-  const menu=document.createElement('div');menu.className='social-share-panel hide';
-  const addShare=(name,action)=>{const btn=document.createElement('button');btn.type='button';btn.textContent=name;btn.onclick=action;menu.append(btn)};
-  addShare('KE ME (REPOST)',()=>doSocialRepost(entry));
-  addShare('KE TEMAN (PESAN)',()=>{
-   if(!activeAccount){show('authPage');return}
-   show('messagesPage');
-   pendingSocialShare='Lihat postingan '+(entry.name||'kreator')+' di NADMO LIVE: '+socialPostLink(id);
-   $('messageInboxStatus').textContent='Pilih teman dari percakapan yang disetujui. Tautan akan dimasukkan sebagai draf, tidak terkirim otomatis.';
-  });
-  addShare('KELUAR APLIKASI',()=>shareOutside(entry));
-  share.onclick=()=>menu.classList.toggle('hide');
-  actions.append(like,comment,repost,share);card.append(actions,menu,comments);
+  share.onclick=()=>openSocialShareSheet(entry,share);
+  actions.append(like,comment,share);
+  if(item.repostMe){
+   const removeRepost=document.createElement('button');removeRepost.type='button';removeRepost.className='social-remove-repost';
+   removeRepost.textContent='✕ Hapus';removeRepost.title='Hapus repost dari ME';
+   removeRepost.setAttribute('aria-label','Hapus repost '+(entry.name||'kreator')+' dari ME');
+   removeRepost.onclick=async()=>{
+    if(removeRepost.disabled||!confirm('Hapus repost ini dari ME?'))return;
+    removeRepost.disabled=true;
+    try{
+     await accountRequest('/api/account/social/unrepost','POST',{id});
+     flash('Repost dihapus dari ME.');
+     await Promise.all([loadMyReposts(),loadSocialFeed()]);
+    }catch(e){flash(e.message);removeRepost.disabled=false}
+   };
+   actions.append(removeRepost);
+  }
+  card.append(actions,comments);
   if(activeAccount?.handle===item.handle&&item.type!=='repost'){
    const remove=document.createElement('button');remove.type='button';remove.className='btn ghost';remove.textContent='HAPUS POSTINGAN';remove.style.marginTop='12px';
    remove.onclick=async()=>{

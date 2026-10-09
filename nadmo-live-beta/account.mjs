@@ -169,7 +169,7 @@ export async function accountEndpoint(storage,request){
   if(!viewer)return fail(401,'Masuk akun untuk melihat repost');
   const own=await storage.get(repostsKey(viewer.id))||[];
   const feed=await storage.get('social-public-feed')||[];
-  const reposts=await Promise.all(own.slice(-50).reverse().map(async x=>({id:x.id,createdAt:x.createdAt,original:await getOriginalPost(storage,x.originalId)})));
+  const reposts=await Promise.all(own.slice(-50).reverse().map(async x=>({id:x.id,caption:x.caption||'',createdAt:x.createdAt,original:await getOriginalPost(storage,x.originalId)})));
   return json({ok:true,reposts:reposts.filter(x=>x.original)});
  }
 
@@ -615,6 +615,8 @@ export async function accountEndpoint(storage,request){
  if(p==='/api/account/social/repost'&&method==='POST'){
   const id=payload.id;
   if(!postIdOK(id))return fail(400,'Postingan tidak valid');
+  if(payload.caption!==undefined&&(typeof payload.caption!=='string'||payload.caption.length>500))return fail(400,'Catatan repost maksimal 500 karakter');
+  const caption=clean(payload.caption||'',500);
   const feed=await storage.get('social-public-feed')||[],post=await getOriginalPost(storage,id);
   if(!post)return fail(404,'Postingan tidak tersedia');
   if(post.accountId===user.id)return fail(400,'Tidak perlu repost postingan sendiri');
@@ -622,13 +624,13 @@ export async function accountEndpoint(storage,request){
   const existing=list.find(x=>x.originalId===id);
   if(existing)return json({ok:true,reposted:true,repostId:existing.id,counts:{reposts:post.repostsCount||0}});
   if(!await throttle(storage,'social-repost:'+user.id,15,86400000))return fail(429,'Terlalu banyak repost hari ini');
-  const repost={id:crypto.randomUUID(),originalId:id,createdAt:Date.now()};
+  const repost={id:crypto.randomUUID(),originalId:id,caption,createdAt:Date.now()};
   await storage.put(repostsKey(user.id),[...list,repost].slice(-100));
   post.repostsCount=(post.repostsCount||0)+1;
   await storage.put('social-post:'+id,post);
   const listed=lookupOriginal(feed,id);if(listed)listed.repostsCount=post.repostsCount;
   const entry={id:repost.id,accountId:user.id,handle:user.handle,name:record.name,avatarVersion:record.avatarVersion||0,
-   originalId:id,type:'repost',text:'',createdAt:repost.createdAt,status:'published'};
+   originalId:id,type:'repost',caption,text:'',createdAt:repost.createdAt,status:'published'};
   await storage.put('social-public-feed',[entry,...feed].slice(0,200));
   return json({ok:true,reposted:true,repostId:repost.id,counts:{reposts:post.repostsCount}},201);
  }

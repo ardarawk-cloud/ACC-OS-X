@@ -29,11 +29,18 @@ try{
  assert.equal(engagement.body.counts.likes,1);
  assert.equal(engagement.body.counts.comments,1);
  assert.equal(engagement.body.comments[0].text,'Postingan bagus!');
- const repost=await action('/api/account/social/repost',cb,{id});
+ const repost=await action('/api/account/social/repost',cb,{id,caption:'Konten menarik untuk komunitas NADMO.'});
  assert.equal(repost.status,201);
  const own=await get('/api/social/reposts/me',cb);
  assert.equal(own.status,200);
  assert.equal(own.body.reposts[0].original.id,id);
+ assert.equal(own.body.reposts[0].caption,'Konten menarik untuk komunitas NADMO.');
+ const feedWithRepost=await get('/api/social/feed');
+ const shared=feedWithRepost.body.posts.find(post=>post.id===repost.body.repostId);
+ assert.equal(shared.caption,'Konten menarik untuk komunitas NADMO.');
+ assert.equal(shared.original.id,id);
+ const badCaption=await action('/api/account/social/repost',ca,{id,caption:'a'.repeat(501)});
+ assert.equal(badCaption.status,400);
   // Unrepost is owner-only: cannot remove someone else's repost, and counters stay accurate.
   // Worker/DO code can briefly be at different rollout versions immediately after deploy.
   // Retry only an unavailable API route, then fail loudly with its real response.
