@@ -208,7 +208,15 @@ body.live-immersive #watch .flash{z-index:40}
 </section>
 <section id="studio" class="hide">
   <div class="page-top"><div><span class="eyebrow">CREATOR / CONSOLE</span><h1>YOUR STAGE<span style="color:var(--neon)">.</span></h1></div><span class="edition">REC / 01</span></div>
-  <p class="deck">Siapkan kamera dan mic kamu. Kamu yang mengendalikan siarannya.</p>
+  <p class="deck">Pilih cara siaran. Semua mulai Public; pilihan lanjutan tersedia saat live.</p>
+<div class="mode-grid" id="liveModeGrid" role="group" aria-label="Mode siaran">
+<button type="button" data-live-mode="talk"><span class="mode-icon">♫</span>NGOBROL</button>
+<button type="button" data-live-mode="camera" class="active"><span class="mode-icon">◉</span>KAMERA</button>
+<button type="button" data-live-mode="gaming"><span class="mode-icon">▣</span>GAMING</button>
+<button type="button" data-live-mode="studio"><span class="mode-icon">⌘</span>STUDIO PC</button></div>
+<div class="mode-details" id="modeDetails">Kamera dan mikrofon HP. Saat LIVE, video memenuhi layar dengan chat overlay.</div>
+<div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select><p>Capture layar game Android memerlukan MediaProjection native, belum tersedia di APK sekarang.</p></div>
+<div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
   <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
   <div class="status" id="camState">CAMERA / STANDBY</div>
   <div class="actions"><button class="btn secondary" id="preview">◉ ENABLE CAMERA</button><button class="btn ghost" id="stopCamera">STOP CAMERA</button></div>
@@ -394,12 +402,62 @@ body.live-immersive #watch .flash{z-index:40}
  }
  document.querySelectorAll('#tipPresets button').forEach(b=>b.onclick=()=>{$('tipCustom').value=b.dataset.tip;updateTipPreview()});
  $('tipCustom').addEventListener('input',updateTipPreview);updateTipPreview();
+ let selectedLiveMode='camera',talkVisualTimer=null;
+ function stopTalkVisual(){if(talkVisualTimer)clearInterval(talkVisualTimer);talkVisualTimer=null}
+ function chooseMode(mode){
+  selectedLiveMode=mode;
+  for(const b of document.querySelectorAll('#liveModeGrid button')){
+   const selected=b.dataset.liveMode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))
+  }
+  $('gameSetup').classList.toggle('hide',mode!=='gaming');
+  $('studioPcSetup').classList.toggle('hide',mode!=='studio');
+  const copy={
+   camera:'Kamera dan mikrofon HP. Chat terlihat di atas video full layar. Efek wajah menyusul.',
+   talk:'Ngobrol audio-only dari mikrofon HP dengan tampilan audio. Penonton bisa mendengar dan chat. Tamu ikut bicara serta musik dari HP/Radio masih dikembangkan.',
+   gaming:'Pilih judul game. Untuk menyiarkan layar HP diperlukan izin dan modul native screen capture yang belum ada di APK beta.',
+   studio:'Studio untuk siaran PC/OBS. Server penerima stream Studio belum aktif; mode tidak dapat dijalankan dari HP.'
+  };
+  $('modeDetails').textContent=copy[mode];
+  $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE NOT READY';
+  const ready=mode==='camera'||mode==='talk';
+  $('preview').disabled=!ready;$('createRoom').disabled=!ready;
+  $('createRoom').textContent=ready?'● TRANSMIT LIVE':mode==='gaming'?'SCREEN CAPTURE COMING SOON':'PC INGEST COMING SOON';
+  if(mode==='gaming')$('category').value='Gaming';
+  if(mode==='talk')$('category').value='Podcast';
+  if(mode==='studio')$('category').value='DJ & Music';
+  if(localStream&&!host){localStream.getTracks().forEach(t=>t.stop());localStream=null;stopTalkVisual();$('camera').srcObject=null}
+ }
+ document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>chooseMode(b.dataset.liveMode));
  async function preview(){
-  try{if(!navigator.mediaDevices?.getUserMedia)throw Error('Browser belum mendukung kamera');if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720}},audio:{echoCancellation:true}});$('camera').srcObject=localStream;notice('Kamera dan mikrofon siap.','camState');}
-  catch(e){notice('Gagal membuka kamera: '+e.message,'camState')}
+  try{
+   if(!navigator.mediaDevices?.getUserMedia)throw Error('Browser tidak mendukung media capture');
+   if(!['camera','talk'].includes(selectedLiveMode))throw Error('Sumber video mode ini belum didukung');
+   if(localStream)localStream.getTracks().forEach(t=>t.stop());stopTalkVisual();
+   if(selectedLiveMode==='camera'){
+    localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720}},audio:{echoCancellation:true}});
+    notice('Kamera dan mikrofon siap.','camState');
+   }else{
+    const mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true},video:false});
+    try{
+     const canvas=document.createElement('canvas');canvas.width=360;canvas.height=640;
+     const ctx=canvas.getContext('2d');if(!ctx||!canvas.captureStream)throw Error('Visual audio tidak tersedia');
+     const draw=()=>{
+      ctx.fillStyle='#07100a';ctx.fillRect(0,0,360,640);ctx.fillStyle='#344e36';
+      for(let x=20;x<350;x+=23)ctx.fillRect(x,380-Math.random()*90,9,40+Math.random()*180);
+      ctx.textAlign='center';ctx.fillStyle='#e3fd72';ctx.font='bold 60px Arial';ctx.fillText('N/',180,240);
+      ctx.font='bold 25px Arial';ctx.fillText('NADMO TALK',180,305);
+      ctx.font='16px Arial';ctx.fillText('MIC ON / VOICE LIVE',180,338);
+     };
+     draw();talkVisualTimer=setInterval(draw,1000);
+     localStream=new MediaStream([...mic.getAudioTracks(),...canvas.captureStream(5).getVideoTracks()]);
+     notice('Mikrofon siap. Mode ngobrol audio-only.','camState');
+    }catch(e){mic.getTracks().forEach(t=>t.stop());throw e}
+   }
+   $('camera').srcObject=localStream;
+  }catch(e){stopTalkVisual();notice('Gagal menyiapkan siaran: '+e.message,'camState')}
  }
  $('preview').onclick=preview;
- $('stopCamera').onclick=()=>{if(host&&currentRoom){notice('Sedang LIVE. Gunakan KAMERA OFF untuk menyembunyikan gambar sementara tanpa mengakhiri siaran.','camState');return}if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;$('camera').srcObject=null;notice('Kamera dimatikan.','camState')};
+ $('stopCamera').onclick=()=>{if(host&&currentRoom){notice('Sedang LIVE. Gunakan KAMERA OFF untuk menyembunyikan gambar sementara tanpa mengakhiri siaran.','camState');return}if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;stopTalkVisual();$('camera').srcObject=null;notice('Sumber siaran dimatikan.','camState')};
  function emptyMessage(message){const box=document.createElement('div');box.className='no-signal';const h=document.createElement('strong');h.textContent='NO SIGNAL';const d=document.createElement('small');d.textContent=message;box.append(h,d);return box}
  function roomCard(x){const card=document.createElement('div');card.className='room';card.dataset.roomId=x.id;const art=document.createElement('div');art.className='room-art';art.textContent='N/';const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');title.textContent=x.title;const sub=document.createElement('small');sub.textContent=(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
  function renderRooms(){const q=$('searchLive').value.trim().toLocaleLowerCase('id');const items=cachedRooms.filter(x=>(selectedFilter==='all'||x.category===selectedFilter)&&(x.title+' '+x.category).toLocaleLowerCase('id').includes(q));$('rooms').replaceChildren();$('liveCount').textContent=items.length+' LIVE ROOMS';if(!items.length){$('rooms').append(emptyMessage(cachedRooms.length?'NO MATCHES':'NO PUBLIC LIVE BROADCASTS'));return}items.forEach(x=>$('rooms').append(roomCard(x)))}
@@ -655,10 +713,12 @@ body.live-immersive #watch .flash{z-index:40}
   if(m.type==='error'){notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
  $('createRoom').onclick=async()=>{
+  if(!['camera','talk'].includes(selectedLiveMode)){notice('Mode '+selectedLiveMode+' belum memiliki source live resmi.','liveState');return}
   if(!adult())return;if(!server){notice('Server NADMO sedang tidak tersedia, coba lagi nanti.','liveState');return}
   if(!localStream)await preview();if(!localStream)return;
   const title=$('title').value.trim()||'NADMO LIVE';
-  connect(()=>transmit({type:'create',title,category:$('category').value,mode:'public'}));
+  const category=selectedLiveMode==='talk'?'Podcast':$('category').value;
+  connect(()=>transmit({type:'create',title,category,mode:'public'}));
  };
  function join(id,title,locked){if(!adult())return;let password='';if(locked){password=prompt('Kode akses room:')||'';if(!password)return}roomPassword=password;stopRetry();
  connect(()=>transmit({type:'join',id,password}));$('watchTitle').textContent=title}
