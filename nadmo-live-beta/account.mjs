@@ -97,6 +97,48 @@ export async function accountEndpoint(storage,request){
   return json({ok:true,wallet:balances,capability:payoutCapability(),identityVerified:owner.kycStatus==='verified'&&owner.verifiedAdult});
  }
  if(p==='/api/wallet/withdraw'&&method!=='POST')return fail(405,'Method not allowed');
+
+ const pairId=(a,b)=>[a,b].sort().join(':');
+ const threadKey=(a,b)=>'dm-thread:'+pairId(a,b);
+ const approvalKey=(a,b)=>'dm-approved:'+pairId(a,b);
+ const hasBlock=async(a,b)=>!!(await storage.get('dm-block:'+a+':'+b)||await storage.get('dm-block:'+b+':'+a));
+ const principal=p.startsWith('/api/messages/')?await getAccount(storage,request):null;
+ if(p.startsWith('/api/messages/')&&method==='GET'){
+  if(!principal)return fail(401,'Masuk akun untuk melihat pesan');
+  if(p==='/api/messages/threads'){
+   const members=await storage.list({prefix:'dm-member:'+principal.id+':',limit:100});
+   const threads=[];
+   for(const item of members.values()){
+    if(!item?.otherId||await hasBlock(principal.id,item.otherId))continue;
+    const other=await storage.get('auth-user:'+item.otherId);
+    if(!other||other.disabled)continue;
+    const messages=await storage.get(threadKey(principal.id,item.otherId))||[];
+    threads.push({handle:other.handle,name:other.name,
+      updatedAt:messages.at(-1)?.createdAt||item.createdAt||0,
+      lastText:messages.at(-1)?.text?.slice(0,100)||''});
+   }
+   return json({ok:true,threads:threads.sort((a,b)=>b.updatedAt-a.updatedAt)});
+  }
+  if(p==='/api/messages/requests'){
+   const requests=await storage.list({prefix:'dm-request:'+principal.id+':',limit:60});
+   const incoming=[];
+   for(const r of requests.values()){
+    const sender=r?.fromId&&await storage.get('auth-user:'+r.fromId);
+    if(sender&&!sender.disabled&&!await hasBlock(principal.id,sender.id))
+     incoming.push({handle:sender.handle,name:sender.name,createdAt:r.createdAt});
+   }
+   return json({ok:true,requests:incoming.slice(0,30)});
+  }
+  if(p.startsWith('/api/messages/thread/')){
+   const handle=decodeURIComponent(p.slice('/api/messages/thread/'.length)).toLowerCase();
+   if(!handleOK(handle))return fail(404,'Percakapan tidak ditemukan');
+   const id=await storage.get('auth-handle:'+handle);
+   if(!id||await hasBlock(principal.id,id)||!await storage.get(approvalKey(principal.id,id)))
+    return fail(403,'Percakapan memerlukan persetujuan kedua akun');
+   return json({ok:true,messages:(await storage.get(threadKey(principal.id,id))||[]).slice(-80)});
+  }
+  return fail(404,'Halaman pesan tidak ditemukan');
+ }
  if(p==='/api/streaming/capacity')return json({architecture:'P2P_WEBRTC',maxViewersPerRoom:4,turnConfigured:false,sfuConfigured:false,scaleReady:false});
  if(p.startsWith('/api/profile/')&&p.endsWith('/avatar')&&method==='GET'){
   const handle=p.slice('/api/profile/'.length,-'/avatar'.length).toLowerCase();
@@ -151,7 +193,7 @@ export async function accountEndpoint(storage,request){
   const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
   return json({ok:true,profile:{handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
- if(!p.startsWith('/api/account/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
+ if(!p.startsWith('/api/account/')&&!p.startsWith('/api/messages/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
   const user=await getAccount(storage,request);
   return json({ok:true,authenticated:!!user,account:user});
