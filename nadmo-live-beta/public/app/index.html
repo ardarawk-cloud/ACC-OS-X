@@ -100,6 +100,10 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 @media(prefers-reduced-motion:reduce){.stage-core .circle:before{animation:none}}
 
 /* v0.5 live-first research implementation */
+#explore .page-top{padding-top:12px;margin-top:4px}
+#explore>.deck{display:none}
+#explore .show-label{margin:13px 0 10px;padding-top:10px}
+
 .fee-table{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:10px 0 14px}.fee-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #313a2f;color:var(--ink);font-size:12px}.fee-row:last-child{border:0;color:var(--neon)}.fee-row b{color:var(--paper);white-space:nowrap}.fee-row:last-child b{color:var(--neon)}
 .filterstrip{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 0 14px}.filterstrip::-webkit-scrollbar{display:none}
 .filterstrip button{flex:none;background:#151a14;border:1px solid #454d40;color:#afb7a8;padding:9px 12px;font:800 10px Arial,sans-serif;letter-spacing:.45px}.filterstrip button.active{background:var(--neon);color:#10140c;border-color:var(--neon)}
@@ -375,7 +379,7 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
   catch(e){window.prompt('Salin link room',url)}
  };
  $('restartRoom').onclick=()=>{leave();show('studio');notice('Mulai siaran baru dari Studio. ID room lama tidak dipulihkan.','liveState')};
-  function rtc(){const pc=new RTCPeerConnection({iceServers:[{urls:'stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});pc.oniceconnectionstatechange=()=>{if(pc.iceConnectionState==='failed')notice('Video belum tersambung. Koneksi ini mungkin membutuhkan relay TURN; uji jaringan lain atau tunggu peningkatan SFU.','watchState')};return pc}
+  function rtc(){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});pc.oniceconnectionstatechange=()=>{if(pc.iceConnectionState==='failed')notice('Video belum tersambung. Koneksi ini mungkin membutuhkan relay TURN; uji jaringan lain atau tunggu peningkatan SFU.','watchState')};return pc}
  function signal(to,data){transmit({type:'signal',to,data})}
  async function attachViewer(id){if(!localStream)return;const pc=rtc();peers.set(id,pc);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.onicecandidate=e=>{if(e.candidate)signal(id,{candidate:e.candidate})};const offer=await pc.createOffer();await pc.setLocalDescription(offer);signal(id,{description:pc.localDescription})}
  async function incoming(m){
