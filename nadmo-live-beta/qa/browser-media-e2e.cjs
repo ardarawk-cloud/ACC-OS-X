@@ -116,7 +116,12 @@ async function main(){
   assert.ok(recovered.tracks?.includes('audio:live')&&recovered.tracks?.includes('video:live'));
   console.log('PASS video and audio resumed after host WebSocket network switch',JSON.stringify(recovered));
   await host.locator('#leave').click();
-  await viewer.waitForFunction(()=>document.querySelector('#explore')&&!document.querySelector('#explore').classList.contains('hide'),{timeout:12000});
+  try{
+    await viewer.waitForFunction(()=>document.querySelector('#explore')&&!document.querySelector('#explore').classList.contains('hide'),{timeout:12000});
+  }catch(e){
+    const status=await viewer.evaluate(()=>({events:window.__nadmoQALog?.slice(-30),watchState:document.querySelector('#watchState')?.textContent,flash:document.querySelector('#flash')?.textContent,exploreHidden:document.querySelector('#explore')?.classList.contains('hide')}));
+    console.log('ROOM_END_DIAGNOSTIC '+JSON.stringify(status));throw e;
+  }
   console.log('PASS explicit end shows viewer Explore without useless reconnect attempts');
   assert.equal(faults.length,0,'Browser uncaught exceptions: '+faults.join('; '));
   console.log('ALL HEADLESS WEBRTC BROADCAST TESTS PASSED');
