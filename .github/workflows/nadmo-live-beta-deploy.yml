@@ -28,6 +28,7 @@ jobs:
           node --check nadmo-live-beta/qa/room-safety-smoke.cjs
           node --check nadmo-live-beta/qa/room-safety-ui-e2e.cjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
+          node --check nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
       - name: Deploy isolated beta Worker (do not modify production apps)
         id: deploy
@@ -77,6 +78,8 @@ jobs:
         run: node nadmo-live-beta/qa/room-safety-ui-e2e.cjs
       - name: Verify LIVE discovery compact on mobile and PC (screenshots)
         run: node nadmo-live-beta/qa/live-feed-compact-e2e.cjs
+      - name: Verify long creator names never overflow phone and PC live cards
+        run: node nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
       - name: Keep visual QC screenshots
         if: always()
         uses: actions/upload-artifact@v4
