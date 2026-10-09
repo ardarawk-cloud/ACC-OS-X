@@ -47,7 +47,7 @@ async function main(){
   await one.locator('#profileLinkUrl').fill('https://bookbwd.nadmo.id/');
   await one.locator('#profileAddLink').click();
   await one.locator('#profileSave').click();
-  await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('server'),{timeout:10000});
+  await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('tersinkron'),{timeout:10000});
   await one.locator('#profilePostText').fill('Book directly https://bookbwd.nadmo.id/ without walled gardens');
   await one.locator('#profilePostSave').click();
   await one.waitForFunction(()=>document.querySelector('#profileSyncedPosts').querySelectorAll('a').length===1,{timeout:10000});
