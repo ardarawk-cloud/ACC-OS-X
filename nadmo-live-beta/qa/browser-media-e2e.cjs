@@ -14,6 +14,7 @@ async function readyAge(page){
 }
 async function main(){
  const chrome=process.env.CHROME_BIN||'/usr/bin/google-chrome';
+ const streamTitle='NADMO QA Stream '+(process.env.GITHUB_RUN_ID||Date.now());
  const browser=await puppeteer.launch({
   executablePath:chrome,headless:true,
   args:['--no-sandbox','--disable-dev-shm-usage','--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream','--autoplay-policy=no-user-gesture-required','--enable-logging=stderr']
@@ -58,20 +59,23 @@ async function main(){
   assert.deepEqual(hostTracks,['audio','video']);
   console.log('PASS host fake camera and mic preview');
   await host.select('#category','Gaming');
-  await host.locator('#title').fill('NADMO QA Virtual Camera Stream');
+  await host.locator('#title').fill(streamTitle);
   await host.locator('#createRoom').click();
   await waitText(host,'#watchState','Bagikan kode');
-  console.log('PASS host published Gaming room');
+  const roomId=await host.$eval('#watchState',el=>el.textContent.match(/[a-f0-9]{12}/i)?.[0]);
+  assert.ok(roomId);
+  const roomButton='#rooms .room[data-room-id="'+roomId+'"] .btn';
+  console.log('PASS host published Gaming room '+roomId);
   await readyAge(viewer);
   await viewer.locator('nav button[data-tab="explore"]').click();
-  await viewer.waitForFunction(()=>Array.from(document.querySelectorAll('#rooms .room b')).some(x=>x.textContent==='NADMO QA Virtual Camera Stream'),{timeout:30000});
+  await viewer.waitForFunction(id=>Boolean(document.querySelector('#rooms .room[data-room-id="'+id+'"] .btn')),{timeout:30000},roomId);
   await delay(1000);
-  const beforeClick=await viewer.evaluate(()=>({adult:document.querySelector('#adult')?.checked,visible:!document.querySelector('#explore')?.classList.contains('hide'),cards:document.querySelectorAll('#rooms .room').length,buttons:document.querySelectorAll('#rooms .room .btn').length}));
+  const beforeClick=await viewer.evaluate(id=>({adult:document.querySelector('#adult')?.checked,visible:!document.querySelector('#explore')?.classList.contains('hide'),cards:document.querySelectorAll('#rooms .room').length,target:!!document.querySelector('#rooms .room[data-room-id="'+id+'"] .btn')}),roomId);
   console.log('VIEWER_BEFORE_CLICK '+JSON.stringify(beforeClick));
-  const coords=await viewer.$eval('#rooms .room .btn',el=>{const r=el.getBoundingClientRect();const center=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return{y:r.y,height:r.height,hitTag:center?.tagName,hitText:center?.textContent?.slice(0,45)}});
+  const coords=await viewer.$eval(roomButton,el=>{const r=el.getBoundingClientRect();const center=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return{y:r.y,height:r.height,hitTag:center?.tagName,hitText:center?.textContent?.slice(0,45)}});
   console.log('VIEWER_WATCH_BUTTON_GEOMETRY '+JSON.stringify(coords));
-  await viewer.$eval('#rooms .room .btn',el=>el.scrollIntoView({block:'center',behavior:'instant'}));
-  await viewer.locator('#rooms .room .btn').click();
+  await viewer.$eval(roomButton,el=>el.scrollIntoView({block:'center',behavior:'instant'}));
+  await viewer.locator(roomButton).click();
   await delay(1000);
   console.log('VIEWER_AFTER_CLICK '+JSON.stringify(await viewer.evaluate(()=>({adult:document.querySelector('#adult')?.checked,watch:!document.querySelector('#watch')?.classList.contains('hide'),log:window.__nadmoQALog?.slice(-20)}))));
   try{await waitText(viewer,'#watchState','Video tersambung',35000)}
