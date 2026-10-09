@@ -259,6 +259,8 @@ export async function accountEndpoint(storage,request){
    await storage.put('dm-block:'+user.id+':'+otherId,true);
    await storage.delete('dm-request:'+user.id+':'+otherId);
    await storage.delete('dm-request:'+otherId+':'+user.id);
+   await storage.delete('dm-outgoing:'+user.id+':'+otherId);
+   await storage.delete('dm-outgoing:'+otherId+':'+user.id);
    return json({ok:true,blocked:true});
   }
   if(p==='/api/messages/unblock'){
@@ -272,12 +274,14 @@ export async function accountEndpoint(storage,request){
    if(await storage.get(approvalKey(user.id,otherId)))return json({ok:true,accepted:true});
    const requested='dm-request:'+otherId+':'+user.id;
    if(!await storage.get(requested))await storage.put(requested,{fromId:user.id,createdAt:Date.now()});
+   await storage.put('dm-outgoing:'+user.id+':'+otherId,true);
    return json({ok:true,pending:true});
   }
   if(p==='/api/messages/accept'){
    const key='dm-request:'+user.id+':'+otherId;
    if(!await storage.get(key))return fail(404,'Permintaan chat tidak tersedia');
    await storage.delete(key);
+   await storage.delete('dm-outgoing:'+otherId+':'+user.id);
    await storage.put(approvalKey(user.id,otherId),true);
    await storage.put('dm-member:'+user.id+':'+otherId,{otherId,createdAt:Date.now()});
    await storage.put('dm-member:'+otherId+':'+user.id,{otherId:user.id,createdAt:Date.now()});
