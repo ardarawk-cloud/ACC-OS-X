@@ -1059,7 +1059,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 <script>
 (function(){
  'use strict';
- const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings'];
+ const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings','authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialPage','messagesPage'];
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
@@ -1219,6 +1219,11 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   $('accountLoginCard').classList.toggle('hide',logged);
   $('accountSignedCard').classList.toggle('hide',!logged);
   $('walletPanel').hidden=!logged;
+  $('meSigned').classList.toggle('hide',!logged);
+  $('meGuest').classList.toggle('hide',logged);
+  $('messagesGuest').classList.toggle('hide',logged);
+  $('messagesSigned').classList.toggle('hide',!logged);
+  if(!logged)$('meWalletBalance').textContent='Rp0';
   $('avatarChoose').hidden=!logged;
   $('avatarRemove').hidden=!logged||!activeAccount.avatarVersion;
   setAvatarImage('profileAvatarImage',logged?activeAccount.handle:'',logged?activeAccount.avatarVersion:0);
@@ -1274,6 +1279,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   try{
    const result=await accountRequest('/api/wallet/me'),w=result.wallet||{},cap=result.capability||{};
    $('walletAvailable').textContent=walletCurrency(w.availableIDR);
+   $('meWalletBalance').textContent=walletCurrency(w.availableIDR);
    $('walletPending').textContent=walletCurrency(w.pendingWithdrawalsIDR);
    $('walletTotal').textContent=walletCurrency(w.totalEarningsIDR);
    $('walletPaid').textContent=walletCurrency(w.paidOutIDR);
@@ -1334,7 +1340,8 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    $('accountPass').value='';
    $('accountStatus').textContent='';
    displayAccount();await loadServerPosts();await loadSupporter();await loadWallet();
-   $('accountSignedStatus').textContent='Akun @'+activeAccount.handle+' berhasil masuk. Profil tersinkron di server.';
+   $('accountSignedStatus').textContent='Akun @'+activeAccount.handle+' siap.';
+  show('settings');
   }catch(e){$('accountStatus').textContent=e.message}
  }
  $('accountRegister').onclick=()=>authAction('register');
@@ -1343,7 +1350,8 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   try{
    await accountRequest('/api/account/logout','POST',{});
    activeAccount=null;supporterData=null;displayAccount();await loadSupporter();
-   $('accountStatus').textContent='Keluar dari akun. Draf lokal di HP ini tetap tersimpan.';
+   $('accountStatus').textContent='Kamu sudah keluar.';
+   show('authPage');
   }catch(e){$('accountSignedStatus').textContent=e.message}
  };
 
@@ -1427,8 +1435,8 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   renderProfileLinks();
  }
  $('editProfileBtn').onclick=()=>{
-  $('profileEditBox').classList.toggle('hide');
-  $('editProfileBtn').textContent=$('profileEditBox').classList.contains('hide')?'EDIT':'✕';
+  $('profileEditBox').classList.remove('hide');show('accountPage');
+  $('editProfileBtn').textContent='EDIT';
  };
  $('profileAddLink').onclick=()=>{
   const label=$('profileLinkLabel').value.trim().slice(0,40);
@@ -1459,7 +1467,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    renderProfileDraft();
    $('profileEditStatus').textContent='Draf tersimpan di HP ini. Masuk akun agar profil tersinkron.';
   }
-  $('profileEditBox').classList.add('hide');$('editProfileBtn').textContent='EDIT';
+  $('profileEditBox').classList.add('hide');$('editProfileBtn').textContent='EDIT';show('settings');
  };
  function renderDraftPosts(){
   $('profilePostFeed').replaceChildren();
@@ -1506,8 +1514,23 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
  renderDraftPosts();
 
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();window.scrollTo(0,0);}
+ function show(name){if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
+  if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
+  if(name==='socialPage')loadSocialFeed();
+  if(name==='messagesPage'&&activeAccount)loadMessageInbox();
+  window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
+ $('meMore').onclick=()=>show('preferencesPage');
+ $('meLogin').onclick=()=>show('authPage');
+ $('meWalletOpen').onclick=()=>show('walletPage');
+ $('meNewPost').onclick=()=>show('draftsPage');
+ $('messagesLogin').onclick=()=>show('authPage');
+ document.querySelectorAll('[data-open-page]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.openPage)));
+ document.querySelectorAll('.subBack').forEach(button=>button.addEventListener('click',()=>{
+  const onPage=button.closest('section')?.id;
+  if(['authPage','preferencesPage','walletPage','supporterPage','accountPage','draftsPage'].includes(onPage))show('settings');
+  else show('preferencesPage');
+ }));
  $('adult').addEventListener('change',()=>{
   const confirmed=$('adult').checked;
   localStorage.setItem('nadmo.adult',confirmed?'yes':'no');
@@ -1518,7 +1541,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    setTimeout(()=>join(invite.id,invite.title,invite.locked),80);
   }
  });
- function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Settings.');show('settings');return false}return true}
+ function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Pengaturan dan privasi.');show('privacyPage');return false}return true}
  function notice(s,id='serverState'){$(id).textContent=s;if(id==='watchState')markWatchWarning(s)}
  function markWatchWarning(s){$('watchState').classList.toggle('connection-warning',/gagal|terputus|menunggu|salah|koneksi.*hilang|host.*reconnect|belum dapat|belum tersambung|ditolak|offline|sedang dipulihkan/i.test(s))}
  function clearWatchWarning(){$('watchState').classList.remove('connection-warning')}
