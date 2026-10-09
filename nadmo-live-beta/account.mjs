@@ -119,6 +119,18 @@ export async function accountEndpoint(storage,request){
  if(!user)return fail(401,'Login diperlukan');
  const record=await storage.get('auth-user:'+user.id);
  if(!record)return fail(401,'Login diperlukan');
+ if(p==='/api/account/delete'&&method==='POST'){
+  if(record.kycStatus==='verified')return fail(403,'Penghapusan akun terverifikasi harus melalui peninjauan retensi data.');
+  const password=typeof payload.password==='string'?payload.password:'';
+  if(!password||!safeCompare(await passwordHash(password,record.salt),record.passhash))
+   return fail(401,'Konfirmasi kata sandi salah');
+  await storage.delete('auth-handle:'+record.handle);
+  await storage.delete('auth-posts:'+record.id);
+  await storage.delete('auth-user:'+record.id);
+  const token=cookies(request);
+  if(token)await storage.delete('auth-session:'+await digest(token));
+  return json({ok:true,deleted:true},200,{'Set-Cookie':unCookie()});
+ }
  if(p==='/api/account/profile'&&method==='PUT'){
   const name=clean(payload.name,60),bio=clean(payload.bio,300);
   if(!name)return fail(400,'Nama tampilan wajib diisi');
