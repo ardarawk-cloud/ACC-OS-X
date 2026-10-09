@@ -1613,7 +1613,11 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   node.classList.toggle('name-long',Array.from(label).length>14);
   node.classList.toggle('name-very-long',Array.from(label).length>23);
  }
- function roomCard(x){const card=document.createElement('div');card.className='room';card.dataset.roomId=x.id;const art=document.createElement('div');art.className='room-art';art.textContent='N/';const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');setStreamerName(title,x.hostHandle?'@'+x.hostHandle:(x.hostName||'Host'));const sub=document.createElement('small');sub.textContent=x.title+' · '+(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
+ function roomCard(x){const card=document.createElement('div');card.className='room';card.dataset.roomId=x.id;const art=document.createElement('div');art.className='room-art';art.textContent='N/';if(x.hostAvatarVersion){
+ const avatar=document.createElement('img');avatar.className='room-avatar-photo';avatar.alt='';
+ avatar.src=avatarURL(x.hostHandle,x.hostAvatarVersion);avatar.onerror=()=>avatar.remove();
+ art.append(avatar);
+ }const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');setStreamerName(title,x.hostHandle?'@'+x.hostHandle:(x.hostName||'Host'));const sub=document.createElement('small');sub.textContent=x.title+' · '+(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
  function renderRooms(){const q=$('searchLive').value.trim().toLocaleLowerCase('id');const items=cachedRooms.filter(x=>(selectedFilter==='all'||x.category===selectedFilter)&&(x.title+' '+x.category).toLocaleLowerCase('id').includes(q));$('rooms').replaceChildren();$('liveCount').textContent=items.length+' LIVE ROOMS';if(!items.length){$('rooms').append(emptyMessage(cachedRooms.length?'NO MATCHES':'NO PUBLIC LIVE BROADCASTS'));return}items.forEach(x=>$('rooms').append(roomCard(x)))}
  function renderSaved(){$('savedRooms').replaceChildren();const items=cachedRooms.filter(x=>savedIds.has(x.id));if(!items.length){$('savedRooms').append(emptyMessage('NO SAVED LIVE SESSIONS ON THIS DEVICE'));return}items.forEach(x=>$('savedRooms').append(roomCard(x)))}
  async function loadRooms(){try{const response=await fetch(api('/api/rooms'),{cache:'no-store',signal:AbortSignal.timeout(7000)});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();cachedRooms=Array.isArray(data.rooms)?data.rooms:[];renderRooms();renderSaved()}catch(e){$('rooms').replaceChildren(emptyMessage('NETWORK UNAVAILABLE / RETRY'));$('liveCount').textContent='NETWORK ERROR'}}
@@ -1877,6 +1881,11 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    const number=document.createElement('span');number.className='stage-slot-number';number.textContent=String(index+1).padStart(2,'0');
    const title=document.createElement('small');title.className='stage-tag';
    title.textContent=(guest.id===selfId?'ANDA':guest.name||'Tamu')+' · '+(guest.mic?'MIC ON':'MIC OFF')+' · '+(guest.camera?'CAM':'VOICE');
+   if(!guest.camera&&guest.avatarVersion){
+    const avatar=document.createElement('img');avatar.className='stage-guest-fallback-avatar';avatar.alt='';
+    avatar.src=avatarURL(guest.handle,guest.avatarVersion);
+    avatar.onerror=()=>avatar.remove();tile.append(avatar);
+   }
    tile.append(fallback,number,title);
    if(host){
     tile.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;stageDrag(tile,guest.id,e)});
@@ -1925,6 +1934,8 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   const name=String(room.hostName||'Host').slice(0,60),handle=room.hostHandle||'';
   hostPublicIdentity={name,handle};
   $('hostIdentityHandle').textContent=handle?'@'+handle:'KREATOR NADMO';
+  setAvatarImage('hostAvatarImage',handle,room.hostAvatarVersion);
+  setAvatarImage('hostPublicAvatarImage',handle,room.hostAvatarVersion);
   $('hostPublicName').textContent=name;
   $('hostPublicBio').textContent='';
   $('hostPublicLinks').replaceChildren();
@@ -2232,6 +2243,10 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    }
    if(m.type==='chat'){
     const div=document.createElement('div'),b=document.createElement('b'),badge=makeSupporterBadge(m.supporterBadge);
+    if(m.avatarVersion&&m.handle){
+     const avatar=document.createElement('img');avatar.className='chat-user-avatar';avatar.alt='';
+     avatar.src=avatarURL(m.handle,m.avatarVersion);avatar.onerror=()=>avatar.remove();div.append(avatar);
+    }
     if(badge)div.append(badge);
     b.textContent=(m.name||'Viewer')+': ';
     div.append(b,document.createTextNode(m.text||''));$('chat').append(div);$('chat').scrollTop=$('chat').scrollHeight;
