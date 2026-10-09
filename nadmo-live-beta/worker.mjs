@@ -88,7 +88,7 @@ export class RoomHub{
   if(++s.events>MAX_EVENTS){ws.close(1008,'rate limited');return}
   save(ws,s);
   const type=msg.type;
-  if(type==='leave'){await this.leave(ws,s);return}
+  if(type==='leave'){await this.leave(ws,s);reply(ws,{type:'left'});return}
   if(type==='create'){
    if(s.roomId)return failure(ws,'Keluar dari room sebelumnya terlebih dahulu');
    const all=await this.findRooms();
