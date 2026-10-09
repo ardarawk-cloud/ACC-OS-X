@@ -648,12 +648,13 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 .message-bubble.mine{align-self:flex-end;background:#3a562f}
 .message-request,.message-thread{padding:15px 12px;border-bottom:1px solid #344936;color:#f1f6e9;display:flex;align-items:center;gap:9px}
 .message-request button,.message-thread button{background:#30472d;border:1px solid #69835b;color:#e9f8df;padding:9px;border-radius:9px;font-weight:800}
+.mast-login{border:1px solid #8fad63;border-radius:17px;background:#192519;color:#e7faaf;padding:7px 11px;font:900 10px Arial;cursor:pointer}.mast-login[hidden]{display:none!important}
 </style></head>
 <body>
 <div class="app">
 <header class="mast">
   <div class="logo"><span class="logo-mark">N/</span><div><div class="logo-name">NADMO <em>LIVE</em></div><div class="logo-sub">INDEPENDENT BROADCAST SYSTEM</div></div></div>
-  <div class="mast-right"><div class="micro"><span class="dot"></span><strong id="net">OFFLINE BETA</strong></div><div class="micro">BALI / IDN · 18+</div></div>
+  <div class="mast-right"><div class="micro"><span class="dot"></span><strong id="net">OFFLINE BETA</strong></div><div class="micro">BALI / IDN · 18+</div><button type="button" id="mastLogin" class="mast-login">MASUK</button></div>
 </header>
 <section id="home">
   <div class="ticker"><b>TRANSMISSION 001</b><span class="line"></span><small>NO FILTER / JUST SIGNAL</small></div>
@@ -1220,7 +1221,8 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   $('accountSignedCard').classList.toggle('hide',!logged);
   $('walletPanel').hidden=!logged;
   $('meSigned').classList.toggle('hide',!logged);
-  $('meGuest').classList.toggle('hide',logged);
+  $('meGuest').classList.add('hide');
+  $('mastLogin').hidden=logged;
   $('messagesGuest').classList.toggle('hide',logged);
   $('messagesSigned').classList.toggle('hide',!logged);
   if(!logged)$('meWalletBalance').textContent='Rp0';
@@ -1694,13 +1696,14 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
  renderDraftPosts();
 
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
+ function show(name){if(name==='settings'&&!activeAccount)name='authPage';if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
   if(name==='socialPage')loadSocialFeed();
   if(name==='messagesPage'&&activeAccount)loadMessageInbox();
   if(name!=='messagesPage'&&activeChatHandle)closeMessages();
   window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
+ $('mastLogin').onclick=()=>show('authPage');
  $('meMore').onclick=()=>show('preferencesPage');
  $('meLogin').onclick=()=>show('authPage');
  $('meWalletOpen').onclick=()=>show('walletPage');
