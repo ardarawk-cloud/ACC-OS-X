@@ -160,6 +160,59 @@ body.live-immersive #watch .flash{z-index:40}
 .mode-details{font-size:12px;line-height:1.5;background:#172018;border:1px solid #38483a;padding:12px;margin:0 0 12px;color:#d7e2d1}
 @media(max-width:360px){.mode-grid{gap:4px}.mode-grid button{font-size:9px;padding:12px 2px}body.live-immersive #watch #hostControls{right:7px}body.live-immersive #watch .live-chat{right:78px}}
 
+/* On desktop, a viewer should see the same portrait framing as a phone.
+   A fullscreen desktop page must not turn portrait streaming into a zoomed,
+   horizontally cropped video. Keep the 9:16 viewing stage centered. */
+@media (min-width:800px) {
+ body.live-immersive.watch-viewer #watch{
+  --watch-stage-width:min(480px,56.25dvh);
+  background:radial-gradient(ellipse at 50% 42%,#263626 0%,#101710 38%,#060806 78%);
+ }
+ body.live-immersive.watch-viewer #watch .live-stage{
+  inset:0 auto 0 50%;
+  width:var(--watch-stage-width);
+  height:100dvh;
+  transform:translateX(-50%);
+  box-shadow:0 0 0 1px #43533b,0 0 60px #000b;
+ }
+ body.live-immersive.watch-viewer #watch .live-stage>.viewfinder{
+  background:#050705;
+ }
+ body.live-immersive.watch-viewer #watch #remote{
+  object-fit:cover;
+  object-position:center center;
+ }
+ body.live-immersive.watch-viewer #watch::after{
+  inset:49% auto 0 50%;
+  width:var(--watch-stage-width);
+  transform:translateX(-50%);
+ }
+ body.live-immersive.watch-viewer #watch .page-top{
+  left:calc(50% - var(--watch-stage-width)/2);
+  right:auto;
+  width:var(--watch-stage-width);
+ }
+ body.live-immersive.watch-viewer #watch #watchState{
+  left:calc(50% - var(--watch-stage-width)/2 + 16px);
+  max-width:calc(var(--watch-stage-width) - 98px);
+ }
+ body.live-immersive.watch-viewer #watch #refreshVideo,
+ body.live-immersive.watch-viewer #watch #leave,
+ body.live-immersive.watch-viewer #watch #viewerTools{
+  right:calc(50% - var(--watch-stage-width)/2 + 12px);
+ }
+ body.live-immersive.watch-viewer #watch .live-chat{
+  left:calc(50% - var(--watch-stage-width)/2 + 12px);
+  right:calc(50% - var(--watch-stage-width)/2 + 84px);
+ }
+ body.live-immersive.watch-viewer #watch #viewerTipPanel{
+  left:50%;right:auto;
+  width:var(--watch-stage-width);
+  transform:translateX(-50%);
+ }
+}
+
+
 </style></head>
 <body>
 <div class="app">
@@ -335,7 +388,7 @@ body.live-immersive #watch .flash{z-index:40}
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0;
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){document.body.classList.toggle('live-immersive',name==='watch');for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();window.scrollTo(0,0);}
+ function show(name){document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
  $('adult').addEventListener('change',()=>localStorage.setItem('nadmo.adult',$('adult').checked?'yes':'no'));
  function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Settings.');show('settings');return false}return true}
