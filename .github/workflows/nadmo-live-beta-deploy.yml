@@ -1,0 +1,53 @@
+name: NADMO LIVE Beta Cloudflare Worker
+on:
+  push:
+    branches:
+      - 'feat/nadmo-live-beta-worker-20261009'
+    paths:
+      - 'nadmo-live-beta/**'
+      - '.github/workflows/nadmo-live-beta-deploy.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nadmo-live-beta-worker
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: node --check nadmo-live-beta/worker.mjs
+      - name: Deploy isolated beta Worker (do not modify production apps)
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          workingDirectory: 'nadmo-live-beta'
+          command: deploy --config wrangler.json
+      - name: Verify public beta health
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          echo "Worker deployment URL: ${DEPLOYMENT_URL:-not returned}"
+          if [ -z "${DEPLOYMENT_URL:-}" ]; then
+            echo "No automatic URL; check Cloudflare deployment output"
+            exit 1
+          fi
+          for i in 1 2 3 4 5; do
+            if curl -fsS --max-time 20 "${DEPLOYMENT_URL%/}/health" | grep -q '"service":"nadmo-live-beta"'; then
+              echo "NADMO LIVE BETA HEALTH PASS"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
