@@ -74,7 +74,7 @@ export class RoomHub{
    for(const [key,room] of rooms){
     if(room.mode!=='public')continue;
     if(room.hostOfflineAt||!getHost(peers,room.hostId))continue;
-    list.push({id:room.id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,category:room.category,viewers:roomCount(peers,room.id)});
+    list.push({id:room.id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostAvatarVersion:room.hostAvatarVersion||0,hostVerified:room.hostVerified===true,category:room.category,viewers:roomCount(peers,room.id)});
    }
    return Response.json({rooms:list});
   }
@@ -94,7 +94,7 @@ export class RoomHub{
   const principal=await getAccount(this.ctx.storage,request);
   const sessionFingerprint=principal?await getSessionFingerprint(request):null;
   save(server,{id:crypto.randomUUID().replace(/-/g,'').slice(0,16),roomId:null,role:null,lastWindow:0,events:0,lastChat:0,
-    accountId:principal?.id||null,sessionFingerprint,handle:principal?.handle||null,displayName:principal?.name||null,
+    accountId:principal?.id||null,sessionFingerprint,handle:principal?.handle||null,avatarVersion:principal?.avatarVersion||0,displayName:principal?.name||null,
     verifiedAdult:principal?.verifiedAdult===true,kycStatus:principal?.kycStatus||'NOT_CONFIGURED'});
   // A 25s server heartbeat keeps mobile network paths warm without an APK update.
   // The alarm is scheduled only while sockets are present; no idle background loop.
@@ -154,7 +154,7 @@ export class RoomHub{
    const id=crypto.randomUUID().replace(/-/g,'').slice(0,12);
    const resumeToken=crypto.randomUUID()+crypto.randomUUID();
    const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',
-    hostName:current?.name||txt(msg.hostName,60)||'Host',hostHandle:current?.handle||null,
+    hostName:current?.name||txt(msg.hostName,60)||'Host',hostHandle:current?.handle||null,hostAvatarVersion:current?.avatarVersion||0,
     hostVerified:current?.kycStatus==='verified'&&current?.verifiedAdult===true,hostAccountId:current?.id||null,
     mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now};
    await this.ctx.storage.put('room:'+id,room);
