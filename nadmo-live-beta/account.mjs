@@ -319,6 +319,30 @@ export async function accountEndpoint(storage,request){
   if(!password||!safeCompare(await passwordHash(password,record.salt),record.passhash))
    return fail(401,'Konfirmasi kata sandi salah');
   await storage.delete('auth-handle:'+record.handle);
+  // Erase social posts and pending messaging state before revoking this identity.
+  const feed=await storage.get('social-public-feed')||[];
+  await storage.put('social-public-feed',feed.filter(post=>post.accountId!==user.id));
+  const ownConnections=await storage.list({prefix:'dm-member:'+user.id+':',limit:100});
+  for(const item of ownConnections.values()){
+   if(!item?.otherId)continue;
+   await storage.delete(threadKey(user.id,item.otherId));
+   await storage.delete(approvalKey(user.id,item.otherId));
+   await storage.delete('dm-member:'+item.otherId+':'+user.id);
+   await storage.delete('dm-member:'+user.id+':'+item.otherId);
+   await storage.delete('dm-block:'+user.id+':'+item.otherId);
+   await storage.delete('dm-block:'+item.otherId+':'+user.id);
+  }
+  const incoming=await storage.list({prefix:'dm-request:'+user.id+':',limit:100});
+  for(const [key,item] of incoming){
+   await storage.delete(key);
+   if(item?.fromId)await storage.delete('dm-outgoing:'+item.fromId+':'+user.id);
+  }
+  const outgoing=await storage.list({prefix:'dm-outgoing:'+user.id+':',limit:100});
+  for(const key of outgoing.keys()){
+   const otherId=key.split(':').at(-1);
+   await storage.delete('dm-request:'+otherId+':'+user.id);
+   await storage.delete(key);
+  }
   await storage.delete('auth-posts:'+record.id);
   await storage.delete('auth-avatar:'+record.id);
   await storage.delete('auth-user:'+record.id);
