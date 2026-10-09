@@ -344,6 +344,33 @@ body.live-immersive #watch .sheet-close:focus-visible{
  outline:2px solid #e3fd72;outline-offset:3px;
 }
 
+
+/* NADMO profile external-links + post draft surface. External URLs are not platform-locked. */
+.nadmo-profile{margin:12px 0 27px}
+.profile-hero{display:flex;align-items:center;gap:12px;padding:17px 12px;border:1px solid #3b513d;border-radius:14px;background:#131b14}
+.profile-avatar{flex:0 0 54px;height:54px;display:grid;place-items:center;background:#233325;border:1px solid #b9d35a;border-radius:50%;font:bold 26px Impact,Arial,sans-serif;color:#e3fd72}
+.profile-hero>div:nth-child(2){display:flex;flex-direction:column;min-width:0;flex:1;gap:5px}
+.profile-hero b{font-size:17px;overflow:hidden;text-overflow:ellipsis}
+.profile-hero small{font-size:12px;color:#c2d3be}
+.profile-hero button{font-size:11px;padding:10px;min-height:38px}
+.profile-bio{padding:0 5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.profile-links,.profile-edit-links,.profile-post-feed{display:flex;flex-direction:column;gap:9px;padding:8px 0}
+.profile-business-link{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:10px;border:1px solid #4a6844;background:#18271a;color:#e3fd72;text-decoration:none;min-width:0}
+.profile-business-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.profile-business-link:focus-visible,.post-external-link:focus-visible{outline:2px solid #e3fd72}
+.profile-note{font-size:11px;line-height:1.6;color:#9fac99;margin:8px 0 15px}
+.profile-edit-row{display:flex;flex-direction:column;gap:9px;margin:8px 0}
+.profile-textarea{width:100%;resize:vertical;min-height:85px;padding:10px 12px}
+.profile-edit-links>div{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#1b261d;padding:9px 11px;border-radius:9px}
+.profile-edit-links>div span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-edit-links button,.profile-post-feed button{border:1px solid #798871;border-radius:9px;background:#1f2e22;padding:7px;color:#ecf5e7;flex-shrink:0}
+.profile-post-card{background:#151d17;border:1px solid #405442;border-radius:12px;padding:14px;min-width:0}
+.profile-post-card .post-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.profile-post-card .post-top small{color:#a8b3a4}
+.profile-post-content{margin:12px 0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.65;color:#e9ede5}
+.post-external-link{color:#e3fd72;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.profile-composer button{margin-top:9px}
+
 </style></head>
 <body>
 <div class="app">
@@ -518,6 +545,40 @@ body.live-immersive #watch .sheet-close:focus-visible{
   <p class="deck">Ini masih fondasi kanal SIGNAL. Sistem pemberitahuan terverifikasi, arsip offline, relai cadangan dan persetujuan editor belum dibangun.</p>
 </section>
 <section id="settings" class="hide">
+  <div id="betaSocialProfile" class="nadmo-profile">
+    <div class="show-label"><b>PROFIL & LINK BISNIS</b><small>PRATINJAU LOKAL · BELUM DIPUBLIKASIKAN</small></div>
+    <div class="profile-hero">
+      <div class="profile-avatar" aria-hidden="true">N/</div>
+      <div><b id="profileDisplayName">Profil NADMO</b><small id="profileDisplayHandle">@username</small></div>
+      <button type="button" class="btn secondary" id="editProfileBtn">EDIT</button>
+    </div>
+    <p id="profileDisplayBio" class="profile-bio">Tampilkan siapa kamu, bisnis dan karya yang kamu punya.</p>
+    <div id="profileBusinessLinks" class="profile-links"></div>
+    <div class="profile-note">Link luar dibuka langsung, tanpa dialihkan ke halaman penghalang NADMO. Saat ini profil dan postingan contoh ini hanya tersimpan di perangkat ini; akun publik lintas perangkat belum aktif.</div>
+    <div id="profileEditBox" class="panel hide">
+      <label for="profileName">NAMA TAMPILAN</label>
+      <input class="field" id="profileName" maxlength="60" placeholder="Nama kreator / bisnis">
+      <label for="profileHandle">USERNAME</label>
+      <input class="field" id="profileHandle" maxlength="24" placeholder="contoh: ardamoron">
+      <label for="profileBio">BIO</label>
+      <textarea class="field profile-textarea" id="profileBio" rows="3" maxlength="300" placeholder="Bisnis, karya, dan aktivitasmu"></textarea>
+      <div class="show-label"><b>LINK PIHAK KETIGA</b><small>MAKS. 12 LINK</small></div>
+      <div class="profile-edit-row"><input class="field" id="profileLinkLabel" maxlength="40" placeholder="Nama link: Website, WhatsApp, Booking">
+      <input class="field" id="profileLinkUrl" type="url" inputmode="url" maxlength="500" placeholder="https://..."></div>
+      <div class="actions"><button class="btn secondary" type="button" id="profileAddLink">+ LINK</button><button class="btn" type="button" id="profileSave">SIMPAN PROFIL</button></div>
+      <div id="profileEditLinks" class="profile-edit-links"></div>
+      <div class="status" id="profileEditStatus" role="status"></div>
+    </div>
+    <div class="show-label"><b>POSTINGAN</b><small>LINK LANGSUNG AKTIF · PRATINJAU LOKAL</small></div>
+    <div class="panel profile-composer">
+      <label for="profilePostText">TULIS POSTINGAN</label>
+      <textarea class="field profile-textarea" id="profilePostText" rows="4" maxlength="2000" placeholder="Promosikan bisnis, jadwal DJ, website, produk atau acara. Tempel link https://... — langsung bisa diketuk."></textarea>
+      <button type="button" class="btn secondary" id="profilePostSave">SIMPAN DRAF POSTINGAN</button>
+      <p class="profile-note">Belum terbit untuk pengguna lain. Perlu sistem login dan penyimpanan akun sebelum tombol PUBLIKASIKAN bisa diaktifkan.</p>
+      <div id="profilePostStatus" class="status" role="status"></div>
+    </div>
+    <div id="profilePostFeed" class="profile-post-feed"></div>
+  </div>
   <div class="page-top"><div><span class="eyebrow">CREATOR / SETTINGS</span><h1>MY NADMO<span style="color:var(--neon)">.</span></h1></div><span class="edition">BETA ACCOUNT</span></div>
   <p class="deck">Profil kreator, dukungan, keuangan, dan koneksi. Akses tanpa akun saat ini hanya untuk uji internal.</p><div class="notice">Saweran: belum aktif · Tiket room: belum aktif · Penarikan: belum aktif. Tidak ada uang yang diproses dalam beta ini.</div>
   <div class="show-label"><b>NETWORK</b><small>SERVER LINK</small></div>
