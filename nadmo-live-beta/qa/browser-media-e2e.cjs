@@ -132,6 +132,33 @@ async function main(){
   assert.equal(await viewer.$eval('#viewerTipPanel',el=>el.classList.contains('sheet-open')),true);
   await viewer.locator('#closeTipSheet').click();
   console.log('PASS viewer full-screen camera + chat composer + tip bottom sheet',JSON.stringify(viewerLayout));
+
+  // A PC viewer must see the phone-shaped image in the center, not a
+  // screen-wide 'cover' crop that stretches the camera across the monitor.
+  await viewer.setViewport({width:1280,height:800,deviceScaleFactor:1,isMobile:false,hasTouch:false});
+  const pcStage=await viewer.evaluate(()=>{
+    const screen=document.querySelector('#watch').getBoundingClientRect();
+    const stage=document.querySelector('#watch .live-stage').getBoundingClientRect();
+    const vid=document.querySelector('#remote').getBoundingClientRect();
+    const chat=document.querySelector('#message').getBoundingClientRect();
+    const sheet=window.getComputedStyle(document.querySelector('#viewerTipPanel'));
+    return {viewport:[innerWidth,innerHeight],screen:[screen.width,screen.height],
+      stage:[stage.left,stage.top,stage.width,stage.height],
+      video:[vid.width,vid.height],chat:[chat.left,chat.width,chat.bottom],
+      viewerMode:document.body.classList.contains('watch-viewer'),
+      navHidden:getComputedStyle(document.querySelector('nav')).display==='none',
+      tipHidden:sheet.display==='none'};
+  });
+  assert.ok(pcStage.viewerMode&&pcStage.navHidden,'Desktop should retain the immersive viewer controls');
+  assert.ok(Math.abs(pcStage.stage[2]/pcStage.stage[3]-9/16)<0.03,'Desktop camera stage must be phone-proportioned');
+  assert.ok(Math.abs(pcStage.stage[0]+pcStage.stage[2]/2-pcStage.viewport[0]/2)<3,'Desktop stage must be centered');
+  assert.ok(pcStage.video[2]===undefined&&pcStage.video[0]===pcStage.stage[2]&&pcStage.video[1]===pcStage.stage[3],'Remote video must fill centered stage instead of monitor');
+  assert.ok(pcStage.chat[0]>=pcStage.stage[0]&&pcStage.chat[0]+pcStage.chat[1]<=pcStage.stage[0]+pcStage.stage[2],'Chat must stay inside portrait stage');
+  console.log('PASS desktop viewer portrait-centered media instead of full-width crop',JSON.stringify(pcStage));
+  await viewer.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+  await viewer.waitForFunction(()=>document.querySelector('#watch .live-stage').getBoundingClientRect().width>=innerWidth-2,{timeout:6000});
+  console.log('PASS mobile view returns to full-bleed video after desktop resizing');
+
   console.log('PASS actual WebRTC video and audio media received',JSON.stringify(evidence));
   // Simulated Android foreground return: refresh the host camera while room/viewer stay open.
   const firstHostVideo=await host.$eval('#remote',el=>el.srcObject?.getVideoTracks()[0]?.id);
