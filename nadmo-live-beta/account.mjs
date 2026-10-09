@@ -30,6 +30,12 @@ const profileVisual=a=>({themeId:THEME_IDS.has(a?.themeId)?a.themeId:'nadmo',
 
 const commentsKey=id=>'social-post-comments:'+id;
 const lookupOriginal=(feed,id)=>feed.find(p=>p.id===id&&p.status==='published'&&p.type!=='repost');
+async function getOriginalPost(storage,id){
+ const stored=await storage.get('social-post:'+id);
+ if(stored?.id===id&&stored.status==='published'&&stored.type!=='repost')return stored;
+ return lookupOriginal(await storage.get('social-public-feed')||[],id);
+}
+
 const isBlockedSocialURL=(label,url)=>{
  try{
   const u=new URL(url),text=(String(label||'')+' '+decodeURIComponent(u.hostname+u.pathname+u.search)).toLowerCase();
@@ -135,7 +141,12 @@ export async function accountEndpoint(storage,request){
    const entries=await storage.list({prefix:'social-user-like:'+viewer.id+':',limit:501});
    liked=new Set([...entries.keys()].map(key=>key.slice(('social-user-like:'+viewer.id+':').length)));
   }
-  return json({ok:true,posts:feed.slice(0,80).map(post=>({...post,likedByMe:liked.has(post.originalId||post.id)}))});
+  const displayed=await Promise.all(feed.slice(0,80).map(async post=>{
+   if(post.type==='repost')return {...post,likedByMe:liked.has(post.originalId||post.id)};
+   const latest=await getOriginalPost(storage,post.id);
+   return {...(latest||post),likedByMe:liked.has(post.id)};
+  }));
+  return json({ok:true,posts:displayed});
  }
  if(p==='/api/social/post'&&method==='GET'){
   const id=u.searchParams.get('id')||'';
@@ -147,8 +158,7 @@ export async function accountEndpoint(storage,request){
  if(p==='/api/social/engagement'&&method==='GET'){
   const id=u.searchParams.get('id')||'';
   if(!postIdOK(id))return fail(400,'Postingan tidak valid');
-  const feed=await storage.get('social-public-feed')||[];
-  const post=lookupOriginal(feed,id);
+  const post=await getOriginalPost(storage,id);
   if(!post)return fail(404,'Postingan sudah tidak tersedia');
   const viewer=await getAccount(storage,request);
   return json({ok:true,counts:{likes:post.likesCount||0,comments:post.commentsCount||0,reposts:post.repostsCount||0},
@@ -159,7 +169,8 @@ export async function accountEndpoint(storage,request){
   if(!viewer)return fail(401,'Masuk akun untuk melihat repost');
   const own=await storage.get(repostsKey(viewer.id))||[];
   const feed=await storage.get('social-public-feed')||[];
-  return json({ok:true,reposts:own.slice(-50).reverse().map(x=>({id:x.id,createdAt:x.createdAt,original:lookupOriginal(feed,x.originalId)})).filter(x=>x.original)});
+  const reposts=await Promise.all(own.slice(-50).reverse().map(async x=>({id:x.id,createdAt:x.createdAt,original:await getOriginalPost(storage,x.originalId)})));
+  return json({ok:true,reposts:reposts.filter(x=>x.original)});
  }
 
  if(p==='/api/payments/status'&&method==='GET')return json({
@@ -441,7 +452,10 @@ export async function accountEndpoint(storage,request){
   // Remove creator-owned posts and reposts; do not leave orphaned public repost copies.
   const owned=new Set(feed.filter(post=>post.accountId===user.id&&post.type!=='repost').map(post=>post.id));
   const ownReposted=new Set((await storage.get(repostsKey(user.id))||[]).map(x=>x.originalId));
-  for(const id of ownReposted){const original=lookupOriginal(feed,id);if(original)original.repostsCount=Math.max(0,(original.repostsCount||0)-1)}
+  for(const id of ownReposted){
+   const original=await getOriginalPost(storage,id);
+   if(original){original.repostsCount=Math.max(0,(original.repostsCount||0)-1);await storage.put('social-post:'+id,original)}
+  }
   const retained=feed.filter(post=>post.accountId!==user.id&&!owned.has(post.originalId));
   for(const original of retained.filter(post=>post.type!=='repost')){
    const comments=await storage.get(commentsKey(original.id))||[];
@@ -459,6 +473,7 @@ export async function accountEndpoint(storage,request){
    if(original)original.likesCount=Math.max(0,(original.likesCount||0)-1);
   }
   for(const id of owned){
+   await storage.delete('social-post:'+id);
    await storage.delete(commentsKey(id));
    const otherLikes=await storage.list({prefix:'social-like:'+id+':',limit:501});
    for(const key of otherLikes.keys()){
@@ -543,7 +558,7 @@ export async function accountEndpoint(storage,request){
  if(p==='/api/account/social/like'&&method==='POST'){
   const id=payload.id,want=payload.liked===true;
   if(!postIdOK(id)||typeof payload.liked!=='boolean')return fail(400,'Pilihan like tidak valid');
-  const feed=await storage.get('social-public-feed')||[],post=lookupOriginal(feed,id);
+  const feed=await storage.get('social-public-feed')||[],post=await getOriginalPost(storage,id);
   if(!post)return fail(404,'Postingan tidak tersedia');
   const key=socialLikesKey(id,user.id),old=!!await storage.get(key);
   if(old!==want){
@@ -551,14 +566,15 @@ export async function accountEndpoint(storage,request){
    if(want){await storage.put(key,true);await storage.put(socialUserLike(user.id,id),true)}
    else{await storage.delete(key);await storage.delete(socialUserLike(user.id,id))}
    post.likesCount=Math.max(0,(post.likesCount||0)+(want?1:-1));
-   await storage.put('social-public-feed',feed);
+   await storage.put('social-post:'+id,post);
+   const listed=lookupOriginal(feed,id);if(listed){listed.likesCount=post.likesCount;await storage.put('social-public-feed',feed)}
   }
   return json({ok:true,liked:want,likes:post.likesCount||0});
  }
  if(p==='/api/account/social/comment'&&method==='POST'){
   const id=payload.id,text=clean(payload.text,500);
   if(!postIdOK(id)||!text||typeof payload.text!=='string'||payload.text.length>500)return fail(400,'Komentar harus 1–500 karakter');
-  const feed=await storage.get('social-public-feed')||[],post=lookupOriginal(feed,id);
+  const feed=await storage.get('social-public-feed')||[],post=await getOriginalPost(storage,id);
   if(!post)return fail(404,'Postingan tidak tersedia');
   if(!await throttle(storage,'social-comment:'+user.id,25,3600000))return fail(429,'Terlalu sering berkomentar');
   const previous=await storage.get(commentsKey(id))||[];
@@ -566,13 +582,14 @@ export async function accountEndpoint(storage,request){
   const comment={id:crypto.randomUUID(),accountId:user.id,handle:user.handle,name:record.name,text,createdAt:Date.now()};
   await storage.put(commentsKey(id),[...previous,comment]);
   post.commentsCount=Math.max(0,(post.commentsCount||0)+1);
-  await storage.put('social-public-feed',feed);
+  await storage.put('social-post:'+id,post);
+  const listed=lookupOriginal(feed,id);if(listed){listed.commentsCount=post.commentsCount;await storage.put('social-public-feed',feed)}
   return json({ok:true,comment,counts:{comments:post.commentsCount}},201);
  }
  if(p==='/api/account/social/repost'&&method==='POST'){
   const id=payload.id;
   if(!postIdOK(id))return fail(400,'Postingan tidak valid');
-  const feed=await storage.get('social-public-feed')||[],post=lookupOriginal(feed,id);
+  const feed=await storage.get('social-public-feed')||[],post=await getOriginalPost(storage,id);
   if(!post)return fail(404,'Postingan tidak tersedia');
   if(post.accountId===user.id)return fail(400,'Tidak perlu repost postingan sendiri');
   const list=await storage.get(repostsKey(user.id))||[];
@@ -582,6 +599,8 @@ export async function accountEndpoint(storage,request){
   const repost={id:crypto.randomUUID(),originalId:id,createdAt:Date.now()};
   await storage.put(repostsKey(user.id),[...list,repost].slice(-100));
   post.repostsCount=(post.repostsCount||0)+1;
+  await storage.put('social-post:'+id,post);
+  const listed=lookupOriginal(feed,id);if(listed)listed.repostsCount=post.repostsCount;
   const entry={id:repost.id,accountId:user.id,handle:user.handle,name:record.name,avatarVersion:record.avatarVersion||0,
    originalId:id,type:'repost',text:'',createdAt:repost.createdAt,status:'published'};
   await storage.put('social-public-feed',[entry,...feed].slice(0,200));
@@ -622,6 +641,7 @@ export async function accountEndpoint(storage,request){
    await storage.delete(socialUserLike(otherId,id));await storage.delete(key);
   }
   await storage.delete(commentsKey(id));
+  await storage.delete('social-post:'+id);
   return json({ok:true,deleted:true});
  }
  if(p==='/api/account/posts'&&method==='POST'){
