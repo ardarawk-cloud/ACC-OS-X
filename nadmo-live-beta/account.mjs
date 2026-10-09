@@ -83,6 +83,9 @@ export async function accountEndpoint(storage,request){
   const record=await storage.get('auth-user:'+active.id);
   return json({ok:true,authenticated:true,supporter:await getSupporterProfile(storage,active.id,record),paymentsEnabled:false});
  }
+ if(p==='/api/social/feed'&&method==='GET'){
+  return json({ok:true,posts:(await storage.get('social-public-feed')||[]).slice(0,80)});
+ }
  if(p==='/api/payments/status'&&method==='GET')return json({
   enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,
   recipientPayoutsEnabled:false,state:'WAITING_LICENSED_PROVIDER'
