@@ -177,6 +177,7 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
 <section id="watch" class="hide">
   <div class="page-top"><div><span class="eyebrow">CURRENT TRANSMISSION</span><h1 id="watchTitle">LIVE NOW</h1></div><span class="edition">ON AIR</span></div>
   <div class="panel"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
+  <button class="btn secondary" id="refreshVideo" type="button">↻ PULIHKAN VIDEO</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ AFK SCENE</button><button class="btn ghost" id="shareRoom">↗ SHARE ROOM</button></div>
   <div class="panel" id="hostAccessPanel" hidden>
     <div class="show-label"><b>AKSES SIARAN</b><small id="hostAccessLabel">PUBLIC / GRATIS</small></div>
@@ -478,7 +479,7 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
  async function restoreForeground(){
   if(!currentRoom||manuallyLeaving||recoveringForeground||document.visibilityState==='hidden')return;
   const now=Date.now();
-  if(now-lastForegroundRecovery<5000)return;
+  if(now-lastForegroundRecovery<5000&&lastBackgroundAt<=lastForegroundRecovery)return;
   lastForegroundRecovery=now;recoveringForeground=true;
   try{
    if(!socket||socket.readyState!==WebSocket.OPEN){
@@ -511,6 +512,7 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
   if(document.visibilityState==='hidden')backgroundState();
   else restoreForeground();
  });
+ $('refreshVideo').onclick=()=>{lastForegroundRecovery=0;restoreForeground()};
  window.addEventListener('focus',restoreForeground);
  window.addEventListener('pageshow',event=>{if(event.persisted)restoreForeground()});
   function rtc(){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});pc.oniceconnectionstatechange=()=>{if(pc.iceConnectionState==='failed')notice('Video belum tersambung. Koneksi ini mungkin membutuhkan relay TURN; uji jaringan lain atau tunggu peningkatan SFU.','watchState')};return pc}
@@ -617,7 +619,7 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
   for(const pc of peers.values())pc.close();peers.clear();pendingIce.clear();
   if(peer){peer.close();peer=null}
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
-  currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;
+  currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
   $('remote').srcObject=null;$('remote').muted=false;$('chat').replaceChildren();
   $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';
   $('afkToggle').textContent='▤ AFK SCENE';
