@@ -523,6 +523,11 @@ export async function accountEndpoint(storage,request){
   await storage.put('auth-user:'+user.id,record);
   return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
  }
+ if(p==='/api/account/social/upload-allowed'&&method==='POST'){
+  // File storage is a separate optional R2 dependency. Limit allocations per user.
+  if(!await throttle(storage,'social-media-upload:'+user.id,8,86400000))return fail(429,'Batas upload harian beta tercapai');
+  return json({ok:true,allowed:true});
+ }
  if(p==='/api/account/social/like'&&method==='POST'){
   const id=payload.id,want=payload.liked===true;
   if(!postIdOK(id)||typeof payload.liked!=='boolean')return fail(400,'Pilihan like tidak valid');
