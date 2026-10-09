@@ -22,7 +22,9 @@ jobs:
         with:
           node-version: '22'
       - name: Syntax check
-        run: node --check nadmo-live-beta/worker.mjs
+        run: |
+          node --check nadmo-live-beta/worker.mjs
+          node --check nadmo-live-beta/account.mjs
       - name: Deploy isolated beta Worker (do not modify production apps)
         id: deploy
         uses: cloudflare/wrangler-action@v4
