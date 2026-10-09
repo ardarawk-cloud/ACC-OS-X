@@ -33,6 +33,7 @@ jobs:
           node --check nadmo-live-beta/qa/supporter-badges-e2e.cjs
           node --check nadmo-live-beta/qa/room-safety-smoke.cjs
           node --check nadmo-live-beta/qa/room-safety-ui-e2e.cjs
+          node --check nadmo-live-beta/qa/avatar-crop-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/social-follow-structure.mjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
           node --check nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
@@ -99,6 +100,8 @@ jobs:
         run: node nadmo-live-beta/qa/supporter-badges-e2e.cjs
       - name: Verify mobile ME, direct wallet and public social post flow
         run: node nadmo-live-beta/qa/me-one-mobile-e2e.cjs
+      - name: Verify gallery avatar crop gestures, cancel and final upload in mobile browser
+        run: node nadmo-live-beta/qa/avatar-crop-mobile-e2e.cjs
       - name: Verify mobile viewer reports and host moderation UI
         run: node nadmo-live-beta/qa/room-safety-ui-e2e.cjs
       - name: Verify LIVE discovery compact on mobile and PC (screenshots)

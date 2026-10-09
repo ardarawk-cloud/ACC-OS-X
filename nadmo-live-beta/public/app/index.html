@@ -584,6 +584,28 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 #avatarChoose[hidden],#avatarRemove[hidden]{display:none!important}
 #avatarUploadStatus{font:700 10px/1.5 Arial,sans-serif;color:#d1e2c9;margin:5px 2px}
 #avatarUploadStatus:empty{display:none}
+/* Private mobile-friendly image cropper, intentionally separate from photo selection.
+   Preserves NADMO LIVE visual identity and avoids arbitrary forced center cropping. */
+.avatar-crop-modal{position:fixed;inset:0;z-index:90;background:rgba(3,7,4,.96);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 12px) 14px calc(env(safe-area-inset-bottom) + 12px);overflow:auto;overscroll-behavior:contain}
+.avatar-crop-panel{width:min(100%,400px);max-height:100%;overflow:auto;display:flex;flex-direction:column;align-items:stretch;gap:13px;padding:15px;background:#121c14;border:1px solid #40543b;border-radius:16px;box-shadow:0 18px 60px #0009}
+.avatar-crop-panel h2{font:900 21px Impact,Arial,sans-serif;color:#e5f7d5;letter-spacing:.35px}
+.avatar-crop-panel p{margin:0;color:#acbeaa;font-size:12px;line-height:1.5}
+.avatar-crop-frame{width:min(100%,310px,43dvh);aspect-ratio:1;position:relative;align-self:center;overflow:hidden;border-radius:12px;background:#222922;touch-action:none;cursor:grab}
+.avatar-crop-frame:active{cursor:grabbing}
+.avatar-crop-frame canvas{width:100%;height:100%;display:block;touch-action:none}
+.avatar-crop-outline{position:absolute;inset:4px;border:2px solid var(--neon);border-radius:50%;box-shadow:0 0 0 100vmax rgba(0,0,0,.44);pointer-events:none}
+.avatar-crop-zoom{display:flex;align-items:center;gap:10px;font:800 11px Arial,sans-serif;color:#d5e9c7}
+.avatar-crop-zoom input{flex:1;min-width:0;accent-color:var(--neon);height:30px;touch-action:pan-x}
+.avatar-crop-zoom output{width:42px;text-align:right;font-variant-numeric:tabular-nums;color:var(--neon)}
+.avatar-crop-actions{display:flex;gap:9px}
+.avatar-crop-actions button{min-height:45px;flex:1;padding:11px 8px;border-radius:9px;border:1px solid #5b7851;font:900 12px Arial,sans-serif}
+.avatar-crop-actions button:last-child{background:var(--neon);color:#0a1109;border-color:var(--neon)}
+.avatar-crop-actions button:disabled{opacity:.5}
+.avatar-crop-reset{align-self:center;padding:5px 12px;font:800 10px Arial,sans-serif;color:#ddebce;background:transparent;border:0;text-decoration:underline;text-underline-offset:3px}
+.avatar-crop-feedback{min-height:16px;font:700 11px/1.4 Arial,sans-serif;color:#d3ecc0}
+body.avatar-crop-open{overflow:hidden}
+@media(max-height:620px){.avatar-crop-panel{gap:7px;padding:9px}.avatar-crop-frame{width:min(100%,190px,33dvh)}.avatar-crop-panel h2{font-size:17px}.avatar-crop-panel p{font-size:10px}}
+
 #profileEditBox #avatarRemove{display:block;margin:0 0 16px;width:100%}
 #hostProfileCard .host-avatar{position:relative;overflow:hidden}
 .host-public-header{display:flex;gap:12px;align-items:center;margin-bottom:7px}
@@ -1078,6 +1100,17 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   <button data-tab="messagesPage" aria-label="Pesan"><i>◌</i>PESAN</button>
   <button data-tab="settings"><i>◇</i>ME</button>
 </nav>
+<div id="avatarCropModal" class="avatar-crop-modal hide" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitle" aria-describedby="avatarCropHelp">
+ <div class="avatar-crop-panel">
+  <h2 id="avatarCropTitle">ATUR FOTO PROFIL</h2>
+  <p id="avatarCropHelp">Geser foto untuk mengatur posisi, cubit dengan dua jari atau gunakan zoom. Lingkaran menunjukkan hasil akhir.</p>
+  <div class="avatar-crop-frame" id="avatarCropFrame"><canvas id="avatarCropCanvas" width="600" height="600" tabindex="0" aria-label="Geser gambar untuk menentukan crop foto profil"></canvas><div class="avatar-crop-outline" aria-hidden="true"></div></div>
+  <div class="avatar-crop-zoom"><label for="avatarCropZoom">ZOOM</label><input id="avatarCropZoom" type="range" min="1" max="3" step="0.01" value="1"><output id="avatarCropZoomText" for="avatarCropZoom">100%</output></div>
+  <button type="button" id="avatarCropReset" class="avatar-crop-reset">TENGAHKAN ULANG</button>
+  <div class="avatar-crop-actions"><button type="button" id="avatarCropCancel">BATAL</button><button type="button" id="avatarCropSave">SIMPAN FOTO</button></div>
+  <div id="avatarCropStatus" class="avatar-crop-feedback" role="status" aria-live="polite"></div>
+ </div>
+</div>
 <script>
 (function(){
  'use strict';
@@ -1112,31 +1145,130 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   img.hidden=false;
   if(img.src!==url)img.src=url;
  }
- async function photoBlob(file){
+ // In-browser crop editor: picture never leaves the device until the owner presses SIMPAN.
+ const cropCanvas=$('avatarCropCanvas'),cropZoomInput=$('avatarCropZoom');
+ const CROP_BASE=600,cropPointers=new Map();
+ let cropImage=null,cropObjectURL='',cropZoom=1,cropOffsetX=0,cropOffsetY=0,cropBusy=false,cropOwner='',cropLastGesture=null;
+ const bound=(value,low,high)=>Math.max(low,Math.min(high,value));
+ function constrainAvatarCrop(){
+  if(!cropImage)return;
+  const fit=Math.max(CROP_BASE/cropImage.naturalWidth,CROP_BASE/cropImage.naturalHeight)*cropZoom;
+  const maxX=Math.max(0,(cropImage.naturalWidth*fit-CROP_BASE)/2);
+  const maxY=Math.max(0,(cropImage.naturalHeight*fit-CROP_BASE)/2);
+  cropOffsetX=bound(cropOffsetX,-maxX,maxX);
+  cropOffsetY=bound(cropOffsetY,-maxY,maxY);
+ }
+ function renderAvatarCrop(canvas,size){
+  if(!cropImage)return;
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('Editor foto tidak tersedia pada perangkat ini');
+  const fit=Math.max(size/cropImage.naturalWidth,size/cropImage.naturalHeight)*cropZoom;
+  const w=cropImage.naturalWidth*fit,h=cropImage.naturalHeight*fit;
+  ctx.clearRect(0,0,size,size);
+  ctx.drawImage(cropImage,(size-w)/2+cropOffsetX*size/CROP_BASE,(size-h)/2+cropOffsetY*size/CROP_BASE,w,h);
+ }
+ function refreshAvatarCrop(){
+  constrainAvatarCrop();
+  renderAvatarCrop(cropCanvas,CROP_BASE);
+  cropZoomInput.value=String(cropZoom);
+  $('avatarCropZoomText').textContent=Math.round(cropZoom*100)+'%';
+ }
+ function closeAvatarCrop(){
+  if(cropBusy)return;
+  $('avatarCropModal').classList.add('hide');
+  document.body.classList.remove('avatar-crop-open');
+  cropPointers.clear();cropLastGesture=null;cropImage=null;cropOwner='';
+  if(cropObjectURL){URL.revokeObjectURL(cropObjectURL);cropObjectURL=''}
+  $('avatarChoose').disabled=false;
+ }
+ async function openAvatarCrop(file){
   if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Pilih foto JPG, PNG, atau WebP');
   if(file.size>10*1024*1024)throw Error('Foto asli maksimal 10 MB');
-  const tmp=URL.createObjectURL(file),image=new Image();
+  const url=URL.createObjectURL(file),img=new Image();
   try{
-   await new Promise((resolve,reject)=>{
-    image.onload=resolve;image.onerror=()=>reject(Error('Foto tidak dapat dibuka'));
-    image.src=tmp;
-   });
-   if(!image.naturalWidth||!image.naturalHeight)throw Error('Foto kosong');
-   const length=Math.min(image.naturalWidth,image.naturalHeight);
-   const sx=(image.naturalWidth-length)/2,sy=(image.naturalHeight-length)/2;
-   for(const size of [288,224,176]){
-    const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
-    const context=canvas.getContext('2d');
-    if(!context)throw Error('Foto tidak bisa diproses di perangkat ini');
-    context.drawImage(image,sx,sy,length,length,0,0,size,size);
-    for(const quality of [.82,.68,.52]){
-     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
-     if(blob&&blob.size>=100&&blob.size<=65536)return blob;
-    }
-   }
-   throw Error('Foto terlalu rumit untuk diperkecil; pilih gambar lain');
-  }finally{URL.revokeObjectURL(tmp)}
+   await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Foto tidak bisa dibuka'));img.src=url});
+   if(img.naturalWidth<1||img.naturalHeight<1)throw Error('Foto tidak valid');
+   cropImage=img;cropObjectURL=url;cropOwner=activeAccount?.handle||'';
+   cropZoom=1;cropOffsetX=0;cropOffsetY=0;cropPointers.clear();cropLastGesture=null;
+   $('avatarCropStatus').textContent='';
+   $('avatarCropModal').classList.remove('hide');
+   document.body.classList.add('avatar-crop-open');
+   refreshAvatarCrop();
+   cropCanvas.focus({preventScroll:true});
+  }catch(e){URL.revokeObjectURL(url);throw e}
  }
+ async function croppedPhotoBlob(){
+  if(!cropImage)throw Error('Pilih foto terlebih dahulu');
+  for(const size of [288,224,176,128]){
+   const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+   renderAvatarCrop(canvas,size);
+   for(const quality of [.82,.69,.54,.40]){
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+    if(blob&&blob.size>=100&&blob.size<=65536)return blob;
+   }
+  }
+  throw Error('Gambar sulit diperkecil. Coba foto lain.');
+ }
+ cropZoomInput.addEventListener('input',()=>{
+  if(!cropImage||cropBusy)return;
+  cropZoom=bound(Number(cropZoomInput.value)||1,1,3);refreshAvatarCrop();
+ });
+ $('avatarCropReset').onclick=()=>{
+  if(!cropImage||cropBusy)return;
+  cropZoom=1;cropOffsetX=0;cropOffsetY=0;refreshAvatarCrop();
+ };
+ $('avatarCropCancel').onclick=closeAvatarCrop;
+ document.addEventListener('keydown',event=>{
+  if($('avatarCropModal').classList.contains('hide')||cropBusy)return;
+  if(event.key==='Escape'){event.preventDefault();closeAvatarCrop();return}
+  if(document.activeElement===cropCanvas&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){
+   event.preventDefault();const step=event.shiftKey?30:10;
+   if(event.key==='ArrowLeft')cropOffsetX-=step;
+   if(event.key==='ArrowRight')cropOffsetX+=step;
+   if(event.key==='ArrowUp')cropOffsetY-=step;
+   if(event.key==='ArrowDown')cropOffsetY+=step;
+   refreshAvatarCrop();
+  }
+ });
+ const cropGesture=()=>{
+  const positions=[...cropPointers.values()];
+  if(positions.length===1){
+   cropLastGesture={type:'pan',x:positions[0].x,y:positions[0].y};
+  }else if(positions.length>=2){
+   const p=positions[0],q=positions[1];
+   cropLastGesture={type:'pinch',distance:Math.hypot(p.x-q.x,p.y-q.y),mx:(p.x+q.x)/2,my:(p.y+q.y)/2,zoom:cropZoom,x:cropOffsetX,y:cropOffsetY};
+  }else cropLastGesture=null;
+ };
+ cropCanvas.addEventListener('pointerdown',event=>{
+  if(!cropImage||cropBusy||event.button>0)return;
+  event.preventDefault();
+  cropPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  try{cropCanvas.setPointerCapture(event.pointerId)}catch(e){}
+  cropGesture();
+ });
+ cropCanvas.addEventListener('pointermove',event=>{
+  if(!cropPointers.has(event.pointerId)||!cropImage||cropBusy)return;
+  event.preventDefault();
+  cropPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  const p=[...cropPointers.values()],rect=cropCanvas.getBoundingClientRect(),scale=CROP_BASE/Math.max(rect.width,1);
+  if(p.length===1&&cropLastGesture?.type==='pan'){
+   cropOffsetX+=(p[0].x-cropLastGesture.x)*scale;
+   cropOffsetY+=(p[0].y-cropLastGesture.y)*scale;
+   cropLastGesture.x=p[0].x;cropLastGesture.y=p[0].y;
+  }else if(p.length>=2&&cropLastGesture?.type==='pinch'){
+   const distance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+   cropZoom=bound(cropLastGesture.zoom*distance/Math.max(1,cropLastGesture.distance),1,3);
+   cropOffsetX=cropLastGesture.x+((p[0].x+p[1].x)/2-cropLastGesture.mx)*scale;
+   cropOffsetY=cropLastGesture.y+((p[0].y+p[1].y)/2-cropLastGesture.my)*scale;
+  }
+  refreshAvatarCrop();
+ });
+ const endCropPointer=event=>{
+  if(!cropPointers.has(event.pointerId))return;
+  cropPointers.delete(event.pointerId);cropGesture();
+ };
+ cropCanvas.addEventListener('pointerup',endCropPointer);
+ cropCanvas.addEventListener('pointercancel',endCropPointer);
+ cropCanvas.addEventListener('lostpointercapture',endCropPointer);
  $('avatarChoose').onclick=()=>{
   if(!activeAccount){$('avatarUploadStatus').textContent='Masuk akun untuk mengganti foto.';return}
   $('avatarFile').click();
@@ -1144,23 +1276,34 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  $('avatarFile').onchange=async()=>{
   const input=$('avatarFile'),file=input.files?.[0];input.value='';
   if(!file||!activeAccount)return;
-  const ownerHandle=activeAccount.handle;
-  $('avatarChoose').disabled=true;$('avatarUploadStatus').textContent='Menyiapkan foto...';
+  $('avatarChoose').disabled=true;
+  $('avatarUploadStatus').textContent='Menyiapkan foto...';
+  try{await openAvatarCrop(file);$('avatarUploadStatus').textContent='Atur crop lalu tekan SIMPAN FOTO.'}
+  catch(error){$('avatarChoose').disabled=false;$('avatarUploadStatus').textContent=error.message}
+ };
+ $('avatarCropSave').onclick=async()=>{
+  if(!cropImage||cropBusy||!activeAccount||activeAccount.handle!==cropOwner)return;
+  cropBusy=true;
+  $('avatarCropSave').disabled=true;$('avatarCropCancel').disabled=true;$('avatarCropReset').disabled=true;cropZoomInput.disabled=true;
+  $('avatarCropStatus').textContent='Menyimpan foto...';
   try{
-   const blob=await photoBlob(file);
-   $('avatarUploadStatus').textContent='Menyimpan foto...';
+   const blob=await croppedPhotoBlob();
    const response=await fetch(api('/api/account/avatar'),{
     method:'PUT',credentials:'include',headers:{'Content-Type':'image/jpeg'},body:blob,cache:'no-store'
    });
    const result=await response.json().catch(()=>({error:'Gagal memuat respons'}));
    if(!response.ok)throw Error(result.error||'Foto tidak tersimpan');
-   if(!activeAccount||activeAccount.handle!==ownerHandle)return;
+   if(!activeAccount||activeAccount.handle!==cropOwner)throw Error('Sesi akun berubah. Silakan masuk ulang.');
    activeAccount.avatarVersion=result.avatarVersion;
-   setAvatarImage('profileAvatarImage',ownerHandle,result.avatarVersion);
+   setAvatarImage('profileAvatarImage',cropOwner,result.avatarVersion);
    $('avatarRemove').hidden=false;
    $('avatarUploadStatus').textContent='Foto profil berhasil disimpan.';
-  }catch(error){$('avatarUploadStatus').textContent=error.message}
-  finally{$('avatarChoose').disabled=false}
+   cropBusy=false;closeAvatarCrop();
+  }catch(error){$('avatarCropStatus').textContent=error.message}
+  finally{
+   cropBusy=false;$('avatarCropSave').disabled=false;$('avatarCropCancel').disabled=false;
+   $('avatarCropReset').disabled=false;cropZoomInput.disabled=false;
+  }
  };
  $('avatarRemove').onclick=async()=>{
   if(!activeAccount||!activeAccount.avatarVersion)return;
