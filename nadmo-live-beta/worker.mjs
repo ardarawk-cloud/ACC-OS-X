@@ -180,7 +180,7 @@ export class RoomHub{
     const meta=state(other);
     if(meta.roomId===roomId){
      meta.roomId=null;meta.role=null;save(other,meta);
-     failure(other,'Host telah mengakhiri siaran');
+     reply(other,{type:'room-ended',reason:'Host mengakhiri siaran.'});
      try{other.close(1000,'room closed')}catch(e){}
     }
    }
@@ -228,7 +228,7 @@ export default {
   }
   if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,payments:false}));
   if(url.pathname==='/'){
-   return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Install Android beta and configure HTTPS backend URL in Settings.'}));
+   return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
   if(url.pathname!=='/api/rooms'&&url.pathname!=='/ws')return new Response('Not Found',{status:404});
   if(url.pathname==='/ws'){
