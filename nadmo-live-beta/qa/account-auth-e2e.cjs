@@ -12,7 +12,7 @@ async function main(){
   const one=await a.newPage(),two=await b.newPage();
   for(const p of [one,two])await p.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
   await one.locator('nav [data-tab="settings"]').click();
-  await one.locator('#meLogin').click();
+
   const routeProbe=await one.evaluate(async()=>{
    const r=await fetch('/api/account/me',{credentials:'include'});
    return {status:r.status,body:(await r.text()).slice(0,160)};
@@ -60,7 +60,7 @@ async function main(){
   await one.waitForFunction(()=>document.querySelector('#profileSyncedPosts').querySelectorAll('a').length===1,{timeout:10000});
 
   await two.locator('nav [data-tab="settings"]').click();
-  await two.locator('#meLogin').click();
+
   await two.locator('#accountHandle').fill(handle);
   await two.locator('#accountPass').fill(password);
   await two.locator('#accountLogin').click();
