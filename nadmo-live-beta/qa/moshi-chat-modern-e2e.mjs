@@ -11,8 +11,8 @@ const register=async handle=>{
  assert.equal(result.status,201,'Register '+handle);
  const cookie=result.headers.get('set-cookie').split(';')[0];cookies.push(cookie);return cookie;
 };
-const post=(p,cookie,body)=>parse(await fetch(base+p,{method:'POST',headers:{Origin:base,'Content-Type':'application/json',Cookie:cookie},body:JSON.stringify(body)}));
-const get=(p,cookie)=>parse(await fetch(base+p,{headers:{Cookie:cookie}}));
+const post=async(p,cookie,body)=>parse(await fetch(base+p,{method:'POST',headers:{Origin:base,'Content-Type':'application/json',Cookie:cookie},body:JSON.stringify(body)}));
+const get=async(p,cookie)=>parse(await fetch(base+p,{headers:{Cookie:cookie}}));
 try{
  const [A,B,C,D]=await Promise.all(handles.map(register));
  assert.equal((await get('/api/messages/settings',B)).body.privacy,'everyone','Default direct inbox');
