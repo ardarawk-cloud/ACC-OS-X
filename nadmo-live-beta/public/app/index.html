@@ -98,6 +98,13 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 @media(min-width:620px){.signal-stage{height:450px}.stage-core .circle{height:180px;width:180px}.freq button{height:160px}.app{padding-left:30px;padding-right:30px}}
 @media(max-width:365px){.app{padding-left:12px;padding-right:12px}.mast-right .micro{font-size:9px}.signal-stage{height:320px}.freq{gap:4px}.freq button{padding:8px 5px;height:117px}.freq b{font-size:10px}.intro h1{font-size:43px}}
 @media(prefers-reduced-motion:reduce){.stage-core .circle:before{animation:none}}
+
+/* v0.5 live-first research implementation */
+.filterstrip{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 0 14px}.filterstrip::-webkit-scrollbar{display:none}
+.filterstrip button{flex:none;background:#151a14;border:1px solid #454d40;color:#afb7a8;padding:9px 12px;font:800 10px Arial,sans-serif;letter-spacing:.45px}.filterstrip button.active{background:var(--neon);color:#10140c;border-color:var(--neon)}
+.room{position:relative;gap:12px;align-items:flex-start}.room .room-art{width:70px;height:86px;background:repeating-linear-gradient(115deg,#233122 0px,#233122 8px,#111711 9px,#111711 19px);border:1px solid #43513a;flex:none;display:grid;place-items:center;color:var(--neon);font:900 27px Impact,sans-serif}.room .room-main{flex:1;min-width:0}.room .room-main b{font-size:20px;word-break:break-word}.room .room-main small{display:block;font-size:11px}.room .room-actions{display:flex;align-items:center;gap:7px;margin-top:8px}.room .room-actions .btn{padding:8px 10px;min-height:35px;font-size:11px}.room .bookmark{min-height:35px;width:35px;background:transparent;border:1px solid var(--line);color:var(--neon);font-size:17px}
+#hostControls[hidden],#afkHint[hidden]{display:none!important}#hostControls{margin:14px 0}#afkHint{margin:8px 0;font-size:11px}
+#signalStatus{font-size:11px;letter-spacing:1px;color:var(--neon)}
 </style></head>
 <body>
 <div class="app">
@@ -124,10 +131,25 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
   <div class="section"><div class="notice">PRIVATE BETA / Tampilan dan preview kamera tersedia secara lokal. Live publik, saweran, dan tiket belum aktif sampai server serta pembayaran terhubung.</div></div>
 </section>
 <section id="explore" class="hide">
-  <div class="page-top"><div><span class="eyebrow">FREQUENCY / 01</span><h1>ON THE AIR<span style="color:var(--neon)">.</span></h1></div><span class="edition">LIVE FEED</span></div>
-  <p class="deck">Siaran dari kreator independen. Temukan frekuensi yang sedang aktif.</p>
-  <div id="rooms" class="no-signal"><strong>NO SIGNAL</strong><small>NOTHING BROADCASTING YET</small></div>
-  <button class="btn secondary" id="refresh">↻ REFRESH CHANNELS</button>
+  <div class="page-top"><div><span class="eyebrow">LIVE / FREQUENCIES</span><h1>ON THE AIR<span style="color:var(--neon)">.</span></h1></div><span class="edition">LIVE FEED</span></div>
+  <p class="deck">Langsung ke siaran, tanpa banner pembuka yang menghalangi. Public room yang aktif muncul di sini.</p>
+  <label class="eyebrow" for="searchLive">FIND YOUR FREQUENCY</label>
+  <input class="field" id="searchLive" placeholder="Cari judul siaran atau genre..." maxlength="70" autocomplete="off">
+  <div class="filterstrip" id="filters">
+    <button data-filter="all" class="active">ALL</button><button data-filter="Social">SOCIAL</button><button data-filter="DJ & Music">DJ / MUSIC</button><button data-filter="Podcast">PODCAST</button><button data-filter="Nightlife">NIGHTLIFE</button>
+  </div>
+  <div class="show-label"><b>LIVE NOW</b><small id="liveCount">0 ROOMS</small></div>
+  <div id="rooms" class="no-signal"><strong>SEARCHING</strong><small>CONNECTING TO BROADCAST NETWORK</small></div>
+  <div class="actions"><button class="btn secondary" id="refresh">↻ REFRESH LIVE</button><button class="btn" data-tab="studio">● BROADCAST</button></div>
+  <div class="show-label"><b>INVITATION ACCESS</b><small>LOCKED ROOM</small></div>
+  <p class="deck">Punya kode room dari host? Masuk langsung. Room tertutup tidak muncul di pencarian publik.</p>
+  <div class="row"><input class="field" id="privateId" maxlength="32" placeholder="Masukkan ID room privat"><button class="btn secondary" id="privateJoin">JOIN</button></div>
+</section>
+<section id="following" class="hide">
+  <div class="page-top"><div><span class="eyebrow">SAVED / DEVICE</span><h1>FOLLOWING<span style="color:var(--neon)">.</span></h1></div><span class="edition">BETA</span></div>
+  <p class="deck">Simpan siaran yang ingin kamu pantau. Saat ini favorit tersimpan di HP ini saja; mengikuti akun kreator dan notifikasi lintas perangkat belum tersedia.</p>
+  <div id="savedRooms" class="no-signal"><strong>NOT YET</strong><small>NO SAVED LIVE SESSIONS</small></div>
+  <button class="btn secondary" data-tab="explore">FIND LIVE SESSIONS →</button>
 </section>
 <section id="studio" class="hide">
   <div class="page-top"><div><span class="eyebrow">CREATOR / CONSOLE</span><h1>YOUR STAGE<span style="color:var(--neon)">.</span></h1></div><span class="edition">REC / 01</span></div>
@@ -147,7 +169,10 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 </section>
 <section id="watch" class="hide">
   <div class="page-top"><div><span class="eyebrow">CURRENT TRANSMISSION</span><h1 id="watchTitle">LIVE NOW</h1></div><span class="edition">ON AIR</span></div>
-  <div class="panel"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div><button class="btn ghost" id="leave">← LEAVE ROOM</button></div>
+  <div class="panel"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
+  <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ AFK SCENE</button><button class="btn ghost" id="shareRoom">↗ SHARE ROOM</button></div>
+  <p class="deck" id="afkHint" hidden>AFK = tampilan standby sementara mikrofon tetap aktif. Tidak otomatis memutar Spotify atau musik berhak cipta. Tetap buka aplikasi saat siaran.</p>
+  <div class="actions"><button class="btn ghost" id="leave">← LEAVE ROOM</button><button class="btn secondary hide" id="restartRoom">RESTART BROADCAST</button></div></div>
   <div class="panel"><div class="show-label"><b>BACKCHANNEL</b><small>LIVE CHAT</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button></div></div>
 </section>
 <section id="tv" class="hide">
@@ -162,9 +187,22 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
   <div class="signal-stage" style="height:310px"><div class="stage-head"><span>FM / NADMO 001</span><span class="liveflag">STANDBY</span></div><div class="stage-core"><div class="circle"><strong style="font-size:62px">≋</strong></div><p>AWAITING AUDIO SOURCE</p></div><div class="stage-foot"><small>RADIO ENGINE / COMING SOON</small><div class="bars"><i></i><i></i><i></i><i></i></div></div></div>
   <div class="notice">Audio background dan acara radio belum tersambung. Ini halaman preview.</div>
 </section>
+<section id="signal" class="hide">
+  <div class="page-top"><div><span class="eyebrow">INDEPENDENT / PUBLIC INFORMATION</span><h1>SIGNAL<span style="color:var(--neon)">.</span></h1></div><span class="edition">COMMUNITY</span></div>
+  <p class="deck">Kanal informasi komunitas untuk masa normal dan darurat. Informasi penting harus diverifikasi sebelum diberi label resmi.</p>
+  <div class="signal-stage" style="height:260px"><div class="stage-head"><span>PUBLIC SERVICE / SIGNAL-01</span><span class="liveflag">MONITORING</span></div>
+    <div class="stage-core"><div class="circle" style="width:112px;height:112px"><strong style="font-size:44px">!</strong></div><p>NO VERIFIED ALERTS PUBLISHED</p></div>
+    <div class="stage-foot"><small>UNVERIFIED CLAIMS ARE NOT PUBLIC ALERTS</small><div class="bars"><i></i><i></i><i></i><i></i></div></div></div>
+  <div class="show-label"><b>NETWORK STATUS</b><small>LIVE SYSTEM</small></div>
+  <div class="setting-line"><span>Broadcast server</span><strong id="signalStatus">CHECKING</strong></div>
+  <button class="btn secondary" id="signalRefresh">↻ CHECK CONNECTION</button>
+  <div class="show-label"><b>WHEN THE NETWORK IS DOWN</b><small>PREPAREDNESS</small></div>
+  <div class="notice">Simpan kontak darurat dan sumber informasi resmi sebelum terjadi gangguan. Jika NADMO tidak dapat diakses, gunakan kanal alternatif seperti radio lokal dan komunikasi langsung. Jangan menyebarkan kabar yang belum diverifikasi.</div>
+  <p class="deck">Ini masih fondasi kanal SIGNAL. Sistem pemberitahuan terverifikasi, arsip offline, relai cadangan dan persetujuan editor belum dibangun.</p>
+</section>
 <section id="settings" class="hide">
-  <div class="page-top"><div><span class="eyebrow">SYSTEM / CONTROL</span><h1>SETTINGS<span style="color:var(--neon)">.</span></h1></div><span class="edition">CONFIG / 01</span></div>
-  <p class="deck">Status jaringan otomatis dan pengaturan usia.</p>
+  <div class="page-top"><div><span class="eyebrow">CREATOR / SETTINGS</span><h1>MY NADMO<span style="color:var(--neon)">.</span></h1></div><span class="edition">BETA ACCOUNT</span></div>
+  <p class="deck">Profil kreator, dukungan, keuangan, dan koneksi. Akses tanpa akun saat ini hanya untuk uji internal.</p><div class="notice">Saweran: belum aktif · Tiket room: belum aktif · Penarikan: belum aktif. Tidak ada uang yang diproses dalam beta ini.</div>
   <div class="show-label"><b>NETWORK</b><small>SERVER LINK</small></div>
   <div class="panel"><input id="server" type="hidden"><div class="eyebrow">AUTO-CONNECT / ACTIVE</div><div class="status" id="serverState">Memeriksa koneksi server NADMO...</div><button class="btn secondary" id="saveServer">↻ CEK KONEKSI</button><p>Server diatur otomatis oleh NADMO. Tidak ada alamat yang harus diisi pengguna.</p></div>
   <div class="show-label"><b>ACCESS & AGE</b><small>18+ POLICY</small></div>
@@ -175,20 +213,21 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
 </section>
 </div>
 <nav aria-label="Main navigation">
-  <button data-tab="home" class="active"><i>⌂</i>HOME</button>
-  <button data-tab="explore"><i>◉</i>EXPLORE</button>
+  <button data-tab="explore" class="active"><i>◉</i>LIVE</button>
+  <button data-tab="following"><i>☆</i>FOLLOW</button>
   <button data-tab="studio" class="broadcast"><i>+</i>GO LIVE</button>
-  <button data-tab="radio"><i>≋</i>RADIO</button>
-  <button data-tab="settings"><i>⚙</i>SYSTEM</button>
+  <button data-tab="signal"><i>⌁</i>SIGNAL</button>
+  <button data-tab="settings"><i>◇</i>ME</button>
 </nav>
 <script>
 (function(){
  'use strict';
- const $=id=>document.getElementById(id), screens=['home','explore','studio','watch','tv','radio','settings'];
+ const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings'];
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
+ let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false;
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();}
+ function show(name){for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following')renderSaved();if(name==='signal')health();window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
  $('adult').addEventListener('change',()=>localStorage.setItem('nadmo.adult',$('adult').checked?'yes':'no'));
  function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Settings.');show('settings');return false}return true}
