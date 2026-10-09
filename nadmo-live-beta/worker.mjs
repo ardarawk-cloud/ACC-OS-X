@@ -1,7 +1,7 @@
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling, no public onboarding, no content moderation service.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
-const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_MESSAGE=60000;
+const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_MESSAGE=60000, HOST_GRACE_MS=90000;
 
 function txt(x,max=60){return typeof x==='string'?x.trim().slice(0,max):''}
 function reply(ws,object){try{ws.send(JSON.stringify(object))}catch(e){}}
@@ -40,7 +40,7 @@ export class RoomHub{
    const list=[];
    for(const [key,room] of rooms){
     if(room.mode!=='public')continue;
-    if(!getHost(peers,room.hostId))continue;
+    if(room.hostOfflineAt||!getHost(peers,room.hostId))continue;
     list.push({id:room.id,title:room.title,category:room.category,viewers:roomCount(peers,room.id)});
    }
    return Response.json({rooms:list});
@@ -58,11 +58,24 @@ export class RoomHub{
   return new Response(null,{status:101,webSocket:client});
  }
  async alarm(){
-  const sockets=this.sockets();
-  if(!sockets.length)return;
-  const payload=JSON.stringify({type:'heartbeat',at:Date.now()});
-  for(const socket of sockets)reply(socket,JSON.parse(payload));
-  await this.ctx.storage.setAlarm(Date.now()+25000);
+  const sockets=this.sockets(),rooms=await this.findRooms();
+  const now=Date.now();
+  for(const [key,room] of rooms){
+   if(room.hostOfflineAt&&now-room.hostOfflineAt>HOST_GRACE_MS){
+    await this.ctx.storage.delete(key);
+    for(const socket of sockets){
+     const meta=state(socket);
+     if(meta.roomId!==room.id)continue;
+     meta.roomId=null;meta.role=null;save(socket,meta);
+     reply(socket,{type:'room-ended',reason:'Host tidak kembali setelah masa pemulihan.'});
+    }
+   }
+  }
+  if(sockets.length){
+   const heartbeat={type:'heartbeat',at:now};
+   for(const socket of sockets)reply(socket,heartbeat);
+  }
+  if(sockets.length||(await this.findRooms()).size)await this.ctx.storage.setAlarm(now+25000);
  }
  async webSocketMessage(ws,input){
   if(typeof input!=='string'||input.length>MAX_MESSAGE){ws.close(1009,'message too large');return}
@@ -84,10 +97,37 @@ export class RoomHub{
    const password=txt(msg.password,32);
    if(mode==='password'&&password.length<4)return failure(ws,'Kode private room minimal 4 karakter');
    const id=crypto.randomUUID().replace(/-/g,'').slice(0,12);
-   const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',mode,hostId:s.id,passwordHash:mode==='password'?await sha(password):null,createdAt:now};
+   const resumeToken=crypto.randomUUID()+crypto.randomUUID();
+   const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,createdAt:now};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
-   reply(ws,{type:'created',id,selfId:s.id});
+   reply(ws,{type:'created',id,selfId:s.id,resumeToken});
+   return;
+  }
+  if(type==='resume'){
+   if(s.roomId)return failure(ws,'Keluar room sebelumnya sebelum pemulihan');
+   const id=txt(msg.id,32),token=txt(msg.token,128);
+   const room=await this.ctx.storage.get('room:'+id);
+   if(!room||!room.hostResumeHash||!token||await sha(token)!==room.hostResumeHash){
+    return failure(ws,'Pemulihan room ditolak: akses tidak valid atau room telah berakhir');
+   }
+   if(room.hostOfflineAt&&now-room.hostOfflineAt>HOST_GRACE_MS){
+    await this.ctx.storage.delete('room:'+id);
+    return failure(ws,'Waktu pemulihan 90 detik telah habis');
+   }
+   const peers=this.sockets();
+   const old=getHost(peers,room.hostId);
+   if(old&&old!==ws){
+    const previous=state(old);
+    previous.roomId=null;previous.role=null;save(old,previous);
+    try{old.close(4000,'Session transferred')}catch(e){}
+   }
+   room.hostId=s.id;room.hostOfflineAt=null;
+   await this.ctx.storage.put('room:'+id,room);
+   s.roomId=id;s.role='host';save(ws,s);
+   const viewers=peers.filter(x=>state(x).roomId===id&&state(x).role==='viewer').map(x=>state(x).id);
+   reply(ws,{type:'resumed',id,selfId:s.id,viewers});
+   for(const other of peers){if(state(other).roomId===id&&state(other).role==='viewer')reply(other,{type:'host-reconnected'})}
    return;
   }
   if(type==='join'){
@@ -96,7 +136,7 @@ export class RoomHub{
    const room=await this.ctx.storage.get('room:'+id);
    if(!room)return failure(ws,'Room tidak ditemukan atau sudah selesai');
    const peers=this.sockets(),host=getHost(peers,room.hostId);
-   if(!host){await this.ctx.storage.delete('room:'+id);return failure(ws,'Host sudah offline')}
+   if(!host||room.hostOfflineAt){return failure(ws,'Host sedang reconnect. Coba lagi beberapa detik.')}
    if(roomCount(peers,id)>=VIEWER_LIMIT)return failure(ws,'Room beta penuh (maks. 4 penonton)');
    if(room.mode==='password'&&await sha(txt(msg.password,32))!==room.passwordHash)return failure(ws,'Kode akses salah');
    s.roomId=id;s.role='viewer';save(ws,s);
@@ -149,15 +189,26 @@ export class RoomHub{
    if(room){const host=getHost(peers,room.hostId);if(host)reply(host,{type:'viewer-left',id:s.id})}
   }
  }
+ async disconnected(ws){
+  const s=state(ws);
+  if(!s.roomId)return;
+  if(s.role!=='host'){await this.leave(ws,s);return}
+  const room=await this.ctx.storage.get('room:'+s.roomId);
+  if(!room||room.hostId!==s.id)return;
+  room.hostOfflineAt=Date.now();
+  await this.ctx.storage.put('room:'+room.id,room);
+  for(const other of this.sockets()){
+   if(other!==ws&&state(other).roomId===room.id&&state(other).role==='viewer')reply(other,{type:'host-reconnecting',seconds:90});
+  }
+  if((await this.ctx.storage.getAlarm())===null)await this.ctx.storage.setAlarm(Date.now()+25000);
+ }
  async webSocketClose(ws,code,reason){
   console.log('NADMO socket close',code,String(reason||'').slice(0,80),state(ws).role||'none');
-  await this.leave(ws,state(ws));
-  try{ws.close(code||1000,reason||'closed')}catch(e){}
+  await this.disconnected(ws);
  }
  async webSocketError(ws){
   console.log('NADMO socket error',state(ws).role||'none');
-  await this.leave(ws,state(ws));
-  try{ws.close(1011,'connection error')}catch(e){}
+  await this.disconnected(ws);
  }
 }
 export default {
