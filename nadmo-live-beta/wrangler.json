@@ -26,5 +26,8 @@
     "directory": "./public",
     "binding": "ASSETS",
     "run_worker_first": true
+  },
+  "vars": {
+    "BETA_TEST_HOSTS_ENABLED": "true"
   }
 }
