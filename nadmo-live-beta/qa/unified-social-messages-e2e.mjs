@@ -17,6 +17,24 @@ try{
  const feed=await get('/api/social/feed');
  assert.equal(feed.status,200);
  assert.ok(feed.body.posts.some(p=>p.id===post.body.post.id));
+ const id=post.body.post.id;
+ const like=await action('/api/account/social/like',cb,{id,liked:true});
+ assert.equal(like.status,200);
+ assert.equal(like.body.likes,1);
+ const again=await action('/api/account/social/like',cb,{id,liked:true});
+ assert.equal(again.status,200);assert.equal(again.body.likes,1);
+ const comment=await action('/api/account/social/comment',cb,{id,text:'Postingan bagus!'});
+ assert.equal(comment.status,201);
+ const engagement=await get('/api/social/engagement?id='+id);
+ assert.equal(engagement.body.counts.likes,1);
+ assert.equal(engagement.body.counts.comments,1);
+ assert.equal(engagement.body.comments[0].text,'Postingan bagus!');
+ const repost=await action('/api/account/social/repost',cb,{id});
+ assert.equal(repost.status,201);
+ const own=await get('/api/social/reposts/me',cb);
+ assert.equal(own.status,200);
+ assert.equal(own.body.reposts[0].original.id,id);
+
  // Follow is account-bound and persists cross-device. Duplicate requests do not inflate counters.
  const firstFollow=await action('/api/account/follow',ca,{handle:j});
  console.log('FOLLOW DEBUG',firstFollow.status,firstFollow.body.error);
