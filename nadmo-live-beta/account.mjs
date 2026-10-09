@@ -9,6 +9,8 @@ const handleOK = v => /^[a-z][a-z0-9_]{2,23}$/.test(v);
 const COOKIE='nadmo_beta_session';
 const SESSION_AGE=7*86400;
 const MAX_BODY=16000;
+const AVATAR_MAX_BYTES=65536; // Compact profile pictures only; no raw high-resolution photo storage.
+const AVATAR_RESPONSE_HEADERS={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'};
 const clean=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function digest(value){return hex(await crypto.subtle.digest('SHA-256',enc.encode(value)))}
@@ -52,7 +54,7 @@ async function getAccountBySessionFingerprint(storage,fingerprint){
  const session=await storage.get('auth-session:'+fingerprint);
  if(!session||session.expiresAt<Date.now())return null;
  const user=await storage.get('auth-user:'+session.id);
- return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
+ return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],avatarVersion:user.avatarVersion||0,verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
 }
 async function getSessionFingerprint(request){
  const token=cookies(request);
@@ -93,6 +95,49 @@ export async function accountEndpoint(storage,request){
  }
  if(p==='/api/wallet/withdraw'&&method!=='POST')return fail(405,'Method not allowed');
  if(p==='/api/streaming/capacity')return json({architecture:'P2P_WEBRTC',maxViewersPerRoom:4,turnConfigured:false,sfuConfigured:false,scaleReady:false});
+ if(p.startsWith('/api/profile/')&&p.endsWith('/avatar')&&method==='GET'){
+  const handle=p.slice('/api/profile/'.length,-'/avatar'.length).toLowerCase();
+  if(!handleOK(handle))return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  const id=await storage.get('auth-handle:'+handle);
+  if(!id)return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  const owner=await storage.get('auth-user:'+id);
+  if(!owner||owner.disabled)return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  const photo=await storage.get('auth-avatar:'+id);
+  if(!photo||!photo.data||!['image/jpeg','image/webp'].includes(photo.type))
+   return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  return new Response(photo.data,{status:200,headers:{...AVATAR_RESPONSE_HEADERS,'Content-Type':photo.type}});
+ }
+ if(p==='/api/account/avatar'&&method==='GET')return fail(405,'Method not allowed');
+ if(p==='/api/account/avatar'&&['PUT','DELETE'].includes(method)){
+  if(!originOK(request))return fail(403,'Same-origin request required');
+  const owner=await getAccount(storage,request);
+  if(!owner)return fail(401,'Masuk akun untuk mengganti foto');
+  if(!await throttle(storage,'avatar:'+owner.id,15,15*60000))
+   return fail(429,'Terlalu sering mengganti foto. Coba lagi nanti.');
+  const record=await storage.get('auth-user:'+owner.id);
+  if(!record||record.disabled)return fail(401,'Akun tidak tersedia');
+  if(method==='DELETE'){
+   await storage.delete('auth-avatar:'+owner.id);
+   record.avatarVersion=0;record.updatedAt=Date.now();
+   await storage.put('auth-user:'+owner.id,record);
+   return json({ok:true,avatarVersion:0});
+  }
+  const type=(request.headers.get('Content-Type')||'').toLowerCase();
+  if(!['image/jpeg','image/webp'].includes(type))return fail(415,'Gunakan foto JPG, PNG, atau WebP');
+  const length=Number(request.headers.get('Content-Length')||0);
+  if(length>AVATAR_MAX_BYTES)return fail(413,'Foto terlalu besar. Maksimal 64 KB setelah diperkecil.');
+  const body=await request.arrayBuffer();
+  if(body.byteLength<100||body.byteLength>AVATAR_MAX_BYTES)return fail(413,'Ukuran foto tidak valid');
+  const bytes=new Uint8Array(body);
+  const jpeg=type==='image/jpeg'&&bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff;
+  const webp=type==='image/webp'&&bytes[0]===0x52&&bytes[1]===0x49&&bytes[2]===0x46&&bytes[3]===0x46
+   &&String.fromCharCode(...bytes.slice(8,12))==='WEBP';
+  if(!jpeg&&!webp)return fail(415,'File bukan gambar yang didukung');
+  await storage.put('auth-avatar:'+owner.id,{type,data:bytes});
+  record.avatarVersion=Date.now();record.updatedAt=record.avatarVersion;
+  await storage.put('auth-user:'+owner.id,record);
+  return json({ok:true,avatarVersion:record.avatarVersion});
+ }
  if(p.startsWith('/api/profile/')&&method==='GET'){
   const handle=decodeURIComponent(p.slice('/api/profile/'.length)).toLowerCase();
   if(!handleOK(handle))return fail(404,'Profil tidak ditemukan');
@@ -101,7 +146,7 @@ export async function accountEndpoint(storage,request){
   if(!account||account.disabled)return fail(404,'Profil tidak ditemukan');
   const posts=await storage.get('auth-posts:'+id)||[];
   const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
-  return json({ok:true,profile:{handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
+  return json({ok:true,profile:{handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
  if(!p.startsWith('/api/account/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
@@ -139,7 +184,7 @@ export async function accountEndpoint(storage,request){
   await storage.put('auth-user:'+id,user);
   await storage.put('auth-handle:'+handle,id);
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle,name,bio:'',links:[],kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle,name,bio:'',links:[],avatarVersion:0,kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/login'&&method==='POST'){
   const handle=clean(payload.handle,24).toLowerCase(),pw=payload.password;
@@ -148,7 +193,7 @@ export async function accountEndpoint(storage,request){
   const id=await storage.get('auth-handle:'+handle),user=id&&await storage.get('auth-user:'+id);
   if(!user||user.disabled||!safeCompare(await passwordHash(pw,user.salt),user.passhash))return fail(401,'Username atau kata sandi salah');
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],avatarVersion:user.avatarVersion||0,kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/logout'&&method==='POST'){
   const token=cookies(request);
@@ -180,6 +225,7 @@ export async function accountEndpoint(storage,request){
    return fail(401,'Konfirmasi kata sandi salah');
   await storage.delete('auth-handle:'+record.handle);
   await storage.delete('auth-posts:'+record.id);
+  await storage.delete('auth-avatar:'+record.id);
   await storage.delete('auth-user:'+record.id);
   const token=cookies(request);
   if(token)await storage.delete('auth-session:'+await digest(token));
@@ -198,7 +244,7 @@ export async function accountEndpoint(storage,request){
   }
   record.name=name;record.bio=bio;record.links=validated;record.updatedAt=Date.now();
   await storage.put('auth-user:'+user.id,record);
-  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
+  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
  }
  if(p==='/api/account/posts'&&method==='POST'){
   const text=clean(payload.text,2000);
