@@ -257,13 +257,65 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
  $('privateJoin').onclick=()=>{const id=$('privateId').value.trim();if(!/^[a-f0-9]{12,32}$/i.test(id)){alert('ID room tidak valid. Minta kode undangan dari host.');return}join(id,'Private live',true)};
  function wsurl(){return server.replace(/^https:/,'wss:').replace(/\/$/,'')+'/ws'}
  function transmit(obj){if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(obj))}
- function connect(fn){if(!server){notice('Server NADMO sedang tidak tersedia.','liveState');return}if(socket)socket.close();socket=new WebSocket(wsurl());socket.onopen=fn;socket.onerror=()=>notice('Gagal menghubungi server streaming.','liveState');socket.onclose=()=>{if(currentRoom)notice('Koneksi siaran terputus.','watchState');$('net').textContent='TERPUTUS'};socket.onmessage=async e=>{try{await incoming(JSON.parse(e.data))}catch(err){console.error(err)}}}
- function rtc(){return new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]})}
+ function connect(fn){if(!server){notice('Server NADMO sedang tidak tersedia.','liveState');return}if(socket)socket.close();socket=new WebSocket(wsurl());socket.onopen=fn;socket.onerror=()=>notice('Gagal menghubungi server streaming.','liveState');socket.onclose=e=>{if(currentRoom){notice('Koneksi terputus (code '+e.code+'). Room perlu dimulai ulang jika gagal tersambung.','watchState');$('restartRoom').classList.remove('hide')} $('net').textContent='TERPUTUS'};socket.onmessage=async e=>{try{await incoming(JSON.parse(e.data))}catch(err){console.error(err)}}}
+ async function swapVideo(track){
+  if(!host||!localStream)throw Error('Host tidak sedang siaran');
+  for(const pc of peers.values()){
+   const sender=pc.getSenders().find(x=>x.track&&x.track.kind==='video');
+   if(sender)await sender.replaceTrack(track);
+  }
+  const old=localStream.getVideoTracks()[0];
+  if(old)localStream.removeTrack(old);
+  localStream.addTrack(track);
+  $('remote').srcObject=null;$('remote').srcObject=localStream;
+  if(old&&old!==track)old.stop();
+ }
+ async function toggleAfk(){
+  if(!host||!currentRoom)return;
+  $('afkToggle').disabled=true;
+  try{
+   if(!afkMode){
+    const canvas=document.createElement('canvas');canvas.width=720;canvas.height=1280;
+    if(typeof canvas.captureStream!=='function')throw Error('AFK canvas belum didukung browser ini');
+    const ctx=canvas.getContext('2d');
+    const draw=()=>{
+     ctx.fillStyle='#0b100d';ctx.fillRect(0,0,720,1280);
+     ctx.strokeStyle='#1d261e';for(let y=0;y<1280;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(720,y);ctx.stroke()}
+     ctx.textAlign='center';ctx.fillStyle='#e3fd72';ctx.font='bold 72px Arial';ctx.fillText('NADMO / LIVE',360,475);
+     ctx.font='bold 112px Arial';ctx.fillText('AFK',360,630);
+     ctx.fillStyle='#b9c6ad';ctx.font='bold 29px Arial';ctx.fillText('CREATOR AWAY',360,710);
+     ctx.font='23px Arial';ctx.fillText('MIC MAY STILL BE LIVE',360,772);
+     ctx.fillText(new Date().toLocaleTimeString('id-ID'),360,850);
+    };
+    draw();
+    const track=canvas.captureStream(5).getVideoTracks()[0];
+    if(!track)throw Error('Tidak bisa membuat visual standby');
+    await swapVideo(track);afkTrack=track;afkTimer=setInterval(draw,1000);afkMode=true;
+    $('afkToggle').textContent='◉ RETURN CAMERA';
+    $('watchState').textContent='AFK aktif • Kamera dimatikan, audio mikrofon tetap aktif jika diizinkan.';
+   }else{
+    const media=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720}},audio:false});
+    await swapVideo(media.getVideoTracks()[0]);
+    if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
+    $('afkToggle').textContent='▤ AFK SCENE';$('watchState').textContent='Kamera kembali. Room tetap aktif.';
+   }
+  }catch(e){$('watchState').textContent='Tidak bisa mengganti AFK: '+e.message}
+  finally{$('afkToggle').disabled=false}
+ }
+ $('afkToggle').onclick=toggleAfk;
+ $('shareRoom').onclick=async()=>{
+  if(!currentRoom)return;
+  const url=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(currentRoom);
+  try{await navigator.clipboard.writeText(url);$('watchState').textContent='Link undangan disalin. Kirim passcode secara terpisah jika room terkunci.'}
+  catch(e){window.prompt('Salin link room',url)}
+ };
+ $('restartRoom').onclick=()=>{leave();show('studio');notice('Mulai siaran baru dari Studio. ID room lama tidak dipulihkan.','liveState')};
+  function rtc(){return new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]})}
  function signal(to,data){transmit({type:'signal',to,data})}
  async function attachViewer(id){if(!localStream)return;const pc=rtc();peers.set(id,pc);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.onicecandidate=e=>{if(e.candidate)signal(id,{candidate:e.candidate})};const offer=await pc.createOffer();await pc.setLocalDescription(offer);signal(id,{description:pc.localDescription})}
  async function incoming(m){
-  if(m.type==='created'){currentRoom=m.id;selfId=m.selfId;host=true;notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Anda sedang siaran. Bagikan kode: '+m.id;$('remote').srcObject=localStream;show('watch');}
-  if(m.type==='joined'){currentRoom=m.id;selfId=m.selfId;host=false;$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';show('watch')}
+  if(m.type==='created'){currentRoom=m.id;selfId=m.selfId;host=true;$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Anda sedang siaran. Bagikan kode: '+m.id;$('remote').srcObject=localStream;show('watch');}
+  if(m.type==='joined'){currentRoom=m.id;selfId=m.selfId;host=false;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';show('watch')}
   if(m.type==='viewer-joined'&&host){await attachViewer(m.id)}
   if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id)}
   if(m.type==='signal'){let pc;if(host)pc=peers.get(m.from);else{if(!peer){peer=rtc();peer.ontrack=e=>{$('remote').srcObject=e.streams[0];$('watchState').textContent='Video tersambung'};peer.onicecandidate=e=>{if(e.candidate)signal(m.from,{candidate:e.candidate})}}pc=peer}
@@ -272,7 +324,7 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
    if(m.data.candidate){try{await pc.addIceCandidate(m.data.candidate)}catch(e){console.warn(e)}}
   }
   if(m.type==='chat'){let div=document.createElement('div'),b=document.createElement('b');b.textContent=(m.name||'Viewer')+': ';div.append(b,document.createTextNode(m.text));$('chat').append(div);$('chat').scrollTop=$('chat').scrollHeight}
-  if(m.type==='error'){alert(m.message||'Kesalahan server');notice(m.message||'Kesalahan server','liveState')}
+  if(m.type==='error'){notice(m.message||'Kesalahan server','liveState');if(currentRoom)notice(m.message||'Kesalahan server','watchState');else alert(m.message||'Kesalahan server')}
  }
  $('createRoom').onclick=async()=>{
   if(!adult())return;if(!server){notice('Server NADMO sedang tidak tersedia, coba lagi nanti.','liveState');return}
@@ -285,8 +337,21 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
  connect(()=>transmit({type:'join',id,password}));$('watchTitle').textContent=title}
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
- function leave(){transmit({type:'leave'});if(socket){socket.close();socket=null}for(const pc of peers.values())pc.close();peers.clear();if(peer){peer.close();peer=null}currentRoom='';selfId='';host=false; $('remote').srcObject=null;$('chat').replaceChildren();$('stopCamera').click();show('home')}
+ function leave(){
+  transmit({type:'leave'});
+  if(socket){socket.onclose=null;socket.close();socket=null}
+  for(const pc of peers.values())pc.close();peers.clear();
+  if(peer){peer.close();peer=null}
+  if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
+  currentRoom='';selfId='';host=false;
+  $('remote').srcObject=null;$('chat').replaceChildren();
+  $('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');
+  $('afkToggle').textContent='▤ AFK SCENE';
+  $('stopCamera').click();show('explore');
+}
  $('leave').onclick=leave;window.addEventListener('pagehide',()=>{if(localStream)localStream.getTracks().forEach(t=>t.stop());});
- health();show('home');
+ health();show('explore');
+ const incomingRoom=new URLSearchParams(location.search).get('room');
+ if(incomingRoom&&/^[a-f0-9]{12,32}$/i.test(incomingRoom))setTimeout(()=>join(incomingRoom,'Invitation room',true),450);
 })();
 </script></body></html>
