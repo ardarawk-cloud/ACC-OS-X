@@ -430,7 +430,36 @@ export async function accountEndpoint(storage,request){
   await storage.delete('auth-handle:'+record.handle);
   // Erase social posts and pending messaging state before revoking this identity.
   const feed=await storage.get('social-public-feed')||[];
-  await storage.put('social-public-feed',feed.filter(post=>post.accountId!==user.id));
+  // Remove creator-owned posts and reposts; do not leave orphaned public repost copies.
+  const owned=new Set(feed.filter(post=>post.accountId===user.id&&post.type!=='repost').map(post=>post.id));
+  const ownReposted=new Set((await storage.get(repostsKey(user.id))||[]).map(x=>x.originalId));
+  for(const id of ownReposted){const original=lookupOriginal(feed,id);if(original)original.repostsCount=Math.max(0,(original.repostsCount||0)-1)}
+  const retained=feed.filter(post=>post.accountId!==user.id&&!owned.has(post.originalId));
+  for(const original of retained.filter(post=>post.type!=='repost')){
+   const comments=await storage.get(commentsKey(original.id))||[];
+   if(comments.some(x=>x.accountId===user.id)){
+    const cleanComments=comments.filter(x=>x.accountId!==user.id);
+    original.commentsCount=Math.max(0,(original.commentsCount||0)-(comments.length-cleanComments.length));
+    await storage.put(commentsKey(original.id),cleanComments);
+   }
+  }
+  const liked=await storage.list({prefix:'social-user-like:'+user.id+':',limit:501});
+  for(const key of liked.keys()){
+   const id=key.slice(('social-user-like:'+user.id+':').length);
+   await storage.delete(socialLikesKey(id,user.id));await storage.delete(key);
+   const original=lookupOriginal(retained,id);
+   if(original)original.likesCount=Math.max(0,(original.likesCount||0)-1);
+  }
+  for(const id of owned){
+   await storage.delete(commentsKey(id));
+   const otherLikes=await storage.list({prefix:'social-like:'+id+':',limit:501});
+   for(const key of otherLikes.keys()){
+    const otherId=key.slice(('social-like:'+id+':').length);
+    await storage.delete(socialUserLike(otherId,id));await storage.delete(key);
+   }
+  }
+  await storage.delete(repostsKey(user.id));
+  await storage.put('social-public-feed',retained);
   const ownConnections=await storage.list({prefix:'dm-member:'+user.id+':',limit:100});
   for(const item of ownConnections.values()){
    if(!item?.otherId)continue;
@@ -543,10 +572,18 @@ export async function accountEndpoint(storage,request){
  }
  if(p==='/api/account/posts/publish'&&method==='POST'){
   const text=clean(payload.text,2000);
-  if(!text||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Postingan tidak valid');
+  const videoUrl=payload.videoUrl?urlOK(payload.videoUrl):null;
+  if(payload.videoUrl&&!videoUrl)return fail(400,'URL video harus HTTPS yang aman dan bukan judi online');
+  if(videoUrl){
+   const videoHost=new URL(videoUrl).hostname.toLowerCase().replace(/^www\./,'');
+   const videoPath=new URL(videoUrl).pathname.toLowerCase();
+   if(!(['youtube.com','m.youtube.com','youtu.be','vimeo.com','player.vimeo.com'].includes(videoHost)
+     ||/\.(mp4|webm)$/.test(videoPath)))return fail(400,'Gunakan link video YouTube, Vimeo, MP4, atau WebM yang valid');
+  }
+  if((!text&&!videoUrl)||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Postingan atau video tidak valid');
   if(!await throttle(storage,'publish:'+user.id,8,3600000))return fail(429,'Terlalu banyak postingan');
   const post={id:crypto.randomUUID(),accountId:user.id,handle:user.handle,name:record.name,
-   avatarVersion:record.avatarVersion||0,text,createdAt:Date.now(),status:'published'};
+   avatarVersion:record.avatarVersion||0,text,videoUrl:videoUrl||null,likesCount:0,commentsCount:0,repostsCount:0,createdAt:Date.now(),status:'published'};
   const previous=await storage.get('auth-posts:'+user.id)||[];
   await storage.put('auth-posts:'+user.id,[post,...previous].slice(0,80));
   const feed=await storage.get('social-public-feed')||[];
@@ -560,7 +597,13 @@ export async function accountEndpoint(storage,request){
   if(!previous.some(post=>post.id===id))return fail(404,'Postingan tidak ditemukan');
   await storage.put('auth-posts:'+user.id,previous.filter(post=>post.id!==id));
   const feed=await storage.get('social-public-feed')||[];
-  await storage.put('social-public-feed',feed.filter(post=>post.id!==id));
+  await storage.put('social-public-feed',feed.filter(post=>post.id!==id&&post.originalId!==id));
+  const likes=await storage.list({prefix:'social-like:'+id+':',limit:501});
+  for(const key of likes.keys()){
+   const otherId=key.slice(('social-like:'+id+':').length);
+   await storage.delete(socialUserLike(otherId,id));await storage.delete(key);
+  }
+  await storage.delete(commentsKey(id));
   return json({ok:true,deleted:true});
  }
  if(p==='/api/account/posts'&&method==='POST'){
