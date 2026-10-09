@@ -17,6 +17,16 @@ NADMO LIVE is an independent, adult-oriented social broadcasting network for cre
 - **Future community voice.** Explore genuine creator and viewer participation in product decisions, not token voting or unverifiable claims that users own the platform.
 - **No false promises.** Don't advertise features, privacy protections, payouts, guaranteed uptime or crisis resilience before they're implemented and tested.
 
+### Verified human streamer — no farmed creator accounts
+- **One real verified adult human = one primary creator account.** A verified person can manage several genuine business brands, channel identities or shows under that one legal account, but cannot maintain five to ten fraudulent creator accounts to inflate activity.
+- Before streamer privileges in PUBLIC NADMO LIVE, require government ID verification with a qualified identity verification provider: Indonesian KTP, accepted passport, or SIM only if valid and supported by that provider; proportionate real-person and 18+ validation plus duplicate detection. Allow legitimate appeals and account recovery for identity mismatches.
+- **Real identity private, stage name public.** Creators may use DJ names/handles to speak freely; their legal names, document numbers, biometrics and addresses are never public or visible to ordinary viewers.
+- Verify identity on the SERVER, not via frontend checkbox. Link creator permission and live room ownership to authenticated account sessions; restrict unverified accounts from starting/restoring public live rooms.
+- Viewers can watch free public streams without uploading government documents. Additional controls for chat/tipping can be proportionate.
+- Use a trusted privacy-protecting hosted IDV/KYC process, minimize sensitive data held by NADMO, protect retention and security, review biometric processing and privacy impact, handle appeals, document requests and lawful access with audited disclosures. Never collect identity scans through ordinary chat, GitHub or public uploads.
+- Verified identity reduces fake accounts and aids legitimate investigations, but never guarantees the person is honest or that impersonation, document fraud or scams are impossible. Publish clear protections against abuse and unwarranted exposure.
+- This is a **public-launch gate and forward product contract, NOT a working feature of the anonymous private beta**. Implementation source: `nadmo-live-beta/VERIFIED_STREAMER_IDENTITY_MASTER.md`.
+
 ### No competition — every streamer finds their own community
 - **No creator-versus-creator contests as the default.** NADMO LIVE is not a race for ranks or a zero-sum competition for attention. Each streamer should be able to discover their own fans through interests, community relationships and consistent broadcasts.
 - Do not build compulsory PK battles, global streamer scoreboards, gift-based dominance rankings, competitive spending incentives, or punishments for small audiences.
