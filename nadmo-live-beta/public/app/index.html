@@ -801,6 +801,11 @@ body.social-share-open{overflow:hidden}
 .message-request,.message-thread{padding:15px 12px;border-bottom:1px solid #344936;color:#f1f6e9;display:flex;align-items:center;gap:9px}
 .message-request button,.message-thread button{background:#30472d;border:1px solid #69835b;color:#e9f8df;padding:9px;border-radius:9px;font-weight:800}
 /* MOSHI's contemporary messaging UX; keep the NADMO global dashboard/nav locked. */
+body.messages-screen .app{padding-top:calc(env(safe-area-inset-top) + 8px)}
+body.messages-screen .mast{padding:5px 0 11px;margin-bottom:4px;min-height:40px}
+body.messages-screen .logo-mark{width:27px;height:28px;font-size:17px}
+body.messages-screen .logo-name{font-size:18px}
+body.messages-screen .logo-sub,body.messages-screen .mast-right{display:none}
 .messages-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0 16px;border-bottom:1px solid #344633}
 .messages-top h2{font:900 29px Impact,Arial,sans-serif;letter-spacing:.5px;display:flex;align-items:center;gap:9px}
 .messages-top p{font:12px Arial,sans-serif;margin:5px 0 0;color:#a5b5a0}
@@ -2651,6 +2656,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
   if(name==='socialPage'){loadSocialFeed();if(activeAccount)refreshSocialRelations().catch(()=>{});}
   if(name==='settings'&&activeAccount){refreshSocialRelations().catch(()=>{});loadMyReposts();}
+  document.body.classList.toggle('messages-screen',name==='messagesPage');
   if(name==='messagesPage'&&activeAccount)loadMessageInbox();
   if(name!=='messagesPage'&&activeChatHandle)closeMessages();
   window.scrollTo(0,0);}
