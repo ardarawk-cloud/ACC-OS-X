@@ -152,7 +152,7 @@ export async function accountEndpoint(storage,request){
   const id=u.searchParams.get('id')||'';
   if(!postIdOK(id))return fail(400,'Postingan tidak valid');
   const feed=await storage.get('social-public-feed')||[];
-  const post=feed.find(x=>x.id===id&&x.status==='published');
+  const post=await getOriginalPost(storage,id)||feed.find(x=>x.id===id&&x.status==='published');
   return post?json({ok:true,post}):fail(404,'Postingan tidak ditemukan');
  }
  if(p==='/api/social/engagement'&&method==='GET'){
@@ -450,7 +450,9 @@ export async function accountEndpoint(storage,request){
   // Erase social posts and pending messaging state before revoking this identity.
   const feed=await storage.get('social-public-feed')||[];
   // Remove creator-owned posts and reposts; do not leave orphaned public repost copies.
-  const owned=new Set(feed.filter(post=>post.accountId===user.id&&post.type!=='repost').map(post=>post.id));
+  const priorOwned=await storage.get('auth-posts:'+user.id)||[];
+  const owned=new Set([...priorOwned.filter(post=>post.status==='published').map(post=>post.id),
+   ...feed.filter(post=>post.accountId===user.id&&post.type!=='repost').map(post=>post.id)]);
   const ownReposted=new Set((await storage.get(repostsKey(user.id))||[]).map(x=>x.originalId));
   for(const id of ownReposted){
    const original=await getOriginalPost(storage,id);
@@ -469,8 +471,12 @@ export async function accountEndpoint(storage,request){
   for(const key of liked.keys()){
    const id=key.slice(('social-user-like:'+user.id+':').length);
    await storage.delete(socialLikesKey(id,user.id));await storage.delete(key);
-   const original=lookupOriginal(retained,id);
-   if(original)original.likesCount=Math.max(0,(original.likesCount||0)-1);
+   const original=await getOriginalPost(storage,id);
+   if(original){
+    original.likesCount=Math.max(0,(original.likesCount||0)-1);
+    await storage.put('social-post:'+id,original);
+    const listed=lookupOriginal(retained,id);if(listed)listed.likesCount=original.likesCount;
+   }
   }
   for(const id of owned){
    await storage.delete('social-post:'+id);
