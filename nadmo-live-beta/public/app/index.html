@@ -945,6 +945,81 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   return result;
  };
 
+ function avatarURL(handle,version){
+  if(!version||!/^[a-z][a-z0-9_]{2,23}$/.test(String(handle||'')))return '';
+  return DEFAULT_BACKEND+'/api/profile/'+encodeURIComponent(handle)+'/avatar?v='+encodeURIComponent(version);
+ }
+ function setAvatarImage(id,handle,version){
+  const img=$(id),url=avatarURL(handle,version);
+  img.onerror=()=>{img.hidden=true;img.removeAttribute('src')};
+  if(!url){img.hidden=true;img.removeAttribute('src');return}
+  img.hidden=false;
+  if(img.src!==url)img.src=url;
+ }
+ async function photoBlob(file){
+  if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Pilih foto JPG, PNG, atau WebP');
+  if(file.size>10*1024*1024)throw Error('Foto asli maksimal 10 MB');
+  const tmp=URL.createObjectURL(file),image=new Image();
+  try{
+   await new Promise((resolve,reject)=>{
+    image.onload=resolve;image.onerror=()=>reject(Error('Foto tidak dapat dibuka'));
+    image.src=tmp;
+   });
+   if(!image.naturalWidth||!image.naturalHeight)throw Error('Foto kosong');
+   const length=Math.min(image.naturalWidth,image.naturalHeight);
+   const sx=(image.naturalWidth-length)/2,sy=(image.naturalHeight-length)/2;
+   for(const size of [288,224,176]){
+    const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+    const context=canvas.getContext('2d');
+    if(!context)throw Error('Foto tidak bisa diproses di perangkat ini');
+    context.drawImage(image,sx,sy,length,length,0,0,size,size);
+    for(const quality of [.82,.68,.52]){
+     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+     if(blob&&blob.size>=100&&blob.size<=65536)return blob;
+    }
+   }
+   throw Error('Foto terlalu rumit untuk diperkecil; pilih gambar lain');
+  }finally{URL.revokeObjectURL(tmp)}
+ }
+ $('avatarChoose').onclick=()=>{
+  if(!activeAccount){$('avatarUploadStatus').textContent='Masuk akun untuk mengganti foto.';return}
+  $('avatarFile').click();
+ };
+ $('avatarFile').onchange=async()=>{
+  const input=$('avatarFile'),file=input.files?.[0];input.value='';
+  if(!file||!activeAccount)return;
+  const ownerHandle=activeAccount.handle;
+  $('avatarChoose').disabled=true;$('avatarUploadStatus').textContent='Menyiapkan foto...';
+  try{
+   const blob=await photoBlob(file);
+   $('avatarUploadStatus').textContent='Menyimpan foto...';
+   const response=await fetch(api('/api/account/avatar'),{
+    method:'PUT',credentials:'include',headers:{'Content-Type':'image/jpeg'},body:blob,cache:'no-store'
+   });
+   const result=await response.json().catch(()=>({error:'Gagal memuat respons'}));
+   if(!response.ok)throw Error(result.error||'Foto tidak tersimpan');
+   if(!activeAccount||activeAccount.handle!==ownerHandle)return;
+   activeAccount.avatarVersion=result.avatarVersion;
+   setAvatarImage('profileAvatarImage',ownerHandle,result.avatarVersion);
+   $('avatarRemove').hidden=false;
+   $('avatarUploadStatus').textContent='Foto profil berhasil disimpan.';
+  }catch(error){$('avatarUploadStatus').textContent=error.message}
+  finally{$('avatarChoose').disabled=false}
+ };
+ $('avatarRemove').onclick=async()=>{
+  if(!activeAccount||!activeAccount.avatarVersion)return;
+  $('avatarRemove').disabled=true;
+  try{
+   const response=await fetch(api('/api/account/avatar'),{method:'DELETE',credentials:'include',cache:'no-store'});
+   const result=await response.json().catch(()=>({error:'Server tidak merespons'}));
+   if(!response.ok)throw Error(result.error||'Tidak dapat menghapus foto');
+   activeAccount.avatarVersion=0;
+   setAvatarImage('profileAvatarImage',activeAccount.handle,0);
+   $('avatarRemove').hidden=true;
+   $('avatarUploadStatus').textContent='Foto profil dihapus.';
+  }catch(error){$('avatarUploadStatus').textContent=error.message}
+  finally{$('avatarRemove').disabled=false}
+ };
  const supporterTiers=new Set(['spark','mint','azure','violet','rose','gold','royal','platinum','diamond','legend']);
  function makeSupporterBadge(b){
   if(!b||!Number.isInteger(b.level)||b.level<1||b.level>50||!supporterTiers.has(b.tier))return null;
@@ -1011,6 +1086,10 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   $('accountLoginCard').classList.toggle('hide',logged);
   $('accountSignedCard').classList.toggle('hide',!logged);
   $('walletPanel').hidden=!logged;
+  $('avatarChoose').hidden=!logged;
+  $('avatarRemove').hidden=!logged||!activeAccount.avatarVersion;
+  setAvatarImage('profileAvatarImage',logged?activeAccount.handle:'',logged?activeAccount.avatarVersion:0);
+  if(!logged)$('avatarUploadStatus').textContent='';
   if(logged){
    $('signedAccountName').textContent=activeAccount.name;
    $('signedAccountHandle').textContent='@'+activeAccount.handle;
