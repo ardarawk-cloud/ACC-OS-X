@@ -1246,23 +1246,110 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   }
   renderSyncedPosts();
  }
+
+ function makePublicPost(item){
+  const card=document.createElement('article');card.className='profile-post-card';
+  const top=document.createElement('div');top.className='post-top';
+  const author=document.createElement('b');author.textContent=(item.name||item.handle||'Kreator')+' · @'+(item.handle||'nadmo');
+  const date=document.createElement('small');
+  date.textContent=item.createdAt?new Date(item.createdAt).toLocaleDateString('id-ID'):'';
+  top.append(author,date);
+  if(item.avatarVersion){
+   const avatar=document.createElement('img');avatar.alt='';
+   avatar.src=avatarURL(item.handle,item.avatarVersion);
+   avatar.onerror=()=>avatar.remove();
+   top.prepend(avatar);
+  }
+  const content=document.createElement('div');content.className='profile-post-content';
+  linkifyCaption(content,String(item.text||'').slice(0,2000));
+  card.append(top,content);
+  if(activeAccount?.handle===item.handle){
+   const remove=document.createElement('button');remove.type='button';
+   remove.className='btn ghost';remove.textContent='HAPUS POSTINGAN';
+   remove.style.marginTop='12px';
+   remove.onclick=async()=>{
+    if(!confirm('Hapus postingan ini?'))return;
+    remove.disabled=true;
+    try{
+     await accountRequest('/api/account/posts/delete','POST',{id:item.id});
+     syncedPosts=syncedPosts.filter(x=>x.id!==item.id);
+     renderSyncedPosts();await loadSocialFeed();
+    }catch(error){remove.disabled=false;flash(error.message)}
+   };
+   card.append(remove);
+  }
+  return card;
+ }
+ async function loadSocialFeed(){
+  const feed=$('socialPublicFeed');feed.replaceChildren();
+  try{
+   const result=await accountRequest('/api/social/feed');
+   const posts=Array.isArray(result.posts)?result.posts:[];
+   for(const item of posts)feed.append(makePublicPost(item));
+   $('socialFeedEmpty').hidden=posts.length>0;
+  }catch(error){$('socialFeedEmpty').hidden=false;$('socialFeedEmpty').textContent='Postingan belum bisa dimuat.'}
+ }
+ async function publishSocialText(text,output){
+  const value=String(text||'').trim();
+  if(!value||value.length>2000){output.textContent='Postingan harus berisi 1 sampai 2.000 karakter.';return false}
+  if(!activeAccount){output.textContent='Masuk akun untuk memposting.';show('authPage');return false}
+  output.textContent='Memposting...';
+  try{
+   const result=await accountRequest('/api/account/posts/publish','POST',{text:value});
+   syncedPosts.unshift(result.post);
+   renderSyncedPosts();await loadSocialFeed();
+   output.textContent='Postingan berhasil dipublikasikan.';
+   return true;
+  }catch(error){output.textContent=error.message;return false}
+ }
+ $('socialCompose').onclick=()=>{
+  if(!activeAccount){show('authPage');return}
+  $('socialComposer').classList.toggle('hide');
+ };
+ $('socialPublish').onclick=async()=>{
+  if(await publishSocialText($('socialPostText').value,$('socialPostStatus'))){
+   $('socialPostText').value='';$('socialComposer').classList.add('hide');
+  }
+ };
+ $('profilePostPublish').onclick=async()=>{
+  if(await publishSocialText($('profilePostText').value,$('profilePostStatus'))){
+   $('profilePostText').value='';show('settings');
+  }
+ };
+ $('socialSaveDraft').onclick=()=>{
+  $('profilePostText').value=$('socialPostText').value;
+  $('socialPostText').value='';show('draftsPage');
+  $('profilePostSave').click();
+ };
  function updatePostEmptyState(){
-  const hasSynced=!!activeAccount&&syncedPosts.length>0;
+  const hasSynced=!!activeAccount&&syncedPosts.some(x=>x.status!=='published');
   $('syncedPostsHeader').hidden=!hasSynced;
   $('postsEmptyState').hidden=hasSynced||draftPosts.length>0;
  }
  function renderSyncedPosts(){
   $('profileSyncedPosts').replaceChildren();
-  if(!activeAccount||!syncedPosts.length){updatePostEmptyState();return}
-  for(const item of syncedPosts){
-   const card=document.createElement('article');card.className='profile-post-card';
-   const head=document.createElement('div');head.className='post-top';
-   const label=document.createElement('b');label.textContent='@'+activeAccount.handle;
-   const state=document.createElement('small');state.textContent='DRAF · '+new Date(item.createdAt).toLocaleDateString('id-ID');
-   head.append(label,state);
-   const text=document.createElement('div');text.className='profile-post-content';linkifyCaption(text,item.text);
-   card.append(head,text);$('profileSyncedPosts').appendChild(card);
+  $('profilePublishedPosts').replaceChildren();
+  if(activeAccount){
+   for(const item of syncedPosts){
+    if(item.status==='published')$('profilePublishedPosts').append(makePublicPost(item));
+    else{
+     const card=document.createElement('article');card.className='profile-post-card';
+     const head=document.createElement('div');head.className='post-top';
+     const label=document.createElement('b');label.textContent='@'+activeAccount.handle;
+     const state=document.createElement('small');state.textContent='DRAF · '+new Date(item.createdAt).toLocaleDateString('id-ID');
+     head.append(label,state);
+     const text=document.createElement('div');text.className='profile-post-content';linkifyCaption(text,item.text);
+     const discard=document.createElement('button');discard.type='button';discard.textContent='HAPUS DRAF';discard.className='btn ghost';
+     discard.onclick=async()=>{
+      try{await accountRequest('/api/account/posts/delete','POST',{id:item.id});
+       syncedPosts=syncedPosts.filter(x=>x.id!==item.id);renderSyncedPosts();
+      }catch(e){flash(e.message)}
+     };
+     card.append(head,text,discard);$('profileSyncedPosts').appendChild(card);
+    }
+   }
   }
+  $('meNoPosts').hidden=$('profilePublishedPosts').childElementCount>0;
   updatePostEmptyState();
  }
  async function loadServerPosts(){
