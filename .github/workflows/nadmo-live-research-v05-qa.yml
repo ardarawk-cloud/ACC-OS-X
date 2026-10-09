@@ -50,7 +50,7 @@ jobs:
           if [ -z "$CHROME" ]; then echo "Chrome not installed";exit 1;fi
           "$CHROME" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --window-size=420,950 --virtual-time-budget=2500 \
             --dump-dom "file://$GITHUB_WORKSPACE/nadmo-live-beta/public/app/index.html" > /tmp/nadmo-dom.html
-          grep -q 'LIVE FEED' /tmp/nadmo-dom.html
+          grep -q 'LIVE SEKARANG' /tmp/nadmo-dom.html
           grep -q 'GO LIVE' /tmp/nadmo-dom.html
           echo 'PASS mobile rendering shell'
       - name: Verify HTTPS deployed page
