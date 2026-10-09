@@ -120,7 +120,7 @@ async function main(){
     return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
   },{timeout:25000},firstViewerStream);
   console.log('PASS host background return restarts camera while same viewer receives refreshed video');
-  const viewerStreamAfterHostResume=await viewer.$eval('#remote',el=>el.srcObject?.id);
+  const viewerPCsAfterHostResume=await viewer.evaluate(()=>window.__nadmoPCs?.length||0);
   await viewer.evaluate(()=>{
     Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});
     document.dispatchEvent(new Event('visibilitychange'));
@@ -131,10 +131,12 @@ async function main(){
   await delay(1300);
   console.log('HOST_AFTER_VIEWER_RESUME '+JSON.stringify(await host.evaluate(()=>({events:window.__nadmoQALog?.slice(-18),state:document.querySelector('#watchState')?.textContent}))));
   try{
-   await viewer.waitForFunction(old=>{
-     const el=document.querySelector('#remote');
-     return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
-   },{timeout:20000},viewerStreamAfterHostResume);
+   await viewer.waitForFunction(previousCount=>{
+     const video=document.querySelector('#remote');
+     const pcs=window.__nadmoPCs||[],latest=pcs[pcs.length-1];
+     return pcs.length>previousCount&&latest?.connectionState==='connected'&&
+       video?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&video.videoWidth>0&&video.readyState>=2;
+   },{timeout:20000},viewerPCsAfterHostResume);
   }catch(e){
    for(const [page,name] of [[host,'HOST'],[viewer,'VIEWER']]){
     console.log('FOREGROUND_DIAGNOSTIC '+name+' '+JSON.stringify(await page.evaluate(()=>({
@@ -149,12 +151,13 @@ async function main(){
   }
   console.log('PASS returning viewer requests fresh video without leaving room');
   // The user can also force recovery in-place if Android did not emit a resume event.
-  const viewerManualBefore=await viewer.$eval('#remote',el=>el.srcObject?.id);
+  const viewerManualPCBefore=await viewer.evaluate(()=>window.__nadmoPCs?.length||0);
   await viewer.locator('#refreshVideo').click();
-  await viewer.waitForFunction(old=>{
-    const el=document.querySelector('#remote');
-    return el?.srcObject?.id!==old&&el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0;
-  },{timeout:25000},viewerManualBefore);
+  await viewer.waitForFunction(previousCount=>{
+    const el=document.querySelector('#remote'),pcs=window.__nadmoPCs||[],pc=pcs[pcs.length-1];
+    return pcs.length>previousCount&&pc?.connectionState==='connected'&&
+      el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0&&el.readyState>=2;
+  },{timeout:25000},viewerManualPCBefore);
   console.log('PASS manual refresh-video button restores viewer media without rejoining');
   await host.locator('#afkToggle').click();
   await waitText(host,'#watchState','AFK aktif',15000);
