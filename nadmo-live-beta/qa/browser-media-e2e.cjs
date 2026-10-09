@@ -62,8 +62,8 @@ async function main(){
   await host.select('#category','Gaming');
   await host.locator('#title').fill(streamTitle);
   await host.locator('#createRoom').click();
-  await waitText(host,'#watchState','Bagikan kode');
-  const roomId=await host.$eval('#watchState',el=>el.textContent.match(/[a-f0-9]{12}/i)?.[0]);
+  await waitText(host,'#liveState','Bagikan kode room');
+  const roomId=await host.$eval('#liveState',el=>el.textContent.match(/[a-f0-9]{12}/i)?.[0]);
   assert.ok(roomId);
   const roomButton='#rooms .room[data-room-id="'+roomId+'"] .btn';
   const hostLayout=await host.evaluate(()=>({
@@ -73,14 +73,23 @@ async function main(){
     video:(()=>{const r=document.querySelector('#remote').getBoundingClientRect();return [r.width,r.height]})(),
     chatVisible:getComputedStyle(document.querySelector('.live-chat')).display!=='none',
     navHidden:getComputedStyle(document.querySelector('nav')).display==='none',
-    controls:document.querySelector('#accessQuick')?.getBoundingClientRect().width,
+    controls:document.querySelector('#moreQuick')?.getBoundingClientRect().width,
     scrollHeight:document.documentElement.scrollHeight
   }));
   console.log('HOST_IMMERSIVE_LAYOUT '+JSON.stringify(hostLayout));
   assert.ok(hostLayout.body&&hostLayout.navHidden&&hostLayout.chatVisible,'Host must use immersive live layout with overlay chat');
   assert.ok(Math.abs(hostLayout.watch[3]-hostLayout.viewport[1])<=3&&hostLayout.video[1]>=hostLayout.viewport[1]-3,'Live video must fill viewport height');
-  assert.ok(hostLayout.controls>0,'Private access quick control must be visible');
-  await host.locator('#accessQuick').click();
+  assert.ok(hostLayout.controls>0,'Bottom Settings control must be visible');
+  assert.equal(await host.$eval('#watchState',el=>getComputedStyle(el).display),'none','Normal status labels must not obstruct video');
+  assert.equal(await host.$eval('.page-top',el=>el.innerText.includes('CURRENT TRANSMISSION')),false,'Technical header removed');
+  await host.locator('#moreQuick').click();
+  assert.equal(await host.$eval('#liveSettingsPanel',el=>el.classList.contains('sheet-open')),true);
+  assert.equal(await host.$eval('#mirrorPreviewToggle',el=>el.checked),true,'Front camera preview mirrored by default');
+  assert.equal(await host.$eval('#remote',el=>getComputedStyle(el).transform.startsWith('matrix(-1')),true,'Host preview is mirrored');
+  await host.locator('#mirrorPreviewToggle').click();
+  assert.equal(await host.$eval('#remote',el=>getComputedStyle(el).transform==='none'),true,'Mirror preview switch toggles host only');
+  await host.locator('#mirrorPreviewToggle').click();
+  await host.locator('#settingsPrivate').click();
   assert.equal(await host.$eval('#hostAccessPanel',el=>el.classList.contains('sheet-open')),true);
   await host.locator('#closeAccessSheet').click();
   assert.equal(await host.$eval('#hostAccessPanel',el=>el.classList.contains('sheet-open')),false);
@@ -121,6 +130,15 @@ async function main(){
   assert.ok(evidence.width>0&&evidence.height>0,'Remote playback has no video frame');
   assert.ok(evidence.tracks.some(t=>t.kind==='video'&&t.readyState==='live'),'No active remote video track');
   assert.ok(evidence.tracks.some(t=>t.kind==='audio'),'No remote audio track');
+  await host.locator('#moreQuick').click();
+  await host.locator('#mirrorBroadcastToggle').click();
+  await host.waitForFunction(()=>document.querySelector('#mirrorBroadcastToggle').checked,{timeout:6000});
+  await viewer.waitForFunction(()=>getComputedStyle(document.querySelector('#remote')).transform.startsWith('matrix(-1'),{timeout:7500});
+  console.log('PASS host broadcast mirror ON synchronized to viewer');
+  await host.locator('#mirrorBroadcastToggle').click();
+  await viewer.waitForFunction(()=>getComputedStyle(document.querySelector('#remote')).transform==='none',{timeout:7500});
+  await host.locator('#closeSettingsSheet').click();
+  console.log('PASS host broadcast mirror OFF restores viewer orientation');
   const viewerLayout=await viewer.evaluate(()=>({
     immersive:document.body.classList.contains('live-immersive'),
     visibleChat:document.querySelector('#chat').getBoundingClientRect().height>50,
@@ -128,7 +146,7 @@ async function main(){
     navHidden:getComputedStyle(document.querySelector('nav')).display==='none'
   }));
   assert.ok(viewerLayout.immersive&&viewerLayout.visibleChat&&viewerLayout.messageVisible&&viewerLayout.navHidden,'Viewer immersive overlay/chat must be visible without scrolling');
-  await viewer.locator('#tipQuick').click();
+  await viewer.locator('#giftQuick').click();
   assert.equal(await viewer.$eval('#viewerTipPanel',el=>el.classList.contains('sheet-open')),true);
   await viewer.locator('#closeTipSheet').click();
   console.log('PASS viewer full-screen camera + chat composer + tip bottom sheet',JSON.stringify(viewerLayout));
@@ -219,14 +237,16 @@ async function main(){
   console.log('PASS returning viewer requests fresh video without leaving room');
   // The user can also force recovery in-place if Android did not emit a resume event.
   const viewerManualPCBefore=await viewer.evaluate(()=>window.__nadmoPCs?.length||0);
-  await viewer.locator('#refreshVideo').click();
+  await viewer.locator('#moreQuick').click();
+  await viewer.locator('#settingsRecover').click();
   await viewer.waitForFunction(previousCount=>{
     const el=document.querySelector('#remote'),pcs=window.__nadmoPCs||[],pc=pcs[pcs.length-1];
     return pcs.length>previousCount&&pc?.connectionState==='connected'&&
       el?.srcObject?.getVideoTracks()[0]?.readyState==='live'&&el.videoWidth>0&&el.readyState>=2;
   },{timeout:25000},viewerManualPCBefore);
   console.log('PASS manual refresh-video button restores viewer media without rejoining');
-  await host.locator('#afkToggle').click();
+  await host.locator('#moreQuick').click();
+  await host.locator('#settingsCamera').click();
   await waitText(host,'#watchState','Kamera OFF',15000);
   await viewer.waitForFunction(()=>document.querySelector('#remote')?.srcObject?.getVideoTracks()?.[0]?.readyState==='live',{timeout:15000});
   console.log('PASS host camera-standby media switch without closing viewer stream');
@@ -249,6 +269,13 @@ async function main(){
     return{y:r.y,height:r.height,hit:hit?.tagName,hitId:hit?.id,text:hit?.textContent?.slice(0,35)}
   })));
   await host.locator('#leave').click();
+  assert.equal(await host.$eval('#endLiveConfirm',el=>!el.classList.contains('hide')),true,'Host sees confirmation instead of immediate end');
+  await host.locator('#cancelEndLive').click();
+  assert.equal(await host.$eval('#endLiveConfirm',el=>el.classList.contains('hide')),true,'Cancel preserves room');
+  const roomStillLive=await viewer.$eval('#watch',el=>!el.classList.contains('hide'));
+  assert.equal(roomStillLive,true,'Cancel must leave viewer connected');
+  await host.locator('#leave').click();
+  await host.locator('#confirmEndLive').click();
   const sentLeave=await host.evaluate(()=>window.__nadmoQALog?.some(x=>x.startsWith('SEND leave')));
   console.log('HOST_LEAVE_SENT '+JSON.stringify({sentLeave,events:await host.evaluate(()=>window.__nadmoQALog?.slice(-12))}));
   assert.ok(sentLeave,'Actual Leave command must be sent');
@@ -275,10 +302,11 @@ async function main(){
   assert.deepEqual(talkTracks,['audio','video'],'Talk mode needs real mic and canvas visualization');
   await host.locator('#title').fill('NADMO QA TALK '+Date.now());
   await host.locator('#createRoom').click();
-  await waitText(host,'#watchState','Bagikan kode',16000);
+  await waitText(host,'#liveState','Bagikan kode room',16000);
   assert.equal(await host.$eval('#watch',el=>el.getBoundingClientRect().height>700),true);
   console.log('PASS Ngobrol mode starts real microphone audio live with fullscreen visual');
   await host.locator('#leave').click();
+  await host.locator('#confirmEndLive').click();
   assert.equal(faults.length,0,'Browser uncaught exceptions: '+faults.join('; '));
   console.log('ALL HEADLESS WEBRTC BROADCAST TESTS PASSED');
  }finally{await browser.close();}
