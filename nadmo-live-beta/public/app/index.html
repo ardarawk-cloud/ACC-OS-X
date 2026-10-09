@@ -534,6 +534,9 @@ html{scroll-padding-bottom:100px}.room .room-actions .btn{scroll-margin-bottom:1
     $('restartRoom').classList.add('hide');
     const activeViewers=Array.isArray(m.viewers)?m.viewers:[];
     $('watchState').textContent='Room berhasil dipulihkan. Menyambungkan ulang '+activeViewers.length+' penonton.';
+    if(!afkMode){
+      try{await recoverHostCapture()}catch(error){console.warn('Camera resume after reconnect',error)}
+    }
     for(const viewerId of activeViewers)await attachViewer(viewerId);
    }
   if(m.type==='host-reconnecting'){
