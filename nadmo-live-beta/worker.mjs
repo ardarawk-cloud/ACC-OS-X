@@ -13,7 +13,7 @@ function getHost(clients,id){return clients.find(x=>state(x).id===id)}
 function roomCount(clients,id){return clients.filter(x=>state(x).role==='viewer'&&state(x).roomId===id).length}
 function stageGuests(clients,id){return clients.filter(x=>state(x).role==='guest'&&state(x).roomId===id)}
 function stagePublic(clients,id){return stageGuests(clients,id).map(x=>{
- const s=state(x);return {id:s.id,name:s.displayName||s.handle||'Tamu',mode:s.guestMode||'voice',ready:s.guestReady===true,mic:s.guestMic===true,camera:s.guestCamera===true};
+ const s=state(x);return {id:s.id,name:s.displayName||s.handle||'Tamu',mode:s.guestMode||'voice',ready:s.guestReady===true,mic:s.guestMic===true,camera:s.guestCamera===true,streamId:s.guestStreamId||null};
 })}
 function stageBroadcast(clients,id){
  const packet={type:'stage-updated',guests:stagePublic(clients,id),maxGuests:GUEST_LIMIT};
@@ -234,7 +234,7 @@ export class RoomHub{
    if(typeof msg.accept!=='boolean')return failure(ws,'Persetujuan tidak valid.');
    if(msg.accept&&stageGuests(this.sockets(),room.id).length>=GUEST_LIMIT)return failure(ws,'Kursi tamu penuh.');
    const gs=state(guest),mode=gs.pendingGuestMode;gs.pendingGuestMode=null;
-   if(msg.accept){gs.role='guest';gs.guestMode=mode;gs.guestReady=false;gs.guestMic=false;gs.guestCamera=false}
+   if(msg.accept){gs.role='guest';gs.guestMode=mode;gs.guestReady=false;gs.guestMic=false;gs.guestCamera=false;gs.guestStreamId=null}
    save(guest,gs);reply(guest,{type:msg.accept?'guest-approved':'guest-rejected',mode});
    reply(ws,{type:'guest-request-resolved',id,accepted:msg.accept});
    stageBroadcast(this.sockets(),room.id);return;
@@ -243,7 +243,9 @@ export class RoomHub{
    if(s.role!=='guest')return failure(ws,'Belum diberi akses panggung.');
    if(typeof msg.mic!=='boolean'||typeof msg.camera!=='boolean')return failure(ws,'Status media tidak valid.');
    if(type==='guest-media-state'&&!s.guestReady)return failure(ws,'Media belum siap.');
-   s.guestReady=true;s.guestMic=msg.mic;s.guestCamera=msg.camera;save(ws,s);
+   s.guestReady=true;s.guestMic=msg.mic;s.guestCamera=msg.camera;
+   if(type==='guest-ready')s.guestStreamId=txt(msg.streamId,128)||s.guestStreamId||null;
+   save(ws,s);
    if(type==='guest-ready'){
     const host=getHost(this.sockets(),room.hostId);
     if(host)reply(host,{type:'guest-ready',id:s.id});
@@ -253,7 +255,7 @@ export class RoomHub{
   if(type==='guest-exit'){
    if(s.role!=='guest')return failure(ws,'Tidak berada di panggung.');
    if(roomCount(this.sockets(),room.id)>=VIEWER_LIMIT)return failure(ws,'Penonton penuh. Keluar dari room untuk turun panggung.');
-   s.role='viewer';s.guestReady=false;s.guestMode=null;s.guestCamera=false;s.guestMic=false;save(ws,s);
+   s.role='viewer';s.guestReady=false;s.guestMode=null;s.guestCamera=false;s.guestMic=false;s.guestStreamId=null;save(ws,s);
    const host=getHost(this.sockets(),room.hostId);if(host)reply(host,{type:'guest-left',id:s.id});
    reply(ws,{type:'guest-exited'});stageBroadcast(this.sockets(),room.id);return;
   }
