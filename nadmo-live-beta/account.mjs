@@ -93,7 +93,9 @@ export async function accountEndpoint(storage,request){
   if(await storage.get('auth-handle:'+handle))return fail(409,'Username sudah digunakan');
   // Explicitly not KYC: this account cannot be treated as an identity-verified streamer.
   const salt=hex(crypto.getRandomValues(new Uint8Array(16)));
-  const passhash=await passwordHash(pw,salt);
+  let passhash;
+  try{passhash=await passwordHash(pw,salt)}
+  catch(error){console.error('Password KDF unsupported',error?.name);return fail(503,'Secure password hashing unavailable on this server')}
   const id=crypto.randomUUID();
   const user={id,handle,name,bio:'',links:[],salt,passhash,kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
   await storage.put('auth-user:'+id,user);
