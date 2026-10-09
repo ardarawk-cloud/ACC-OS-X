@@ -732,7 +732,7 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
  const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null;
-  let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),stageRefreshTimer=null,hostMute=false;
+  let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
@@ -1507,16 +1507,30 @@ body.live-immersive #watch .room-safety{pointer-events:auto}
   $('reportStatus').textContent='Mengirim laporan...';
   transmit({type:'report',reason:$('reportReason').value,description:$('reportDetails').value.trim().slice(0,300)});
  };
+
  async function attachViewer(id){
   if(!localStream||!currentRoom||!host)return;
+  const receivingGuest=readyGuestIds.has(id)||stageGuestsList.some(g=>g.id===id);
   const old=peers.get(id);
   if(old){old.close();peers.delete(id);pendingIce.delete(id)}
   const pc=rtc();peers.set(id,pc);renderHostModeration();
+  pc.ontrack=e=>{
+   if(!receivingGuest||!e.streams?.[0]||peers.get(id)!==pc)return;
+   const stream=e.streams[0];
+   if(guestRemoteStreams.get(stream.id)===stream)return;
+   guestRemoteStreams.set(stream.id,stream);
+   renderStageGuests();refreshGuestAudience(id);
+  };
   localStream.getTracks().filter(t=>t.readyState==='live').forEach(t=>pc.addTrack(t,localStream));
+  for(const guest of stageGuestsList){
+   if(guest.id===id||!guest.ready||!guest.streamId)continue;
+   const media=guestRemoteStreams.get(guest.streamId);
+   if(media)for(const track of media.getTracks())if(track.readyState==='live')pc.addTrack(track,media);
+  }
   pc.onicecandidate=e=>{if(e.candidate&&peers.get(id)===pc)signal(id,{candidate:e.candidate})};
   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
   if(peers.get(id)===pc)signal(id,{description:pc.localDescription,reset:true});
-}
+ }
  async function incoming(m){
   if(m.type==='created'){$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
   if(m.type==='joined'){$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
