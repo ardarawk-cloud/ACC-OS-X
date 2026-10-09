@@ -320,6 +320,13 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
   }
 }
 
+/* Keep on-air information deliberately minimal; show status text on actual faults only. */
+body.live-immersive #watch .page-top{padding-top:calc(env(safe-area-inset-top) + 14px)}
+body.live-immersive #watch .page-top .onair-label{font:900 12px/1.2 Arial,sans-serif;color:#e3fd72;letter-spacing:1.4px}
+body.live-immersive #watch #watchTitle{font-size:15px;line-height:1.25;font-family:Arial,sans-serif;font-weight:800;max-width:190px;margin-top:5px}
+body.live-immersive #watch #watchState{display:none!important}
+body.live-immersive #watch #watchState.connection-warning{display:block!important;background:#241c10de;border:1px solid #aa8540;color:#ffe5a1}
+
 </style></head>
 <body>
 <div class="app">
@@ -394,7 +401,7 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
     <button type="button" id="pcBack" title="Kembali ke daftar LIVE" aria-label="Kembali ke daftar LIVE">←</button>
     <span>NADMO LIVE</span>
   </aside>
-  <div class="page-top"><div><span class="eyebrow">CURRENT TRANSMISSION</span><h1 id="watchTitle">LIVE NOW</h1></div><span class="edition">ON AIR</span></div>
+  <div class="page-top"><div><span class="onair-label">● LIVE</span><h1 id="watchTitle">NADMO LIVE</h1></div></div>
   <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
   <button class="btn secondary" id="refreshVideo" type="button">↻ PULIHKAN VIDEO</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom">↗ BAGIKAN</button></div>
@@ -536,7 +543,9 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
  $('adult').addEventListener('change',()=>localStorage.setItem('nadmo.adult',$('adult').checked?'yes':'no'));
  function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Settings.');show('settings');return false}return true}
- function notice(s,id='serverState'){$(id).textContent=s}
+ function notice(s,id='serverState'){$(id).textContent=s;if(id==='watchState')markWatchWarning(s)}
+ function markWatchWarning(s){$('watchState').classList.toggle('connection-warning',/gagal|terputus|menunggu|salah|koneksi.*hilang|host.*reconnect|belum dapat|belum tersambung|ditolak|offline|sedang dipulihkan/i.test(s))}
+ function clearWatchWarning(){$('watchState').classList.remove('connection-warning')}
  let flashTimer=null;
  function flash(message){const el=$('flash');el.textContent=message;el.classList.remove('hide');if(flashTimer)clearTimeout(flashTimer);flashTimer=setTimeout(()=>el.classList.add('hide'),5500)}
  const api=p=>server.replace(/\/$/,'')+p;
@@ -809,7 +818,7 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
  $('shareRoom').onclick=async()=>{
   if(!currentRoom)return;
   const url=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(currentRoom)+(activeAccessMode==='password'?'&private=1':'');
-  try{await navigator.clipboard.writeText(url);$('watchState').textContent='Link undangan disalin. Kirim passcode secara terpisah jika room terkunci.'}
+  try{await navigator.clipboard.writeText(url);flash('Link undangan disalin. Bagikan kode akses terpisah jika privat.')}
   catch(e){window.prompt('Salin link room',url)}
  };
  $('restartRoom').onclick=()=>{leave();show('studio');notice('Mulai siaran baru dari Studio. ID room lama tidak dipulihkan.','liveState')};
@@ -841,7 +850,7 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
   for(const id of ids){
     try{await attachViewer(id)}catch(error){console.warn('Viewer media refresh',error)}
   }
-  $('watchState').textContent='Kamera dan mikrofon dipulihkan. Room tetap aktif.';
+  $('watchState').textContent='Kamera dan mikrofon dipulihkan. Room tetap aktif.';clearWatchWarning();
  }
  function backgroundState(){
   lastBackgroundAt=Date.now();
@@ -849,7 +858,7 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
   if(host&&socket?.readyState===WebSocket.OPEN)transmit({type:'host-visibility',status:'background'});
   $('watchState').textContent=host?
     'Aplikasi di background. Android bisa menjeda kamera. Buka kembali untuk memulihkan video.':
-    'Aplikasi di background. Video akan dicek kembali saat kamu membuka aplikasi.';
+    'Aplikasi di background. Video akan dicek kembali saat kamu membuka aplikasi.';clearWatchWarning();
  }
  async function restoreForeground(){
   if(!currentRoom||manuallyLeaving||recoveringForeground||document.visibilityState==='hidden')return;
@@ -903,8 +912,8 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
   if(peers.get(id)===pc)signal(id,{description:pc.localDescription,reset:true});
 }
  async function incoming(m){
-  if(m.type==='created'){mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Anda sedang siaran. Bagikan kode: '+m.id;$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
-  if(m.type==='joined'){closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';show('watch');applyMirroring();$('giftQuick').hidden=false}
+  if(m.type==='created'){mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');$('watchTitle').textContent=$('title').value.trim()||'NADMO LIVE';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='joined'){closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');$('watchTitle').textContent=m.title;$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
   if(m.type==='resumed'){
     mirrorBroadcast=m.mirrorBroadcast===true;applyMirroring();
     stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('net').textContent='SERVER ONLINE';
@@ -918,7 +927,7 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
     for(const viewerId of activeViewers)await attachViewer(viewerId);
    }
   if(m.type==='host-reconnecting'){
-   $('watchState').textContent='Host sementara kehilangan jaringan. Menunggu sampai 90 detik tanpa mengakhiri room...';
+   $('watchState').textContent='Host sementara kehilangan jaringan. Menunggu sampai 90 detik tanpa mengakhiri room...';markWatchWarning($('watchState').textContent);
   }
   if(m.type==='host-reconnected'){
    if(peer){peer.close();peer=null}pendingIce.clear();$('remote').srcObject=null;
@@ -956,7 +965,7 @@ body.live-immersive #watch #liveSettingsPanel.sheet-open{display:block}
    if(!host&&m.data?.description?.type==='offer'&&m.data.reset&&peer){
      peer.close();peer=null;pendingIce.delete(m.from);$('remote').srcObject=null;
    }
-   let pc;if(host)pc=peers.get(m.from);else{if(!peer){peer=rtc();peer.ontrack=e=>{$('remote').srcObject=e.streams[0];applyMirroring();$('watchState').textContent='Video tersambung'};peer.onicecandidate=e=>{if(e.candidate)signal(m.from,{candidate:e.candidate})}}pc=peer}
+   let pc;if(host)pc=peers.get(m.from);else{if(!peer){peer=rtc();peer.ontrack=e=>{$('remote').srcObject=e.streams[0];applyMirroring();$('watchState').textContent='Video tersambung';clearWatchWarning()};peer.onicecandidate=e=>{if(e.candidate)signal(m.from,{candidate:e.candidate})}}pc=peer}
    if(!pc)return;
    if(m.data.description){
     await pc.setRemoteDescription(m.data.description);
