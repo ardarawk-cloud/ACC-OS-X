@@ -804,9 +804,29 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   <p class="deck">Ini masih fondasi kanal SIGNAL. Sistem pemberitahuan terverifikasi, arsip offline, relai cadangan dan persetujuan editor belum dibangun.</p>
 </section>
 <section id="settings" class="hide">
-  <div class="page-top"><div><h1>AKUN SAYA<span style="color:var(--neon)">.</span></h1></div></div>
-  <div class="show-label"><b>AKUN</b></div>
-  <div class="panel account-card" id="accountLoginCard">
+ <div class="me-top"><span>ME</span><button id="meMore" type="button" aria-label="Pengaturan dan privasi" title="Pengaturan dan privasi">⋮</button></div>
+ <div id="meGuest" class="me-guest hide"><div class="profile-avatar" aria-hidden="true">N/</div><h2>Profil NADMO</h2><p>Masuk untuk melihat profil dan aktivitasmu.</p><button type="button" class="btn" id="meLogin">MASUK / DAFTAR</button></div>
+ <div id="meSigned">
+  <div id="betaSocialProfile" class="nadmo-profile">
+     <div class="profile-hero">
+      <div class="profile-avatar" aria-hidden="true"><span>N/</span><img id="profileAvatarImage" alt="" hidden></div>
+      <div><b id="profileDisplayName">Profil NADMO</b><small id="profileDisplayHandle">@username</small></div>
+      <button type="button" class="btn secondary" id="avatarChoose" hidden>FOTO</button><button type="button" class="btn secondary" id="editProfileBtn">EDIT</button>
+    </div>
+    <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Pilih foto profil"><div id="avatarUploadStatus" role="status" aria-live="polite"></div>
+    <p id="profileDisplayBio" class="profile-bio">Tampilkan siapa kamu, bisnis dan karya yang kamu punya.</p>
+    
+
+  <div class="me-profile-actions"><button type="button" id="meWalletOpen"><span>DOMPET</span><b id="meWalletBalance">Rp0</b><span aria-hidden="true">›</span></button></div>
+  <div class="me-content-header"><b>POSTINGAN</b><button type="button" id="meNewPost">+ BUAT</button></div>
+  <div id="profilePublishedPosts" class="profile-post-feed"></div>
+  <p id="meNoPosts" class="profile-note">Belum ada postingan.</p>
+  </div>
+ </div>
+</section>
+<section id="authPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Masuk ke NADMO</h2></div>
+   <div class="panel account-card" id="accountLoginCard">
     <p>Masuk atau daftar untuk menggunakan profil yang sama di HP dan PC.</p>
     <label for="accountHandle">USERNAME</label>
     <input class="field" id="accountHandle" autocomplete="username" maxlength="24" placeholder="username unik">
@@ -820,24 +840,37 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
     </div>
     <div class="status" role="status" id="accountStatus">Pemulihan kata sandi belum tersedia. Simpan kata sandi dengan aman.</div>
   </div>
-  <div class="panel account-card hide" id="accountSignedCard">
+
+</section>
+<section id="preferencesPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Pengaturan dan privasi</h2></div>
+ <div class="me-menu-label">AKUN</div>
+ <div class="me-menu">
+  <button type="button" data-open-page="accountPage">◉ <span>Akun & edit profil</span><b>›</b></button>
+  <button type="button" data-open-page="walletPage">▣ <span>Dompet & penarikan</span><b>›</b></button>
+  <button type="button" data-open-page="supporterPage">✦ <span>Level pendukung</span><b>›</b></button>
+ </div>
+ <div class="me-menu-label">AKTIVITAS</div>
+ <div class="me-menu">
+  <button type="button" data-open-page="draftsPage">▤ <span>Kelola postingan & draf</span><b>›</b></button>
+  <button type="button" data-tab="studio">◉ <span>Pengaturan LIVE</span><b>›</b></button>
+ </div>
+ <div class="me-menu-label">PRIVASI</div>
+ <div class="me-menu"><button type="button" data-open-page="privacyPage">♙ <span>Keamanan & izin</span><b>›</b></button></div>
+ <div class="me-menu-label">SESI</div>
+ <div class="me-menu"><button type="button" data-open-page="accountPage">◉ <span>Kelola akun / keluar</span><b>›</b></button></div>
+</section>
+<section id="accountPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Akun saya</h2></div>
+   <div class="panel account-card hide" id="accountSignedCard">
     <div class="row account-title"><b id="signedAccountName"></b><span id="supporterMyBadge" hidden></span><small id="signedAccountHandle"></small></div>
     <div class="notice" id="accountKycNote">Identitas belum diverifikasi.</div>
     <button class="btn secondary" type="button" id="accountLogout">KELUAR AKUN</button>
     <div class="status" id="accountSignedStatus" role="status"></div>
   </div>
 
-    <div id="betaSocialProfile" class="nadmo-profile">
-    <div class="show-label"><b>PROFIL SAYA</b></div>
-    <div class="profile-hero">
-      <div class="profile-avatar" aria-hidden="true"><span>N/</span><img id="profileAvatarImage" alt="" hidden></div>
-      <div><b id="profileDisplayName">Profil NADMO</b><small id="profileDisplayHandle">@username</small></div>
-      <button type="button" class="btn secondary" id="avatarChoose" hidden>FOTO</button><button type="button" class="btn secondary" id="editProfileBtn">EDIT</button>
-    </div>
-    <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Pilih foto profil"><div id="avatarUploadStatus" role="status" aria-live="polite"></div>
-    <p id="profileDisplayBio" class="profile-bio">Tampilkan siapa kamu, bisnis dan karya yang kamu punya.</p>
-    <div id="profileBusinessLinks" class="profile-links"></div>
-    <div id="profileEditBox" class="panel hide"><button type="button" class="btn ghost" id="avatarRemove" hidden>HAPUS FOTO PROFIL</button>
+
+     <div id="profileEditBox" class="panel hide"><button type="button" class="btn ghost" id="avatarRemove" hidden>HAPUS FOTO PROFIL</button>
       <label for="profileName">NAMA TAMPILAN</label>
       <input class="field" id="profileName" maxlength="60" placeholder="Nama kreator / bisnis">
       <label for="profileHandle">USERNAME</label>
@@ -851,33 +884,13 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
       <div id="profileEditLinks" class="profile-edit-links"></div>
       <div class="status" id="profileEditStatus" role="status"></div>
     </div>
-    <div class="show-label"><b>POSTINGAN</b></div>
-    <div class="panel profile-composer">
-      <label for="profilePostText">TULIS POSTINGAN</label>
-      <textarea class="field profile-textarea" id="profilePostText" rows="4" maxlength="2000" placeholder="Bagikan aktivitas, karya, bisnis, atau tautan kamu..."></textarea>
-      <button type="button" class="btn secondary" id="profilePostSave">SIMPAN DRAF</button>
-      <p class="profile-note">Draf hanya bisa dilihat olehmu.</p>
-      <div id="profilePostStatus" class="status" role="status"></div>
-    </div>
-    <div class="show-label" id="syncedPostsHeader" hidden><b>DRAF TERSIMPAN</b></div>
-    <div id="profileSyncedPosts" class="profile-post-feed"></div>
-    <div id="profilePostFeed" class="profile-post-feed"></div>
-    <p id="postsEmptyState" class="profile-note profile-empty" hidden>Belum ada draf. Buat postingan pertamamu.</p>
-  </div>
 
-
-    <section class="supporter-panel" id="supporterPanel" aria-label="NADMO Supporter level">
-   <div class="supporter-header"><b>LEVEL PENDUKUNG</b><small>LEVEL 1–50</small></div>
-   <p id="supporterMessage">Badge akan tampil saat dukungan berhasil diverifikasi.</p>
-   <div class="supporter-progress" id="supporterProgress">Level 0</div>
-   <label class="supporter-privacy" id="supporterPrivacy" hidden><input type="checkbox" id="supporterShowBadge" checked> Tampilkan badge saya di chat dan profil</label>
-   <details class="supporter-guide"><summary>Lihat tingkatan badge</summary>
-   <div class="supporter-levels" id="supporterLevels" aria-label="Tingkatan badge pendukung"></div>
-   <small id="supporterStatus" role="status">Badge diberikan berdasarkan dukungan terverifikasi.</small>
-   </details>
-  </section>
-  <section class="wallet-panel" id="walletPanel" hidden aria-label="Dompet dan tarik saldo kreator">
-   <details id="walletDetails">
+ <div id="profileBusinessLinks" class="profile-links"></div>
+</section>
+<section id="walletPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Dompet Kreator</h2></div>
+   <section class="wallet-panel" id="walletPanel" aria-label="Dompet dan tarik saldo kreator">
+   <details id="walletDetails" open>
     <summary><span>DOMPET KREATOR</span><span aria-hidden="true">⌄</span></summary>
     <div class="wallet-total"><small>SALDO BISA DITARIK</small><strong id="walletAvailable">Rp0</strong></div>
     <div class="wallet-breakdown"><span>Dalam proses pencairan</span><b id="walletPending">Rp0</b></div>
@@ -901,7 +914,41 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
     <div class="wallet-history"><b>RIWAYAT SAWERAN & PENARIKAN</b><div id="walletHistory">Belum ada transaksi.</div></div>
    </details>
   </section>
-  <div class="show-label"><b>PRIVASI & KEAMANAN</b></div>
+
+</section>
+<section id="supporterPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Level Pendukung</h2></div>
+     <section class="supporter-panel" id="supporterPanel" aria-label="NADMO Supporter level">
+   <div class="supporter-header"><b>LEVEL PENDUKUNG</b><small>LEVEL 1–50</small></div>
+   <p id="supporterMessage">Badge akan tampil saat dukungan berhasil diverifikasi.</p>
+   <div class="supporter-progress" id="supporterProgress">Level 0</div>
+   <label class="supporter-privacy" id="supporterPrivacy" hidden><input type="checkbox" id="supporterShowBadge" checked> Tampilkan badge saya di chat dan profil</label>
+   <details class="supporter-guide"><summary>Lihat tingkatan badge</summary>
+   <div class="supporter-levels" id="supporterLevels" aria-label="Tingkatan badge pendukung"></div>
+   <small id="supporterStatus" role="status">Badge diberikan berdasarkan dukungan terverifikasi.</small>
+   </details>
+  </section>
+
+</section>
+<section id="draftsPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Buat & kelola postingan</h2></div>
+     <div class="show-label"><b>POSTINGAN</b></div>
+    <div class="panel profile-composer">
+      <label for="profilePostText">TULIS POSTINGAN</label>
+      <textarea class="field profile-textarea" id="profilePostText" rows="4" maxlength="2000" placeholder="Bagikan aktivitas, karya, bisnis, atau tautan kamu..."></textarea>
+      <button type="button" class="btn secondary" id="profilePostSave">SIMPAN DRAF</button>
+      <p class="profile-note">Draf hanya bisa dilihat olehmu.</p>
+      <div id="profilePostStatus" class="status" role="status"></div>
+    </div>
+    <div class="show-label" id="syncedPostsHeader" hidden><b>DRAF TERSIMPAN</b></div>
+    <div id="profileSyncedPosts" class="profile-post-feed"></div>
+    <div id="profilePostFeed" class="profile-post-feed"></div>
+    <p id="postsEmptyState" class="profile-note profile-empty" hidden>Belum ada draf. Buat postingan pertamamu.</p>
+
+</section>
+<section id="privacyPage" class="hide">
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Keamanan & izin</h2></div>
+   <div class="show-label"><b>PRIVASI & KEAMANAN</b></div>
   <div class="setting-line"><label for="adult">Saya berusia 18 tahun ke atas</label><input id="adult" type="checkbox"></div>
   <!-- Developer-only hooks retained for connection diagnostics and fee calculations.
        They must never be presented as public profile settings. -->
@@ -913,14 +960,15 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
     <input id="feeAmount" type="number" value="100000">
     <div id="feeBreakdown"></div>
   </div>
+
 </section>
 </div>
 <div id="flash" class="flash hide" role="status" aria-live="polite"></div>
 <nav aria-label="Main navigation">
   <button data-tab="explore" class="active"><i>◉</i>LIVE</button>
-  <button data-tab="following"><i>☆</i>FOLLOW</button>
+  <button data-tab="socialPage"><i>▦</i>SOSIAL</button>
   <button data-tab="studio" class="broadcast"><i>+</i>GO LIVE</button>
-  <button data-tab="signal"><i>⌁</i>SIGNAL</button>
+  <button data-tab="messagesPage"><i>◌</i>PESAN</button>
   <button data-tab="settings"><i>◇</i>ME</button>
 </nav>
 <script>
