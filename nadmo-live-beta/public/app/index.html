@@ -227,7 +227,7 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false;
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following')renderSaved();if(name==='signal')health();window.scrollTo(0,0);}
+ function show(name){for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
  $('adult').addEventListener('change',()=>localStorage.setItem('nadmo.adult',$('adult').checked?'yes':'no'));
  function adult(){if(!$('adult').checked){alert('Konfirmasi usia 18+ dahulu di Settings.');show('settings');return false}return true}
@@ -236,23 +236,25 @@ nav button.broadcast{margin-top:-9px;color:#bdcab5}
  function validURL(x){try{const u=new URL(x);return u.protocol==='https:' && !u.username && !u.password && !u.hash}catch(e){return false}}
  async function health(){
   if(!server){$('net').textContent='OFFLINE BETA';return}
-  try{const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);const r=await fetch(api('/health'),{signal:c.signal});clearTimeout(t);if(!r.ok)throw Error();$('net').textContent='SERVER ONLINE';notice('Backend terhubung.')}catch(e){$('net').textContent='BELUM TERHUBUNG';notice('Server belum merespons. Kamera lokal tetap bisa dipakai.')}
+  try{const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);const r=await fetch(api('/health'),{signal:c.signal});clearTimeout(t);if(!r.ok)throw Error();$('net').textContent='SERVER ONLINE';$('signalStatus').textContent='ONLINE';notice('Backend terhubung.')}catch(e){$('net').textContent='BELUM TERHUBUNG';$('signalStatus').textContent='OFFLINE';notice('Server belum merespons. Kamera lokal tetap bisa dipakai.')}
  }
- $('saveServer').onclick=()=>health();
+ $('saveServer').onclick=()=>health();$('signalRefresh').onclick=()=>health();
  $('mode').onchange=()=>$('passwordBox').classList.toggle('hide',$('mode').value!=='password');
  async function preview(){
   try{if(!navigator.mediaDevices?.getUserMedia)throw Error('Browser belum mendukung kamera');if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720}},audio:{echoCancellation:true}});$('camera').srcObject=localStream;notice('Kamera dan mikrofon siap.','camState');}
   catch(e){notice('Gagal membuka kamera: '+e.message,'camState')}
  }
  $('preview').onclick=preview;
- $('stopCamera').onclick=()=>{if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;$('camera').srcObject=null;notice('Kamera dimatikan.','camState')};
- async function loadRooms(){
-  if(!server){$('rooms').textContent='Server sedang tidak tersedia, coba lagi nanti.';return}
-  try{let r=await fetch(api('/api/rooms'));if(!r.ok)throw Error();let data=await r.json();$('rooms').replaceChildren();if(!data.rooms.length){$('rooms').textContent='Belum ada kreator live. Jadilah yang pertama.';return}
-   for(let x of data.rooms){const node=document.createElement('div');node.className='room';const info=document.createElement('div');const strong=document.createElement('b');strong.textContent=x.title;const detail=document.createElement('small');detail.textContent=x.category+' • '+x.viewers+' viewers';info.append(strong,detail);const button=document.createElement('button');button.className='btn secondary';button.textContent='Tonton';button.onclick=()=>join(x.id,x.title,false);node.append(info,button);$('rooms').append(node)}
-  }catch(e){$('rooms').textContent='Tidak bisa memuat daftar live. Periksa server di Settings.'}
- }
+ $('stopCamera').onclick=()=>{if(host&&currentRoom){notice('Sedang LIVE. Pakai AFK untuk menyembunyikan kamera tanpa memutus siaran.','camState');return}if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;$('camera').srcObject=null;notice('Kamera dimatikan.','camState')};
+ function emptyMessage(message){const box=document.createElement('div');box.className='no-signal';const h=document.createElement('strong');h.textContent='NO SIGNAL';const d=document.createElement('small');d.textContent=message;box.append(h,d);return box}
+ function roomCard(x){const card=document.createElement('div');card.className='room';const art=document.createElement('div');art.className='room-art';art.textContent='N/';const main=document.createElement('div');main.className='room-main';const live=document.createElement('div');live.className='eyebrow';live.textContent='● LIVE / '+x.category;const title=document.createElement('b');title.textContent=x.title;const sub=document.createElement('small');sub.textContent=(Number(x.viewers)||0)+' WATCHING • PUBLIC ROOM';const actions=document.createElement('div');actions.className='room-actions';const open=document.createElement('button');open.className='btn';open.textContent='WATCH LIVE ↗';open.onclick=()=>join(x.id,x.title,false);const save=document.createElement('button');save.className='bookmark';save.textContent=savedIds.has(x.id)?'★':'☆';save.setAttribute('aria-label','Simpan siaran');save.onclick=()=>{if(savedIds.has(x.id))savedIds.delete(x.id);else savedIds.add(x.id);localStorage.setItem('nadmo.beta.saved',JSON.stringify([...savedIds]));renderRooms();renderSaved()};actions.append(open,save);main.append(live,title,sub,actions);card.append(art,main);return card}
+ function renderRooms(){const q=$('searchLive').value.trim().toLocaleLowerCase('id');const items=cachedRooms.filter(x=>(selectedFilter==='all'||x.category===selectedFilter)&&(x.title+' '+x.category).toLocaleLowerCase('id').includes(q));$('rooms').replaceChildren();$('liveCount').textContent=items.length+' LIVE ROOMS';if(!items.length){$('rooms').append(emptyMessage(cachedRooms.length?'NO MATCHES':'NO PUBLIC LIVE BROADCASTS'));return}items.forEach(x=>$('rooms').append(roomCard(x)))}
+ function renderSaved(){$('savedRooms').replaceChildren();const items=cachedRooms.filter(x=>savedIds.has(x.id));if(!items.length){$('savedRooms').append(emptyMessage('NO SAVED LIVE SESSIONS ON THIS DEVICE'));return}items.forEach(x=>$('savedRooms').append(roomCard(x)))}
+ async function loadRooms(){try{const response=await fetch(api('/api/rooms'),{cache:'no-store',signal:AbortSignal.timeout(7000)});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();cachedRooms=Array.isArray(data.rooms)?data.rooms:[];renderRooms();renderSaved()}catch(e){$('rooms').replaceChildren(emptyMessage('NETWORK UNAVAILABLE / RETRY'));$('liveCount').textContent='NETWORK ERROR'}}
  $('refresh').onclick=loadRooms;
+ $('searchLive').addEventListener('input',renderRooms);
+ document.querySelectorAll('#filters [data-filter]').forEach(button=>button.addEventListener('click',()=>{selectedFilter=button.dataset.filter;document.querySelectorAll('#filters button').forEach(x=>x.classList.toggle('active',x===button));renderRooms()}));
+ $('privateJoin').onclick=()=>{const id=$('privateId').value.trim();if(!/^[a-f0-9]{12,32}$/i.test(id)){alert('ID room tidak valid. Minta kode undangan dari host.');return}join(id,'Private live',true)};
  function wsurl(){return server.replace(/^https:/,'wss:').replace(/\/$/,'')+'/ws'}
  function transmit(obj){if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(obj))}
  function connect(fn){if(!server){notice('Server NADMO sedang tidak tersedia.','liveState');return}if(socket)socket.close();socket=new WebSocket(wsurl());socket.onopen=fn;socket.onerror=()=>notice('Gagal menghubungi server streaming.','liveState');socket.onclose=()=>{if(currentRoom)notice('Koneksi siaran terputus.','watchState');$('net').textContent='TERPUTUS'};socket.onmessage=async e=>{try{await incoming(JSON.parse(e.data))}catch(err){console.error(err)}}}
