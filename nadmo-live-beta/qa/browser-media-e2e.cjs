@@ -102,7 +102,7 @@ async function main(){
   await waitText(host,'#watchState','AFK aktif',15000);
   await viewer.waitForFunction(()=>document.querySelector('#remote')?.srcObject?.getVideoTracks()?.[0]?.readyState==='live',{timeout:15000});
   console.log('PASS host AFK media switch without closing viewer stream');
-  await host.evaluate(()=>window.__nadmoSockets[0].close(1001,'QA network switch'));
+  await host.evaluate(()=>window.__nadmoSockets[0].close(4001,'QA network switch'));
   await host.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('SEND resume')),{timeout:25000});
   await waitText(host,'#watchState','Room berhasil dipulihkan',25000);
   await viewer.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('RECV host-reconnected')),{timeout:25000});
