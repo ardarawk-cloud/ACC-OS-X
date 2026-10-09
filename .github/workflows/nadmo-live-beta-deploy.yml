@@ -33,11 +33,14 @@ jobs:
           node --check nadmo-live-beta/qa/supporter-badges-e2e.cjs
           node --check nadmo-live-beta/qa/room-safety-smoke.cjs
           node --check nadmo-live-beta/qa/room-safety-ui-e2e.cjs
+          node --check nadmo-live-beta/qa/social-follow-structure.mjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
           node --check nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
           node --check nadmo-live-beta/qa/viewer-invite-e2e.cjs
           node --check nadmo-live-beta/qa/guest-stage-media-e2e.cjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
+      - name: Verify ME Followers/Following and locked GO LIVE signature
+        run: node nadmo-live-beta/qa/social-follow-structure.mjs
       - name: Verify all supporter level and privacy calculation boundaries
         run: node nadmo-live-beta/qa/supporter-levels-unit.mjs
       - name: Verify wallet ledger and withdrawal safety
@@ -77,7 +80,7 @@ jobs:
         run: node nadmo-live-beta/qa/wallet-endpoint-e2e.mjs
       - name: Verify secure account photo upload, public avatar and deletion
         run: node nadmo-live-beta/qa/avatar-upload-e2e.mjs
-      - name: Verify unified social publishing and private chat consent
+      - name: Verify unified social publishing, account follows and private chat consent
         run: node nadmo-live-beta/qa/unified-social-messages-e2e.mjs
       - name: Verify account-bound resume and logout revocation against deployed Worker
         run: node nadmo-live-beta/qa/creator-ownership-smoke.cjs
