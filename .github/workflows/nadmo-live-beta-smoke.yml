@@ -1,0 +1,23 @@
+name: NADMO LIVE Cloudflare Remote Smoke Test
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/qa/**'
+      - '.github/workflows/nadmo-live-beta-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install websocket test client
+        run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
+      - name: Test live Cloudflare backend
+        run: node nadmo-live-beta/qa/remote-smoke.cjs
