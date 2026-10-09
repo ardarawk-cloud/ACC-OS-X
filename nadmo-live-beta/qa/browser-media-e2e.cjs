@@ -22,6 +22,7 @@ async function main(){
  try{
   const a=await browser.createBrowserContext(),b=await browser.createBrowserContext();
   const host=await a.newPage(),viewer=await b.newPage();
+  for(const page of [host,viewer])await page.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   const faults=[];
   for(const [page,name] of [[host,'HOST'],[viewer,'VIEWER']]){
    page.on('pageerror',err=>{faults.push(name+': '+String(err));console.log('PAGE_ERROR',name,String(err))});
@@ -65,6 +66,25 @@ async function main(){
   const roomId=await host.$eval('#watchState',el=>el.textContent.match(/[a-f0-9]{12}/i)?.[0]);
   assert.ok(roomId);
   const roomButton='#rooms .room[data-room-id="'+roomId+'"] .btn';
+  const hostLayout=await host.evaluate(()=>({
+    body:document.body.classList.contains('live-immersive'),
+    viewport:[innerWidth,innerHeight],
+    watch:(()=>{const r=document.querySelector('#watch').getBoundingClientRect();return [r.left,r.top,r.width,r.height]})(),
+    video:(()=>{const r=document.querySelector('#remote').getBoundingClientRect();return [r.width,r.height]})(),
+    chatVisible:getComputedStyle(document.querySelector('.live-chat')).display!=='none',
+    navHidden:getComputedStyle(document.querySelector('nav')).display==='none',
+    controls:document.querySelector('#accessQuick')?.getBoundingClientRect().width,
+    scrollHeight:document.documentElement.scrollHeight
+  }));
+  console.log('HOST_IMMERSIVE_LAYOUT '+JSON.stringify(hostLayout));
+  assert.ok(hostLayout.body&&hostLayout.navHidden&&hostLayout.chatVisible,'Host must use immersive live layout with overlay chat');
+  assert.ok(Math.abs(hostLayout.watch[3]-hostLayout.viewport[1])<=3&&hostLayout.video[1]>=hostLayout.viewport[1]-3,'Live video must fill viewport height');
+  assert.ok(hostLayout.controls>0,'Private access quick control must be visible');
+  await host.locator('#accessQuick').click();
+  assert.equal(await host.$eval('#hostAccessPanel',el=>el.classList.contains('sheet-open')),true);
+  await host.locator('#closeAccessSheet').click();
+  assert.equal(await host.$eval('#hostAccessPanel',el=>el.classList.contains('sheet-open')),false);
+  console.log('PASS host fullscreen + chat overlay + private bottom sheet');
   console.log('PASS host published Gaming room '+roomId);
   await readyAge(viewer);
   await viewer.locator('nav button[data-tab="explore"]').click();
@@ -101,6 +121,17 @@ async function main(){
   assert.ok(evidence.width>0&&evidence.height>0,'Remote playback has no video frame');
   assert.ok(evidence.tracks.some(t=>t.kind==='video'&&t.readyState==='live'),'No active remote video track');
   assert.ok(evidence.tracks.some(t=>t.kind==='audio'),'No remote audio track');
+  const viewerLayout=await viewer.evaluate(()=>({
+    immersive:document.body.classList.contains('live-immersive'),
+    visibleChat:document.querySelector('#chat').getBoundingClientRect().height>50,
+    messageVisible:document.querySelector('#message').getBoundingClientRect().bottom<=innerHeight+2,
+    navHidden:getComputedStyle(document.querySelector('nav')).display==='none'
+  }));
+  assert.ok(viewerLayout.immersive&&viewerLayout.visibleChat&&viewerLayout.messageVisible&&viewerLayout.navHidden,'Viewer immersive overlay/chat must be visible without scrolling');
+  await viewer.locator('#tipQuick').click();
+  assert.equal(await viewer.$eval('#viewerTipPanel',el=>el.classList.contains('sheet-open')),true);
+  await viewer.locator('#closeTipSheet').click();
+  console.log('PASS viewer full-screen camera + chat composer + tip bottom sheet',JSON.stringify(viewerLayout));
   console.log('PASS actual WebRTC video and audio media received',JSON.stringify(evidence));
   // Simulated Android foreground return: refresh the host camera while room/viewer stay open.
   const firstHostVideo=await host.$eval('#remote',el=>el.srcObject?.getVideoTracks()[0]?.id);
