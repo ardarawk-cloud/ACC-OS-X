@@ -516,7 +516,7 @@ export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
-  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST'))
+  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT'))
     return new Response('Method Not Allowed',{status:405});
   if(url.pathname==='/app')return Response.redirect(url.origin+'/app/',308);
   if(url.pathname==='/app/'||url.pathname==='/app/index.html'){
@@ -543,7 +543,57 @@ export default {
   }
   const hub=env.ROOM_HUB.get(env.ROOM_HUB.idFromName('nadmo-beta-v1'));
   if(url.pathname==='/ws')return hub.fetch(request);
+  if(url.pathname==='/api/social/media/status'&&request.method==='GET')
+   return cors(request,Response.json({ok:true,enabled:!!env.SOCIAL_MEDIA,maxBytes:25*1024*1024,formats:['video/mp4','video/webm']}));
+  if(url.pathname==='/api/social/media/upload'&&request.method==='PUT'){
+   if(!env.SOCIAL_MEDIA)return cors(request,Response.json({ok:false,error:'Upload video belum tersedia. Gunakan link video dahulu.'},{status:503}));
+   if(request.headers.get('Origin')!==url.origin)return new Response('Forbidden',{status:403});
+   const mime=(request.headers.get('Content-Type')||'').split(';')[0].toLowerCase(),size=Number(request.headers.get('Content-Length'));
+   if(!['video/mp4','video/webm'].includes(mime))return cors(request,Response.json({ok:false,error:'Hanya MP4/WebM'},{status:415}));
+   if(!Number.isSafeInteger(size)||size<100||size>25*1024*1024)return cors(request,Response.json({ok:false,error:'Video maksimal 25 MB'},{status:413}));
+   const auth=await hub.fetch(new Request(url.origin+'/api/account/me',{headers:{Cookie:request.headers.get('Cookie')||''}}));
+   const account=(await auth.json()).account;
+   if(!account?.id)return cors(request,Response.json({ok:false,error:'Masuk akun untuk upload video'},{status:401}));
+   const approval=await hub.fetch(new Request(url.origin+'/api/account/social/upload-allowed',{method:'POST',
+    headers:{Origin:url.origin,'Content-Type':'application/json',Cookie:request.headers.get('Cookie')||''},body:'{}'}));
+   if(!approval.ok)return cors(request,new Response(approval.body,{status:approval.status,headers:{'Content-Type':'application/json'}}));
+   const mediaId=crypto.randomUUID(),ext=mime==='video/mp4'?'mp4':'webm',key='clips/'+account.id+'/'+mediaId+'.'+ext;
+   try{
+    await env.SOCIAL_MEDIA.put(key,request.body,{httpMetadata:{contentType:mime,cacheControl:'no-store'},customMetadata:{owner:account.id}});
+   }catch(e){console.error('R2 upload',e?.name);return cors(request,Response.json({ok:false,error:'Upload video gagal'},{status:503}))}
+   return cors(request,Response.json({ok:true,url:url.origin+'/api/social/media/'+account.id+'/'+mediaId+'.'+ext,bytes:size},{status:201}));
+  }
+  if(url.pathname.startsWith('/api/social/media/')&&request.method==='GET'){
+   if(!env.SOCIAL_MEDIA)return new Response('Media unavailable',{status:503});
+   const match=url.pathname.match(/^\/api\/social\/media\/([a-f0-9-]{36})\/([a-f0-9-]{36})\.(mp4|webm)$/);
+   if(!match)return new Response('Not Found',{status:404});
+   const object=await env.SOCIAL_MEDIA.get('clips/'+match[1]+'/'+match[2]+'.'+match[3],{range:request.headers});
+   if(!object)return new Response('Not Found',{status:404});
+   const range=object.range,partial=!!request.headers.get('Range')&&!!range;
+   const headers=new Headers({'Content-Type':match[3]==='mp4'?'video/mp4':'video/webm',
+    'Accept-Ranges':'bytes','X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});
+   if(partial){
+    const offset=range.offset||0,length=range.length||object.size-offset;
+    headers.set('Content-Range','bytes '+offset+'-'+(offset+length-1)+'/'+object.size);
+    headers.set('Content-Length',String(length));
+   }else headers.set('Content-Length',String(object.size));
+   return cors(request,new Response(object.body,{status:partial?206:200,headers}));
+  }
   if(isAccountApi){
+   if(url.pathname==='/api/account/posts/publish'&&request.method==='POST'){
+    let body;try{body=await request.clone().json()}catch(e){return new Response('Invalid JSON',{status:400})}
+    const media=typeof body?.videoUrl==='string'?body.videoUrl:'';
+    if(media.startsWith(url.origin+'/api/social/media/')){
+     if(!env.SOCIAL_MEDIA)return new Response('Video storage unavailable',{status:503});
+     const match=new URL(media).pathname.match(/^\/api\/social\/media\/([a-f0-9-]{36})\/([a-f0-9-]{36})\.(mp4|webm)$/);
+     if(!match)return new Response('Media URL invalid',{status:400});
+     const object=await env.SOCIAL_MEDIA.head('clips/'+match[1]+'/'+match[2]+'.'+match[3]);
+     if(!object)return new Response('Video missing',{status:404});
+     const auth=await hub.fetch(new Request(url.origin+'/api/account/me',{headers:{Cookie:request.headers.get('Cookie')||''}}));
+     const user=(await auth.json()).account;
+     if(!user?.id||user.id!==object.customMetadata?.owner)return new Response('Not your video',{status:403});
+    }
+   }
    // Same-origin mutating requests only; never trust a spoofed visitor IP header.
    const headers=new Headers(request.headers);
    headers.set('x-nadmo-client-ip',request.headers.get('CF-Connecting-IP')||'unknown');
