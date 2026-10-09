@@ -803,6 +803,35 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
   <div class="notice">Simpan kontak darurat dan beberapa sumber independen serta resmi sebelum terjadi gangguan. Jika internet tidak tersedia, NADMO tidak bisa mengirim live; gunakan radio lokal atau jalur komunikasi lain. Jangan sebarkan informasi tanpa bukti.</div>
   <p class="deck">Ini masih fondasi kanal SIGNAL. Sistem pemberitahuan terverifikasi, arsip offline, relai cadangan dan persetujuan editor belum dibangun.</p>
 </section>
+<section id="socialPage" class="hide">
+ <div class="me-content-header"><h2>SOSIAL</h2><button type="button" id="socialCompose">+ POSTING</button></div>
+ <p class="deck">Cerita, karya, dan aktivitas komunitas NADMO.</p>
+ <div id="socialComposer" class="panel hide">
+  <label for="socialPostText">BUAT POSTINGAN</label>
+  <textarea class="field profile-textarea" id="socialPostText" maxlength="2000" rows="4" placeholder="Apa yang ingin kamu bagikan?"></textarea>
+  <div class="actions"><button class="btn" type="button" id="socialPublish">POSTING</button><button class="btn secondary" type="button" id="socialSaveDraft">SIMPAN DRAF</button></div>
+  <p class="status" id="socialPostStatus" role="status"></p>
+ </div>
+ <div id="socialPublicFeed" class="profile-post-feed" aria-live="polite"></div>
+ <p id="socialFeedEmpty" class="profile-note">Belum ada postingan publik.</p>
+ <div class="me-menu-label">LAINNYA</div>
+ <div class="me-menu"><button type="button" data-tab="following">☆ <span>LIVE yang diikuti</span><b>›</b></button><button type="button" data-tab="signal">⌁ <span>SIGNAL</span><b>›</b></button></div>
+</section>
+<section id="messagesPage" class="hide">
+ <div class="me-content-header"><h2>PESAN</h2><span class="me-beta-tag">NADMO</span></div>
+ <div id="messagesGuest" class="panel"><p>Masuk akun untuk membuka percakapan.</p><button type="button" class="btn" id="messagesLogin">MASUK</button></div>
+ <div id="messagesSigned" class="hide">
+  <div class="me-message-search"><label for="messageRecipient">MULAI OBROLAN</label><input id="messageRecipient" class="field" maxlength="24" placeholder="Username penerima, tanpa @"><button type="button" class="btn secondary" id="messageRequest">MINTA CHAT</button></div>
+  <div class="status" id="messageInboxStatus" role="status"></div>
+  <div id="messageRequests"></div>
+  <div id="messageThreads"></div>
+  <div id="messageConversation" class="hide">
+    <button type="button" id="messageBack">‹ KEMBALI</button><h3 id="messageThreadTitle"></h3>
+    <div id="messageBubbles" class="message-bubbles"></div>
+    <div class="row"><input id="messageBody" class="field" maxlength="2000" placeholder="Tulis pesan"><button id="messageSend" class="btn" type="button">KIRIM</button></div>
+  </div>
+ </div>
+</section>
 <section id="settings" class="hide">
  <div class="me-top"><span>ME</span><button id="meMore" type="button" aria-label="Pengaturan dan privasi" title="Pengaturan dan privasi">⋮</button></div>
  <div id="meGuest" class="me-guest hide"><div class="profile-avatar" aria-hidden="true">N/</div><h2>Profil NADMO</h2><p>Masuk untuk melihat profil dan aktivitasmu.</p><button type="button" class="btn" id="meLogin">MASUK / DAFTAR</button></div>
@@ -936,7 +965,7 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
     <div class="panel profile-composer">
       <label for="profilePostText">TULIS POSTINGAN</label>
       <textarea class="field profile-textarea" id="profilePostText" rows="4" maxlength="2000" placeholder="Bagikan aktivitas, karya, bisnis, atau tautan kamu..."></textarea>
-      <button type="button" class="btn secondary" id="profilePostSave">SIMPAN DRAF</button>
+      <div class="actions"><button type="button" class="btn" id="profilePostPublish">POSTING</button><button type="button" class="btn secondary" id="profilePostSave">SIMPAN DRAF</button></div>
       <p class="profile-note">Draf hanya bisa dilihat olehmu.</p>
       <div id="profilePostStatus" class="status" role="status"></div>
     </div>
