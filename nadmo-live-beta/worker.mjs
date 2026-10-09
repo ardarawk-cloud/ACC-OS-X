@@ -78,7 +78,7 @@ export class RoomHub{
    }
    return Response.json({rooms:list});
   }
-  if(route.startsWith('/api/account/')||route.startsWith('/api/profile/')||route.startsWith('/api/supporter/')||route==='/api/payments/status'||route==='/api/streaming/capacity'||route==='/api/social/feed'||route.startsWith('/api/messages/')||route.startsWith('/api/wallet/')){
+  if(route.startsWith('/api/account/')||route.startsWith('/api/profile/')||route.startsWith('/api/supporter/')||route==='/api/payments/status'||route==='/api/streaming/capacity'||route.startsWith('/api/social/')||route.startsWith('/api/messages/')||route.startsWith('/api/wallet/')){
    try{return await accountEndpoint(this.ctx.storage,request)}
    catch(error){
     console.error('NADMO account route',error?.name,String(error?.message||'').slice(0,150));
@@ -534,7 +534,7 @@ export default {
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
   const isAccountApi=url.pathname.startsWith('/api/account/')||url.pathname.startsWith('/api/profile/')||url.pathname.startsWith('/api/supporter/')||
-    url.pathname==='/api/payments/status'||url.pathname==='/api/streaming/capacity'||url.pathname==='/api/social/feed'||url.pathname.startsWith('/api/messages/')||url.pathname.startsWith('/api/wallet/');
+    url.pathname==='/api/payments/status'||url.pathname==='/api/streaming/capacity'||url.pathname.startsWith('/api/social/')||url.pathname.startsWith('/api/messages/')||url.pathname.startsWith('/api/wallet/');
   if(!isAccountApi&&url.pathname!=='/api/rooms'&&url.pathname!=='/ws')return new Response('Not Found',{status:404});
   if(url.pathname==='/ws'){
    const origin=request.headers.get('Origin');
