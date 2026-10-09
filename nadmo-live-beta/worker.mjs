@@ -165,6 +165,16 @@ export default {
   const url=new URL(request.url);
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
   if(request.method!=='GET')return new Response('Method Not Allowed',{status:405});
+  if(url.pathname==='/app')return Response.redirect(url.origin+'/app/',308);
+  if(url.pathname==='/app/'||url.pathname==='/app/index.html'){
+    const asset=await env.ASSETS.fetch(new Request(url.origin+'/app/index.html'));
+    const headers=new Headers(asset.headers);
+    headers.set('X-Content-Type-Options','nosniff');
+    headers.set('Cache-Control','public, max-age=60, must-revalidate');
+    headers.set('Referrer-Policy','no-referrer');
+    headers.set('Permissions-Policy','camera=(self), microphone=(self)');
+    return new Response(asset.body,{status:asset.status,headers});
+  }
   if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,payments:false}));
   if(url.pathname==='/'){
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Install Android beta and configure HTTPS backend URL in Settings.'}));
