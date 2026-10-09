@@ -142,7 +142,7 @@ export async function accountEndpoint(storage,request){
    liked=new Set([...entries.keys()].map(key=>key.slice(('social-user-like:'+viewer.id+':').length)));
   }
   const displayed=await Promise.all(feed.slice(0,80).map(async post=>{
-   if(post.type==='repost')return {...post,likedByMe:liked.has(post.originalId||post.id)};
+   if(post.type==='repost')return {...post,original:await getOriginalPost(storage,post.originalId),likedByMe:liked.has(post.originalId||post.id)};
    const latest=await getOriginalPost(storage,post.id);
    return {...(latest||post),likedByMe:liked.has(post.id)};
   }));
