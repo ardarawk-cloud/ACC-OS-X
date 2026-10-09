@@ -188,6 +188,15 @@ export async function accountEndpoint(storage,request){
  const pairId=(a,b)=>[a,b].sort().join(':');
  const threadKey=(a,b)=>'dm-thread:'+pairId(a,b);
  const approvalKey=(a,b)=>'dm-approved:'+pairId(a,b);
+ const dmPrivacy=user=>['everyone','following','requests'].includes(user?.dmPrivacy)?user.dmPrivacy:'everyone';
+ const readKey=(a,b)=>'dm-read:'+a+':'+b;
+ const canDirect=async(sender,receiver)=>{
+  if(await storage.get(approvalKey(sender.id,receiver.id)))return true;
+  // Existing conversations remain available after switching privacy settings.
+  if(await storage.get('dm-member:'+sender.id+':'+receiver.id))return true;
+  const mode=dmPrivacy(receiver);
+  return mode==='everyone'||mode==='following'&&!!await storage.get(socialFollowing(receiver.id,sender.id));
+ };
  const hasBlock=async(a,b)=>!!(await storage.get('dm-block:'+a+':'+b)||await storage.get('dm-block:'+b+':'+a));
  const principal=p.startsWith('/api/messages/')?await getAccount(storage,request):null;
  if(p.startsWith('/api/messages/')&&method==='GET'){
@@ -200,11 +209,18 @@ export async function accountEndpoint(storage,request){
     const other=await storage.get('auth-user:'+item.otherId);
     if(!other||other.disabled)continue;
     const messages=await storage.get(threadKey(principal.id,item.otherId))||[];
-    threads.push({handle:other.handle,name:other.name,
+    const readAt=Number(await storage.get(readKey(principal.id,item.otherId)))||0;
+    const unread=messages.filter(m=>m.fromHandle!==principal.handle&&m.createdAt>readAt).length;
+    threads.push({handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0,unread,
       updatedAt:messages.at(-1)?.createdAt||item.createdAt||0,
-      lastText:messages.at(-1)?.text?.slice(0,100)||''});
+      lastText:messages.at(-1)?.text?.slice(0,100)||'',lastFromMe:messages.at(-1)?.fromHandle===principal.handle});
    }
-   return json({ok:true,threads:threads.sort((a,b)=>b.updatedAt-a.updatedAt)});
+   return json({ok:true,threads:threads.sort((a,b)=>b.updatedAt-a.updatedAt),
+    totalUnread:threads.reduce((sum,item)=>sum+item.unread,0)});
+  }
+  if(p==='/api/messages/settings'){
+   const record=await storage.get('auth-user:'+principal.id);
+   return json({ok:true,privacy:dmPrivacy(record)});
   }
   if(p==='/api/messages/requests'){
    const requests=await storage.list({prefix:'dm-request:'+principal.id+':',limit:60});
@@ -212,7 +228,7 @@ export async function accountEndpoint(storage,request){
    for(const r of requests.values()){
     const sender=r?.fromId&&await storage.get('auth-user:'+r.fromId);
     if(sender&&!sender.disabled&&!await hasBlock(principal.id,sender.id))
-     incoming.push({handle:sender.handle,name:sender.name,createdAt:r.createdAt});
+     incoming.push({handle:sender.handle,name:sender.name,avatarVersion:sender.avatarVersion||0,createdAt:r.createdAt});
    }
    return json({ok:true,requests:incoming.slice(0,30)});
   }
@@ -220,9 +236,15 @@ export async function accountEndpoint(storage,request){
    const handle=decodeURIComponent(p.slice('/api/messages/thread/'.length)).toLowerCase();
    if(!handleOK(handle))return fail(404,'Percakapan tidak ditemukan');
    const id=await storage.get('auth-handle:'+handle);
-   if(!id||await hasBlock(principal.id,id)||!await storage.get(approvalKey(principal.id,id)))
-    return fail(403,'Percakapan memerlukan persetujuan kedua akun');
-   return json({ok:true,messages:(await storage.get(threadKey(principal.id,id))||[]).slice(-80)});
+   const other=id&&await storage.get('auth-user:'+id);
+   if(!other||other.disabled)return fail(404,'Akun tidak ditemukan');
+   if(await hasBlock(principal.id,id))return fail(403,'Akun diblokir');
+   const current=await storage.get('auth-user:'+principal.id);
+   if(!await canDirect(current,other))return fail(403,'Penerima membatasi pesan. Kirim permintaan chat.');
+   const key=threadKey(principal.id,id),msgs=(await storage.get(key)||[]).slice(-80);
+   await storage.put(readKey(principal.id,id),Date.now());
+   return json({ok:true,messages:msgs,participant:{handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0}});
+
   }
   return fail(404,'Halaman pesan tidak ditemukan');
  }
@@ -367,7 +389,13 @@ export async function accountEndpoint(storage,request){
   return json({ok:true,following:wantFollow,counts:socialCounts(record)});
  }
  if(p.startsWith('/api/messages/')&&method==='POST'){
-  const handle=clean(payload.handle,24).toLowerCase();
+  if(p==='/api/messages/privacy'){
+   if(!['everyone','following','requests'].includes(payload.privacy))return fail(400,'Pengaturan pesan tidak valid');
+   record.dmPrivacy=payload.privacy;record.updatedAt=Date.now();
+   await storage.put('auth-user:'+user.id,record);
+   return json({ok:true,privacy:record.dmPrivacy});
+  }
+  const handle=clean(payload.handle,24).replace(/^@/,'').toLowerCase();
   if(!handleOK(handle)||handle===user.handle)return fail(400,'Username penerima tidak valid');
   const otherId=await storage.get('auth-handle:'+handle);
   const other=otherId&&await storage.get('auth-user:'+otherId);
@@ -397,6 +425,9 @@ export async function accountEndpoint(storage,request){
   }
   if(await hasBlock(user.id,otherId))return fail(403,'Percakapan dibatasi');
   if(p==='/api/messages/request'){
+   if(await canDirect(record,other)){
+    return json({ok:true,accepted:true,handle:other.handle});
+   }
    if(!await throttle(storage,'dm-request-rate:'+user.id,15,86400000))
     return fail(429,'Terlalu banyak permintaan pesan hari ini');
    if(await storage.get(approvalKey(user.id,otherId)))return json({ok:true,accepted:true});
@@ -416,13 +447,21 @@ export async function accountEndpoint(storage,request){
    return json({ok:true,accepted:true,handle:other.handle});
   }
   if(p==='/api/messages/send'){
-   if(!await storage.get(approvalKey(user.id,otherId)))return fail(403,'Tunggu izin penerima');
+   if(!await canDirect(record,other))return fail(403,'Penerima membatasi pesan. Kirim permintaan chat.');
    if(!await throttle(storage,'dm-send:'+user.id,80,3600000))return fail(429,'Batas pengiriman pesan tercapai');
    const text=clean(payload.text,2000);
    if(!text||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Pesan tidak valid');
-   const message={id:crypto.randomUUID(),fromHandle:user.handle,text,createdAt:Date.now()};
    const key=threadKey(user.id,otherId),msgs=await storage.get(key)||[];
+   if(!msgs.length){
+    if(!await throttle(storage,'dm-new-contact:'+user.id,12,86400000))return fail(429,'Batas percakapan baru harian tercapai');
+   }
+   const message={id:crypto.randomUUID(),fromHandle:user.handle,text,createdAt:Date.now()};
    await storage.put(key,[...msgs,message].slice(-100));
+   if(!await storage.get('dm-member:'+user.id+':'+otherId))
+    await storage.put('dm-member:'+user.id+':'+otherId,{otherId,createdAt:message.createdAt});
+   if(!await storage.get('dm-member:'+otherId+':'+user.id))
+    await storage.put('dm-member:'+otherId+':'+user.id,{otherId:user.id,createdAt:message.createdAt});
+   await storage.put(readKey(user.id,otherId),Date.now());
    return json({ok:true,message},201);
   }
   return fail(404,'Aksi pesan tidak ditemukan');
@@ -496,6 +535,8 @@ export async function accountEndpoint(storage,request){
    await storage.delete(approvalKey(user.id,item.otherId));
    await storage.delete('dm-member:'+item.otherId+':'+user.id);
    await storage.delete('dm-member:'+user.id+':'+item.otherId);
+   await storage.delete(readKey(user.id,item.otherId));
+   await storage.delete(readKey(item.otherId,user.id));
    await storage.delete('dm-block:'+user.id+':'+item.otherId);
    await storage.delete('dm-block:'+item.otherId+':'+user.id);
   }

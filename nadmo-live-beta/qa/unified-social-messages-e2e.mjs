@@ -79,16 +79,19 @@ try{
  assert.equal(links.body.counts.followers,1);assert.ok(links.body.accounts.some(x=>x.handle===h));
  assert.equal((await get('/api/profile/'+j,ca)).body.isFollowing,true);
  assert.equal((await get('/api/profile/'+j)).body.isFollowing,false);
- const unaccepted=await action('/api/messages/send',ca,{handle:j,text:'Must not deliver'});
- assert.equal(unaccepted.status,403,'Chat requires consent');
- const requested=await action('/api/messages/request',ca,{handle:j});assert.equal(requested.status,200);
- const incoming=await get('/api/messages/requests',cb);
- assert.ok(incoming.body.requests.some(x=>x.handle===h));
- const accept=await action('/api/messages/accept',cb,{handle:h});assert.equal(accept.status,200);
- const sent=await action('/api/messages/send',ca,{handle:j,text:'Chat after consent'});
- assert.equal(sent.status,201);
+ const direct=await action('/api/messages/send',ca,{handle:j,text:'Halo! Langsung chat tanpa wajib meminta.'});
+ assert.equal(direct.status,201,'Default messaging is direct; opt-in privacy remains available');
+ let inbox=await get('/api/messages/threads',cb);
+ assert.ok(inbox.body.totalUnread>=1,'Recipient gets server-authoritative unread badge');
  const history=await get('/api/messages/thread/'+h,cb);
- assert.equal(history.status,200);assert.ok(history.body.messages.some(x=>x.text==='Chat after consent'));
+ assert.equal(history.status,200);assert.ok(history.body.messages.some(x=>x.text==='Halo! Langsung chat tanpa wajib meminta.'));
+ inbox=await get('/api/messages/threads',cb);
+ assert.equal(inbox.body.totalUnread,0,'Opening conversation marks read');
+ const privacy=await action('/api/messages/privacy',cb,{privacy:'requests'});
+ assert.equal(privacy.status,200);
+ assert.equal((await get('/api/messages/settings',cb)).body.privacy,'requests');
+ const sent=await action('/api/messages/send',ca,{handle:j,text:'Chat lama tetap terbuka ketika privasi diganti'});
+ assert.equal(sent.status,201,'Existing threads remain available after privacy update');
  const blocked=await action('/api/messages/block',cb,{handle:h});assert.equal(blocked.status,200);
  assert.equal((await action('/api/messages/send',ca,{handle:j,text:'Not after block'})).status,403);
  assert.equal((await get('/api/social/connections?type=following',ca)).body.counts.following,0,'Block must also remove follow');
@@ -96,7 +99,7 @@ try{
  assert.equal((await action('/api/account/follow',ca,{handle:j})).status,403,'Blocked follow must fail');
  const remove=await action('/api/account/posts/delete',ca,{id:post.body.post.id});assert.equal(remove.status,200);
  assert.ok(!(await get('/api/social/feed')).body.posts.some(x=>x.id===post.body.post.id));
- console.log('PASS public posting/deletion, follow counts/consent, chat consent, send, receive, blocking');
+ console.log('PASS social content, direct chat/unread/read, private requests option, profile and blocking');
 }finally{
  for(const cookie of [ca,cb].filter(Boolean)){
   const result=await action('/api/account/delete',cookie,{password});
