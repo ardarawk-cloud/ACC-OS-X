@@ -249,6 +249,52 @@ export async function accountEndpoint(storage,request){
  if(!user)return fail(401,'Login diperlukan');
  const record=await storage.get('auth-user:'+user.id);
  if(!record)return fail(401,'Login diperlukan');
+ if(p.startsWith('/api/messages/')&&method==='POST'){
+  const handle=clean(payload.handle,24).toLowerCase();
+  if(!handleOK(handle)||handle===user.handle)return fail(400,'Username penerima tidak valid');
+  const otherId=await storage.get('auth-handle:'+handle);
+  const other=otherId&&await storage.get('auth-user:'+otherId);
+  if(!other||other.disabled)return fail(404,'Akun penerima tidak ditemukan');
+  if(p==='/api/messages/block'){
+   await storage.put('dm-block:'+user.id+':'+otherId,true);
+   await storage.delete('dm-request:'+user.id+':'+otherId);
+   await storage.delete('dm-request:'+otherId+':'+user.id);
+   return json({ok:true,blocked:true});
+  }
+  if(p==='/api/messages/unblock'){
+   await storage.delete('dm-block:'+user.id+':'+otherId);
+   return json({ok:true,blocked:false});
+  }
+  if(await hasBlock(user.id,otherId))return fail(403,'Percakapan dibatasi');
+  if(p==='/api/messages/request'){
+   if(!await throttle(storage,'dm-request-rate:'+user.id,15,86400000))
+    return fail(429,'Terlalu banyak permintaan pesan hari ini');
+   if(await storage.get(approvalKey(user.id,otherId)))return json({ok:true,accepted:true});
+   const requested='dm-request:'+otherId+':'+user.id;
+   if(!await storage.get(requested))await storage.put(requested,{fromId:user.id,createdAt:Date.now()});
+   return json({ok:true,pending:true});
+  }
+  if(p==='/api/messages/accept'){
+   const key='dm-request:'+user.id+':'+otherId;
+   if(!await storage.get(key))return fail(404,'Permintaan chat tidak tersedia');
+   await storage.delete(key);
+   await storage.put(approvalKey(user.id,otherId),true);
+   await storage.put('dm-member:'+user.id+':'+otherId,{otherId,createdAt:Date.now()});
+   await storage.put('dm-member:'+otherId+':'+user.id,{otherId:user.id,createdAt:Date.now()});
+   return json({ok:true,accepted:true,handle:other.handle});
+  }
+  if(p==='/api/messages/send'){
+   if(!await storage.get(approvalKey(user.id,otherId)))return fail(403,'Tunggu izin penerima');
+   if(!await throttle(storage,'dm-send:'+user.id,80,3600000))return fail(429,'Batas pengiriman pesan tercapai');
+   const text=clean(payload.text,2000);
+   if(!text||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Pesan tidak valid');
+   const message={id:crypto.randomUUID(),fromHandle:user.handle,text,createdAt:Date.now()};
+   const key=threadKey(user.id,otherId),msgs=await storage.get(key)||[];
+   await storage.put(key,[...msgs,message].slice(-100));
+   return json({ok:true,message},201);
+  }
+  return fail(404,'Aksi pesan tidak ditemukan');
+ }
  if(p==='/api/wallet/withdraw'){
   // Never accept bank details or queue a real payout without a licensed provider,
   // reconciled ledger, verified account, and secured payout-destination vault.
