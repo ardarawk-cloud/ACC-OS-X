@@ -4,6 +4,8 @@ on:
   push:
     branches: ['feat/nadmo-live-beta-worker-20261009']
     paths:
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/worker.mjs'
       - 'nadmo-live-beta/qa/browser-media-e2e.cjs'
       - '.github/workflows/nadmo-live-media-qa.yml'
 permissions: {contents: read}
