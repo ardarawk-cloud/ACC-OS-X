@@ -17,6 +17,16 @@ NADMO LIVE is an independent, adult-oriented social broadcasting network for cre
 - **Future community voice.** Explore genuine creator and viewer participation in product decisions, not token voting or unverifiable claims that users own the platform.
 - **No false promises.** Don't advertise features, privacy protections, payouts, guaranteed uptime or crisis resilience before they're implemented and tested.
 
+### No competition — every streamer finds their own community
+- **No creator-versus-creator contests as the default.** NADMO LIVE is not a race for ranks or a zero-sum competition for attention. Each streamer should be able to discover their own fans through interests, community relationships and consistent broadcasts.
+- Do not build compulsory PK battles, global streamer scoreboards, gift-based dominance rankings, competitive spending incentives, or punishments for small audiences.
+- Discovery must support **interest-based categories, search, Following, new-creator discovery and diverse independent communities**, instead of giving all exposure to the biggest or highest-spending channels.
+- Viewers decide which creators to follow, support or watch. Gifts and tips express appreciation voluntarily, not superiority or purchasing rank.
+- A channel with five engaged fans can be successful in its own right. Do not define success solely by views, follower count, revenue, duration or viral reach.
+- Streamers may collaborate and voluntarily organize lawful friendly events, but the core platform must never pressure creators into competing.
+- Keep creator tools and basic discoverability accessible without requiring paid promotions, gift thresholds, or minimum follower counts.
+- Evaluate the discovery system for meaningful matches and long-term community satisfaction while monitoring abuse and spam; equal opportunity does not imply a guarantee of identical reach.
+
 ### Independent civic speech — not a party or anti-government platform
 - Mission: serve people, not power. NADMO LIVE is independent of parties, governments, corporate labels and organized harassment campaigns. Independence is not a declaration of hostility to any government or lawful institution.
 - People may criticize governments, officials, political parties, corporations, media, powerful communities and NADMO itself; support viewpoints across the spectrum, subject to laws and rights of others.
