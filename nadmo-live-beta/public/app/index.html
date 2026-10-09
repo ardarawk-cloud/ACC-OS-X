@@ -665,8 +665,14 @@ nav button{touch-action:manipulation}
 #socialPublicFeed .post-top img{width:29px;height:29px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:8px}
 #accountPage #profileEditBox{margin-top:17px}
 #accountPage #profileBusinessLinks{display:none}
-#accountPage #profileEditBox .show-label,#accountPage #profileEditBox .profile-edit-row,
-#accountPage #profileEditLinks,#accountPage #profileAddLink{display:none!important}
+/* External creator links are an explicit ME feature, not a hidden beta control. */
+#accountPage #profileEditBox .profile-edit-row{display:flex;flex-direction:column;gap:8px}
+#accountPage #profileEditLinks{display:flex;flex-direction:column;gap:8px}
+#accountPage #profileAddLink{display:inline-flex;align-items:center;justify-content:center}
+#settings #profileBusinessLinks{display:flex;flex-direction:column;gap:8px;margin:10px 0 14px}
+.me-public-share{border-top:1px solid #354333;margin-top:12px;padding-top:12px}
+.me-repost-header{font:900 12px Arial,sans-serif;letter-spacing:.65px;color:var(--neon);padding-bottom:9px}
+.me-repost-shelf{display:flex;flex-direction:column;gap:8px}
 #accountPage .account-card{margin-bottom:14px}
 #walletPage,#supporterPage,#authPage,#accountPage,#preferencesPage,#draftsPage,#privacyPage,#socialPage,#messagesPage{max-width:720px;margin:0 auto;padding:0 1px 32px}
 #walletPage .wallet-panel{margin:8px 0}
@@ -941,10 +947,14 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
       <button type="button" id="meFollowers" aria-label="Buka daftar pengikut"><strong id="meFollowersCount">—</strong><span>FOLLOWERS</span></button>
       <button type="button" id="meFollowing" aria-label="Buka daftar akun yang diikuti"><strong id="meFollowingCount">—</strong><span>FOLLOWING</span></button>
     </div>
-  <div class="me-profile-actions"><button type="button" id="meWalletOpen"><span>DOMPET</span><b id="meWalletBalance">Rp0</b><span aria-hidden="true">›</span></button></div>
-  <div class="me-content-header"><b>POSTINGAN</b><button type="button" id="meNewPost">+ BUAT</button></div>
-  <div id="profilePublishedPosts" class="profile-post-feed"></div>
-  <p id="meNoPosts" class="profile-note">Belum ada postingan.</p>
+  <div class="me-public-share">
+    <div class="me-repost-header">TERHUBUNG KE</div>
+    <div id="profileBusinessLinks" class="profile-links"></div>
+  </div>
+  <div id="meRepostArea" class="me-public-share hide">
+    <div class="me-repost-header">DIBAGIKAN ULANG</div>
+    <div id="meRepostedFeed" class="me-repost-shelf"></div>
+  </div>
   </div>
  </div>
 </section>
@@ -1014,7 +1024,9 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
       <div class="status" id="profileEditStatus" role="status"></div>
     </div>
 
- <div id="profileBusinessLinks" class="profile-links"></div>
+ <div class="me-content-header"><b>KELOLA POSTINGAN</b><button type="button" id="meNewPost">+ BUAT</button></div>
+ <div id="profilePublishedPosts" class="profile-post-feed"></div>
+ <p id="meNoPosts" class="profile-note">Belum ada postingan.</p>
 </section>
 <section id="walletPage" class="hide">
  <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Dompet Kreator</h2></div>
@@ -1390,7 +1402,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('mastLogin').hidden=logged;
   $('messagesGuest').classList.toggle('hide',logged);
   $('messagesSigned').classList.toggle('hide',!logged);
-  if(!logged){$('meWalletBalance').textContent='Rp0';followedHandles.clear();$('meFollowersCount').textContent='—';$('meFollowingCount').textContent='—';}
+  if(!logged){followedHandles.clear();$('meFollowersCount').textContent='—';$('meFollowingCount').textContent='—';}
   $('avatarChoose').hidden=!logged;
   $('avatarRemove').hidden=!logged||!activeAccount.avatarVersion;
   setAvatarImage('profileAvatarImage',logged?activeAccount.handle:'',logged?activeAccount.avatarVersion:0);
@@ -1714,7 +1726,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   try{
    const result=await accountRequest('/api/wallet/me'),w=result.wallet||{},cap=result.capability||{};
    $('walletAvailable').textContent=walletCurrency(w.availableIDR);
-   $('meWalletBalance').textContent=walletCurrency(w.availableIDR);
+   /* Private wallet only: never display balance in ME. */
    $('walletPending').textContent=walletCurrency(w.pendingWithdrawalsIDR);
    $('walletTotal').textContent=walletCurrency(w.totalEarningsIDR);
    $('walletPaid').textContent=walletCurrency(w.paidOutIDR);
@@ -1796,6 +1808,14 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   try{return JSON.parse(localStorage.getItem(key))||fallback}
   catch(error){return fallback}
  }
+ function isForbiddenExternalLink(label,url){
+  try{
+   const parsed=new URL(url);
+   const text=(String(label||'')+' '+decodeURIComponent(parsed.hostname+parsed.pathname+parsed.search)).toLowerCase();
+   return /(?:^|[^a-z0-9])(judol|judi\s*online|slot\s*gacor|togel\s*online|kasino\s*online|casino\s*online|taruhan\s*online)(?:$|[^a-z0-9])/.test(text)
+    ||/^(?:judol|slotgacor|judionline|togelonline|casinoonline)[a-z0-9-]*\./.test(parsed.hostname);
+  }catch(e){return true}
+ }
  function validExternalLink(raw){
   if(typeof raw!=='string'||raw.length>500)return null;
   try{
@@ -1804,7 +1824,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
     return null;
    if(/^(?:127\.|10\.|192\.168\.|169\.254\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(url.hostname))
     return null;
-   return url.href;
+   return isForbiddenExternalLink('',url.href)?null:url.href;
   }catch(error){return null}
  }
  function directLink(url,label,className){
@@ -1859,7 +1879,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    line.append(details,remove);$('profileEditLinks').appendChild(line);
   }
   if(!draftProfile.links.length){
-   const n=document.createElement('p');n.className='profile-note';n.textContent='Belum ada link bisnis. Tambahkan website, booking, toko, WhatsApp, atau media sosial.';$('profileBusinessLinks').appendChild(n);
+   const n=document.createElement('p');n.className='profile-note';n.textContent='Tambahkan Instagram, TikTok, YouTube, WhatsApp, website, booking, atau link lainnya lewat EDIT.';$('profileBusinessLinks').appendChild(n);
   }
  }
  function renderProfileDraft(){
@@ -1876,7 +1896,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  $('profileAddLink').onclick=()=>{
   const label=$('profileLinkLabel').value.trim().slice(0,40);
   const url=validExternalLink($('profileLinkUrl').value);
-  if(!label||!url){$('profileEditStatus').textContent='Isi judul dan URL HTTPS yang valid (contoh https://wa.me/... atau https://website.com).';return}
+  if(!label||!url||isForbiddenExternalLink(label,url)){$('profileEditStatus').textContent='Isi judul dan HTTPS yang aman. Link judi online tidak diizinkan.';return}
   if(draftProfile.links.length>=12){$('profileEditStatus').textContent='Maksimal 12 link di profil.';return}
   if(draftProfile.links.some(x=>x.url===url)){$('profileEditStatus').textContent='Link ini sudah terdaftar.';return}
   draftProfile.links.push({label,url});
@@ -1971,7 +1991,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  $('mastLogin').onclick=()=>show('authPage');
  $('meMore').onclick=()=>show('preferencesPage');
  $('meLogin').onclick=()=>show('authPage');
- $('meWalletOpen').onclick=()=>show('walletPage');
+ 
  $('meNewPost').onclick=()=>show('draftsPage');
  $('messagesLogin').onclick=()=>show('authPage');
  document.querySelectorAll('[data-open-page]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.openPage)));
