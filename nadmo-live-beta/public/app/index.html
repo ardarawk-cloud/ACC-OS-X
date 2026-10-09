@@ -680,6 +680,26 @@ nav button{touch-action:manipulation}
 #walletPage .wallet-panel details{padding-top:9px}
 #socialComposer{border:1px solid #3b5537;border-radius:12px;padding:13px;margin:14px 0}
 #socialPage .me-menu{margin-top:10px}
+.social-action-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding-top:10px;border-top:1px solid #354935}
+.social-action-row button,.social-share-panel button{border:1px solid #475d42;background:#1e3020;color:#d4e7c9;border-radius:8px;padding:10px 9px;min-height:42px;font:800 11px Arial,sans-serif}
+.social-action-row button{flex:1;min-width:75px}
+.social-action-row .social-liked{color:var(--neon);border-color:var(--neon)}
+.social-comment-box{margin:10px 0 0;padding:10px;background:#172018;border-radius:10px}
+.social-comment-line{padding:8px 0;border-bottom:1px solid #30442f;font:12px/1.5 Arial,sans-serif;overflow-wrap:anywhere}
+.social-comment-line b{color:var(--neon);display:block}
+.social-comment-box textarea{width:100%;min-height:72px;resize:vertical}
+.social-comment-box button{margin-top:7px;padding:10px 16px;border:1px solid #718c59;border-radius:8px;background:#263d22;font-weight:800}
+.social-share-panel{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}
+.social-share-panel button{flex:1}
+.social-video{width:100%;aspect-ratio:16/9;max-height:370px;border:1px solid #385137;border-radius:10px;margin:8px 0;background:#050705}
+.social-video-link{display:block;padding:10px 0;color:var(--neon);overflow-wrap:anywhere}
+.social-video-input{display:flex;flex-direction:column;gap:7px;padding:8px 0}
+.social-video-input input{width:100%}
+.social-upload-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.social-upload-row label{display:inline-flex;min-height:40px;align-items:center;border:1px solid #617c56;border-radius:8px;padding:9px 12px;color:var(--neon);font:800 11px Arial}
+.social-upload-row input{display:none}
+.social-media-status{font-size:11px;color:#a8baa2}
+
 .me-beta-tag{font:800 11px Arial;color:var(--neon)}
 .me-message-search{border:1px solid #405640;border-radius:13px;padding:14px;margin-top:10px}
 .me-message-search label{display:block;color:#c2d4b9;font:800 10px Arial;margin-bottom:9px}
@@ -908,6 +928,9 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  <div id="socialComposer" class="panel hide">
   <label for="socialPostText">BUAT POSTINGAN</label>
   <textarea class="field profile-textarea" id="socialPostText" maxlength="2000" rows="4" placeholder="Apa yang ingin kamu bagikan?"></textarea>
+  <div class="social-video-input"><label for="socialVideoUrl">VIDEO (OPSIONAL)</label><input class="field" type="url" id="socialVideoUrl" maxlength="500" placeholder="Link YouTube, Vimeo, MP4 atau WebM">
+    <div class="social-upload-row"><label for="socialVideoFile">+ UPLOAD VIDEO</label><input id="socialVideoFile" type="file" accept="video/mp4,video/webm"><span id="socialMediaStatus" class="social-media-status">Memeriksa penyimpanan video...</span></div>
+  </div>
   <div class="actions"><button class="btn" type="button" id="socialPublish">POSTING</button><button class="btn secondary" type="button" id="socialSaveDraft">SIMPAN DRAF</button></div>
   <p class="status" id="socialPostStatus" role="status"></p>
  </div>
@@ -1501,38 +1524,159 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  $('meFollowers').onclick=()=>{show('socialConnectionsPage');loadSocialConnections('followers')};
  $('meFollowing').onclick=()=>{show('socialConnectionsPage');loadSocialConnections('following')};
 
+
+ const socialPostCache=new Map();
+ const socialPostLink=id=>DEFAULT_BACKEND+'/app/?post='+encodeURIComponent(id);
+ const socialNum=value=>new Intl.NumberFormat('id-ID').format(Number(value)||0);
+ function playableSocialVideo(url){
+  if(!url)return null;
+  const parsed=validExternalLink(url);if(!parsed)return null;
+  const u=new URL(parsed),host=u.hostname.toLowerCase().replace(/^www\./,'');
+  let embed='';
+  if(host==='youtu.be'||host==='youtube.com'||host==='m.youtube.com'){
+   const id=host==='youtu.be'?u.pathname.slice(1).split('/')[0]:u.searchParams.get('v')||u.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]{11})/)?.[1];
+   if(/^[a-zA-Z0-9_-]{11}$/.test(id||''))embed='https://www.youtube-nocookie.com/embed/'+id;
+  }else if(host==='vimeo.com'||host==='player.vimeo.com'){
+   const id=u.pathname.match(/\/([0-9]{6,14})/)?.[1];
+   if(id)embed='https://player.vimeo.com/video/'+id;
+  }
+  if(embed){
+   const frame=document.createElement('iframe');frame.className='social-video';
+   frame.src=embed;frame.loading='lazy';frame.title='Video postingan NADMO';frame.referrerPolicy='no-referrer';
+   frame.allow='fullscreen; picture-in-picture';frame.setAttribute('allowfullscreen','');
+   return frame;
+  }
+  if(/\.(mp4|webm)$/i.test(u.pathname)){
+   const video=document.createElement('video');video.className='social-video';video.src=parsed;
+   video.controls=true;video.playsInline=true;video.preload='none';video.referrerPolicy='no-referrer';
+   return video;
+  }
+  return directLink(url,'LIHAT VIDEO ↗','social-video-link');
+ }
+ async function showSocialComments(id,target){
+  target.replaceChildren();
+  const state=document.createElement('p');state.className='profile-note';state.textContent='Memuat komentar...';target.append(state);
+  try{
+   const data=await accountRequest('/api/social/engagement?id='+encodeURIComponent(id));
+   target.replaceChildren();
+   const lines=document.createElement('div');
+   for(const item of data.comments||[]){
+    const line=document.createElement('div');line.className='social-comment-line';
+    const who=document.createElement('b');who.textContent=(item.name||item.handle)+' · @'+item.handle;
+    const text=document.createElement('span');text.textContent=item.text;
+    line.append(who,text);lines.append(line);
+   }
+   if(!lines.childElementCount){const msg=document.createElement('p');msg.className='profile-note';msg.textContent='Jadilah yang pertama berkomentar.';lines.append(msg)}
+   target.append(lines);
+   if(!activeAccount){
+    const log=document.createElement('button');log.type='button';log.textContent='MASUK UNTUK KOMENTAR';log.onclick=()=>show('authPage');target.append(log);return;
+   }
+   const input=document.createElement('textarea');input.className='field';input.maxLength=500;input.placeholder='Tulis komentar (maks. 500 karakter)';input.setAttribute('aria-label','Komentar');
+   const submit=document.createElement('button');submit.type='button';submit.textContent='KIRIM KOMENTAR';
+   const status=document.createElement('small');
+   submit.onclick=async()=>{
+    const text=input.value.trim();if(!text)return;
+    submit.disabled=true;
+    try{
+     await accountRequest('/api/account/social/comment','POST',{id,text});await showSocialComments(id,target);await loadSocialFeed();
+    }catch(e){status.textContent=e.message;submit.disabled=false}
+   };
+   target.append(input,submit,status);
+  }catch(e){state.textContent=e.message;target.replaceChildren(state)}
+ }
+ async function shareOutside(post){
+  const url=socialPostLink(post.id),data={title:'NADMO LIVE · @'+post.handle,text:String(post.text||'').slice(0,140),url};
+  try{
+   if(navigator.share){await navigator.share(data);return}
+   if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);flash('Link postingan disalin.');return}
+   window.prompt('Salin tautan postingan',url);
+  }catch(e){if(e.name!=='AbortError')flash('Tidak bisa berbagi dari perangkat ini.');}
+ }
+ async function doSocialRepost(item){
+  if(!activeAccount){show('authPage');return}
+  if(activeAccount.handle===item.handle){flash('Ini postinganmu sendiri.');return}
+  try{
+   const data=await accountRequest('/api/account/social/repost','POST',{id:item.id});
+   flash(data.reposted?'Tersimpan sebagai repost di ME.':'Gagal membagikan ulang');
+   await Promise.all([loadMyReposts(),loadSocialFeed()]);
+  }catch(e){flash(e.message)}
+ }
+ async function loadMyReposts(){
+  const holder=$('meRepostArea'),feed=$('meRepostedFeed');
+  holder.classList.add('hide');feed.replaceChildren();
+  if(!activeAccount)return;
+  try{
+   const data=await accountRequest('/api/social/reposts/me');
+   if(!data.reposts?.length)return;
+   for(const item of data.reposts.slice(0,20)){
+    const card=makePublicPost({...item.original,repostMe:true});
+    feed.append(card);
+   }
+   holder.classList.remove('hide');
+  }catch(e){console.warn('Repost tidak tersedia',e)}
+ }
  function makePublicPost(item){
+  const original=item.originalId?(socialPostCache.get(item.originalId)||item.original):null;
+  const entry=original||item,id=entry.id;
   const card=document.createElement('article');card.className='profile-post-card';
+  card.dataset.postId=item.id;
+  if(item.originalId||item.repostMe){
+   const label=document.createElement('small');label.textContent=item.repostMe?'DIBAGIKAN ULANG':'↗ @'+item.handle+' MEMBAGIKAN ULANG';
+   label.style.color='#e3fd72';card.append(label);
+  }
+  if(!entry||!entry.id){card.append(document.createTextNode('Postingan asli tidak lagi tersedia.'));return card}
   const top=document.createElement('div');top.className='post-top';
-  const author=document.createElement('b');author.textContent=(item.name||item.handle||'Kreator')+' · @'+(item.handle||'nadmo');
-  const date=document.createElement('small');
-  date.textContent=item.createdAt?new Date(item.createdAt).toLocaleDateString('id-ID'):'';
+  const author=document.createElement('b');author.textContent=(entry.name||entry.handle||'Kreator')+' · @'+(entry.handle||'nadmo');
+  const date=document.createElement('small');date.textContent=entry.createdAt?new Date(entry.createdAt).toLocaleDateString('id-ID'):'';
   top.append(author,date);
-  if(item.avatarVersion){
-   const avatar=document.createElement('img');avatar.alt='';
-   avatar.src=avatarURL(item.handle,item.avatarVersion);
-   avatar.onerror=()=>avatar.remove();
-   top.prepend(avatar);
+  if(entry.avatarVersion){
+   const avatar=document.createElement('img');avatar.alt='';avatar.src=avatarURL(entry.handle,entry.avatarVersion);
+   avatar.onerror=()=>avatar.remove();top.prepend(avatar);
   }
   const content=document.createElement('div');content.className='profile-post-content';
-  linkifyCaption(content,String(item.text||'').slice(0,2000));
-  card.append(top,content);
-  if(item.handle&&/^[a-z][a-z0-9_]{2,23}$/.test(item.handle)&&activeAccount?.handle!==item.handle)
-   card.append(makeFollowButton(item.handle));
-  if(activeAccount?.handle===item.handle){
-   const remove=document.createElement('button');remove.type='button';
-   remove.className='btn ghost';remove.textContent='HAPUS POSTINGAN';
-   remove.style.marginTop='12px';
+  linkifyCaption(content,String(entry.text||'').slice(0,2000));card.append(top,content);
+  if(entry.videoUrl){const video=playableSocialVideo(entry.videoUrl);if(video)card.append(video)}
+  if(entry.handle&&/^[a-z][a-z0-9_]{2,23}$/.test(entry.handle)&&activeAccount?.handle!==entry.handle)
+   card.append(makeFollowButton(entry.handle));
+  const actions=document.createElement('div');actions.className='social-action-row';
+  const like=document.createElement('button');like.type='button';let liked=entry.likedByMe===true;
+  const likeLabel=()=>{like.textContent=(liked?'♥':'♡')+' '+socialNum(entry.likesCount)+' SUKA';like.classList.toggle('social-liked',liked)};
+  likeLabel();
+  like.onclick=async()=>{
+   if(!activeAccount){show('authPage');return}
+   like.disabled=true;
+   try{
+    const state=await accountRequest('/api/account/social/like','POST',{id,liked:!liked});
+    liked=state.liked;entry.likesCount=state.likes;likeLabel();
+   }catch(e){flash(e.message)}finally{like.disabled=false}
+  };
+  const comment=document.createElement('button');comment.type='button';comment.textContent='◌ '+socialNum(entry.commentsCount)+' KOMENTAR';
+  const comments=document.createElement('div');comments.className='social-comment-box hide';
+  comment.onclick=()=>{comments.classList.toggle('hide');if(!comments.classList.contains('hide'))showSocialComments(id,comments)};
+  const repost=document.createElement('button');repost.type='button';repost.textContent='↗ '+socialNum(entry.repostsCount)+' REPOST';
+  repost.onclick=()=>doSocialRepost(entry);
+  const share=document.createElement('button');share.type='button';share.textContent='↗ SHARE';
+  const menu=document.createElement('div');menu.className='social-share-panel hide';
+  const addShare=(name,action)=>{const btn=document.createElement('button');btn.type='button';btn.textContent=name;btn.onclick=action;menu.append(btn)};
+  addShare('KE ME (REPOST)',()=>doSocialRepost(entry));
+  addShare('KE TEMAN (PESAN)',()=>{
+   if(!activeAccount){show('authPage');return}
+   show('messagesPage');
+   $('messageBody').value='Lihat postingan @'+entry.handle+' di NADMO LIVE: '+socialPostLink(id);
+   $('messageInboxStatus').textContent='Pilih percakapan yang sudah disetujui untuk mengirim tautan. Pesan tidak dikirim otomatis.';
+  });
+  addShare('KELUAR APLIKASI',()=>shareOutside(entry));
+  share.onclick=()=>menu.classList.toggle('hide');
+  actions.append(like,comment,repost,share);card.append(actions,menu,comments);
+  if(activeAccount?.handle===item.handle&&item.type!=='repost'){
+   const remove=document.createElement('button');remove.type='button';remove.className='btn ghost';remove.textContent='HAPUS POSTINGAN';remove.style.marginTop='12px';
    remove.onclick=async()=>{
     if(!confirm('Hapus postingan ini?'))return;
     remove.disabled=true;
-    try{
-     await accountRequest('/api/account/posts/delete','POST',{id:item.id});
-     syncedPosts=syncedPosts.filter(x=>x.id!==item.id);
-     renderSyncedPosts();await loadSocialFeed();
+    try{await accountRequest('/api/account/posts/delete','POST',{id:item.id});
+     syncedPosts=syncedPosts.filter(x=>x.id!==item.id);renderSyncedPosts();await loadSocialFeed();
     }catch(error){remove.disabled=false;flash(error.message)}
-   };
-   card.append(remove);
+   };card.append(remove);
   }
   return card;
  }
@@ -1541,19 +1685,24 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   try{
    const result=await accountRequest('/api/social/feed');
    const posts=Array.isArray(result.posts)?result.posts:[];
+   socialPostCache.clear();
+   for(const post of posts)if(post.type!=='repost')socialPostCache.set(post.id,post);
    for(const item of posts)feed.append(makePublicPost(item));
    $('socialFeedEmpty').hidden=posts.length>0;
+   const shareId=new URLSearchParams(location.search).get('post');
+   if(shareId&&/^[a-f0-9-]{36}$/.test(shareId)&&!posts.some(x=>x.id===shareId)){
+    try{const one=await accountRequest('/api/social/post?id='+encodeURIComponent(shareId));feed.prepend(makePublicPost(one.post));}catch(e){}
+   }
   }catch(error){$('socialFeedEmpty').hidden=false;$('socialFeedEmpty').textContent='Postingan belum bisa dimuat.'}
  }
- async function publishSocialText(text,output){
-  const value=String(text||'').trim();
-  if(!value||value.length>2000){output.textContent='Postingan harus berisi 1 sampai 2.000 karakter.';return false}
+ async function publishSocialText(text,output,videoURL=''){
+  const value=String(text||'').trim(),videoUrl=String(videoURL||'').trim();
+  if((!value&&!videoUrl)||value.length>2000){output.textContent='Tulis caption atau sertakan video yang valid.';return false}
   if(!activeAccount){output.textContent='Masuk akun untuk memposting.';show('authPage');return false}
   output.textContent='Memposting...';
   try{
-   const result=await accountRequest('/api/account/posts/publish','POST',{text:value});
-   syncedPosts.unshift(result.post);
-   renderSyncedPosts();await loadSocialFeed();
+   const result=await accountRequest('/api/account/posts/publish','POST',{text:value,videoUrl});
+   syncedPosts.unshift(result.post);renderSyncedPosts();await loadSocialFeed();
    output.textContent='Postingan berhasil dipublikasikan.';
    return true;
   }catch(error){output.textContent=error.message;return false}
@@ -1563,13 +1712,31 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('socialComposer').classList.toggle('hide');
  };
  $('socialPublish').onclick=async()=>{
-  if(await publishSocialText($('socialPostText').value,$('socialPostStatus'))){
-   $('socialPostText').value='';$('socialComposer').classList.add('hide');
+  if(await publishSocialText($('socialPostText').value,$('socialPostStatus'),$('socialVideoUrl').value)){
+   $('socialPostText').value='';$('socialVideoUrl').value='';$('socialComposer').classList.add('hide');
   }
+ };
+ $('socialVideoFile').onchange=async()=>{
+  const input=$('socialVideoFile'),file=input.files?.[0];input.value='';
+  if(!file)return;
+  const status=$('socialMediaStatus');status.textContent='Menyiapkan video...';
+  try{
+   if(!['video/mp4','video/webm'].includes(file.type)||file.size>25*1024*1024||file.size<100)
+    throw Error('Gunakan MP4/WebM maksimal 25 MB.');
+   const capability=await accountRequest('/api/social/media/status');
+   if(!capability.enabled)throw Error('Upload file menunggu penyimpanan media. Sementara gunakan link video.');
+   const response=await fetch(api('/api/social/media/upload'),{
+    method:'PUT',credentials:'include',headers:{'Content-Type':file.type},body:file,cache:'no-store'
+   });
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||'Video gagal diunggah');
+   $('socialVideoUrl').value=data.url;
+   status.textContent='Video terunggah. Tulis caption, lalu POSTING.';
+  }catch(e){status.textContent=e.message}
  };
  $('profilePostPublish').onclick=async()=>{
   if(await publishSocialText($('profilePostText').value,$('profilePostStatus'))){
-   $('profilePostText').value='';show('settings');
+   $('profilePostText').value='';show('socialPage');
   }
  };
  $('socialSaveDraft').onclick=()=>{
@@ -1577,7 +1744,13 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('socialPostText').value='';show('draftsPage');
   $('profilePostSave').click();
  };
-
+ async function refreshVideoCapability(){
+  try{
+   const cap=await accountRequest('/api/social/media/status');
+   $('socialMediaStatus').textContent=cap.enabled?'Video MP4/WebM maksimal 25 MB.':'Upload video belum aktif; gunakan tautan video dahulu.';
+  }catch(e){$('socialMediaStatus').textContent='Penyimpanan video belum siap.'}
+ }
+ refreshVideoCapability();
  let activeChatHandle='',chatRefreshTimer=null;
  async function loadMessageInbox(){
   if(!activeAccount)return;
@@ -1983,7 +2156,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
   if(name==='socialPage'){loadSocialFeed();if(activeAccount)refreshSocialRelations().catch(()=>{});}
-  if(name==='settings'&&activeAccount)refreshSocialRelations().catch(()=>{});
+  if(name==='settings'&&activeAccount){refreshSocialRelations().catch(()=>{});loadMyReposts();}
   if(name==='messagesPage'&&activeAccount)loadMessageInbox();
   if(name!=='messagesPage'&&activeChatHandle)closeMessages();
   window.scrollTo(0,0);}
@@ -2928,6 +3101,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  // Do not stop camera/microphone on pagehide: Android WebView can suspend/resume.
  // An explicit Leave button stops media; foreground recovery reacquires camera if needed.
  health();sessionRestore();show('explore');
+ const incomingPost=new URLSearchParams(location.search).get('post');
+ if(incomingPost&&/^[a-f0-9-]{36}$/.test(incomingPost))setTimeout(()=>show('socialPage'),650);
  const incomingRoom=new URLSearchParams(location.search).get('room');
  if(incomingRoom&&/^[a-f0-9]{12,32}$/i.test(incomingRoom))setTimeout(()=>join(incomingRoom,'Invitation room',new URLSearchParams(location.search).get('private')==='1'),450);
 })();
