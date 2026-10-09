@@ -66,7 +66,7 @@ async function createSession(storage,account){
  return token;
 }
 export {getAccount,urlOK,getAccountBySessionFingerprint,getSessionFingerprint};
-export async function accountEndpoint(storage,request,env){
+export async function accountEndpoint(storage,request){
  const u=new URL(request.url),p=u.pathname,method=request.method;
  if(p==='/api/payments/status')return json({enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,state:'WAITING_LICENSED_PROVIDER'});
  if(p==='/api/streaming/capacity')return json({architecture:'P2P_WEBRTC',maxViewersPerRoom:4,turnConfigured:false,sfuConfigured:false,scaleReady:false});
@@ -109,7 +109,7 @@ export async function accountEndpoint(storage,request,env){
   const salt=hex(crypto.getRandomValues(new Uint8Array(16)));
   let passhash;
   try{passhash=await passwordHash(pw,salt)}
-  catch(error){console.error('Password KDF failure',error?.name,error?.code);return json({ok:false,error:'Secure password hashing unavailable on this server',...(env?.BETA_TEST_HOSTS_ENABLED==='true'?{betaDiagnostic:{type:String(error?.name||'Error').slice(0,50),code:String(error?.code||'').slice(0,50),reason:String(error?.message||'').slice(0,130)}}:{})},503)}
+  catch(error){console.error('Password KDF failure',error?.name,error?.code);return fail(503,'Secure password hashing unavailable on this server')}
   const id=crypto.randomUUID();
   const user={id,handle,name,bio:'',links:[],salt,passhash,passAlgo:'scrypt-v1',kycStatus:'NOT_CONFIGURED',verifiedAdult:false,createdAt:Date.now()};
   await storage.put('auth-user:'+id,user);
