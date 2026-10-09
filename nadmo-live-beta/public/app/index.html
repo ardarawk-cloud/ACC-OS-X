@@ -1440,7 +1440,18 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
        syncedPosts=syncedPosts.filter(x=>x.id!==item.id);renderSyncedPosts();
       }catch(e){flash(e.message)}
      };
-     card.append(head,text,discard);$('profileSyncedPosts').appendChild(card);
+     const publish=document.createElement('button');publish.type='button';publish.textContent='POSTING';
+     publish.className='btn';publish.style.marginRight='8px';
+     publish.onclick=async()=>{
+      publish.disabled=true;
+      const ok=await publishSocialText(item.text,$('profilePostStatus'));
+      if(ok){
+       try{await accountRequest('/api/account/posts/delete','POST',{id:item.id});
+        syncedPosts=syncedPosts.filter(x=>x.id!==item.id);renderSyncedPosts();
+       }catch(e){$('profilePostStatus').textContent='Posting terbit; draf lama belum terhapus: '+e.message}
+      }else publish.disabled=false;
+     };
+     card.append(head,text,publish,discard);$('profileSyncedPosts').appendChild(card);
     }
    }
   }
@@ -1663,7 +1674,15 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
    linkifyCaption(text,entry.text);
    const del=document.createElement('button');del.type='button';del.textContent='HAPUS DRAF';
    del.onclick=()=>{draftPosts=draftPosts.filter(x=>x.id!==entry.id);storePosts();renderDraftPosts()};
-   card.append(top,text,del);$('profilePostFeed').appendChild(card);
+   const publish=document.createElement('button');publish.type='button';publish.className='btn';
+   publish.textContent='POSTING';publish.style.marginRight='8px';
+   publish.onclick=async()=>{
+    publish.disabled=true;
+    const ok=await publishSocialText(entry.text,$('profilePostStatus'));
+    if(ok){draftPosts=draftPosts.filter(x=>x.id!==entry.id);storePosts();renderDraftPosts()}
+    else publish.disabled=false;
+   };
+   card.append(top,text,publish,del);$('profilePostFeed').appendChild(card);
   }
   updatePostEmptyState();
  }
