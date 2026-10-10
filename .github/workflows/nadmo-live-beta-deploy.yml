@@ -37,6 +37,7 @@ jobs:
           node --check nadmo-live-beta/qa/social-feed-sharing-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/moshi-chat-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/creator-profile-navigation-mobile-e2e.cjs
+          node --check nadmo-live-beta/qa/offgrid-guest-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/single-avatar-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/custom-domain-contract.mjs
           node --check nadmo-live-beta/qa/auth-modes-official-domain-e2e.cjs
@@ -175,6 +176,8 @@ jobs:
         run: node nadmo-live-beta/qa/moshi-chat-mobile-e2e.cjs
       - name: Verify profile navigation from Followers Following and PESAN; no redundant GO LIVE text
         run: node nadmo-live-beta/qa/creator-profile-navigation-mobile-e2e.cjs
+      - name: Verify OFFGRID emergency information without login or internet and PT footer
+        run: node nadmo-live-beta/qa/offgrid-guest-mobile-e2e.cjs
       - name: Verify social and message avatars never show picture plus letter twice on mobile
         run: node nadmo-live-beta/qa/single-avatar-mobile-e2e.cjs
       - name: Verify mobile viewer reports and host moderation UI
