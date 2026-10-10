@@ -18,6 +18,8 @@ async function main(){
    return {status:r.status,body:(await r.text()).slice(0,160)};
   });
   console.log('AUTH_ROUTE_PROBE',JSON.stringify(routeProbe));
+  await one.locator('#accountRegister').click();
+  assert.equal(await one.$eval('#accountRegisterExtra',el=>el.classList.contains('hide')),false);
   await one.locator('#accountHandle').fill(handle);
   await one.locator('#accountName').fill('NADMO QA Independent Creator');
   await one.locator('#accountPass').fill(password);
