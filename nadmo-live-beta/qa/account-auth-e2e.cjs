@@ -55,6 +55,8 @@ async function main(){
   await fillOffscreen('#profileLinkLabel','Independent Booking');
   await fillOffscreen('#profileLinkUrl','https://bookbwd.nadmo.id/');
   await one.$eval('#profileAddLink',el=>el.click());
+  await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('Link tersimpan di akun'),{timeout:12000});
+  assert.equal(await one.$eval('#profileBusinessLinks a',el=>el.href),'https://bookbwd.nadmo.id/');
   await one.$eval('#profileSave',el=>el.click());
   await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('tersinkron'),{timeout:10000});
   await fillOffscreen('#profilePostText','Book directly https://bookbwd.nadmo.id/ without walled gardens');
