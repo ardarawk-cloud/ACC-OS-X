@@ -148,6 +148,10 @@ export class RoomHub{
     return failure(ws,'Akun streamer harus terverifikasi identitas 18+ sebelum GO LIVE.');
    const all=await this.findRooms();
    if(all.size>=ROOM_LIMIT)return failure(ws,'Room beta sudah penuh');
+   // Native GAME facecam configuration is bounded before being sent to viewers.
+   const fc=msg.facecam&&typeof msg.facecam==='object'&&!Array.isArray(msg.facecam)?msg.facecam:null;
+   const bound=(v,min,max,fallback)=>Number.isFinite(Number(v))?Math.max(min,Math.min(max,Number(v))):fallback;
+   const facecam=fc?{x:bound(fc.x,0,.82,.72),y:bound(fc.y,.02,.85,.11),size:bound(fc.size,56,112,76)}:null;
    const mode=msg.mode==='password'?'password':'public';
    const password=txt(msg.password,32);
    if(mode==='password'&&password.length<4)return failure(ws,'Kode private room minimal 4 karakter');
@@ -156,7 +160,7 @@ export class RoomHub{
    const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',
     hostName:current?.name||txt(msg.hostName,60)||'Host',hostHandle:current?.handle||null,hostAvatarVersion:current?.avatarVersion||0,
     hostVerified:current?.kycStatus==='verified'&&current?.verifiedAdult===true,hostAccountId:current?.id||null,
-    mode,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now};
+    mode,facecam,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
    reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,layout:[]});
@@ -209,7 +213,7 @@ export class RoomHub{
    if(s.accountId&&Array.isArray(room.blockedAccounts)&&room.blockedAccounts.includes(s.accountId))
     return failure(ws,'Akses akun ke room ini telah diblokir oleh host.');
    s.roomId=id;s.role='viewer';save(ws,s);
-   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,selfId:s.id,hostId:room.hostId,mirrorBroadcast:room.mirrorBroadcast===true,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id),layout:room.stageLayout||[]});
+   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,selfId:s.id,hostId:room.hostId,facecam:room.facecam||null,mirrorBroadcast:room.mirrorBroadcast===true,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id),layout:room.stageLayout||[]});
    reply(host,{type:'viewer-joined',id:s.id});
     stageBroadcast(peers,id,room.stageLayout||[]);
    return;
