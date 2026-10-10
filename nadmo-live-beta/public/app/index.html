@@ -970,7 +970,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   </aside>
   <div class="page-top"><div>
   <button id="hostProfileCard" type="button" aria-label="Lihat profil host">
-   <span class="host-avatar" aria-hidden="true"><span>N/</span><img id="hostAvatarImage" alt="" hidden></span><span class="host-details"><b id="watchTitle">HOST</b><small id="hostIdentityHandle">PROFIL HOST</small></span><span class="onair-label">● LIVE</span>
+   <span class="host-avatar" aria-hidden="true"><span>N/</span><img id="hostAvatarImage" alt="" hidden></span><span class="host-details"><b id="watchTitle">HOST</b><small id="hostIdentityHandle" hidden>PROFIL HOST</small></span><span class="onair-label">● LIVE</span>
   </button><div id="watchRoomSubtitle" class="room-subtitle"></div>
  </div></div>
  <div id="guestStageGrid" aria-label="Tamu di panggung live"></div>
@@ -3409,7 +3409,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  function updateHostCard(room){
   const name=String(room.hostName||'Host').slice(0,60),handle=room.hostHandle||'';
   hostPublicIdentity={name,handle};
-  $('hostIdentityHandle').textContent=handle?'@'+handle:'KREATOR NADMO';
+  $('hostIdentityHandle').hidden=true; // Host shown once in #watchTitle.
   setAvatarImage('hostAvatarImage',handle,room.hostAvatarVersion);
   setAvatarImage('hostPublicAvatarImage',handle,room.hostAvatarVersion);
   $('hostPublicName').textContent=name;
