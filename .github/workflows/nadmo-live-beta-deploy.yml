@@ -48,6 +48,7 @@ jobs:
           node --check nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
           node --check nadmo-live-beta/qa/viewer-invite-e2e.cjs
           node --check nadmo-live-beta/qa/guest-stage-media-e2e.cjs
+          node --check nadmo-live-beta/qa/ice-burst-signaling-e2e.mjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
       - name: Verify live.nadmo.id hostname, same-origin APIs and legacy Android compatibility
         run: node nadmo-live-beta/qa/custom-domain-contract.mjs
@@ -142,6 +143,8 @@ jobs:
           echo "DIRECT NADMO LIVE APK DOWNLOAD PASS: $(wc -c < /tmp/nadmo-live-direct.apk) bytes"
       - name: Install creator ownership QA dependencies
         run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
+      - name: Verify ICE candidate bursts do not disconnect GAME hosts
+        run: node nadmo-live-beta/qa/ice-burst-signaling-e2e.mjs
       - name: Verify wallet authentication and reject unverified cashout
         run: node nadmo-live-beta/qa/wallet-endpoint-e2e.mjs
       - name: Verify secure account photo upload, public avatar and deletion
