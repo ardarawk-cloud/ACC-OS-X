@@ -1783,6 +1783,34 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
  #socialPublicFeed .social-photo-frame,
  #meRepostedFeed .social-photo-frame{width:100%;border-radius:5px;margin:9px auto}
 }
+
+/* SOCIAL mixed-media cyberdeck tile grid. */
+.social-media-hint{color:#b6c7ae;font:11px/1.55 Arial,sans-serif}
+.social-queued-media{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;margin:10px 0}
+.social-queued-media:empty{display:none}
+.social-queued-item{min-width:0;background:#0e2012;border:1px solid #52734a;border-radius:5px;padding:5px}
+.social-queued-item img,.social-queued-item video{display:block;width:100%;height:78px;object-fit:cover}
+.social-queued-item small{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 0}
+.social-queued-controls{display:flex;gap:3px}
+.social-queued-controls button{flex:1;min-width:0;min-height:28px;border:1px solid #5c874e;background:#1a3020;color:var(--neon)}
+.social-queued-controls button:disabled{opacity:.25}
+.social-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));width:min(100%,560px);aspect-ratio:1/1;margin:12px auto;gap:3px;overflow:hidden;border:1px solid #608b57;border-radius:6px;background:#08120b}
+.social-gallery[data-count="1"]{display:block}
+.social-gallery[data-count="2"] .social-gallery-tile{grid-row:span 2}
+.social-gallery[data-count="3"] .social-gallery-tile:first-child{grid-row:span 2}
+.social-gallery-tile{position:relative;display:block;width:100%;height:100%;min-width:0;min-height:0;background:#09140b;padding:0;border:0;cursor:pointer;overflow:hidden}
+.social-gallery-tile img,.social-gallery-tile video{display:block;width:100%;height:100%;object-fit:cover}
+.social-gallery-play,.social-gallery-more{position:absolute;display:grid;place-items:center;background:#041108b8;color:#e3fd72;pointer-events:none;font:900 23px Arial,sans-serif}
+.social-gallery-play{left:50%;top:50%;transform:translate(-50%,-50%);height:42px;width:42px;border:1px solid #e3fd72;border-radius:50%}
+.social-gallery-more{inset:0;color:white}
+.social-gallery-tile:focus-visible{outline:3px solid var(--neon);outline-offset:-3px}
+.social-media-lightbox{position:fixed;inset:0;z-index:350;background:#000e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px)}
+.social-media-lightbox-view{flex:1;min-height:0;width:100%;display:grid;place-items:center}
+.social-media-lightbox-view img,.social-media-lightbox-view video{max-width:100%;max-height:100%;height:auto;width:auto;object-fit:contain;display:block}
+.social-media-lightbox-bar{width:min(100%,550px);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.social-media-lightbox-bar button{min-width:44px;min-height:44px;border:1px solid #698f59;color:#e3fd72;background:#15261a}
+body.social-lightbox-open{overflow:hidden}
+@media(max-width:799px){.social-gallery{width:100%}.social-queued-media{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head>
 <body>
 <div class="app">
@@ -2043,7 +2071,9 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
   <label for="socialPostText">BUAT POSTINGAN</label>
   <textarea class="field profile-textarea" id="socialPostText" maxlength="2000" rows="4" placeholder="Apa yang ingin kamu bagikan?"></textarea>
   <div class="social-video-input"><label for="socialVideoUrl">VIDEO (OPSIONAL)</label><input class="field" type="url" id="socialVideoUrl" maxlength="500" placeholder="Link YouTube, Vimeo, MP4 atau WebM">
-    <div class="social-upload-row"><label for="socialVideoFile">+ UPLOAD VIDEO</label><input id="socialVideoFile" type="file" accept="video/mp4,video/webm"><span id="socialMediaStatus" class="social-media-status">Memeriksa penyimpanan video...</span></div>
+    <div class="social-upload-row"><label for="socialVideoFile">+ FOTO / VIDEO</label><input id="socialVideoFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple><span id="socialMediaStatus" class="social-media-status" role="status">Memeriksa penyimpanan galeri...</span></div>
+    <div id="socialQueuedMedia" class="social-queued-media" aria-label="Urutan media sebelum posting"></div>
+    <small class="social-media-hint">Maksimal 10 foto/video. Foto 8 MB, video 25 MB. Atur urutan dengan panah.</small>
   </div>
   <div class="actions"><button class="btn" type="button" id="socialPublish">POSTING</button><button class="btn secondary" type="button" id="socialSaveDraft">SIMPAN DRAF</button></div>
   <p class="status" id="socialPostStatus" role="status"></p>
@@ -2992,7 +3022,24 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
    drawCaption();card.append(content);
   }
   // SOCIAL photos: square preview, but opening retains the original resolution.
-  if(entry.imageUrl){
+  if(Array.isArray(entry.media)&&entry.media.length){
+   const items=entry.media.filter(m=>m&&['image','video'].includes(m.type)&&validExternalLink(m.url)).slice(0,10);
+   if(items.length){
+    const grid=document.createElement('div');grid.className='social-gallery';grid.dataset.count=String(Math.min(5,items.length));
+    for(let i=0;i<Math.min(items.length,4);i++){
+     const item=items[i],tile=document.createElement('button');tile.type='button';tile.className='social-gallery-tile';
+     tile.setAttribute('aria-label','Buka media '+(i+1)+' dari '+items.length);
+     const media=document.createElement(item.type==='video'?'video':'img');media.src=item.url;
+     if(item.type==='video'){media.preload='metadata';media.muted=true;media.playsInline=true}
+     else{media.alt='Foto '+(i+1);media.loading='lazy'}
+     tile.append(media);
+     if(item.type==='video'){const play=document.createElement('span');play.className='social-gallery-play';play.textContent='▶';tile.append(play)}
+     if(i===3&&items.length>4){const more=document.createElement('span');more.className='social-gallery-more';more.textContent='+'+(items.length-4);tile.append(more)}
+     tile.onclick=()=>openSocialMediaLightbox(items,i);grid.append(tile);
+    }
+    card.append(grid);
+   }
+  }else if(entry.imageUrl){
    const imageSrc=validExternalLink(entry.imageUrl);
    if(imageSrc){
     const frame=document.createElement('a');
@@ -3065,6 +3112,27 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
    };card.append(remove);
   }
   return card;
+ }
+ function openSocialMediaLightbox(items,initial){
+  const modal=document.createElement('div');modal.className='social-media-lightbox';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+  const display=document.createElement('div');display.className='social-media-lightbox-view';
+  const bar=document.createElement('div');bar.className='social-media-lightbox-bar';
+  const prev=document.createElement('button'),count=document.createElement('span'),next=document.createElement('button'),close=document.createElement('button');
+  prev.textContent='←';next.textContent='→';close.textContent='✕';
+  prev.setAttribute('aria-label','Sebelumnya');next.setAttribute('aria-label','Berikutnya');close.setAttribute('aria-label','Tutup galeri');
+  bar.append(prev,count,next,close);modal.append(display,bar);
+  const original=document.activeElement;let index=initial;
+  function draw(){
+   display.replaceChildren();const item=items[index],media=document.createElement(item.type==='video'?'video':'img');
+   media.src=item.url;
+   if(item.type==='video'){media.controls=true;media.playsInline=true;media.preload='metadata'}else media.alt='Foto '+(index+1);
+   display.append(media);count.textContent=(index+1)+' / '+items.length;prev.disabled=index===0;next.disabled=index===items.length-1;
+  }
+  function finish(){modal.remove();document.body.classList.remove('social-lightbox-open');document.removeEventListener('keydown',keys);original?.focus?.()}
+  function keys(e){if(e.key==='Escape')finish();else if(e.key==='ArrowLeft'&&index>0){index--;draw()}else if(e.key==='ArrowRight'&&index<items.length-1){index++;draw()}}
+  prev.onclick=()=>{if(index>0){index--;draw()}};next.onclick=()=>{if(index<items.length-1){index++;draw()}};close.onclick=finish;
+  modal.onclick=e=>{if(e.target===modal)finish()};
+  document.body.append(modal);document.body.classList.add('social-lightbox-open');document.addEventListener('keydown',keys);draw();close.focus();
  }
  async function loadSocialFeed(){
   const feed=$('socialPublicFeed');feed.replaceChildren();
