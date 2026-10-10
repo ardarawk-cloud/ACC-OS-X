@@ -39,6 +39,7 @@ jobs:
           node --check nadmo-live-beta/qa/single-avatar-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/custom-domain-contract.mjs
           node --check nadmo-live-beta/qa/auth-modes-official-domain-e2e.cjs
+          node --check nadmo-live-beta/qa/profile-links-immediate-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/moshi-chat-modern-e2e.mjs
           node --check nadmo-live-beta/qa/social-follow-structure.mjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
@@ -124,6 +125,8 @@ jobs:
           echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
       - name: Verify existing account can log in at official domain using only username and password
         run: node nadmo-live-beta/qa/auth-modes-official-domain-e2e.cjs
+      - name: Verify profile links save instantly to ME and public profile after reload
+        run: node nadmo-live-beta/qa/profile-links-immediate-mobile-e2e.cjs
       - name: Verify account registration, linked profiles and private draft posts after deploy
         run: node nadmo-live-beta/qa/account-auth-e2e.cjs
       - name: Verify supporter badge tier preview and immutable verified balances in real mobile browser
