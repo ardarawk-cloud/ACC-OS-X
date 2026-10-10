@@ -1,0 +1,37 @@
+name: NADMO LIVE Cyberdeck Visual QC
+on:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/qa/cyberdeck-watchroom-layout.cjs'
+      - '.github/workflows/nadmo-live-cyberdeck-visual.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nadmo-cyberdeck-visual
+  cancel-in-progress: true
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+      - name: Render and measure real 1014px and 1672px desktop + 390px mobile
+        shell: bash
+        run: |
+          export CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)"
+          node nadmo-live-beta/qa/cyberdeck-watchroom-layout.cjs
+      - name: Keep actual rendered screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nadmo-cyberdeck-watchroom-visual
+          path: nadmo-live-beta/qa/screenshots/cyberdeck-*.png
+          if-no-files-found: warn
+          retention-days: 7
