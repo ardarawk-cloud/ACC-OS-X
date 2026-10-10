@@ -1254,6 +1254,17 @@ body.live-immersive.watch-viewer.watch-landscape #watch .live-stage>.viewfinder{
  height:auto!important;max-height:calc(100% - 176px)!important;
  top:50%!important;transform:translateY(-50%)!important}
 }
+
+/* QA visual correction: the diagonal accent was unintentionally tiled as
+   enormous vertical green bands. Use one short top accent + subtle grid only. */
+@media(min-width:800px){
+body.live-immersive.watch-viewer #watch .live-stage::before{
+ background-repeat:no-repeat,repeat,repeat!important;
+ background-position:0 0,0 0,0 0!important;
+ background-size:100% 4px,26px 26px,26px 26px!important;
+}
+body.live-immersive.watch-viewer #watch .deck-live-metric{max-width:205px}
+}
 </style></head>
 <body>
 <div class="app">
@@ -4273,6 +4284,9 @@ body.live-immersive.watch-viewer.watch-landscape #watch .live-stage>.viewfinder{
  // Source orientation must control the player size; GAME is landscape.
  const watchVideo=$('remote');
  function updateDeckUI(){
+  // On desktop the accessible deck controls replace the browser's duplicate
+  // native timeline; mobile retains its familiar native playback UI.
+  watchVideo.controls=!(window.innerWidth>=800&&document.body.classList.contains('watch-viewer'));
   const media=watchVideo.srcObject;
   const playing=watchVideo.videoWidth>0&&watchVideo.readyState>=2&&!watchVideo.paused;
   const audio=media&&typeof media.getAudioTracks==='function'&&media.getAudioTracks().some(t=>t.readyState==='live'&&t.enabled);
