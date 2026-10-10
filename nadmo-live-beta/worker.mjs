@@ -675,6 +675,19 @@ export default {
    const headers=new Headers(request.headers);
    headers.set('x-nadmo-client-ip',request.headers.get('CF-Connecting-IP')||'unknown');
    const r=await hub.fetch(new Request(request,{headers}));
+   if(url.pathname==='/api/account/posts/delete'&&request.method==='POST'&&r.ok&&env.SOCIAL_MEDIA){
+    // Deleting a public post must also remove its privately stored media.
+    // The DO already checked post ownership before returning deletedMedia.
+    try{
+     const deleted=await r.clone().json();
+     for(const asset of (Array.isArray(deleted.deletedMedia)?deleted.deletedMedia:[]).slice(0,10)){
+      let mediaUrl;try{mediaUrl=new URL(asset)}catch(e){}
+      if(!mediaUrl||mediaUrl.origin!==url.origin)continue;
+      const item=mediaUrl.pathname.match(mediaPath);
+      if(item)await env.SOCIAL_MEDIA.delete(mediaKey(item[1],item[2],item[3]));
+     }
+    }catch(e){console.error('Failed R2 cleanup after post deletion',e?.name);}
+   }
    return cors(request,r);
   }
   const r=await hub.fetch(new Request('https://rooms-internal/rooms'));
