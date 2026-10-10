@@ -1491,6 +1491,45 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label b{
  font-size:21px!important;white-space:nowrap}
 body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8px!important}
 }
+
+/* Real no-frame state, rendered below media only while the stream hasn't
+   delivered playable video. It is never used as a fake game screenshot. */
+#watch .deck-video-idle{position:absolute;z-index:1;inset:0;display:flex;align-items:center;
+ justify-content:center;flex-direction:column;pointer-events:none;gap:9px;
+ background:
+ radial-gradient(circle at 50% 52%,#375d244d,transparent 29%),
+ repeating-linear-gradient(0deg,transparent 0 37px,#90cf5430 38px),
+ repeating-linear-gradient(90deg,transparent 0 37px,#90cf5430 38px),
+ linear-gradient(130deg,#07170b,#030804 80%);
+ color:#c7fb73;letter-spacing:1.4px}
+#watch .deck-video-idle .deck-idle-target{
+ display:grid;place-items:center;width:100px;height:100px;margin-bottom:4px;
+ border:1px solid #a6d954;border-radius:50%;font:900 44px Impact,Arial,sans-serif;
+ box-shadow:0 0 0 10px #92c74b14,0 0 0 23px #75b8590a,inset 0 0 20px #94c04d48}
+#watch .deck-video-idle strong{font:900 12px Arial,sans-serif}
+#watch .deck-video-idle small{font:700 9px Arial,sans-serif;color:#7db89c}
+#watch .deck-has-video .deck-video-idle{display:none}
+@media(max-width:799px){
+ #watch .deck-video-idle .deck-idle-target{width:68px;height:68px;font-size:30px}
+ #watch .deck-video-idle strong{font-size:10px}
+ #watch .deck-video-idle small{font-size:7px}
+}
+@media(min-width:1400px){
+ body.live-immersive.watch-viewer #watch .page-top{
+  width:423px!important;max-width:423px!important}
+ body.live-immersive.watch-viewer #watch .deck-live-telemetry{
+  left:calc(var(--pc-stage-left) + 490px)!important;
+  right:calc(var(--pc-stage-right) + 18px)!important}
+ body.live-immersive.watch-viewer #watch #desktopSawerBar button{
+  min-width:100px!important;height:45px!important;
+  font-size:15px!important}
+ body.live-immersive.watch-viewer #watch #desktopSawerBar .pc-gift-label{font-size:20px!important}
+}
+@media(min-width:1321px) and (max-width:1399px){
+ body.live-immersive.watch-viewer #watch .page-top{width:275px!important;max-width:275px!important}
+ body.live-immersive.watch-viewer #watch .deck-live-telemetry{left:calc(var(--pc-stage-left) + 305px)!important}
+ body.live-immersive.watch-viewer #watch .deck-live-metric:last-child{display:none!important}
+}
 </style></head>
 <body>
 <div class="app">
@@ -1609,7 +1648,7 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
-  <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div>
+  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div>
    <div class="deck-player-controls desktop-watch-only" aria-label="Kontrol pemutar video">
     <span class="deck-player-live">● LIVE</span>
     <button id="deckMute" type="button" aria-label="Bisukan suara video">♫ SUARA ON</button>
@@ -4536,6 +4575,7 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
   const audio=media&&typeof media.getAudioTracks==='function'&&media.getAudioTracks().some(t=>t.readyState==='live'&&t.enabled);
   const ice=peer?.iceConnectionState||'new';
   const videoStatus=playing?'AKTIF':watchVideo.error?'ERROR':watchVideo.readyState>=2?'TERJEDA':'MENUNGGU';
+  watchVideo.closest('.viewfinder')?.classList.toggle('deck-has-video',playing);
   $('deckVideoStatus').textContent=videoStatus;
   $('deckAudioStatus').textContent=audio?'TERDETEKSI':'BELUM ADA';
   $('deckNetStatus').textContent=['connected','completed'].includes(ice)?'TERHUBUNG':
