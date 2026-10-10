@@ -676,10 +676,12 @@ nav button{touch-action:manipulation}
 /* Reposts lead with original content, not giant profile avatars. Global post cards remain compact. */
 .profile-post-card .post-top{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-width:0}
 .profile-post-card .post-top img{display:block;width:29px;height:29px;min-width:29px;max-width:29px;max-height:29px;flex:0 0 29px;object-fit:cover;border-radius:50%;margin:0}
-.profile-post-card .post-top .social-avatar-open{display:grid;place-items:center;width:40px;height:40px;min-width:40px;max-width:40px;flex:0 0 40px;padding:0;background:none;border:0;border-radius:50%;cursor:pointer;touch-action:manipulation}
+.profile-post-card .post-top .social-avatar-open{display:grid;grid-template-areas:"avatar";place-items:center;width:40px;height:40px;min-width:40px;max-width:40px;flex:0 0 40px;padding:0;background:none;border:0;border-radius:50%;cursor:pointer;touch-action:manipulation}
 .profile-post-card .post-top .social-avatar-open:focus-visible{outline:2px solid var(--neon);outline-offset:1px}
-.profile-post-card .post-top .social-avatar-open img{width:29px;height:29px;min-width:29px;max-width:29px;max-height:29px;flex:0 0 29px;border-radius:50%;object-fit:cover;margin:0}
-.profile-post-card .post-top .social-avatar-fallback{display:grid;place-items:center;width:29px;height:29px;border-radius:50%;background:#32472f;color:var(--neon);font:900 12px Arial,sans-serif}
+.profile-post-card .post-top .social-avatar-open img{grid-area:avatar;width:29px;height:29px;min-width:29px;max-width:29px;max-height:29px;flex:0 0 29px;border-radius:50%;object-fit:cover;margin:0}
+.profile-post-card .post-top .social-avatar-fallback{grid-area:avatar;display:grid;place-items:center;width:29px;height:29px;border-radius:50%;background:#32472f;color:var(--neon);font:900 12px Arial,sans-serif}
+.profile-post-card .post-top .social-avatar-fallback[hidden],
+.profile-post-card .post-top .social-avatar-open img[hidden]{display:none!important}
 .profile-post-card .post-top .social-display-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;color:var(--neon);font:800 13px Arial,sans-serif}
 #meRepostedFeed .post-top .social-avatar-open img{width:28px;height:28px;min-width:28px;max-width:28px;max-height:28px}
 .profile-post-card .post-top small{margin-left:auto;flex:0 0 auto;font-size:10px}
@@ -830,8 +832,11 @@ nav [data-tab="messagesPage"]{position:relative}
 .message-inbox-status{min-height:0;font-size:12px;color:#b2c5a9;line-height:1.45;margin:7px 0}
 .message-inbox-status:empty{display:none}
 .message-chat-row{width:100%;display:flex;align-items:center;text-align:left;gap:11px;min-height:69px;padding:9px 2px;background:none;color:#eef2e9;border:0;border-bottom:1px solid #2c392e;touch-action:manipulation}
-.message-chat-avatar{display:grid;place-items:center;width:48px;height:48px;min-width:48px;flex:0 0 48px;border-radius:50%;background:#354b30;color:var(--neon);font:900 16px Arial,sans-serif;overflow:hidden}
-.message-chat-avatar img{width:100%;height:100%;object-fit:cover}
+.message-chat-avatar{display:grid;grid-template-areas:"avatar";place-items:center;width:48px;height:48px;min-width:48px;flex:0 0 48px;border-radius:50%;background:#354b30;color:var(--neon);font:900 16px Arial,sans-serif;overflow:hidden}
+.message-chat-avatar img{grid-area:avatar;display:block;width:100%;height:100%;object-fit:cover}
+.message-chat-avatar .message-avatar-fallback{grid-area:avatar;display:grid;place-items:center;width:100%;height:100%}
+.message-chat-avatar .message-avatar-fallback[hidden],
+.message-chat-avatar img[hidden]{display:none!important}
 .message-chat-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .message-chat-name{font:800 14px Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .message-chat-last{font:400 12px Arial,sans-serif;color:#a3b0a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1942,10 +1947,11 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   fallback.textContent=(displayName.trim().charAt(0)||'N').toUpperCase();
   avatarButton.append(fallback);
   if(entry.avatarVersion){
-   const avatar=document.createElement('img');avatar.alt='';avatar.src=avatarURL(entry.handle,entry.avatarVersion);
-   avatar.onload=()=>{fallback.hidden=true};
+   const avatar=document.createElement('img');avatar.alt='';avatar.hidden=true;
+   avatar.onload=()=>{fallback.hidden=true;avatar.hidden=false};
    avatar.onerror=()=>{avatar.remove();fallback.hidden=false};
    avatarButton.append(avatar);
+   avatar.src=avatarURL(entry.handle,entry.avatarVersion);
   }
   const author=document.createElement('span');author.className='social-display-name';
   author.textContent=displayName;
@@ -2117,12 +2123,15 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  }
  function avatarNode(handle,name,version){
   const span=document.createElement('span');span.className='message-chat-avatar';
-  span.textContent=(String(name||handle||'N').trim().charAt(0)||'N').toUpperCase();
+  const fallback=document.createElement('span');fallback.className='message-avatar-fallback';
+  fallback.textContent=(String(name||handle||'N').trim().charAt(0)||'N').toUpperCase();
+  span.append(fallback);
   const src=avatarURL(handle,version);
   if(src){
-   const img=document.createElement('img');img.alt='';img.src=src;
-   img.onerror=()=>img.remove();
-   span.append(img);
+   const img=document.createElement('img');img.alt='';img.hidden=true;
+   img.onload=()=>{fallback.hidden=true;img.hidden=false};
+   img.onerror=()=>{img.remove();fallback.hidden=false};
+   span.append(img);img.src=src;
   }
   return span;
  }
