@@ -1746,19 +1746,19 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
  body.live-immersive.watch-viewer.watch-game #watch .room-safety{padding-top:2px}
 }
 
-/* MEDIA FORMAT CONTRACT: actual decoded live camera ratio, not design mockups.
-   SOCIAL photos are 1:1; linked originals retain their full uncropped image. */
+/* LIVE PC is a landscape cyberdeck for BOTH camera and games.
+   Portrait camera input fits inside the wide theater without crop or stretch.
+   SOCIAL feed photo tiles retain 1:1 shape independently. */
 @media(min-width:800px){
  body.live-immersive.watch-viewer:not(.watch-landscape) #watch .live-stage>.viewfinder{
-  position:absolute!important;left:50%!important;right:auto!important;
+  position:absolute!important;left:20px!important;right:auto!important;
   top:50%!important;bottom:auto!important;
-  width:auto!important;height:calc(100% - 185px)!important;
-  max-width:calc(100% - 42px)!important;max-height:calc(100% - 185px)!important;
-  aspect-ratio:var(--deck-video-aspect,9 / 16)!important;
-  transform:translate(-50%,-47%)!important;
-  border:2px solid var(--deck-lime)!important;
-  border-radius:2px!important;min-height:0!important;
-  background:#030704!important;overflow:hidden!important;
+  width:calc(100% - 40px)!important;height:auto!important;
+  aspect-ratio:16 / 9!important;max-width:none!important;
+  max-height:calc(100% - 200px)!important;min-height:0!important;
+  transform:translateY(-50%)!important;
+  border:2px solid var(--deck-lime,#e3fd72)!important;
+  border-radius:2px!important;background:#030704!important;overflow:hidden!important;
   box-shadow:0 0 0 3px #07170d,0 0 0 4px #719f4a7d,0 10px 26px #0008!important;
  }
  body.live-immersive.watch-viewer:not(.watch-landscape) #watch #remote{
