@@ -1,0 +1,35 @@
+name: NADMO LIVE Social R2 Bootstrap
+on:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths: ['.github/workflows/nadmo-live-social-r2-bootstrap.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Provision and verify R2 Social media bucket
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "${TOKEN}"
+          test -n "${ACCOUNT_ID}"
+          BASE="https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/r2/buckets"
+          BUCKET="nadmo-live-social-media"
+          STATUS=$(curl -sS -o /tmp/r2-check.json -w "%{http_code}" -H "Authorization: Bearer ${TOKEN}" "${BASE}/${BUCKET}")
+          if [ "$STATUS" = 404 ]; then
+            echo "R2 bucket not found. Creating..."
+            curl -fsS -o /tmp/r2-create.json -X POST "${BASE}" -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" --data "{\"name\":\"${BUCKET}\"}"
+          elif [ "$STATUS" != 200 ]; then
+            echo "::error::Cloudflare R2 bucket lookup returned ${STATUS}. Check token R2:Edit permissions."
+            exit 1
+          fi
+          curl -fsS -o /tmp/r2-verify.json -H "Authorization: Bearer ${TOKEN}" "${BASE}/${BUCKET}"
+          node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('/tmp/r2-verify.json'));if(!d.success||d.result?.name!=='nadmo-live-social-media')process.exit(1)"
+          echo "R2 bucket verified: nadmo-live-social-media"
