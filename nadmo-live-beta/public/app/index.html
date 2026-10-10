@@ -1176,18 +1176,21 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 <section id="authPage" class="hide">
  <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Masuk ke NADMO</h2></div>
    <div class="panel account-card" id="accountLoginCard">
-    <p>Masuk atau daftar untuk menggunakan profil yang sama di HP dan PC.</p>
+    <p id="authIntro">Masuk menggunakan username dan kata sandi akun NADMO kamu.</p>
     <label for="accountHandle">USERNAME</label>
     <input class="field" id="accountHandle" autocomplete="username" maxlength="24" placeholder="username unik">
-    <label for="accountName">NAMA PANGGUNG (untuk daftar baru)</label>
-    <input class="field" id="accountName" maxlength="60" placeholder="Nama tampilan">
+    <div id="accountRegisterExtra" class="hide">
+      <label for="accountName">NAMA PANGGUNG (HANYA PENDAFTARAN)</label>
+      <input class="field" id="accountName" maxlength="60" placeholder="Nama yang tampil di NADMO">
+    </div>
     <label for="accountPass">KATA SANDI</label>
     <input class="field" id="accountPass" type="password" autocomplete="current-password" minlength="12" maxlength="128" placeholder="Minimal 12 karakter">
     <div class="actions">
-      <button class="btn secondary" type="button" id="accountLogin">MASUK</button>
-      <button class="btn" type="button" id="accountRegister">DAFTAR AKUN</button>
+      <button class="btn" type="button" id="accountLogin">MASUK</button>
+      <button class="btn secondary" type="button" id="accountRegister">DAFTAR AKUN BARU</button>
     </div>
-    <div class="status" role="status" id="accountStatus">Pemulihan kata sandi belum tersedia. Simpan kata sandi dengan aman.</div>
+    <div class="status" role="status" id="accountStatus" aria-live="polite"></div>
+    <p class="profile-note">Sudah memiliki akun? Tidak perlu daftar ulang di domain baru.</p>
   </div>
 
 </section>
@@ -1637,7 +1640,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('walletPanel').hidden=!logged;
   $('meSigned').classList.toggle('hide',!logged);
   $('meGuest').classList.add('hide');
-  $('mastLogin').hidden=logged;
+  $('mastLogin').hidden=logged||!$('authPage').classList.contains('hide');
   $('messagesGuest').classList.toggle('hide',logged);
   $('messagesSigned').classList.toggle('hide',!logged);
   if(logged)refreshMessageBadge().catch(()=>{});
@@ -2442,24 +2445,57 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    await loadSupporter();
   }catch(e){console.warn('NADMO account session unavailable',e)}
  }
+ let authRegisterVisible=false;
+ function toggleRegistration(enabled){
+  authRegisterVisible=!!enabled;
+  $('accountRegisterExtra').classList.toggle('hide',!authRegisterVisible);
+  $('authIntro').textContent=authRegisterVisible
+   ?'Daftar akun NADMO baru: pilih username unik, nama panggung, dan kata sandi.'
+   :'Masuk menggunakan username dan kata sandi akun NADMO kamu.';
+  $('accountRegister').textContent=authRegisterVisible?'BUAT AKUN':'DAFTAR AKUN BARU';
+  $('accountLogin').textContent=authRegisterVisible?'KEMBALI KE MASUK':'MASUK';
+  $('accountRegister').classList.toggle('secondary',!authRegisterVisible);
+  $('accountLogin').classList.toggle('secondary',authRegisterVisible);
+  $('accountPass').autocomplete=authRegisterVisible?'new-password':'current-password';
+  $('accountStatus').textContent='';
+ }
  async function authAction(action){
-  $('accountStatus').textContent='Menghubungkan akun...';
   const handle=$('accountHandle').value.trim().replace(/^@/,'').toLowerCase();
   const pw=$('accountPass').value;
   const name=$('accountName').value.trim();
+  if(!handle||!pw){$('accountStatus').textContent='Isi username dan kata sandi untuk '+(action==='login'?'masuk.':'mendaftar.');return}
+  if(action==='register'&&!name){$('accountStatus').textContent='Isi nama panggung untuk daftar akun baru.';return}
+  $('accountStatus').textContent='Menghubungkan akun...';
   try{
    const data=await accountRequest(action==='register'?'/api/account/register':'/api/account/login','POST',
     action==='register'?{handle,name,password:pw}:{handle,password:pw});
    activeAccount=data.account;
    $('accountPass').value='';
+   toggleRegistration(false);
    $('accountStatus').textContent='';
    displayAccount();await loadServerPosts();await loadSupporter();await loadWallet();
    $('accountSignedStatus').textContent='Akun @'+activeAccount.handle+' siap.';
   show('settings');
   }catch(e){$('accountStatus').textContent=e.message}
  }
- $('accountRegister').onclick=()=>authAction('register');
- $('accountLogin').onclick=()=>authAction('login');
+ $('accountRegister').onclick=()=>{
+  // Keep automated and keyboard-created accounts working: a filled name signals
+  // an intentional registration; otherwise first tap reveals its required field.
+  if(!authRegisterVisible&&!$('accountName').value.trim()){
+   toggleRegistration(true);$('accountName').focus();return;
+  }
+  authAction('register');
+ };
+ $('accountLogin').onclick=()=>{
+  if(authRegisterVisible){toggleRegistration(false);$('accountHandle').focus();return}
+  authAction('login');
+ };
+ $('accountPass').addEventListener('keydown',event=>{
+  if(event.key==='Enter'){
+   event.preventDefault();
+   authAction(authRegisterVisible?'register':'login');
+  }
+ });
  $('accountLogout').onclick=async()=>{
   try{
    await accountRequest('/api/account/logout','POST',{});
@@ -2673,6 +2709,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   document.body.classList.toggle('messages-screen',name==='messagesPage');
   if(name==='messagesPage'&&activeAccount)loadMessageInbox();
   if(name!=='messagesPage'&&activeChatHandle)closeMessages();
+  $('mastLogin').hidden=!!activeAccount||name==='authPage';
+  if(name==='authPage'&&!activeAccount&&!authRegisterVisible)toggleRegistration(false);
   window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
  $('mastLogin').onclick=()=>show('authPage');
