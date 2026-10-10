@@ -28,6 +28,7 @@ const chrome=process.env.CHROME_BIN||'/usr/bin/google-chrome';
    await page.setViewport({width:w,height:850,deviceScaleFactor:1,isMobile:true,hasTouch:true});
    await page.goto('file://'+appFile,{waitUntil:'domcontentloaded'});
    await page.$eval('#adult',el=>{if(!el.checked)el.click()});
+   await page.locator('nav button[data-tab="studio"]').click();
    await page.locator('#liveModeGrid [data-live-mode="gaming"]').click();
    assert.equal(await page.$eval('#createRoom',el=>el.disabled),false,'Android GAME mode should enable native CTA');
    assert.equal(await page.$eval('#studio .viewfinder',el=>getComputedStyle(el).display),'none','Game setup must not show duplicate camera');
