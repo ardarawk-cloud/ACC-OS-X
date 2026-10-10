@@ -1,0 +1,29 @@
+name: NADMO LIVE native GAME real-viewer QC
+on:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/worker.mjs'
+      - 'nadmo-live-beta/qa/game-native-viewer-e2e.cjs'
+      - '.github/workflows/nadmo-native-game-viewer-e2e.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: nadmo-native-game-viewer-qa
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Locate Chromium and install testing dependency
+        shell: bash
+        run: |
+          echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
+          npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+      - name: Verify native-shaped GAME sender and real public viewer receive decoded frames
+        run: node nadmo-live-beta/qa/game-native-viewer-e2e.cjs
