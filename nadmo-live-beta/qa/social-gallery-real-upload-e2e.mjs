@@ -45,8 +45,8 @@ async function post(route,cookie,body){
 async function upload(cookie,mime,data){
  const r=await fetch(base+'/api/social/media/upload',{method:'PUT',
   headers:{Origin:base,Cookie:cookie,'Content-Type':mime,'Content-Length':String(data.length)},body:data});
- assert.equal(r.status,201,'Upload '+mime+' '+await r.text());
  const response=await r.json();
+ assert.equal(r.status,201,'Upload '+mime+' '+JSON.stringify(response));
  assert.equal(response.ok,true);
  return response;
 }
