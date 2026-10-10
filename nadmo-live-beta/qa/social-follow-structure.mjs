@@ -25,5 +25,12 @@ assert.ok(html.includes("const avatarButton=document.createElement('button');ava
 assert.ok(html.includes("avatarButton.onclick=()=>openCreatorProfile(entry.handle)"));
 assert.ok(html.includes("const author=document.createElement('span');author.className='social-display-name'"));
 assert.ok(!html.includes("const author=document.createElement('button');author.type='button';author.className='profile-open'"));
-assert.ok(html.includes('.profile-post-card .post-top .social-avatar-open{display:grid;place-items:center;width:40px;height:40px;'));
+assert.ok(html.includes('.profile-post-card .post-top .social-avatar-open{display:grid;grid-template-areas:"avatar";place-items:center;width:40px;height:40px;'));
+assert.ok(html.includes('.profile-post-card .post-top .social-avatar-fallback[hidden],'));
+assert.ok(html.includes('.profile-post-card .post-top .social-avatar-open img[hidden]{display:none!important}'));
+assert.ok(html.includes('.message-chat-avatar{display:grid;grid-template-areas:"avatar";place-items:center;width:48px;height:48px;'));
+assert.ok(html.includes('.message-chat-avatar .message-avatar-fallback[hidden],'));
+assert.ok(html.includes('.message-chat-avatar img[hidden]{display:none!important}'));
+assert.ok(html.includes("avatar.onload=()=>{fallback.hidden=true;avatar.hidden=false}"));
+assert.ok(html.includes("img.onload=()=>{fallback.hidden=true;img.hidden=false}"));
 console.log('PASS navigation signature, compact avatar navigation, plain names and repost actions');
