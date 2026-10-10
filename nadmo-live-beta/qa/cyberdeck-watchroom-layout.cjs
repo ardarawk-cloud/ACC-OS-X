@@ -64,6 +64,9 @@ const puppeteer=require('puppeteer-core');
    document.querySelector('#watch').classList.remove('hide');
    document.body.classList.add('live-immersive','watch-viewer','watch-game','watch-landscape');
    document.querySelector('#remote').muted=true;
+   // Show the controls a real joined viewer receives, without joining a room.
+   for(const id of ['reportLive','joinGuestVoice','joinGuestCamera','giftQuick'])
+    document.getElementById(id).hidden=false;
   });
   // The previous mobile screenshot only captured Studio. Also render the exact
   // viewer GAME layout from a full-height landscape stream on a portrait phone.
