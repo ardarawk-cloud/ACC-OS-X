@@ -660,7 +660,10 @@ nav button{touch-action:manipulation}
 .me-menu button span{flex:1;color:#f3f4f1}
 .me-menu button b{color:#848c83;font-size:24px;font-weight:400}
 .me-menu button:active{background:#2d342d}
-#profilePublishedPosts .profile-post-card,#socialPublicFeed .profile-post-card{background:#151f17;border:1px solid #344b35;border-radius:10px;padding:13px;margin:9px 0;overflow-wrap:anywhere}
+#socialPublicFeed .profile-post-card{background:#151f17;border:1px solid #344b35;border-radius:10px;padding:13px;margin:9px 0;overflow-wrap:anywhere}
+.social-drafts-tools{display:flex;justify-content:flex-end;margin:-5px 0 9px}
+.social-drafts-tools button{background:transparent;border:1px solid #42533e;border-radius:7px;color:#c5d9b6;padding:7px 10px;min-height:34px;font:800 11px Arial,sans-serif}
+.social-drafts-tools button:active{background:#243823}
 #socialPublicFeed .post-top{margin-bottom:9px}
 #socialPublicFeed .post-top img{width:29px;height:29px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:8px}
 #accountPage #profileEditBox{margin-top:17px}
@@ -1079,6 +1082,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 <section id="socialPage" class="hide">
  <div class="me-content-header"><h2>SOSIAL</h2><button type="button" id="socialCompose">+ POSTING</button></div>
  <p class="deck">Cerita, karya, dan aktivitas komunitas NADMO.</p>
+ <div class="social-drafts-tools"><button type="button" id="socialManageDrafts">▤ DRAF SAYA</button></div>
  <div id="socialComposer" class="panel hide">
   <label for="socialPostText">BUAT POSTINGAN</label>
   <textarea class="field profile-textarea" id="socialPostText" maxlength="2000" rows="4" placeholder="Apa yang ingin kamu bagikan?"></textarea>
@@ -1202,11 +1206,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   <button type="button" data-open-page="walletPage">▣ <span>Dompet & penarikan</span><b>›</b></button>
   <button type="button" data-open-page="supporterPage">✦ <span>Level pendukung</span><b>›</b></button>
  </div>
- <div class="me-menu-label">AKTIVITAS</div>
- <div class="me-menu">
-  <button type="button" data-open-page="draftsPage">▤ <span>Kelola postingan & draf</span><b>›</b></button>
-  <button type="button" data-tab="studio">◉ <span>Pengaturan LIVE</span><b>›</b></button>
- </div>
+ <div class="me-menu-label">LIVE</div>
+ <div class="me-menu"><button type="button" data-tab="studio">◉ <span>Pengaturan LIVE</span><b>›</b></button></div>
  <div class="me-menu-label">PRIVASI</div>
  <div class="me-menu"><button type="button" data-open-page="privacyPage">♙ <span>Keamanan & izin</span><b>›</b></button></div>
  <div class="me-menu-label">SESI</div>
@@ -1245,9 +1246,6 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
       <div class="status" id="profileEditStatus" role="status"></div>
     </div>
 
- <div class="me-content-header"><b>KELOLA POSTINGAN</b><button type="button" id="meNewPost">+ BUAT</button></div>
- <div id="profilePublishedPosts" class="profile-post-feed"></div>
- <p id="meNoPosts" class="profile-note">Belum ada postingan.</p>
 </section>
 <section id="walletPage" class="hide">
  <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Dompet Kreator</h2></div>
@@ -1293,7 +1291,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 
 </section>
 <section id="draftsPage" class="hide">
- <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Buat & kelola postingan</h2></div>
+ <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Draf SOSIAL</h2></div>
      <div class="show-label"><b>POSTINGAN</b></div>
     <div class="panel profile-composer">
       <label for="profilePostText">TULIS POSTINGAN</label>
@@ -2348,11 +2346,9 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  }
  function renderSyncedPosts(){
   $('profileSyncedPosts').replaceChildren();
-  $('profilePublishedPosts').replaceChildren();
   if(activeAccount){
    for(const item of syncedPosts){
-    if(item.status==='published')$('profilePublishedPosts').append(makePublicPost(item));
-    else{
+    if(item.status!=='published'){
      const card=document.createElement('article');card.className='profile-post-card';
      const head=document.createElement('div');head.className='post-top';
      const label=document.createElement('b');label.textContent='@'+activeAccount.handle;
@@ -2380,7 +2376,6 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
     }
    }
   }
-  $('meNoPosts').hidden=$('profilePublishedPosts').childElementCount>0;
   updatePostEmptyState();
  }
  async function loadServerPosts(){
@@ -2755,7 +2750,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  function show(name){if(name==='settings'&&!activeAccount)name='authPage';
   const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialConnectionsPage','publicProfilePage'];
   document.body.classList.toggle('page-subview',subpages.includes(name));
-  if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
+  if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(name==='draftsPage'?'socialPage':subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
   if(name==='socialPage'){loadSocialFeed();if(activeAccount)refreshSocialRelations().catch(()=>{});}
   if(name==='settings'&&activeAccount){refreshSocialRelations().catch(()=>{});loadMyReposts();}
@@ -2770,12 +2765,13 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  $('meMore').onclick=()=>show('preferencesPage');
  $('meLogin').onclick=()=>show('authPage');
  
- $('meNewPost').onclick=()=>show('draftsPage');
+ $('socialManageDrafts').onclick=()=>activeAccount?show('draftsPage'):show('authPage');
  $('messagesLogin').onclick=()=>show('authPage');
  document.querySelectorAll('[data-open-page]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.openPage)));
  document.querySelectorAll('.subBack').forEach(button=>button.addEventListener('click',()=>{
   const onPage=button.closest('section')?.id;
-  if(['authPage','preferencesPage','walletPage','supporterPage','accountPage','draftsPage','socialConnectionsPage'].includes(onPage))show('settings');
+  if(onPage==='draftsPage')show('socialPage');
+  else if(['authPage','preferencesPage','walletPage','supporterPage','accountPage','socialConnectionsPage'].includes(onPage))show('settings');
   else show('preferencesPage');
  }));
  $('adult').addEventListener('change',()=>{
