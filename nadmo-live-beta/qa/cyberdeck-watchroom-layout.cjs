@@ -86,6 +86,7 @@ const puppeteer=require('puppeteer-core');
    assert.ok(layout.close.x>layout.header.right-14,'Close control must remain reachable');
   };
   const gameMobile=await inspectGame();
+  console.log('MOBILE_GAMECAST_GEOMETRY '+JSON.stringify(gameMobile));
   checkGame(gameMobile);
   // Two harmless local fixture messages test readability; no room is opened.
   await page.evaluate(()=>{
