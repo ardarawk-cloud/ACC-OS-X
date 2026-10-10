@@ -874,6 +874,17 @@ nav [data-tab="messagesPage"]{position:relative}
 .message-compose button{width:43px;height:43px;min-width:43px;border-radius:50%;border:0;background:var(--neon);color:#142014;font:900 18px Arial,sans-serif}
 .message-compose button:disabled{opacity:.6}
 
+.mast-quick-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:6px;margin-top:5px}
+.offgrid-entry{border:1px solid #b94b43;border-radius:16px;background:#281312;color:#ffaaa3;padding:7px 10px;font:900 10px Arial,sans-serif;letter-spacing:.4px;min-height:32px}
+.offgrid-entry:focus-visible,.offgrid-panel button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.offgrid-modal{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:18px}
+.offgrid-modal.hide{display:none!important}
+.offgrid-panel{width:min(100%,370px);background:#341110;border:1px solid #ed675a;border-radius:11px;padding:14px 15px 12px;box-shadow:0 14px 46px #000a}
+.offgrid-panel-top{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#ffd0ca;font:900 15px Impact,"Arial Narrow",Arial,sans-serif;letter-spacing:1px}
+.offgrid-panel-top button{border:1px solid #b75a52;border-radius:7px;background:#481a18;color:#ffe5e0;min-width:34px;min-height:34px;font:900 21px Arial}
+.offgrid-panel p{font:12px/1.5 Arial,sans-serif;color:#ffe9e5;margin:10px 0 0}
+.offgrid-panel .offgrid-status{color:#ffbd9b;font-weight:800;border-top:1px solid #a34b45;padding-top:9px}
+.nadmo-pt-footer{padding:17px 0 5px;border-top:1px solid #262d28;margin-top:27px;color:#707d73;text-align:center;font:700 10px/1.6 Arial,sans-serif;letter-spacing:.3px}
 .mast-login{border:1px solid #8fad63;border-radius:17px;background:#192519;color:#e7faaf;padding:7px 11px;font:900 10px Arial;cursor:pointer}.mast-login[hidden]{display:none!important}
 body.page-subview nav{display:none!important}body.page-subview #app{padding-bottom:22px}
 .mode-details[hidden]{display:none!important}
@@ -882,7 +893,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 <div class="app">
 <header class="mast">
   <div class="logo"><span class="logo-mark">N/</span><div><div class="logo-name">NADMO <em>LIVE</em></div><div class="logo-sub">INDEPENDENT BROADCAST SYSTEM</div></div></div>
-  <div class="mast-right"><div class="micro"><span class="dot"></span><strong id="net">OFFLINE BETA</strong></div><div class="micro">BALI / IDN · 18+</div><button type="button" id="mastLogin" class="mast-login">MASUK</button></div>
+  <div class="mast-right"><div class="micro"><span class="dot"></span><strong id="net">OFFLINE BETA</strong></div><div class="micro">BALI / IDN · 18+</div><div class="mast-quick-actions"><button type="button" id="offgridEntry" class="offgrid-entry" aria-haspopup="dialog" aria-controls="offgridModal">OFFGRID</button><button type="button" id="mastLogin" class="mast-login">MASUK</button></div></div>
 </header>
 <section id="home">
   <div class="ticker"><b>TRANSMISSION 001</b><span class="line"></span><small>NO FILTER / JUST SIGNAL</small></div>
@@ -1329,6 +1340,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   </div>
 
 </section>
+<footer class="nadmo-pt-footer">© 2026 PT NADMO Studio Indonesia</footer>
 </div>
 <div id="flash" class="flash hide" role="status" aria-live="polite"></div>
 <nav aria-label="Main navigation">
@@ -1338,6 +1350,13 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   <button data-tab="messagesPage" aria-label="Pesan"><i>◌</i>PESAN<span id="messageUnreadBadge" class="message-nav-badge" hidden></span></button>
   <button data-tab="settings"><i>◇</i>ME</button>
 </nav>
+<div id="offgridModal" class="offgrid-modal hide" role="dialog" aria-modal="true" aria-labelledby="offgridTitle" aria-describedby="offgridDescription">
+  <div class="offgrid-panel">
+    <div class="offgrid-panel-top"><span id="offgridTitle">OFFGRID / SIAGA</span><button type="button" id="offgridClose" aria-label="Tutup OFFGRID">×</button></div>
+    <p id="offgridDescription">Cadangan saat internet blackout. Dirancang untuk pesan jarak dekat antar-HP lewat koneksi lokal, tanpa server.</p>
+    <p class="offgrid-status">BELUM AKTIF — tidak bisa mengirim pesan offline saat ini.</p>
+  </div>
+</div>
 <div id="socialShareSheet" class="social-share-sheet hide" role="dialog" aria-modal="true" aria-labelledby="socialShareTitle">
  <div class="social-share-dialog">
   <div class="social-share-grip" aria-hidden="true"></div>
@@ -2790,6 +2809,22 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   if(name==='authPage'&&!activeAccount&&!authRegisterVisible)toggleRegistration(false);
   window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
+ const offgridModal=$('offgridModal'),offgridEntry=$('offgridEntry'),offgridClose=$('offgridClose');
+ function closeOffgrid(){
+  offgridModal.classList.add('hide');offgridEntry.focus({preventScroll:true});
+ }
+ offgridEntry.onclick=()=>{
+  // This information is local HTML + JavaScript: no login or server request.
+  offgridModal.classList.remove('hide');offgridClose.focus({preventScroll:true});
+ };
+ offgridClose.onclick=closeOffgrid;
+ offgridModal.addEventListener('click',event=>{if(event.target===offgridModal)closeOffgrid()});
+ offgridModal.addEventListener('keydown',event=>{
+  if(event.key==='Escape'){event.preventDefault();closeOffgrid();return}
+  if(event.key==='Tab'){
+   event.preventDefault();offgridClose.focus();
+  }
+ });
  $('mastLogin').onclick=()=>show('authPage');
  $('meMore').onclick=()=>show('preferencesPage');
  $('meLogin').onclick=()=>show('authPage');
