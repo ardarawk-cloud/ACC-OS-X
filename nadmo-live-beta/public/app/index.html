@@ -1476,6 +1476,21 @@ body.live-immersive.watch-viewer #watch .deck-live-metric{max-width:205px}
  body.live-immersive.watch-viewer #watch #desktopSawerBar button{min-width:60px;padding:6px}
  body.live-immersive.watch-viewer #watch #desktopSawerBar .pc-gift-label{font-size:14px;margin-right:0}
 }
+
+/* Desktop visual inspection adjustments: sawer belongs above the bottom
+   HUD frame (not over the footer), chat heading stays one line at 1014 px. */
+@media(min-width:1000px){
+body.live-immersive.watch-viewer #watch #desktopSawerBar{
+ bottom:83px!important;
+}
+body.live-immersive.watch-viewer #watch .deck-live-metric:last-child>span{color:#bcf16f!important}
+}
+@media(min-width:1000px) and (max-width:1320px){
+body.live-immersive.watch-viewer #watch .deck-live-metric:last-child{display:none}
+body.live-immersive.watch-viewer #watch .live-chat .show-label b{
+ font-size:21px!important;white-space:nowrap}
+body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8px!important}
+}
 </style></head>
 <body>
 <div class="app">
@@ -1586,6 +1601,7 @@ body.live-immersive.watch-viewer #watch .deck-live-metric{max-width:205px}
   <div class="deck-live-metric"><span>▣</span><div><small>VIDEO FEED</small><strong id="deckVideoStatus">MENUNGGU</strong></div></div>
   <div class="deck-live-metric"><span>♫</span><div><small>AUDIO TRACK</small><strong id="deckAudioStatus">MENUNGGU</strong></div></div>
   <div class="deck-live-metric"><span>⌁</span><div><small>KONEKSI</small><strong id="deckNetStatus">MENYAMBUNG</strong></div></div>
+  <div class="deck-live-metric"><span>▤</span><div><small>LIVE CHAT</small><strong id="deckChatStatus">MENUNGGU</strong></div></div>
  </div>
  <div id="guestStageGrid" aria-label="Tamu di panggung live"></div>
  <div id="hostProfilePanel" class="panel" role="dialog" aria-label="Profil host" aria-modal="true">
@@ -4524,6 +4540,7 @@ body.live-immersive.watch-viewer #watch .deck-live-metric{max-width:205px}
   $('deckAudioStatus').textContent=audio?'TERDETEKSI':'BELUM ADA';
   $('deckNetStatus').textContent=['connected','completed'].includes(ice)?'TERHUBUNG':
     ice==='disconnected'?'TERPUTUS':ice==='failed'?'GAGAL':ice==='checking'?'MEMERIKSA':'MENYAMBUNG';
+  $('deckChatStatus').textContent=socket?.readyState===WebSocket.OPEN&&currentRoom?'ROOM AKTIF':'OFFLINE';
   $('deckMediaLabel').textContent='STREAM / '+(playing?'VIDEO DITERIMA':videoStatus);
   $('deckMute').textContent=watchVideo.muted?'♫ SUARA OFF':'♫ SUARA ON';
  }
