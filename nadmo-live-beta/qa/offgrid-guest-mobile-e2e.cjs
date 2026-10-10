@@ -8,6 +8,8 @@ const base='https://live.nadmo.id';
   const page=await browser.newPage();await page.setViewport({width:390,height:844,isMobile:true,hasTouch:true});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/app/',{waitUntil:'domcontentloaded'});
+  // ME's initial server-session restoration is asynchronous; wait until guest state is confirmed.
+  await page.waitForFunction(()=>document.querySelector('#meSigned')?.classList.contains('hide')===true,{timeout:14000});
   const start=await page.evaluate(()=>({
    noAccount:document.querySelector('#meSigned').classList.contains('hide'),
    entryVisible:document.querySelector('#offgridEntry').getBoundingClientRect().height>0,
