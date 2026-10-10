@@ -57,6 +57,54 @@ const puppeteer=require('puppeteer-core');
   });
   assert.ok(wide.playerWidth>900&&wide.chatWidth>300,'Wide screen should feel like control deck '+JSON.stringify(wide));
   await page.screenshot({path:path.join(dir,'cyberdeck-desktop-1672x941.png')});
+  await page.setViewport({width:390,height:844,deviceScaleFactor:1,isMobile:true,hasTouch:true});
+  // The previous mobile screenshot only captured Studio. Also render the exact
+  // viewer GAME layout from a full-height landscape stream on a portrait phone.
+  const inspectGame=async()=>{
+   return page.evaluate(()=>{
+    const rect=selector=>{const el=document.querySelector(selector),r=el.getBoundingClientRect();
+     return {x:r.x,y:r.y,w:r.width,h:r.height,bottom:r.bottom,right:r.right}};
+    return {screen:{w:innerWidth,h:innerHeight},
+     stage:rect('#watch .live-stage'),video:rect('#watch #remote'),
+     header:rect('#watch #hostProfileCard'),close:rect('#watch #leave'),
+     feed:rect('#watch .mobile-game-feedline'),chat:rect('#watch .live-chat'),
+     chatHeading:rect('#watch .live-chat .show-label'),chatMessages:rect('#watch #chat'),
+     composer:rect('#watch .live-chat .row'),safety:rect('#watch .room-safety'),
+     brandVisible:getComputedStyle(document.querySelector('.mobile-game-brand')).display!=='none',
+     chatHeadingVisible:getComputedStyle(document.querySelector('#watch .live-chat .show-label')).display!=='none',
+     overflow:document.documentElement.scrollWidth>innerWidth+1};
+   });
+  };
+  const checkGame=layout=>{
+   assert.ok(layout.brandVisible&&layout.chatHeadingVisible,'Mobile GAMECAST must show useful compact HUD');
+   assert.ok(layout.stage.y>layout.header.bottom+16&&layout.stage.y<230,'Game must follow host immediately: '+JSON.stringify(layout));
+   assert.ok(Math.abs(layout.video.w/layout.video.h-16/9)<.06,'Landscape game frame aspect was cropped or stretched: '+JSON.stringify(layout));
+   assert.ok(layout.chat.y>=layout.stage.bottom+8&&layout.chat.y<layout.screen.h*.67,'Chat must begin immediately after gameplay: '+JSON.stringify(layout));
+   assert.ok(layout.chatMessages.h>=30&&layout.composer.h>=38,'Chat and input must remain usable: '+JSON.stringify(layout));
+   assert.ok(layout.composer.bottom<=layout.safety.y+8,'Actions must stay below input: '+JSON.stringify(layout));
+   assert.ok(layout.safety.bottom<=layout.screen.h+1&&!layout.overflow,'No clipped controls / horizontal overflow: '+JSON.stringify(layout));
+   assert.ok(layout.close.x>layout.header.right-14,'Close control must remain reachable');
+  };
+  const gameMobile=await inspectGame();
+  checkGame(gameMobile);
+  // Two harmless local fixture messages test readability; no room is opened.
+  await page.evaluate(()=>{
+   const chat=document.querySelector('#chat');chat.replaceChildren();
+   for(const [name,msg] of [['Viewer QA','Tes pesan masuk'],['Penonton QA','Chat tampil saat game landscape']]){
+    const line=document.createElement('div'),strong=document.createElement('b');
+    strong.textContent=name+': ';line.append(strong,document.createTextNode(msg));chat.append(line);
+   }
+  });
+  await page.screenshot({path:path.join(dir,'cyberdeck-game-viewer-mobile-390x844.png')});
+  await page.click('#moreQuick');
+  assert.equal(await page.$eval('#liveSettingsPanel',el=>el.classList.contains('sheet-open')),true,
+   'Game viewer settings must remain functional after UI refinement');
+  await page.click('#closeSettingsSheet');
+  for(const size of [{width:360,height:720},{width:320,height:568}]){
+   await page.setViewport({...size,deviceScaleFactor:1,isMobile:true,hasTouch:true});
+   const small=await inspectGame();checkGame(small);
+   await page.screenshot({path:path.join(dir,'cyberdeck-game-viewer-mobile-'+size.width+'x'+size.height+'.png')});
+  }
   await page.setViewport({width:390,height:844,deviceScaleFactor:1,isMobile:true});
   const mobile=await page.evaluate(()=>{
    document.body.classList.remove('live-immersive','watch-viewer','watch-game','watch-landscape');
