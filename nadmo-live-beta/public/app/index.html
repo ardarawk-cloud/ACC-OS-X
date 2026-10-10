@@ -2570,6 +2570,43 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   try{localStorage.setItem(PROFILE_KEY,JSON.stringify(draftProfile));return true}
   catch(error){$('profileEditStatus').textContent='Penyimpanan perangkat penuh / tidak tersedia';return false}
  }
+ let profileLinkBusy=false;
+ async function commitProfileLinks(next){
+  if(profileLinkBusy)return false;
+  if(!activeAccount){
+   draftProfile.links=next;
+   if(!saveProfileDraft())return false;
+   renderProfileLinks();
+   $('profileEditStatus').textContent='Link disimpan sebagai draf perangkat. Masuk akun agar link tampil di ME publik.';
+   return true;
+  }
+  const owner=activeAccount;
+  profileLinkBusy=true;
+  $('profileAddLink').disabled=true;
+  $('profileSave').disabled=true;
+  $('profileEditStatus').textContent='Menyimpan link ke akun NADMO...';
+  try{
+   // Use the server-confirmed profile, not unsaved form inputs, so adding/removing
+   // a link never accidentally overwrites the creator's other profile settings.
+   const updated=await accountRequest('/api/account/profile','PUT',{
+    name:owner.name,bio:owner.bio||'',links:next,
+    themeId:owner.themeId||'nadmo',fontId:owner.fontId||'system',coverId:owner.coverId||'grid'
+   });
+   if(activeAccount?.id!==owner.id)throw Error('Akun berubah sebelum penyimpanan selesai.');
+   activeAccount={...activeAccount,links:updated.account.links};
+   draftProfile.links=updated.account.links.slice();
+   saveProfileDraft();renderProfileLinks();
+   $('profileEditStatus').textContent='Link tersimpan di akun dan langsung tampil di ME.';
+   return true;
+  }catch(error){
+   $('profileEditStatus').textContent='Link belum tersimpan: '+error.message;
+   return false;
+  }finally{
+   profileLinkBusy=false;
+   $('profileAddLink').disabled=false;
+   $('profileSave').disabled=false;
+  }
+ }
  function renderProfileLinks(){
   $('profileBusinessLinks').replaceChildren();
   $('profileEditLinks').replaceChildren();
@@ -2581,7 +2618,13 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    details.textContent=item.label+' · '+item.url;
    const remove=document.createElement('button');
    remove.type='button';remove.textContent='✕';remove.title='Hapus link';remove.setAttribute('aria-label','Hapus '+item.label);
-   remove.onclick=()=>{draftProfile.links.splice(index,1);saveProfileDraft();renderProfileLinks()};
+   remove.disabled=profileLinkBusy;
+   remove.onclick=async()=>{
+    if(profileLinkBusy)return;
+    const next=draftProfile.links.filter((_,position)=>position!==index);
+    const saved=await commitProfileLinks(next);
+    if(saved)$('profileEditStatus').textContent=activeAccount?'Link dihapus dari akun NADMO.':'Link dihapus dari draf.';
+   };
    line.append(details,remove);$('profileEditLinks').appendChild(line);
   }
   if(!draftProfile.links.length){
@@ -2611,18 +2654,27 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('profileEditBox').classList.remove('hide');show('accountPage');
   $('editProfileBtn').textContent='EDIT';
  };
- $('profileAddLink').onclick=()=>{
-  const label=$('profileLinkLabel').value.trim().slice(0,40);
-  const url=validExternalLink($('profileLinkUrl').value);
-  if(!label||!url||isForbiddenExternalLink(label,url)){$('profileEditStatus').textContent='Isi judul dan HTTPS yang aman. Link judi online tidak diizinkan.';return}
+ $('profileAddLink').onclick=async()=>{
+  if(profileLinkBusy)return;
+  // Many users paste a social URL without https:// or a separate link title.
+  // Normalize to HTTPS before applying the existing server-compatible safety rules.
+  const typed=$('profileLinkUrl').value.trim();
+  const candidate=/^[a-z][a-z0-9+.-]*:/i.test(typed)?typed:'https://'+typed.replace(/^\/\//,'');
+  const url=validExternalLink(candidate);
+  const label=$('profileLinkLabel').value.trim().slice(0,40)
+   ||(url?new URL(url).hostname.replace(/^www\./,'').slice(0,40):'');
+  if(!label||!url||isForbiddenExternalLink(label,url)){
+   $('profileEditStatus').textContent='Masukkan link HTTPS yang valid. Link judi online tidak diizinkan.';
+   return;
+  }
   if(draftProfile.links.length>=12){$('profileEditStatus').textContent='Maksimal 12 link di profil.';return}
   if(draftProfile.links.some(x=>x.url===url)){$('profileEditStatus').textContent='Link ini sudah terdaftar.';return}
-  draftProfile.links.push({label,url});
-  saveProfileDraft();renderProfileLinks();
-  $('profileLinkLabel').value='';$('profileLinkUrl').value='';
-  $('profileEditStatus').textContent='Link disimpan dan bisa dibuka langsung dari profil pratinjau.';
+  if(await commitProfileLinks([...draftProfile.links,{label,url}])){
+   $('profileLinkLabel').value='';$('profileLinkUrl').value='';
+  }
  };
  $('profileSave').onclick=async()=>{
+  if(profileLinkBusy){$('profileEditStatus').textContent='Tunggu penyimpanan link selesai.';return}
   const handle=$('profileHandle').value.trim().toLowerCase().replace(/^@/,'');
   if(handle&&!/^[a-z0-9_]{3,24}$/.test(handle)){$('profileEditStatus').textContent='Username 3–24 karakter: huruf kecil, angka, atau garis bawah.';return}
   draftProfile.name=$('profileName').value.trim().slice(0,60);
