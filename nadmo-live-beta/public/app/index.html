@@ -1056,6 +1056,12 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
  body:not(.live-immersive) .btn{transition:none}
 }
 
+
+/* Only verified GAME states are shown; mic status follows active service state. */
+.game-deck-health{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.game-deck-health>span{font:800 9px/1.35 Arial,sans-serif;padding:7px 9px;background:#0d1a14;border:1px solid #385541;border-radius:5px;color:#cde3c1;white-space:normal}
+#gameDeckAudio{color:#efcc8c;border-color:#78613b;background:#251d14}
+#gameChatSettings{margin:0 0 9px;padding:9px 11px;min-height:40px;border:1px solid #9aa65c}
 </style></head>
 <body>
 <div class="app">
@@ -1112,7 +1118,15 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
   <div class="game-face-frame" id="gameFaceFrame"><video id="gameFaceCam" autoplay muted playsinline></video></div>
  </div>
  <div class="face-actions"><button type="button" class="btn secondary" id="gameFaceToggle">KAMERA ON</button><button type="button" class="btn secondary" id="gameFaceSize">UKURAN</button><button type="button" class="btn ghost" id="gameFaceHide">SEMBUNYIKAN</button></div>
- <p id="gameCaptureStatus" class="profile-note" role="status" aria-live="polite">Pilih game, aktifkan kamera jika perlu, lalu mulai.</p><div class="game-live-actions"><button type="button" class="btn secondary" id="gameLaunchGame" hidden>↗ BUKA GAME</button><button type="button" class="btn ghost" id="gameShareRoom" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="gameStopLive" hidden>■ AKHIRI LIVE</button></div></div>
+ <p id="gameCaptureStatus" class="profile-note" role="status" aria-live="polite">Pilih game, aktifkan kamera jika perlu, lalu mulai.</p>
+ <div class="game-deck-health" aria-label="Status siaran GAME">
+  <span id="gameDeckMic">MIC / MENUNGGU</span>
+  <span id="gameDeckScreen">LAYAR / MENUNGGU</span>
+  <span id="gameDeckAudio" title="Android belum mengirim audio internal game. Mikrofon masih berfungsi.">AUDIO GAME / BELUM TERSEDIA</span>
+  <span id="gameDeckChat">CHAT / PERIKSA IZIN</span>
+ </div>
+ <button type="button" class="btn ghost" id="gameChatSettings" hidden>AKTIFKAN NOTIFIKASI CHAT</button>
+ <div class="game-live-actions"><button type="button" class="btn secondary" id="gameLaunchGame" hidden>↗ BUKA GAME</button><button type="button" class="btn ghost" id="gameShareRoom" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="gameStopLive" hidden>■ AKHIRI LIVE</button></div></div>
 <div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
   <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
   <div class="status" id="camState">CAMERA / STANDBY</div>
@@ -1587,6 +1601,11 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
   if(d.room)nativeGameRoom=d.room;
   if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
   $('gameCaptureStatus').textContent=d.message||'Pilih game untuk mulai.';
+  const gameActive=['live','reconnecting'].includes(nativeGameState);
+  $('gameDeckMic').textContent='MIC / '+(gameActive?'AKTIF':'MENUNGGU');
+  $('gameDeckScreen').textContent='LAYAR / '+(nativeGameState==='live'?'AKTIF':nativeGameState==='reconnecting'?'MENYAMBUNG ULANG':nativeGameState==='starting'?'MENYIAPKAN':'BERHENTI');
+  $('gameDeckChat').textContent=d.chatNotificationsEnabled===true?'CHAT / NOTIFIKASI AKTIF':'CHAT / NOTIFIKASI PERLU IZIN';
+  $('gameChatSettings').hidden=d.chatNotificationsEnabled===true;
   $('gameLaunchGame').hidden=nativeGameState!=='live';
   $('gameShareRoom').hidden=nativeGameState!=='live'||!nativeGameRoom;
   $('gameStopLive').hidden=!['live','starting','reconnecting'].includes(nativeGameState);
@@ -3220,6 +3239,7 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
  };
  $('gameLaunchGame').onclick=()=>gameCommand('launch');
  $('gameStopLive').onclick=()=>{if(confirm('Akhiri GAME LIVE?'))gameCommand('stop')};
+ $('gameChatSettings').onclick=()=>gameCommand('chat-settings');
  $('gameShareRoom').onclick=async()=>{
   if(!nativeGameRoom)return;
   const link=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(nativeGameRoom);
