@@ -88,9 +88,11 @@ jobs:
           set -euo pipefail
           for i in $(seq 1 18); do
             echo "Checking live.nadmo.id custom hostname (attempt ${i}/18)"
-            if curl --silent --show-error --fail --max-time 12 https://live.nadmo.id/health | grep -q '"service":"nadmo-live-beta"' \
+            if curl --silent --show-error --fail --max-time 12 --output /tmp/nadmo-live-domain-health.json https://live.nadmo.id/health \
+              && grep -Fq '"service":"nadmo-live-beta"' /tmp/nadmo-live-domain-health.json \
               && [ "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 12 https://live.nadmo.id/)" = '308' ] \
-              && curl --silent --show-error --fail --location --max-time 12 https://live.nadmo.id/ | grep -q 'NADMO LIVE'; then
+              && curl --silent --show-error --fail --location --max-time 12 --output /tmp/nadmo-live-domain-app.html https://live.nadmo.id/ \
+              && grep -Fq 'NADMO LIVE' /tmp/nadmo-live-domain-app.html; then
               echo "OFFICIAL NADMO LIVE DOMAIN HTTPS + APPLICATION PASS"
               exit 0
             fi
