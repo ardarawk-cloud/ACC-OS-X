@@ -32,6 +32,19 @@ assert.ok(html.includes("const stats=document.createElement('div');stats.classNa
 assert.ok(html.includes("actions.append(like,comment,share);"));
 assert.ok(html.includes("id=\"socialShareCaption\""));
 assert.ok(html.includes("Selengkapnya"));
+const studio=html.split('<section id="studio" class="hide">')[1]?.split('<section id="watch"')[0]||'';
+assert.ok(studio,'GO LIVE studio must remain');
+assert.ok(!studio.includes('AKSES AWAL')&&!studio.includes('PUBLIC / GRATIS'),'No redundant pricing/access tutorial in GO LIVE');
+assert.ok(!studio.includes('Semua siaran dimulai publik'),'Remove self-explanatory prose');
+assert.ok(studio.includes('id="createRoom"'),'Transmit control must remain unchanged');
+assert.ok(html.includes("personLink.onclick=()=>openCreatorProfile(person.handle)"),'Followers and Following identities open ME');
+assert.ok(html.includes("personLink.append(label);row.append(personLink,makeFollowButton(person.handle))"),'Profile and follow actions are separate');
+assert.ok(html.includes("name.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)}"),'Message names open ME');
+assert.ok(html.includes("person.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)}"),'Message avatars open ME');
+assert.ok(html.includes("person.onclick=()=>openCreatorProfile(req.handle)"),'Message requests can open profile');
+assert.ok(html.includes("if(origin==='messagesPage'&&returnChat)openMessages(returnChat)"),'Returning from chat profile preserves chat navigation');
+assert.ok(html.includes("publicProfileOrigin=['socialConnectionsPage','messagesPage'].includes(origin)?origin:'socialPage'"),'Profile back origin is retained');
+
 // Card author identity: only a compact avatar is interactive, name remains plain text.
 assert.ok(html.includes("const avatarButton=document.createElement('button');avatarButton.type='button';avatarButton.className='social-avatar-open'"));
 assert.ok(html.includes("avatarButton.onclick=()=>openCreatorProfile(entry.handle)"));

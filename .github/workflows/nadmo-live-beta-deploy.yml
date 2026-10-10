@@ -36,6 +36,7 @@ jobs:
           node --check nadmo-live-beta/qa/avatar-crop-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/social-feed-sharing-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/moshi-chat-mobile-e2e.cjs
+          node --check nadmo-live-beta/qa/creator-profile-navigation-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/single-avatar-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/custom-domain-contract.mjs
           node --check nadmo-live-beta/qa/auth-modes-official-domain-e2e.cjs
@@ -172,6 +173,8 @@ jobs:
         run: node nadmo-live-beta/qa/social-feed-sharing-mobile-e2e.cjs
       - name: Verify MOSHI mobile inbox avatars, direct chat, unread notifications and settings
         run: node nadmo-live-beta/qa/moshi-chat-mobile-e2e.cjs
+      - name: Verify profile navigation from Followers Following and PESAN; no redundant GO LIVE text
+        run: node nadmo-live-beta/qa/creator-profile-navigation-mobile-e2e.cjs
       - name: Verify social and message avatars never show picture plus letter twice on mobile
         run: node nadmo-live-beta/qa/single-avatar-mobile-e2e.cjs
       - name: Verify mobile viewer reports and host moderation UI

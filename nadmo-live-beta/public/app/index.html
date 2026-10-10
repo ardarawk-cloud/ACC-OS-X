@@ -632,6 +632,9 @@ body.avatar-crop-open{overflow:hidden}
 .me-connection-name{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
 .me-connection-name strong,.me-connection-name small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .me-connection-name small{color:#a0b19c}
+.me-connection-person{display:flex;align-items:center;gap:10px;flex:1;min-width:0;border:0;background:none;color:inherit;padding:3px 0;text-align:left;border-radius:8px;touch-action:manipulation}
+.me-connection-person:active{background:#263326}
+.me-connection-person:focus-visible,.message-profile-tap:focus-visible,.message-chat-name:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
 nav button{touch-action:manipulation}
 .me-top button{min-width:42px;height:43px;font:900 30px Arial,sans-serif;color:#e7f2d8;background:none;border:0;cursor:pointer}
 #settings .profile-hero{background:transparent;border:0;padding:8px 0 16px;gap:12px}
@@ -834,7 +837,10 @@ nav [data-tab="messagesPage"]{position:relative}
 .message-privacy p{margin:4px 0 11px;font:11px/1.4 Arial,sans-serif}
 .message-inbox-status{min-height:0;font-size:12px;color:#b2c5a9;line-height:1.45;margin:7px 0}
 .message-inbox-status:empty{display:none}
-.message-chat-row{width:100%;display:flex;align-items:center;text-align:left;gap:11px;min-height:69px;padding:9px 2px;background:none;color:#eef2e9;border:0;border-bottom:1px solid #2c392e;touch-action:manipulation}
+.message-chat-row{width:100%;display:flex;align-items:center;text-align:left;gap:11px;min-height:69px;padding:9px 2px;background:none;color:#eef2e9;border:0;border-bottom:1px solid #2c392e;touch-action:manipulation;cursor:pointer}
+.message-profile-tap{border:0;background:none;padding:0;border-radius:50%;flex:0 0 48px;touch-action:manipulation}
+.message-chat-name{display:block;border:0;background:transparent;color:inherit;padding:2px 0;text-align:left;cursor:pointer;touch-action:manipulation}
+.message-chat-name:active,.message-profile-tap:active{opacity:.72}
 .message-chat-avatar{display:grid;grid-template-areas:"avatar";place-items:center;width:48px;height:48px;min-width:48px;flex:0 0 48px;border-radius:50%;background:#354b30;color:var(--neon);font:900 16px Arial,sans-serif;overflow:hidden}
 .message-chat-avatar img{grid-area:avatar;display:block;width:100%;height:100%;object-fit:cover}
 .message-chat-avatar .message-avatar-fallback{grid-area:avatar;display:grid;place-items:center;width:100%;height:100%}
@@ -849,6 +855,8 @@ nav [data-tab="messagesPage"]{position:relative}
 .message-unread-pill{min-width:20px;height:20px;display:grid;place-items:center;padding:0 6px;border-radius:99px;background:var(--neon);color:#112011;font:900 10px Arial,sans-serif}
 .message-request-title{padding:10px 0 3px;font:900 12px Arial,sans-serif;color:var(--neon)}
 .message-request{padding:8px 0;border-bottom:1px solid #2c392e;display:flex;align-items:center;gap:8px}
+.message-request-person{min-height:43px}
+.message-request-person .message-chat-avatar{width:43px;height:43px;min-width:43px;flex-basis:43px}
 .message-request .message-request-buttons{display:flex;gap:5px;flex:0 0 auto}
 .message-request .message-request-buttons button{font:800 10px Arial,sans-serif;padding:8px;min-height:36px}
 .message-empty{text-align:center;padding:40px 10px;color:#a5b6a0}
@@ -868,6 +876,7 @@ nav [data-tab="messagesPage"]{position:relative}
 
 .mast-login{border:1px solid #8fad63;border-radius:17px;background:#192519;color:#e7faaf;padding:7px 11px;font:900 10px Arial;cursor:pointer}.mast-login[hidden]{display:none!important}
 body.page-subview nav{display:none!important}body.page-subview #app{padding-bottom:22px}
+.mode-details[hidden]{display:none!important}
 </style></head>
 <body>
 <div class="app">
@@ -901,7 +910,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   </div>
   <div id="rooms" aria-live="polite"><div class="no-signal"><strong>MEMUAT SIARAN</strong><small>MENYAMBUNG KE SERVER</small></div></div>
   <div class="actions"><button class="btn secondary" id="refresh">↻ REFRESH LIVE</button><button class="btn" data-tab="studio">● BROADCAST</button></div>
-  <div class="notice">GAMING LIVE: pilih kategori Gaming untuk siaran kamera dan obrolan. Capture layar game/OBS dan suara internal game belum tersedia di beta ini.</div>
+  <!-- Gaming capability limitations are shown only when Gaming mode is selected. -->
 </section>
 <section id="following" class="hide">
   <div class="page-top"><div><span class="eyebrow">SAVED / DEVICE</span><h1>FOLLOWING<span style="color:var(--neon)">.</span></h1></div><span class="edition">BETA</span></div>
@@ -911,13 +920,13 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 </section>
 <section id="studio" class="hide">
   <div class="page-top"><div><span class="eyebrow">CREATOR / CONSOLE</span><h1>YOUR STAGE<span style="color:var(--neon)">.</span></h1></div><span class="edition">REC / 01</span></div>
-  <p class="deck">Pilih cara siaran. Semua mulai Public; pilihan lanjutan tersedia saat live.</p>
+  <!-- Mode icons and button states make the studio self-explanatory. -->
 <div class="mode-grid" id="liveModeGrid" role="group" aria-label="Mode siaran">
 <button type="button" data-live-mode="talk"><span class="mode-icon">♫</span>NGOBROL</button>
 <button type="button" data-live-mode="camera" class="active"><span class="mode-icon">◉</span>KAMERA</button>
 <button type="button" data-live-mode="gaming"><span class="mode-icon">▣</span>GAMING</button>
 <button type="button" data-live-mode="studio"><span class="mode-icon">⌘</span>STUDIO PC</button></div>
-<div class="mode-details" id="modeDetails">Kamera dan mikrofon HP. Saat LIVE, video memenuhi layar dengan chat overlay.</div>
+<div class="mode-details" id="modeDetails" hidden></div>
 <div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select>
  <div id="gameOverlayPreview" aria-label="Pratinjau posisi kamera saat bermain">
   <div class="game-canvas-note">Pratinjau posisi kamera<br>Rekaman layar game belum tersedia.</div>
@@ -933,8 +942,6 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   <div class="panel">
     <label for="title">BROADCAST TITLE</label><input class="field" id="title" maxlength="60" placeholder="Midnight conversation #001">
     <label for="category">CHANNEL TYPE</label><select id="category" class="field"><option>Social</option><option>DJ & Music</option><option>Podcast</option><option>Nightlife</option><option>Gaming</option></select>
-    <div class="setting-line"><span>AKSES AWAL</span><strong>PUBLIC / GRATIS</strong></div>
-    <p>Semua siaran dimulai publik. Kamu bisa mengubah akses saat live tanpa harus mengakhiri room.</p>
     <button class="btn" id="createRoom" style="width:100%">● TRANSMIT LIVE</button>
     <div class="status" id="liveState"></div>
   </div>
@@ -1081,7 +1088,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 </section>
 <section id="socialPage" class="hide">
  <div class="me-content-header"><h2>SOSIAL</h2><button type="button" id="socialCompose">+ POSTING</button></div>
- <p class="deck">Cerita, karya, dan aktivitas komunitas NADMO.</p>
+ <!-- The SOSIAL feed and actions need no tutorial text. -->
  <div class="social-drafts-tools"><button type="button" id="socialManageDrafts">▤ DRAF SAYA</button></div>
  <div id="socialComposer" class="panel hide">
   <label for="socialPostText">BUAT POSTINGAN</label>
@@ -1098,7 +1105,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  <div class="me-menu"><button type="button" data-tab="following">☆ <span>LIVE yang diikuti</span><b>›</b></button><button type="button" data-tab="signal">⌁ <span>SIGNAL</span><b>›</b></button></div>
 </section>
 <section id="messagesPage" class="hide">
- <div class="messages-top"><div><h2>PESAN <span id="messageHeaderCount" hidden></span></h2><p>Obrolan dan teman NADMO</p></div><button type="button" id="messageNewToggle" class="message-icon-button" aria-label="Buat percakapan baru" title="Chat baru">＋</button></div>
+ <div class="messages-top"><div><h2>PESAN <span id="messageHeaderCount" hidden></span></h2></div><button type="button" id="messageNewToggle" class="message-icon-button" aria-label="Buat percakapan baru" title="Chat baru">＋</button></div>
  <div id="messagesGuest" class="panel"><p>Masuk akun untuk berkirim pesan.</p><button type="button" class="btn" id="messagesLogin">MASUK</button></div>
  <div id="messagesSigned" class="hide">
   <div id="messageInboxMain">
@@ -1729,15 +1736,18 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    const accounts=result.accounts||[];
    for(const person of accounts){
     const row=document.createElement('div');row.className='me-connection-row';
+    const personLink=document.createElement('button');personLink.type='button';personLink.className='me-connection-person';
+    personLink.setAttribute('aria-label','Lihat profil '+(person.name||person.handle));
+    personLink.onclick=()=>openCreatorProfile(person.handle);
     if(person.avatarVersion){
      const avatar=document.createElement('img');avatar.alt='';avatar.src=avatarURL(person.handle,person.avatarVersion);
      avatar.onerror=()=>{avatar.replaceWith(Object.assign(document.createElement('span'),{className:'me-connection-avatar',textContent:'N/'}))};
-     row.append(avatar);
-    }else{const avatar=document.createElement('span');avatar.className='me-connection-avatar';avatar.textContent='N/';row.append(avatar)}
+     personLink.append(avatar);
+    }else{const avatar=document.createElement('span');avatar.className='me-connection-avatar';avatar.textContent='N/';personLink.append(avatar)}
     const label=document.createElement('div');label.className='me-connection-name';
     const name=document.createElement('strong');name.textContent=person.name||person.handle;
     const handle=document.createElement('small');handle.textContent='@'+person.handle;
-    label.append(name,handle);row.append(label,makeFollowButton(person.handle));box.append(row);
+    label.append(name,handle);personLink.append(label);row.append(personLink,makeFollowButton(person.handle));box.append(row);
    }
    status.textContent=accounts.length?(result.truncated?'Menampilkan 500 akun pertama.':''):(socialConnectionsKind==='followers'?'Belum ada pengikut.':'Belum mengikuti kreator mana pun.');
    updateFollowButtons();
@@ -1900,11 +1910,13 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    holder.classList.remove('hide');
   }catch(e){console.warn('Repost tidak tersedia',e)}
  }
- let publicProfileOrigin='socialPage';
+ let publicProfileOrigin='socialPage',publicProfileReturnChat='';
  async function openCreatorProfile(handle){
   if(!/^[a-z][a-z0-9_]{2,23}$/.test(handle||''))return;
   if(activeAccount?.handle===handle){show('settings');return}
-  publicProfileOrigin=['socialPage','messagesPage'].includes([...screens].find(n=>!$(n).classList.contains('hide')))?'socialPage':'socialPage';
+  const origin=[...screens].find(n=>!$(n).classList.contains('hide'));
+  publicProfileOrigin=['socialConnectionsPage','messagesPage'].includes(origin)?origin:'socialPage';
+  publicProfileReturnChat=publicProfileOrigin==='messagesPage'?activeChatHandle:'';
   show('publicProfilePage');
   $('publicProfileStatus').textContent='Memuat profil...';
   try{
@@ -1925,7 +1937,12 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    $('publicProfileStatus').textContent='';
   }catch(e){$('publicProfileStatus').textContent='Profil tidak bisa dimuat: '+e.message}
  }
- $('publicProfileBack').onclick=()=>show('socialPage');
+ $('publicProfileBack').onclick=()=>{
+  const origin=publicProfileOrigin,returnChat=publicProfileReturnChat;
+  publicProfileOrigin='socialPage';publicProfileReturnChat='';
+  show(origin);
+  if(origin==='messagesPage'&&returnChat)openMessages(returnChat);
+ };
  function makePublicPost(item){
   const original=item.originalId?(socialPostCache.get(item.originalId)||item.original):null;
   const entry=original||item,id=entry.id;
@@ -2178,9 +2195,11 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    }
    for(const req of requests){
     const row=document.createElement('div');row.className='message-request';
-    row.append(avatarNode(req.handle,req.name,req.avatarVersion));
+    const person=document.createElement('button');person.type='button';person.className='message-person message-request-person';
+    person.setAttribute('aria-label','Lihat profil '+(req.name||req.handle));
+    person.append(avatarNode(req.handle,req.name,req.avatarVersion));
     const name=document.createElement('span');name.className='message-chat-copy';
-    name.textContent=req.name||req.handle;row.append(name);
+    name.textContent=req.name||req.handle;person.append(name);person.onclick=()=>openCreatorProfile(req.handle);row.append(person);
     const actions=document.createElement('span');actions.className='message-request-buttons';
     const accept=document.createElement('button');accept.type='button';accept.textContent='TERIMA';
     accept.onclick=async()=>{
@@ -2200,13 +2219,19 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    const box=$('messageThreads');box.replaceChildren();
    const threads=threadsData.threads||[];
    for(const item of threads){
-    const row=document.createElement('button');row.type='button';
+    const row=document.createElement('div');
     row.className='message-chat-row'+(item.unread?' has-unread':'');
     row.setAttribute('aria-label','Buka percakapan dengan '+(item.name||item.handle));
-    row.append(avatarNode(item.handle,item.name,item.avatarVersion));
+    row.tabIndex=0;row.setAttribute('role','button');
+    const person=document.createElement('button');person.type='button';person.className='message-profile-tap';
+    person.setAttribute('aria-label','Lihat profil '+(item.name||item.handle));
+    person.append(avatarNode(item.handle,item.name,item.avatarVersion));
+    person.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)};
+    row.append(person);
     const content=document.createElement('span');content.className='message-chat-copy';
-    const name=document.createElement('span');name.className='message-chat-name';
+    const name=document.createElement('button');name.type='button';name.className='message-chat-name';
     name.textContent=item.name||item.handle;
+    name.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)};
     const last=document.createElement('span');last.className='message-chat-last';
     last.textContent=item.lastText?(item.lastFromMe?'Kamu: ':'')+item.lastText:'Mulai mengobrol';
     content.append(name,last);row.append(content);
@@ -2218,6 +2243,10 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
      unread.textContent=item.unread>99?'99+':String(item.unread);aside.append(unread);
     }
     row.append(aside);row.onclick=()=>openMessages(item.handle,item.name,item.avatarVersion);
+    row.onkeydown=event=>{
+     if(event.target!==row)return;
+     if(event.key==='Enter'||event.key===' '){event.preventDefault();row.click()}
+    };
     box.append(row);
    }
    $('messageInboxEmpty').classList.toggle('hide',threads.length>0||requests.length>0);
@@ -2915,13 +2944,10 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   if(mode!=='gaming'&&gameFaceStream){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON'}
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
-  const copy={
-   camera:'Kamera dan mikrofon HP. Chat terlihat di atas video full layar. Efek wajah menyusul.',
-   talk:'Ngobrol audio-only dari mikrofon HP dengan tampilan audio. Penonton bisa mendengar dan chat. Tamu ikut bicara serta musik dari HP/Radio masih dikembangkan.',
-   gaming:'Pilih judul game. Untuk menyiarkan layar HP diperlukan izin dan modul native screen capture yang belum ada di APK beta.',
-   studio:'Studio untuk siaran PC/OBS. Server penerima stream Studio belum aktif; mode tidak dapat dijalankan dari HP.'
-  };
+  // Keep the screen quiet; show status only for unavailable modes.
+  const copy={camera:'',talk:'',gaming:'Perekaman layar belum tersedia.',studio:'Koneksi OBS belum tersedia.'};
   $('modeDetails').textContent=copy[mode];
+  $('modeDetails').hidden=!copy[mode];
   $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE NOT READY';
   const ready=mode==='camera'||mode==='talk';
   $('preview').disabled=!ready;$('createRoom').disabled=!ready;
