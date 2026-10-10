@@ -1360,7 +1360,12 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 (function(){
  'use strict';
  const $=id=>document.getElementById(id), screens=['home','explore','following','studio','watch','tv','radio','signal','settings','authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialPage','messagesPage','socialConnectionsPage','publicProfilePage'];
- const DEFAULT_BACKEND='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
+ // Browser deployments use their own origin for cookies, chat, API and WebSocket.
+ // Android WebView's appassets:// origin must keep the original Worker backend.
+ const NADMO_LEGACY_ORIGIN='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
+ const NADMO_PUBLIC_ORIGIN='https://live.nadmo.id';
+ const DEFAULT_BACKEND=(location.origin===NADMO_PUBLIC_ORIGIN||location.origin===NADMO_LEGACY_ORIGIN)
+  ?location.origin:NADMO_LEGACY_ORIGIN;
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let followedHandles=new Set(),socialConnectionsKind='following';
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
@@ -1742,7 +1747,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 
  const socialPostCache=new Map();
  let pendingSocialShare='';
- const socialPostLink=id=>DEFAULT_BACKEND+'/app/?post='+encodeURIComponent(id);
+ const socialPostLink=id=>NADMO_PUBLIC_ORIGIN+'/app/?post='+encodeURIComponent(id);
  const socialNum=value=>new Intl.NumberFormat('id-ID').format(Number(value)||0);
  function playableSocialVideo(url){
   if(!url)return null;
