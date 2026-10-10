@@ -35,5 +35,11 @@
       "pattern": "live.nadmo.id",
       "custom_domain": true
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SOCIAL_MEDIA",
+      "bucket_name": "nadmo-live-social-media"
+    }
   ]
 }
