@@ -3129,14 +3129,37 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
       {type:'join',id:currentRoom,password:roomPassword}));
   },wait);
  }
+ // WebSocket.close() can stay CLOSING when a network handover interrupts
+ // the closing handshake. Recover the room rather than waiting indefinitely.
+ let socketGuardTimer=null, socketUnhealthySince=0;
+ function stopSocketGuard(){
+  if(socketGuardTimer){clearInterval(socketGuardTimer);socketGuardTimer=null}
+  socketUnhealthySince=0;
+ }
+ function guardSocket(conn){
+  stopSocketGuard();
+  socketGuardTimer=setInterval(()=>{
+   if(conn!==socket||manuallyLeaving){stopSocketGuard();return}
+   if(!currentRoom)return;
+   if(conn.readyState===WebSocket.OPEN){socketUnhealthySince=0;return}
+   if(!socketUnhealthySince)socketUnhealthySince=Date.now();
+   if(Date.now()-socketUnhealthySince<8000||reconnectTimer)return;
+   // Normal onclose remains the primary reconnect path.
+   conn.onclose=null;
+   try{conn.close()}catch(error){}
+   retryConnection();
+  },2500);
+ }
  function connect(fn){
   if(!server){notice('Server NADMO sedang tidak tersedia.','liveState');return}
   if(socket){socket.onclose=null;socket.close()}
   const conn=new WebSocket(wsurl());socket=conn;
+  guardSocket(conn);
   conn.onopen=()=>{if(conn===socket)fn()};
   conn.onerror=()=>{if(conn===socket)notice('Sambungan WebSocket terganggu.','liveState')};
   conn.onclose=e=>{
    if(conn!==socket)return;
+   stopSocketGuard();
    $('net').textContent='TERPUTUS';
    if(currentRoom&&!manuallyLeaving)retryConnection();
    else notice('Sambungan gagal. Silakan coba lagi.','liveState');
@@ -3748,7 +3771,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('reportLive').hidden=true;$('hostModeration').hidden=true;
   $('reportPanel').classList.add('hide');$('moderationPanel').classList.add('hide');mutedViewerIds.clear();
   closeLiveSheets();$('viewerTools').hidden=true;
-  manuallyLeaving=true;stopRetry();
+  manuallyLeaving=true;stopRetry();stopSocketGuard();
   if(socket){
     const conn=socket;
     conn.onclose=null;

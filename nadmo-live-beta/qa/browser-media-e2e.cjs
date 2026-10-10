@@ -251,8 +251,26 @@ async function main(){
   await waitText(host,'#watchState','Kamera OFF',15000);
   await viewer.waitForFunction(()=>document.querySelector('#remote')?.srcObject?.getVideoTracks()?.[0]?.readyState==='live',{timeout:15000});
   console.log('PASS host camera-standby media switch without closing viewer stream');
-  await host.evaluate(()=>window.__nadmoSockets[0].close(4001,'QA network switch'));
-  await host.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('SEND resume')),{timeout:25000});
+  const switched=await host.evaluate(()=>{
+    const candidates=window.__nadmoSockets||[];
+    const active=candidates.filter(ws=>ws.readyState===WebSocket.OPEN).at(-1);
+    if(!active)return {closed:false,states:candidates.map(ws=>ws.readyState)};
+    active.close(4001,'QA network switch');
+    return {closed:true,states:candidates.map(ws=>ws.readyState)};
+  });
+  assert.ok(switched.closed,'Network-switch test must close the currently OPEN host socket');
+  console.log('HOST_SOCKET_NETWORK_SWITCH '+JSON.stringify(switched));
+  try{
+    await host.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('SEND resume')),{timeout:25000});
+  }catch(error){
+    console.log('HOST_RECONNECT_DIAGNOSTIC '+JSON.stringify(await host.evaluate(()=>({
+      sockets:window.__nadmoSockets?.map(ws=>({state:ws.readyState,url:ws.url})),
+      events:window.__nadmoQALog?.slice(-35),
+      roomState:document.querySelector('#watchState')?.textContent,
+      net:document.querySelector('#net')?.textContent
+    }))));
+    throw error;
+  }
   await waitText(host,'#watchState','Room berhasil dipulihkan',25000);
   await viewer.waitForFunction(()=>window.__nadmoQALog.some(x=>x.startsWith('RECV host-reconnected')),{timeout:25000});
   await waitText(viewer,'#watchState','Video tersambung',35000);
