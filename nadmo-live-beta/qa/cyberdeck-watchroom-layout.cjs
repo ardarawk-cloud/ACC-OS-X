@@ -58,6 +58,13 @@ const puppeteer=require('puppeteer-core');
   assert.ok(wide.playerWidth>900&&wide.chatWidth>300,'Wide screen should feel like control deck '+JSON.stringify(wide));
   await page.screenshot({path:path.join(dir,'cyberdeck-desktop-1672x941.png')});
   await page.setViewport({width:390,height:844,deviceScaleFactor:1,isMobile:true,hasTouch:true});
+  // Switching desktop Chromium to mobile emulation can reload the page.
+  // Re-enter the GAME room fixture after the viewport switch.
+  await page.evaluate(()=>{
+   document.querySelector('#watch').classList.remove('hide');
+   document.body.classList.add('live-immersive','watch-viewer','watch-game','watch-landscape');
+   document.querySelector('#remote').muted=true;
+  });
   // The previous mobile screenshot only captured Studio. Also render the exact
   // viewer GAME layout from a full-height landscape stream on a portrait phone.
   const inspectGame=async()=>{
