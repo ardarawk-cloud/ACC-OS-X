@@ -37,6 +37,7 @@ jobs:
           node --check nadmo-live-beta/qa/social-feed-sharing-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/moshi-chat-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/single-avatar-mobile-e2e.cjs
+          node --check nadmo-live-beta/qa/custom-domain-contract.mjs
           node --check nadmo-live-beta/qa/moshi-chat-modern-e2e.mjs
           node --check nadmo-live-beta/qa/social-follow-structure.mjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
@@ -44,6 +45,8 @@ jobs:
           node --check nadmo-live-beta/qa/viewer-invite-e2e.cjs
           node --check nadmo-live-beta/qa/guest-stage-media-e2e.cjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
+      - name: Verify live.nadmo.id hostname, same-origin APIs and legacy Android compatibility
+        run: node nadmo-live-beta/qa/custom-domain-contract.mjs
       - name: Verify ME Followers/Following and locked GO LIVE signature
         run: node nadmo-live-beta/qa/social-follow-structure.mjs
       - name: Verify all supporter level and privacy calculation boundaries
@@ -79,6 +82,22 @@ jobs:
           done
           exit 1
 
+      - name: Verify official live.nadmo.id HTTPS, health and app landing
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 18); do
+            echo "Checking live.nadmo.id custom hostname (attempt ${i}/18)"
+            if curl --silent --show-error --fail --max-time 12 https://live.nadmo.id/health | grep -q '"service":"nadmo-live-beta"' \
+              && [ "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 12 https://live.nadmo.id/)" = '308' ] \
+              && curl --silent --show-error --fail --location --max-time 12 https://live.nadmo.id/ | grep -q 'NADMO LIVE'; then
+              echo "OFFICIAL NADMO LIVE DOMAIN HTTPS + APPLICATION PASS"
+              exit 0
+            fi
+            sleep 7
+          done
+          echo "::error::Custom domain not responding. Check Cloudflare zone nadmo.id and Worker custom domain/SSL permission."
+          exit 1
       - name: Install creator ownership QA dependencies
         run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
       - name: Verify wallet authentication and reject unverified cashout
