@@ -586,35 +586,54 @@ export default {
   }
   const hub=env.ROOM_HUB.get(env.ROOM_HUB.idFromName('nadmo-beta-v1'));
   if(url.pathname==='/ws')return hub.fetch(request);
+  // A single R2 binding serves photos and videos. No external storage credentials
+  // or raw object keys are exposed to clients. Existing video URLs remain valid.
+  const mediaExt={jpg:'image/jpeg',png:'image/png',webp:'image/webp',mp4:'video/mp4',webm:'video/webm'};
+  const mediaPath=/^\/api\/social\/media\/([a-f0-9-]{36})\/([a-f0-9-]{36})\.(jpg|png|webp|mp4|webm)$/;
+  const mediaKey=(user,id,ext)=>(['jpg','png','webp'].includes(ext)?'photos/':'clips/')+user+'/'+id+'.'+ext;
   if(url.pathname==='/api/social/media/status'&&request.method==='GET')
-   return cors(request,Response.json({ok:true,enabled:!!env.SOCIAL_MEDIA,maxBytes:25*1024*1024,formats:['video/mp4','video/webm']}));
+   return cors(request,Response.json({ok:true,enabled:!!env.SOCIAL_MEDIA,maxItems:10,maxImageBytes:8*1024*1024,
+    maxVideoBytes:25*1024*1024,formats:['image/jpeg','image/png','image/webp','video/mp4','video/webm']}));
   if(url.pathname==='/api/social/media/upload'&&request.method==='PUT'){
-   if(!env.SOCIAL_MEDIA)return cors(request,Response.json({ok:false,error:'Upload video belum tersedia. Gunakan link video dahulu.'},{status:503}));
+   if(!env.SOCIAL_MEDIA)return cors(request,Response.json({ok:false,error:'Penyimpanan foto/video belum aktif'},{status:503}));
    if(request.headers.get('Origin')!==url.origin)return new Response('Forbidden',{status:403});
-   const mime=(request.headers.get('Content-Type')||'').split(';')[0].toLowerCase(),size=Number(request.headers.get('Content-Length'));
-   if(!['video/mp4','video/webm'].includes(mime))return cors(request,Response.json({ok:false,error:'Hanya MP4/WebM'},{status:415}));
-   if(!Number.isSafeInteger(size)||size<100||size>25*1024*1024)return cors(request,Response.json({ok:false,error:'Video maksimal 25 MB'},{status:413}));
+   const mime=(request.headers.get('Content-Type')||'').split(';')[0].toLowerCase();
+   const ext=Object.keys(mediaExt).find(x=>mediaExt[x]===mime),isPhoto=ext&&['jpg','png','webp'].includes(ext);
+   const size=Number(request.headers.get('Content-Length')),max=isPhoto?8*1024*1024:25*1024*1024;
+   if(!ext)return cors(request,Response.json({ok:false,error:'Gunakan JPG, PNG, WebP, MP4 atau WebM'},{status:415}));
+   if(!Number.isSafeInteger(size)||size<100||size>max)
+    return cors(request,Response.json({ok:false,error:isPhoto?'Foto maksimal 8 MB':'Video maksimal 25 MB'},{status:413}));
    const auth=await hub.fetch(new Request(url.origin+'/api/account/me',{headers:{Cookie:request.headers.get('Cookie')||''}}));
    const account=(await auth.json()).account;
-   if(!account?.id)return cors(request,Response.json({ok:false,error:'Masuk akun untuk upload video'},{status:401}));
+   if(!account?.id)return cors(request,Response.json({ok:false,error:'Masuk akun untuk upload'},{status:401}));
    const approval=await hub.fetch(new Request(url.origin+'/api/account/social/upload-allowed',{method:'POST',
     headers:{Origin:url.origin,'Content-Type':'application/json',Cookie:request.headers.get('Cookie')||''},body:'{}'}));
    if(!approval.ok)return cors(request,new Response(approval.body,{status:approval.status,headers:{'Content-Type':'application/json'}}));
-   const mediaId=crypto.randomUUID(),ext=mime==='video/mp4'?'mp4':'webm',key='clips/'+account.id+'/'+mediaId+'.'+ext;
+   const id=crypto.randomUUID(),key=mediaKey(account.id,id,ext);
    try{
-    await env.SOCIAL_MEDIA.put(key,request.body,{httpMetadata:{contentType:mime,cacheControl:'no-store'},customMetadata:{owner:account.id}});
-   }catch(e){console.error('R2 upload',e?.name);return cors(request,Response.json({ok:false,error:'Upload video gagal'},{status:503}))}
-   return cors(request,Response.json({ok:true,url:url.origin+'/api/social/media/'+account.id+'/'+mediaId+'.'+ext,bytes:size},{status:201}));
+    let data=request.body;
+    if(isPhoto){
+     const bytes=new Uint8Array(await request.arrayBuffer());
+     const valid=ext==='jpg'&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255||
+      ext==='png'&&bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71||
+      ext==='webp'&&String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP';
+     if(!valid)return cors(request,Response.json({ok:false,error:'Konten foto tidak cocok dengan format'},{status:415}));
+     data=bytes;
+    }
+    await env.SOCIAL_MEDIA.put(key,data,{httpMetadata:{contentType:mime,cacheControl:'public, max-age=3600'},customMetadata:{owner:account.id}});
+   }catch(e){console.error('SOCIAL R2 upload',e?.name);return cors(request,Response.json({ok:false,error:'Upload media gagal'},{status:503}))}
+   return cors(request,Response.json({ok:true,type:isPhoto?'image':'video',url:url.origin+'/api/social/media/'+account.id+'/'+id+'.'+ext,bytes:size},{status:201}));
   }
   if(url.pathname.startsWith('/api/social/media/')&&request.method==='GET'){
    if(!env.SOCIAL_MEDIA)return new Response('Media unavailable',{status:503});
-   const match=url.pathname.match(/^\/api\/social\/media\/([a-f0-9-]{36})\/([a-f0-9-]{36})\.(mp4|webm)$/);
+   const match=url.pathname.match(mediaPath);
    if(!match)return new Response('Not Found',{status:404});
-   const object=await env.SOCIAL_MEDIA.get('clips/'+match[1]+'/'+match[2]+'.'+match[3],{range:request.headers});
+   const isPhoto=['jpg','png','webp'].includes(match[3]);
+   const object=await env.SOCIAL_MEDIA.get(mediaKey(match[1],match[2],match[3]),isPhoto?{}:{range:request.headers});
    if(!object)return new Response('Not Found',{status:404});
-   const range=object.range,partial=!!request.headers.get('Range')&&!!range;
-   const headers=new Headers({'Content-Type':match[3]==='mp4'?'video/mp4':'video/webm',
-    'Accept-Ranges':'bytes','X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});
+   const range=object.range,partial=!isPhoto&&!!request.headers.get('Range')&&!!range;
+   const headers=new Headers({'Content-Type':mediaExt[match[3]],
+    'Accept-Ranges':isPhoto?'none':'bytes','X-Content-Type-Options':'nosniff','Cache-Control':'public, max-age=3600'});
    if(partial){
     const offset=range.offset||0,length=range.length||object.size-offset;
     headers.set('Content-Range','bytes '+offset+'-'+(offset+length-1)+'/'+object.size);
@@ -625,16 +644,31 @@ export default {
   if(isAccountApi){
    if(url.pathname==='/api/account/posts/publish'&&request.method==='POST'){
     let body;try{body=await request.clone().json()}catch(e){return new Response('Invalid JSON',{status:400})}
-    const media=typeof body?.videoUrl==='string'?body.videoUrl:'';
-    if(media.startsWith(url.origin+'/api/social/media/')){
-     if(!env.SOCIAL_MEDIA)return new Response('Video storage unavailable',{status:503});
-     const match=new URL(media).pathname.match(/^\/api\/social\/media\/([a-f0-9-]{36})\/([a-f0-9-]{36})\.(mp4|webm)$/);
-     if(!match)return new Response('Media URL invalid',{status:400});
-     const object=await env.SOCIAL_MEDIA.head('clips/'+match[1]+'/'+match[2]+'.'+match[3]);
-     if(!object)return new Response('Video missing',{status:404});
+    const raw=body?.media===undefined?[]:body.media;
+    if(!Array.isArray(raw)||raw.length>10)return cors(request,Response.json({ok:false,error:'Maksimal 10 foto/video'},{status:400}));
+    if(raw.length&&body.videoUrl)return cors(request,Response.json({ok:false,error:'Pisahkan link video dan galeri upload'},{status:400}));
+    const legacy=typeof body?.videoUrl==='string'?body.videoUrl:'';
+    if(raw.length||legacy.startsWith(url.origin+'/api/social/media/')){
+     if(!env.SOCIAL_MEDIA)return cors(request,Response.json({ok:false,error:'Penyimpanan galeri belum aktif'},{status:503}));
      const auth=await hub.fetch(new Request(url.origin+'/api/account/me',{headers:{Cookie:request.headers.get('Cookie')||''}}));
      const user=(await auth.json()).account;
-     if(!user?.id||user.id!==object.customMetadata?.owner)return new Response('Not your video',{status:403});
+     if(!user?.id)return cors(request,Response.json({ok:false,error:'Silakan login'},{status:401}));
+     const ordered=raw.length?raw:[{type:'video',url:legacy}],seen=new Set();
+     for(const entry of ordered){
+      if(!entry||!['image','video'].includes(entry.type)||typeof entry.url!=='string')
+       return cors(request,Response.json({ok:false,error:'Media tidak valid'},{status:400}));
+      let input;try{input=new URL(entry.url)}catch(e){}
+      if(!input||input.origin!==url.origin||input.search||input.hash||seen.has(input.href))
+       return cors(request,Response.json({ok:false,error:'Alamat media tidak valid atau duplikat'},{status:400}));
+      seen.add(input.href);
+      const match=input.pathname.match(mediaPath);
+      if(!match||match[1]!==user.id)return cors(request,Response.json({ok:false,error:'Media bukan milik akun ini'},{status:403}));
+      if(entry.type!==(['jpg','png','webp'].includes(match[3])?'image':'video'))
+       return cors(request,Response.json({ok:false,error:'Jenis media tidak cocok'},{status:400}));
+      const object=await env.SOCIAL_MEDIA.head(mediaKey(match[1],match[2],match[3]));
+      if(!object||object.customMetadata?.owner!==user.id)
+       return cors(request,Response.json({ok:false,error:'Media tidak ditemukan'},{status:404}));
+     }
     }
    }
    // Same-origin mutating requests only; never trust a spoofed visitor IP header.
