@@ -57,20 +57,20 @@ const puppeteer=require('puppeteer-core');
   });
   assert.ok(wide.playerWidth>900&&wide.chatWidth>300,'Wide screen should feel like control deck '+JSON.stringify(wide));
   await page.screenshot({path:path.join(dir,'cyberdeck-desktop-1672x941.png')});
-  // CAMERA / normal 9:16 capture must stay portrait even inside the
-  // same desktop cyberdeck container used by the widescreen GAME mode.
-  const cameraPortrait=await page.evaluate(()=>{
+  // Camera input may be portrait, but the PC player layout stays landscape.
+  // Contain ensures a 9:16 source is not cropped inside its wide theater.
+  const cameraWide=await page.evaluate(()=>{
    document.body.classList.remove('watch-game','watch-landscape');
    document.body.style.setProperty('--deck-video-aspect','9 / 16');
    const stage=document.querySelector('#watch .live-stage').getBoundingClientRect();
    const view=document.querySelector('#watch .live-stage>.viewfinder').getBoundingClientRect();
    return {stageW:stage.width,viewW:view.width,viewH:view.height,fit:getComputedStyle(document.querySelector('#remote')).objectFit};
   });
-  assert.ok(cameraPortrait.viewW>0&&cameraPortrait.viewH>0&&
-   Math.abs(cameraPortrait.viewW/cameraPortrait.viewH-9/16)<.035&&
-   cameraPortrait.viewW<cameraPortrait.stageW*.7&&cameraPortrait.fit==='contain',
-   'Desktop camera must remain 9:16 portrait, not a landscape thumbnail: '+JSON.stringify(cameraPortrait));
-  await page.screenshot({path:path.join(dir,'cyberdeck-camera-portrait-desktop-1672x941.png')});
+  assert.ok(cameraWide.viewW>0&&cameraWide.viewH>0&&
+   Math.abs(cameraWide.viewW/cameraWide.viewH-16/9)<.05&&
+   cameraWide.viewW>cameraWide.stageW*.85&&cameraWide.fit==='contain',
+   'PC LIVE must remain wide landscape while displaying portrait camera intact: '+JSON.stringify(cameraWide));
+  await page.screenshot({path:path.join(dir,'cyberdeck-camera-landscape-PC-1672x941.png')});
   // SOCIAL: a photo is square in the feed but its original is separately linked.
   const socialPhoto=await page.evaluate(()=>{
    document.body.classList.remove('live-immersive','watch-viewer');
