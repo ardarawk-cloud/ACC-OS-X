@@ -1244,6 +1244,16 @@ body.live-immersive.watch-viewer #watch #pcWatchRail span{color:#a7d5b2;font-wei
  body.live-immersive.watch-viewer #watch .deck-live-metric strong{font-size:9px}
  body.live-immersive.watch-viewer #watch #desktopSawerBar button{padding:8px 5px}
 }
+
+/* Video frame adapts to actual decoded game dimensions, not a fabricated 16:9 ratio.
+   CSS aspect-ratio is used instead of browser-dependent calc multiplication. */
+@media(min-width:800px){
+body.live-immersive.watch-viewer #watch .live-stage::after{display:none}
+body.live-immersive.watch-viewer.watch-landscape #watch .live-stage>.viewfinder{
+ aspect-ratio:var(--deck-video-aspect,16 / 9)!important;
+ height:auto!important;max-height:calc(100% - 176px)!important;
+ top:50%!important;transform:translateY(-50%)!important}
+}
 </style></head>
 <body>
 <div class="app">
@@ -4284,8 +4294,13 @@ body.live-immersive.watch-viewer #watch #pcWatchRail span{color:#a7d5b2;font-wei
  };
  for(const event of ['playing','pause','waiting','stalled','error','loadedmetadata','emptied'])
   watchVideo.addEventListener(event,updateDeckUI);
- const syncWatchAspect=()=>document.body.classList.toggle('watch-landscape',
-   watchVideo.videoHeight>0&&watchVideo.videoWidth>watchVideo.videoHeight*1.12);
+ const syncWatchAspect=()=>{
+  const width=watchVideo.videoWidth,height=watchVideo.videoHeight;
+  const landscape=height>0&&width>height*1.12;
+  document.body.classList.toggle('watch-landscape',landscape);
+  if(width>0&&height>0)document.body.style.setProperty('--deck-video-aspect',width+' / '+height);
+  else document.body.style.removeProperty('--deck-video-aspect');
+ };
  watchVideo.addEventListener('loadedmetadata',syncWatchAspect);
  watchVideo.addEventListener('resize',syncWatchAspect);
  health();sessionRestore();show('explore');
