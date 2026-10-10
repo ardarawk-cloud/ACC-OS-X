@@ -878,7 +878,7 @@ nav [data-tab="messagesPage"]{position:relative}
 .mast .logo{flex:1 1 auto;min-width:0}
 .mast-right{flex:0 0 auto;min-width:0}
 .mast .logo-name{white-space:nowrap}
-@media(max-width:420px){.mast .logo-name{font-size:clamp(17px,5.1vw,24px)}.mast .logo-sub{font-size:7px;letter-spacing:1.2px}.mast-right .micro{font-size:9px;letter-spacing:.7px}.mast-quick-actions{gap:4px}.offgrid-entry,.mast-login{padding:6px 8px;min-height:30px}}
+@media(max-width:420px){.mast{flex-wrap:wrap;gap:6px}.mast-right{margin-left:auto}.mast .logo-name{font-size:clamp(17px,5.1vw,24px)}.mast .logo-sub{font-size:7px;letter-spacing:1.2px}.mast-right .micro{font-size:9px;letter-spacing:.7px}.mast-quick-actions{gap:4px}.offgrid-entry,.mast-login{padding:6px 8px;min-height:30px}}
 .offgrid-entry{border:1px solid #b94b43;border-radius:16px;background:#281312;color:#ffaaa3;padding:7px 10px;font:900 10px Arial,sans-serif;letter-spacing:.4px;min-height:32px}
 .offgrid-entry:focus-visible,.offgrid-panel button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .offgrid-modal{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:18px}
@@ -2837,7 +2837,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  offgridModal.addEventListener('keydown',event=>{
   if(event.key==='Escape'){event.preventDefault();closeOffgrid();return}
   if(event.key==='Tab'){
-   event.preventDefault();offgridClose.focus();
+   event.preventDefault();
+   (document.activeElement===offgridClose&&!event.shiftKey?$('offgridLaunch'):offgridClose).focus();
   }
  });
  $('mastLogin').onclick=()=>show('authPage');
