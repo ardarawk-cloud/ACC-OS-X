@@ -29,5 +29,11 @@
   },
   "vars": {
     "BETA_TEST_HOSTS_ENABLED": "true"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "live.nadmo.id",
+      "custom_domain": true
+    }
+  ]
 }
