@@ -163,26 +163,37 @@ async function main(){
       video:rect('#remote'),chat:rect('#watch .live-chat'),
       chatInput:rect('#message'),quickBar:rect('#desktopSawerBar'),
       rail:rect('#pcWatchRail'),
+      videoIntrinsic:(()=>{const v=document.querySelector('#remote');return [v.videoWidth,v.videoHeight]})(),
+      videoFit:getComputedStyle(document.querySelector('#remote')).objectFit,
       viewerMode:document.body.classList.contains('watch-viewer'),
       navHidden:getComputedStyle(document.querySelector('nav')).display==='none',
-      railVisible:getComputedStyle(document.querySelector('#pcWatchRail')).display==='flex',
+      railVisible:getComputedStyle(document.querySelector('#pcWatchRail')).display!=='none',
       quickVisible:getComputedStyle(document.querySelector('#desktopSawerBar')).display==='flex'
     };
   });
   console.log('PC_STAGE_DIAGNOSTIC '+JSON.stringify(pcStage));
-  assert.ok(pcStage.viewerMode&&pcStage.navHidden&&pcStage.railVisible&&pcStage.quickVisible,'PC must show viewing rail, permanent theater and rupiah bar');
-  assert.ok(pcStage.theater[0]>=pcStage.rail[2],'Theater must be to right of navigation rail');
-  assert.ok(pcStage.chat[0]>=pcStage.theater[0]+pcStage.theater[2],'Live chat must have its own right-side column');
-  assert.ok(Math.abs(pcStage.video[2]/pcStage.video[3]-9/16)<0.04,'Desktop embedded camera must display portrait aspect ratio');
-  assert.ok(pcStage.video[2]<pcStage.theater[2]*0.85,'PC must not stretch portrait image across widescreen theater');
-  assert.ok(pcStage.video[0]>=pcStage.theater[0],'Video must be inside its theater');
+  assert.ok(pcStage.viewerMode&&pcStage.navHidden&&pcStage.railVisible&&pcStage.quickVisible,'PC must show navigation, video theater, live chat and rupiah bar');
+  // Cyberdeck V5 intentionally embeds a small back control inside the HUD
+  // rather than reserving an entire left navigation rail as in legacy V1.
+  assert.ok(pcStage.rail[0]>=12&&pcStage.rail[0]+pcStage.rail[2]<100&&
+    pcStage.rail[1]>=60&&pcStage.rail[1]<pcStage.theater[3]/2,
+    'Cyberdeck back control must be visible inside upper-left HUD, never off-screen');
+  assert.ok(pcStage.chat[0]>=pcStage.theater[0]+pcStage.theater[2]-2,'Live chat must have its own right-side column');
+  // The old 9:16 fixed theater test was incompatible with the approved
+  // game-landscape cyberdeck. Contain preserves actual portrait OR landscape
+  // footage without stretching/cropping either source.
+  assert.ok(pcStage.videoIntrinsic[0]>0&&pcStage.videoIntrinsic[1]>0,'PC must have decoded video');
+  assert.equal(pcStage.videoFit,'contain','Game/camera content must fit its frame without cropping');
+  assert.ok(pcStage.video[0]>=pcStage.theater[0]&&
+    pcStage.video[0]+pcStage.video[2]<=pcStage.theater[0]+pcStage.theater[2]+2,
+    'Video must remain contained in its HUD theater');
   assert.ok(pcStage.chatInput[0]>=pcStage.chat[0],'Comment entry must sit in chat sidebar');
   assert.ok(pcStage.quickBar[0]>=pcStage.theater[0]&&pcStage.quickBar[0]+pcStage.quickBar[2]<=pcStage.chat[0],'Rupiah presets must sit under theater, not chat');
   await viewer.locator('#desktopSawerBar [data-pc-sawer="2000"]').click();
   assert.equal(await viewer.$eval('#tipCustom',el=>el.value),'2000');
   assert.equal(await viewer.$eval('#viewerTipPanel',el=>el.classList.contains('sheet-open')),true);
   await viewer.locator('#closeTipSheet').click();
-  console.log('PASS PC viewer: portrait live theater, right chat, left rail, quick rupiah support preview',JSON.stringify(pcStage));
+  console.log('PASS PC viewer: adaptive cyberdeck theater, right chat, HUD back control and rupiah support preview',JSON.stringify(pcStage));
   await viewer.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   await viewer.waitForFunction(()=>document.querySelector('#watch .live-stage').getBoundingClientRect().width>=innerWidth-2,{timeout:6000});
   console.log('PASS mobile view returns to full-bleed video after desktop resizing');
