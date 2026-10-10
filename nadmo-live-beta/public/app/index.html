@@ -1432,6 +1432,19 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
  let gameFaceStream=null,gameFaceDiameter=76;
+ const nativeGame=typeof window.NadmoGame?.postMessage==='function';
+ let nativeGameState='stopped',nativeGameRoom='';
+ function gameCommand(type,data={}){if(!nativeGame)return false;window.NadmoGame.postMessage(JSON.stringify({type,...data}));return true}
+ window.addEventListener('nadmo-game-status',event=>{
+  const d=event.detail||{};nativeGameState=d.state||'stopped';
+  if(d.room)nativeGameRoom=d.room;
+  if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
+  $('gameCaptureStatus').textContent=d.message||'Pilih game untuk mulai.';
+  $('gameLaunchGame').hidden=nativeGameState!=='live';
+  $('gameShareRoom').hidden=nativeGameState!=='live'||!nativeGameRoom;
+  $('gameStopLive').hidden=!['live','starting','reconnecting'].includes(nativeGameState);
+  if(selectedLiveMode==='gaming')chooseMode('gaming');
+ });
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
@@ -3022,13 +3035,14 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
   // Keep the screen quiet; show status only for unavailable modes.
-  const copy={camera:'',talk:'',gaming:'Perekaman layar belum tersedia.',studio:'Koneksi OBS belum tersedia.'};
+  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',studio:'Koneksi OBS belum tersedia.'};
   $('modeDetails').textContent=copy[mode];
   $('modeDetails').hidden=!copy[mode];
-  $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE NOT READY';
-  const ready=mode==='camera'||mode==='talk';
-  $('preview').disabled=!ready;$('createRoom').disabled=!ready;
-  $('createRoom').textContent=ready?'● TRANSMIT LIVE':mode==='gaming'?'SCREEN CAPTURE COMING SOON':'PC INGEST COMING SOON';
+  $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE VIA ANDROID';
+  const ready=mode==='camera'||mode==='talk'||(mode==='gaming'&&nativeGame);
+  $('preview').disabled=!(mode==='camera'||mode==='talk');
+  $('createRoom').disabled=!ready||(mode==='gaming'&&['live','starting','reconnecting'].includes(nativeGameState));
+  $('createRoom').textContent=mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
   if(mode==='gaming')$('category').value='Gaming';
   if(mode==='talk')$('category').value='Podcast';
   if(mode==='studio')$('category').value='DJ & Music';
@@ -3047,7 +3061,7 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
    if(selectedLiveMode!=='gaming'){stream.getTracks().forEach(track=>track.stop());return}
    gameFaceStream=stream;$('gameFaceCam').srcObject=stream;
    $('gameFaceFrame').classList.add('active');$('gameFaceToggle').textContent='KAMERA OFF';
-   $('gameCaptureStatus').textContent='Kamera siap untuk tata letak. Siaran layar game belum tersedia di Android.';
+   $('gameCaptureStatus').textContent='Kamera siap untuk siaran facecam kecil.';
   }catch(err){$('gameCaptureStatus').textContent='Kamera tidak tersedia: '+(err?.message||'izin ditolak')}
  };
  $('gameFaceSize').onclick=()=>{
@@ -3056,6 +3070,14 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
  };
  $('gameFaceHide').onclick=()=>{
   gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON';
+ };
+ $('gameLaunchGame').onclick=()=>gameCommand('launch');
+ $('gameStopLive').onclick=()=>{if(confirm('Akhiri GAME LIVE?'))gameCommand('stop')};
+ $('gameShareRoom').onclick=async()=>{
+  if(!nativeGameRoom)return;
+  const link=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(nativeGameRoom);
+  try{await navigator.clipboard.writeText(link);$('gameCaptureStatus').textContent='Link siaran disalin.'}
+  catch(e){window.prompt('Salin link GAME LIVE',link)}
  };
  $('gameFaceFrame').addEventListener('pointerdown',event=>{
   if(event.button!==0)return;
@@ -3779,6 +3801,15 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
   if(m.type==='error'){if(!$('reportPanel').classList.contains('hide'))$('reportStatus').textContent=m.message||'Gagal mengirim laporan';notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
  $('createRoom').onclick=async()=>{
+  if(selectedLiveMode==='gaming'){
+   if(!nativeGame){notice('GAME LIVE memerlukan APK Android NADMO.','liveState');return}
+   if(!adult())return;
+   const face=!!gameFaceStream;
+   if(face){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON'}
+   $('gameCaptureStatus').textContent='Meminta izin layar Android...';
+   gameCommand('start',{title:($('title').value.trim()||$('gameName').value+' LIVE').slice(0,60),game:$('gameName').value,face});
+   return;
+  }
   if(!['camera','talk'].includes(selectedLiveMode)){notice('Mode '+selectedLiveMode+' belum memiliki source live resmi.','liveState');return}
   if(!adult())return;if(!server){notice('Server NADMO sedang tidak tersedia, coba lagi nanti.','liveState');return}
   if(!localStream)await preview();if(!localStream)return;
