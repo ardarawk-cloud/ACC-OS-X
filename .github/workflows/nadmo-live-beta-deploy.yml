@@ -57,28 +57,29 @@ jobs:
         run: node nadmo-live-beta/qa/supporter-levels-unit.mjs
       - name: Verify wallet ledger and withdrawal safety
         run: node nadmo-live-beta/qa/wallet-unit.mjs
-      - name: Prepare verified signed NADMO LIVE APK for Cloudflare direct download
+      - name: Prepare owner-signed NADMO LIVE v0.9.2 and legacy APK downloads
         shell: bash
         run: |
           set -euo pipefail
-          TAG="nadmo-live-v0.9.1-beta"
-          RELEASE="https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/$TAG"
           STAGING="nadmo-live-beta/public/downloads"
           mkdir -p "$STAGING"
-          curl --fail --location --silent --show-error --retry 5 --retry-delay 3 --max-time 90 \
-            "$RELEASE/NADMO-LIVE-v0.9.1-beta.apk" \
-            --output "$STAGING/NADMO-LIVE-v0.9.1-beta.apk"
-          curl --fail --location --silent --show-error --retry 5 --retry-delay 3 --max-time 30 \
-            "$RELEASE/NADMO-LIVE-v0.9.1-beta.sha256" \
-            --output "$STAGING/NADMO-LIVE-v0.9.1-beta.sha256"
-          (
-            cd "$STAGING"
-            sha256sum --check NADMO-LIVE-v0.9.1-beta.sha256
-            test "$(wc -c < NADMO-LIVE-v0.9.1-beta.apk)" -gt 500000
-            unzip -t NADMO-LIVE-v0.9.1-beta.apk | tail -n 2
-            unzip -l NADMO-LIVE-v0.9.1-beta.apk | grep -F 'AndroidManifest.xml'
-          )
-          echo "Verified APK staged as an app-owned static asset. No GitHub ZIP at the download endpoint."
+          for VERSION in 0.9.1 0.9.2; do
+            RELEASE="https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v${VERSION}-beta"
+            APK="NADMO-LIVE-v${VERSION}-beta.apk"
+            curl --fail --location --silent --show-error --retry 5 --retry-delay 3 --max-time 90 \
+              "$RELEASE/$APK" --output "$STAGING/$APK"
+            curl --fail --location --silent --show-error --retry 5 --retry-delay 3 --max-time 30 \
+              "$RELEASE/NADMO-LIVE-v${VERSION}-beta.sha256" \
+              --output "$STAGING/NADMO-LIVE-v${VERSION}-beta.sha256"
+            (
+              cd "$STAGING"
+              sha256sum --check "NADMO-LIVE-v${VERSION}-beta.sha256"
+              test "$(wc -c < "$APK")" -gt 500000
+              unzip -t "$APK" | tail -n 2
+              unzip -l "$APK" | grep -F 'AndroidManifest.xml'
+            )
+          done
+          echo "Both signed APKs verified byte-for-byte against official release checksums."
       - name: Deploy isolated beta Worker (do not modify production apps)
         id: deploy
         uses: cloudflare/wrangler-action@v4
@@ -134,8 +135,10 @@ jobs:
           curl --fail --silent --show-error --max-time 60 --dump-header /tmp/nadmo-apk-headers.txt \
             --output /tmp/nadmo-live-direct.apk "$URL"
           grep -Fqi 'Content-Type: application/vnd.android.package-archive' /tmp/nadmo-apk-headers.txt
-          grep -Fqi 'Content-Disposition: attachment; filename="NADMO-LIVE-v0.9.1-beta.apk"' /tmp/nadmo-apk-headers.txt
-          cmp /tmp/nadmo-live-direct.apk nadmo-live-beta/public/downloads/NADMO-LIVE-v0.9.1-beta.apk
+          grep -Fqi 'Content-Disposition: attachment; filename="NADMO-LIVE-v0.9.2-beta.apk"' /tmp/nadmo-apk-headers.txt
+          cmp /tmp/nadmo-live-direct.apk nadmo-live-beta/public/downloads/NADMO-LIVE-v0.9.2-beta.apk
+          curl --fail --silent --show-error --max-time 60 --output /tmp/nadmo-live-legacy.apk https://live.nadmo.id/NADMO-LIVE-v0.9.1-beta.apk
+          cmp /tmp/nadmo-live-legacy.apk nadmo-live-beta/public/downloads/NADMO-LIVE-v0.9.1-beta.apk
           echo "DIRECT NADMO LIVE APK DOWNLOAD PASS: $(wc -c < /tmp/nadmo-live-direct.apk) bytes"
       - name: Install creator ownership QA dependencies
         run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
