@@ -1069,9 +1069,10 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
   <div class="logo"><span class="logo-mark">N/</span><div><div class="logo-name">NADMO <em>LIVE</em></div><div class="logo-sub">INDEPENDENT BROADCAST SYSTEM</div></div></div>
   <div class="mast-right"><div class="micro"><span class="dot"></span><strong id="net">OFFLINE BETA</strong></div><div class="micro">BALI / IDN · 18+</div><div class="mast-quick-actions"><button type="button" id="offgridEntry" class="offgrid-entry" aria-haspopup="dialog" aria-controls="offgridModal">OFFGRID</button><button type="button" id="mastLogin" class="mast-login">MASUK</button></div></div>
 </header>
+<div class="deck-system-bar" aria-hidden="true"><span>◈ NADMO / CYBERDECK</span><span>LIVE • CREATE • PLAY</span><span class="deck-system-led">● LIVE NETWORK</span></div>
 <section id="home">
   <div class="ticker"><b>TRANSMISSION 001</b><span class="line"></span><small>NO FILTER / JUST SIGNAL</small></div>
-  <div class="intro"><h1>OWN THE<br><span class="text-outline">AIRWAVES.</span></h1><span class="sub">Your voice.<br>Your space.<br>Your rules.</span></div>
+  <div class="intro"><h1>YOUR LIVE.<br><span class="text-outline">YOUR WORLD.</span></h1><span class="sub">MAIN • STREAM<br>NGOBROL • SAWER<br>NADMO LIVE</span></div>
   <div class="signal-stage">
     <div class="stage-head"><span>FREQUENCY / <span style="color:var(--neon)">CH—001</span></span><span class="liveflag">◉ STANDBY</span></div>
     <div class="stage-core"><div class="circle"><strong>N<i>/</i></strong></div><p>WAITING FOR FIRST BROADCAST</p></div>
@@ -4056,7 +4057,7 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
   if(peer){peer.close();peer=null}
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
-  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game');$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
+  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game','watch-landscape');$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
   $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';mirrorBroadcast=false;$('giftQuick').hidden=false;$('endLiveConfirm').classList.add('hide');applyMirroring();
   $('afkToggle').textContent='▤ KAMERA OFF';
   $('stopCamera').click();show('explore');manuallyLeaving=false;
@@ -4064,6 +4065,12 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
  $('leave').onclick=()=>{if(host&&currentRoom)showEndConfirm();else leave()};
  // Do not stop camera/microphone on pagehide: Android WebView can suspend/resume.
  // An explicit Leave button stops media; foreground recovery reacquires camera if needed.
+ // Source orientation must control the player size; GAME is landscape.
+ const watchVideo=$('remote');
+ const syncWatchAspect=()=>document.body.classList.toggle('watch-landscape',
+   watchVideo.videoHeight>0&&watchVideo.videoWidth>watchVideo.videoHeight*1.12);
+ watchVideo.addEventListener('loadedmetadata',syncWatchAspect);
+ watchVideo.addEventListener('resize',syncWatchAspect);
  health();sessionRestore();show('explore');
  const incomingPost=new URLSearchParams(location.search).get('post');
  if(incomingPost&&/^[a-f0-9-]{36}$/.test(incomingPost))setTimeout(()=>show('socialPage'),650);
