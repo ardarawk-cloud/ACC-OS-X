@@ -3743,6 +3743,8 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
    if(!host&&m.data?.description?.type==='offer'&&m.data.reset&&peer){
     peer.close();peer=null;pendingIce.delete(m.from);$('remote').srcObject=null;
     guestRemoteStreams.clear();renderStageGuests();
+    $('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;
+    document.body.classList.remove('watch-game');
    }
    let pc;
    if(host)pc=peers.get(m.from);
@@ -3755,6 +3757,14 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
      }
      peer.ontrack=e=>{
       const media=e.streams?.[0];if(!media)return;
+      if(media.id==='NADMO_GAME_FACE'){
+       const faceVideo=$('gameRemoteFace');faceVideo.srcObject=media;faceVideo.hidden=false;
+       faceVideo.play().catch(()=>{});document.body.classList.add('watch-game');return;
+      }
+      if(media.id==='NADMO_GAME_SCREEN'){
+       $('remote').srcObject=media;document.body.classList.add('watch-game');
+       applyMirroring();$('watchState').textContent='Game tersambung';clearWatchWarning();return;
+      }
       if(stageGuestsList.some(g=>g.streamId===media.id)||$('remote').srcObject){
        guestRemoteStreams.set(media.id,media);
       }else{
@@ -3850,7 +3860,7 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
   if(peer){peer.close();peer=null}
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
-  $('remote').srcObject=null;$('remote').muted=false;$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
+  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game');$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
   $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';mirrorBroadcast=false;$('giftQuick').hidden=false;$('endLiveConfirm').classList.add('hide');applyMirroring();
   $('afkToggle').textContent='▤ KAMERA OFF';
   $('stopCamera').click();show('explore');manuallyLeaving=false;
