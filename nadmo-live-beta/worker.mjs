@@ -682,7 +682,9 @@ export default {
      const deleted=await r.clone().json();
      for(const asset of (Array.isArray(deleted.deletedMedia)?deleted.deletedMedia:[]).slice(0,10)){
       let mediaUrl;try{mediaUrl=new URL(asset)}catch(e){}
-      if(!mediaUrl||mediaUrl.origin!==url.origin)continue;
+      const permittedOrigins=new Set([url.origin,'https://live.nadmo.id',
+       'https://nadmo-live-beta-20261009.ardarawk.workers.dev']);
+      if(!mediaUrl||!permittedOrigins.has(mediaUrl.origin)||mediaUrl.search||mediaUrl.hash)continue;
       const item=mediaUrl.pathname.match(mediaPath);
       if(item)await env.SOCIAL_MEDIA.delete(mediaKey(item[1],item[2],item[3]));
      }
