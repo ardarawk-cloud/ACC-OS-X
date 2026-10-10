@@ -717,7 +717,8 @@ export async function accountEndpoint(storage,request){
   const id=typeof payload.id==='string'?payload.id:'';
   if(!/^[a-f0-9-]{36}$/.test(id))return fail(400,'Postingan tidak valid');
   const previous=await storage.get('auth-posts:'+user.id)||[];
-  if(!previous.some(post=>post.id===id))return fail(404,'Postingan tidak ditemukan');
+  const removedPost=previous.find(post=>post.id===id);
+  if(!removedPost)return fail(404,'Postingan tidak ditemukan');
   await storage.put('auth-posts:'+user.id,previous.filter(post=>post.id!==id));
   const feed=await storage.get('social-public-feed')||[];
   await storage.put('social-public-feed',feed.filter(post=>post.id!==id&&post.originalId!==id));
@@ -728,7 +729,10 @@ export async function accountEndpoint(storage,request){
   }
   await storage.delete(commentsKey(id));
   await storage.delete('social-post:'+id);
-  return json({ok:true,deleted:true});
+  // The Worker removes uploaded R2 objects after this owner-verified deletion.
+  const deletedMedia=Array.isArray(removedPost.media)?removedPost.media.map(x=>x.url):[];
+  if(removedPost.videoUrl)deletedMedia.push(removedPost.videoUrl);
+  return json({ok:true,deleted:true,deletedMedia});
  }
  if(p==='/api/account/posts'&&method==='POST'){
   const text=clean(payload.text,2000);
