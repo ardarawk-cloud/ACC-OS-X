@@ -599,7 +599,7 @@ export async function accountEndpoint(storage,request){
  }
  if(p==='/api/account/social/upload-allowed'&&method==='POST'){
   // File storage is a separate optional R2 dependency. Limit allocations per user.
-  if(!await throttle(storage,'social-media-upload:'+user.id,8,86400000))return fail(429,'Batas upload harian beta tercapai');
+  if(!await throttle(storage,'social-media-upload:'+user.id,50,86400000))return fail(429,'Batas upload harian 50 file tercapai');
   return json({ok:true,allowed:true});
  }
  if(p==='/api/account/social/like'&&method==='POST'){
@@ -685,10 +685,27 @@ export async function accountEndpoint(storage,request){
    if(!(['youtube.com','m.youtube.com','youtu.be','vimeo.com','player.vimeo.com'].includes(videoHost)
      ||/\.(mp4|webm)$/.test(videoPath)))return fail(400,'Gunakan link video YouTube, Vimeo, MP4, atau WebM yang valid');
   }
-  if((!text&&!videoUrl)||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Postingan atau video tidak valid');
+  // Persistent ordered gallery: photos and videos may coexist in one post.
+  // The public Worker checks R2 ownership and existence before forwarding here.
+  const rawMedia=payload.media===undefined?[]:payload.media;
+  if(!Array.isArray(rawMedia)||rawMedia.length>10)return fail(400,'Maksimal 10 foto/video per postingan');
+  if(videoUrl&&rawMedia.length)return fail(400,'Tautan video lama dan galeri tidak boleh digabung');
+  const media=[];
+  const seen=new Set();
+  for(const item of rawMedia){
+   if(!item||!['image','video'].includes(item.type)||typeof item.url!=='string')return fail(400,'Format galeri tidak valid');
+   const url=urlOK(item.url);
+   if(!url||!/^https:\/\/[^/]+\/api\/social\/media\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.(?:jpg|png|webp|mp4|webm)$/.test(url)||seen.has(url))
+    return fail(400,'Media tidak valid atau duplikat');
+   const path=new URL(url).pathname;
+   if(item.type==='image'&&!/\.(jpg|png|webp)$/.test(path)||item.type==='video'&&!/\.(mp4|webm)$/.test(path))
+    return fail(400,'Tipe file dan media tidak cocok');
+   seen.add(url);media.push({type:item.type,url});
+  }
+  if((!text&&!videoUrl&&!media.length)||typeof payload.text!=='string'||payload.text.length>2000)return fail(400,'Caption atau media tidak valid');
   if(!await throttle(storage,'publish:'+user.id,8,3600000))return fail(429,'Terlalu banyak postingan');
   const post={id:crypto.randomUUID(),accountId:user.id,handle:user.handle,name:record.name,
-   avatarVersion:record.avatarVersion||0,text,videoUrl:videoUrl||null,likesCount:0,commentsCount:0,repostsCount:0,createdAt:Date.now(),status:'published'};
+   avatarVersion:record.avatarVersion||0,text,videoUrl:videoUrl||null,media,likesCount:0,commentsCount:0,repostsCount:0,createdAt:Date.now(),status:'published'};
   const previous=await storage.get('auth-posts:'+user.id)||[];
   await storage.put('auth-posts:'+user.id,[post,...previous].slice(0,80));
   await storage.put('social-post:'+post.id,post);
