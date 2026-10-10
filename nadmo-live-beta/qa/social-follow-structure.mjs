@@ -9,6 +9,18 @@ for(const [tab,label] of [['socialPage','SOSIAL'],['messagesPage','PESAN']]){
 for(const id of ['meFollowers','meFollowing','meFollowersCount','meFollowingCount','socialConnectionsPage'])assert.ok(html.includes('id="'+id+'"'));
 assert.ok(html.includes('transform:skew(-10deg)'));
 assert.ok(html.includes('data-tab="studio" class="broadcast"'));
+const accountPage=html.split('<section id="accountPage" class="hide">')[1]?.split('<section id="walletPage"')[0]||'';
+const preferencesPage=html.split('<section id="preferencesPage" class="hide">')[1]?.split('<section id="accountPage"')[0]||'';
+const socialPage=html.split('<section id="socialPage" class="hide">')[1]?.split('<section id="messagesPage"')[0]||'';
+assert.ok(accountPage,'Account editor must exist');
+assert.ok(socialPage,'Social page must exist');
+assert.ok(!accountPage.includes('KELOLA POSTINGAN'),'ME edit must never include post manager');
+assert.ok(!accountPage.includes('meNewPost'),'Legacy post-create button must not be in ME');
+assert.ok(!preferencesPage.includes('data-open-page="draftsPage"'),'Draf management must not be in ME settings');
+assert.ok(socialPage.includes('id="socialManageDrafts"'),'Drafts are accessed from SOSIAL');
+assert.ok(html.includes("if(onPage==='draftsPage')show('socialPage');"));
+assert.ok(html.includes("name==='draftsPage'?'socialPage'"));
+assert.ok(!html.includes('profilePublishedPosts'),'Published post duplication must be eliminated');
 // Repost is content-first: no avatar enlargement in ME, no duplicate heading.
 assert.match(html,/#meRepostedFeed \.post-top img\{width:28px;height:28px/);
 assert.match(html,/\.profile-post-card \.social-action-row\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
