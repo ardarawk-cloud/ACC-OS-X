@@ -57,6 +57,38 @@ const puppeteer=require('puppeteer-core');
   });
   assert.ok(wide.playerWidth>900&&wide.chatWidth>300,'Wide screen should feel like control deck '+JSON.stringify(wide));
   await page.screenshot({path:path.join(dir,'cyberdeck-desktop-1672x941.png')});
+  // CAMERA / normal 9:16 capture must stay portrait even inside the
+  // same desktop cyberdeck container used by the widescreen GAME mode.
+  const cameraPortrait=await page.evaluate(()=>{
+   document.body.classList.remove('watch-game','watch-landscape');
+   document.body.style.setProperty('--deck-video-aspect','9 / 16');
+   const stage=document.querySelector('#watch .live-stage').getBoundingClientRect();
+   const view=document.querySelector('#watch .live-stage>.viewfinder').getBoundingClientRect();
+   return {stageW:stage.width,viewW:view.width,viewH:view.height,fit:getComputedStyle(document.querySelector('#remote')).objectFit};
+  });
+  assert.ok(cameraPortrait.viewW>0&&cameraPortrait.viewH>0&&
+   Math.abs(cameraPortrait.viewW/cameraPortrait.viewH-9/16)<.035&&
+   cameraPortrait.viewW<cameraPortrait.stageW*.7&&cameraPortrait.fit==='contain',
+   'Desktop camera must remain 9:16 portrait, not a landscape thumbnail: '+JSON.stringify(cameraPortrait));
+  await page.screenshot({path:path.join(dir,'cyberdeck-camera-portrait-desktop-1672x941.png')});
+  // SOCIAL: a photo is square in the feed but its original is separately linked.
+  const socialPhoto=await page.evaluate(()=>{
+   document.body.classList.remove('live-immersive','watch-viewer');
+   document.querySelector('#watch').classList.add('hide');
+   document.querySelector('#socialPage').classList.remove('hide');
+   const frame=document.createElement('a');frame.className='social-photo-frame';
+   frame.href='https://example.com/photo-original.jpg';
+   const img=document.createElement('img');img.className='social-post-photo';
+   img.alt='Square media fixture';
+   img.src='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600"%3E%3Crect width="100%25" height="100%25" fill="%230e271a"/%3E%3Ccircle cx="400" cy="300" r="180" fill="%2389b34f"/%3E%3C/svg%3E';
+   frame.append(img);document.querySelector('#socialPublicFeed').prepend(frame);
+   const rect=frame.getBoundingClientRect();
+   return {width:rect.width,height:rect.height,fit:getComputedStyle(img).objectFit,href:frame.href};
+  });
+  assert.ok(socialPhoto.width>120&&Math.abs(socialPhoto.width-socialPhoto.height)<2&&
+   socialPhoto.fit==='cover'&&/photo-original.jpg/.test(socialPhoto.href),
+   'SOCIAL photo tile must display 1:1, full image still linked: '+JSON.stringify(socialPhoto));
+  await page.screenshot({path:path.join(dir,'cyberdeck-social-square-photo-desktop.png')});
   await page.setViewport({width:390,height:844,deviceScaleFactor:1,isMobile:true,hasTouch:true});
   // Switching desktop Chromium to mobile emulation can reload the page.
   // Re-enter the GAME room fixture after the viewport switch.
