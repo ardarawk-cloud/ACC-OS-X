@@ -3,7 +3,7 @@ import {getPublicSupporterBadge} from './supporter-levels.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
-const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_MESSAGE=60000, HOST_GRACE_MS=90000, REPORT_LIMIT=100, REPORT_TTL=14*86400000, GUEST_LIMIT=9;
+const ROOM_LIMIT=20, VIEWER_LIMIT=4, MAX_EVENTS=35, MAX_ICE_EVENTS=120, MAX_MESSAGE=60000, HOST_GRACE_MS=90000, REPORT_LIMIT=100, REPORT_TTL=14*86400000, GUEST_LIMIT=9;
 
 function txt(x,max=60){return typeof x==='string'?x.trim().slice(0,max):''}
 function reply(ws,object){try{ws.send(JSON.stringify(object))}catch(e){}}
@@ -132,10 +132,18 @@ export class RoomHub{
   if(!msg||typeof msg!=='object'||Array.isArray(msg))return failure(ws,'Pesan tidak valid');
   let s=state(ws);
   const now=Date.now();
-  if(now-(s.lastWindow||0)>1000){s.lastWindow=now;s.events=0}
-  if(++s.events>MAX_EVENTS){ws.close(1008,'rate limited');return}
-  save(ws,s);
+  if(now-(s.lastWindow||0)>1000){s.lastWindow=now;s.events=0;s.iceEvents=0}
   const type=msg.type;
+  // ICE candidates are generated in bursts by WebRTC when the audience joins.
+  // Count them separately: the previous generic 35/s rate limiter dropped the
+  // entire host WebSocket, falsely displaying "host lost network" to viewers.
+  // Keep a firm independent cap and strict candidate shape/length below.
+  const candidate=type==='signal'&&msg.data&&typeof msg.data==='object'&&!msg.data.description?msg.data.candidate:null;
+  const isIceCandidate=!!(candidate&&typeof candidate.candidate==='string'&&candidate.candidate.length<=2048);
+  if(isIceCandidate?++s.iceEvents>MAX_ICE_EVENTS:++s.events>MAX_EVENTS){
+    ws.close(1008,isIceCandidate?'ice rate limited':'rate limited');return;
+  }
+  save(ws,s);
   if(type==='leave'){await this.leave(ws,s);reply(ws,{type:'left'});return}
   if(type==='create'){
    if(s.roomId)return failure(ws,'Keluar dari room sebelumnya terlebih dahulu');
@@ -414,6 +422,14 @@ export class RoomHub{
    if(s.role!=='host'&&state(target).role!=='host')return;
    const data=msg.data;
    if(!data||typeof data!=='object'||Array.isArray(data))return;
+   if(data.candidate){
+    const candidate=data.candidate;
+    if(!candidate||typeof candidate!=='object'||Array.isArray(candidate)||
+      typeof candidate.candidate!=='string'||candidate.candidate.length>2048||
+      typeof candidate.sdpMid!=='string'||candidate.sdpMid.length>32||
+      !Number.isInteger(candidate.sdpMLineIndex)||candidate.sdpMLineIndex<0||candidate.sdpMLineIndex>16)
+      return failure(ws,'Kandidat koneksi ICE tidak valid');
+   }
    if(data.description&&!['offer','answer'].includes(data.description.type))return;
    if(!data.description&&!data.candidate)return;
    reply(target,{type:'signal',from:s.id,data});
