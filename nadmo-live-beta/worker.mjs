@@ -531,6 +531,13 @@ export default {
   if(url.pathname==='/api/radio/status')return cors(request,Response.json(await radioStatus(env)));
   if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,maxGuestSeats:GUEST_LIMIT,guestMediaArchitecture:'BETA_HOST_RELAY_P2P',payments:false,creatorVerificationRequired:env.VERIFY_CREATOR_REQUIRED==='true'||env.BETA_TEST_HOSTS_ENABLED!=='true',anonymousBetaHostsEnabled:env.BETA_TEST_HOSTS_ENABLED==='true'&&env.VERIFY_CREATOR_REQUIRED!=='true'}));
   if(url.pathname==='/'){
+   // The official short URL opens the app, not a JSON status page.
+   // Keep workers.dev root behavior unchanged for legacy integrations.
+   if(url.hostname==='live.nadmo.id'){
+    const target=new URL('/app/',url.origin);
+    target.search=url.search;
+    return Response.redirect(target.toString(),308);
+   }
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
   const isAccountApi=url.pathname.startsWith('/api/account/')||url.pathname.startsWith('/api/profile/')||url.pathname.startsWith('/api/supporter/')||
