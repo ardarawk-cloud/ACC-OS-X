@@ -2943,13 +2943,10 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   if(mode!=='gaming'&&gameFaceStream){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON'}
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
-  const copy={
-   camera:'Kamera dan mikrofon HP. Chat terlihat di atas video full layar. Efek wajah menyusul.',
-   talk:'Ngobrol audio-only dari mikrofon HP dengan tampilan audio. Penonton bisa mendengar dan chat. Tamu ikut bicara serta musik dari HP/Radio masih dikembangkan.',
-   gaming:'Pilih judul game. Untuk menyiarkan layar HP diperlukan izin dan modul native screen capture yang belum ada di APK beta.',
-   studio:'Studio untuk siaran PC/OBS. Server penerima stream Studio belum aktif; mode tidak dapat dijalankan dari HP.'
-  };
+  // Keep the screen quiet; show status only for unavailable modes.
+  const copy={camera:'',talk:'',gaming:'Perekaman layar belum tersedia.',studio:'Koneksi OBS belum tersedia.'};
   $('modeDetails').textContent=copy[mode];
+  $('modeDetails').hidden=!copy[mode];
   $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE NOT READY';
   const ready=mode==='camera'||mode==='talk';
   $('preview').disabled=!ready;$('createRoom').disabled=!ready;
