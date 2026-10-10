@@ -1232,13 +1232,26 @@ body:not(.live-immersive) #studio #createRoom{
    <span class="host-avatar" aria-hidden="true"><span>N/</span><img id="hostAvatarImage" alt="" hidden></span><span class="host-details"><b id="watchTitle">HOST</b><small id="hostIdentityHandle" hidden>PROFIL HOST</small></span><span class="onair-label">● LIVE</span>
   </button><div id="watchRoomSubtitle" class="room-subtitle"></div>
  </div></div>
+ <div class="deck-live-telemetry desktop-watch-only" aria-label="Status teknis stream">
+  <div class="deck-live-metric"><span>▣</span><div><small>VIDEO FEED</small><strong id="deckVideoStatus">MENUNGGU</strong></div></div>
+  <div class="deck-live-metric"><span>♫</span><div><small>AUDIO TRACK</small><strong id="deckAudioStatus">MENUNGGU</strong></div></div>
+  <div class="deck-live-metric"><span>⌁</span><div><small>KONEKSI</small><strong id="deckNetStatus">MENYAMBUNG</strong></div></div>
+ </div>
  <div id="guestStageGrid" aria-label="Tamu di panggung live"></div>
  <div id="hostProfilePanel" class="panel" role="dialog" aria-label="Profil host" aria-modal="true">
   <button type="button" class="sheet-close" id="closeHostProfile" aria-label="Tutup profil host">✕</button>
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
-  <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
+  <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div>
+   <div class="deck-player-controls desktop-watch-only" aria-label="Kontrol pemutar video">
+    <span class="deck-player-live">● LIVE</span>
+    <button id="deckMute" type="button" aria-label="Bisukan suara video">♫ SUARA ON</button>
+    <small id="deckMediaLabel">STREAM / MENUNGGU</small>
+    <span class="deck-player-spacer"></span>
+    <button id="deckRefresh" type="button" aria-label="Pulihkan stream">↻</button>
+    <button id="deckFullscreen" type="button" aria-label="Video layar penuh">⛶</button>
+   </div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
   <div id="viewerTools" hidden><button class="btn secondary" id="tipQuick">Rp SAWER</button></div>
@@ -1310,7 +1323,7 @@ body:not(.live-immersive) #studio #createRoom{
     <button type="button" data-pc-sawer="custom">CUSTOM</button>
     <small>PREVIEW · BELUM AKTIF</small>
   </div>
-  <div class="panel live-chat"><div class="show-label"><b>BACKCHANNEL</b><small>LIVE CHAT</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button><button type="button" class="live-bar-button" id="giftQuick" aria-label="Saweran rupiah" title="Sawer">🎁</button><button type="button" class="live-bar-button" id="moreQuick" aria-label="Pengaturan live" title="Pengaturan">⚙</button></div>
+  <div class="panel live-chat"><div class="show-label"><b>LIVE CHAT</b><small>NADMO / BACKCHANNEL</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button><button type="button" class="live-bar-button" id="giftQuick" aria-label="Saweran rupiah" title="Sawer">🎁</button><button type="button" class="live-bar-button" id="moreQuick" aria-label="Pengaturan live" title="Pengaturan">⚙</button></div>
 <div class="room-safety">
  <div class="safety-toolbar">
     <button id="reportLive" type="button" hidden>LAPORKAN LIVE</button>
@@ -3592,7 +3605,7 @@ body:not(.live-immersive) #studio #createRoom{
  $('refreshVideo').onclick=()=>{lastForegroundRecovery=0;restoreForeground()};
  window.addEventListener('focus',restoreForeground);
  window.addEventListener('pageshow',event=>{if(event.persisted)restoreForeground()});
-  function rtc(){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});pc.oniceconnectionstatechange=()=>{if(pc.iceConnectionState==='failed')notice('Video belum tersambung. Koneksi ini mungkin membutuhkan relay TURN; uji jaringan lain atau tunggu peningkatan SFU.','watchState')};return pc}
+  function rtc(){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});pc.oniceconnectionstatechange=()=>{updateDeckUI();if(pc.iceConnectionState==='failed')notice('Video belum tersambung. Koneksi ini mungkin membutuhkan relay TURN; uji jaringan lain atau tunggu peningkatan SFU.','watchState')};return pc}
  function signal(to,data){transmit({type:'signal',to,data})}
  function guestStatus(message){
   $('guestJoinStatus').hidden=!message;
@@ -4148,6 +4161,28 @@ body:not(.live-immersive) #studio #createRoom{
  // An explicit Leave button stops media; foreground recovery reacquires camera if needed.
  // Source orientation must control the player size; GAME is landscape.
  const watchVideo=$('remote');
+ function updateDeckUI(){
+  const media=watchVideo.srcObject;
+  const playing=watchVideo.videoWidth>0&&watchVideo.readyState>=2&&!watchVideo.paused;
+  const audio=media&&typeof media.getAudioTracks==='function'&&media.getAudioTracks().some(t=>t.readyState==='live'&&t.enabled);
+  const ice=peer?.iceConnectionState||'new';
+  const videoStatus=playing?'AKTIF':watchVideo.error?'ERROR':watchVideo.readyState>=2?'TERJEDA':'MENUNGGU';
+  $('deckVideoStatus').textContent=videoStatus;
+  $('deckAudioStatus').textContent=audio?'TERDETEKSI':'BELUM ADA';
+  $('deckNetStatus').textContent=['connected','completed'].includes(ice)?'TERHUBUNG':
+    ice==='disconnected'?'TERPUTUS':ice==='failed'?'GAGAL':ice==='checking'?'MEMERIKSA':'MENYAMBUNG';
+  $('deckMediaLabel').textContent='STREAM / '+(playing?'VIDEO DITERIMA':videoStatus);
+  $('deckMute').textContent=watchVideo.muted?'♫ SUARA OFF':'♫ SUARA ON';
+ }
+ $('deckMute').onclick=()=>{watchVideo.muted=!watchVideo.muted;updateDeckUI()};
+ $('deckRefresh').onclick=()=>$('refreshVideo').click();
+ $('deckFullscreen').onclick=()=>{
+  if(document.fullscreenElement){document.exitFullscreen?.().catch(()=>{});return}
+  if(watchVideo.requestFullscreen)watchVideo.requestFullscreen().catch(()=>{});
+  else if(watchVideo.webkitEnterFullscreen)watchVideo.webkitEnterFullscreen();
+ };
+ for(const event of ['playing','pause','waiting','stalled','error','loadedmetadata','emptied'])
+  watchVideo.addEventListener(event,updateDeckUI);
  const syncWatchAspect=()=>document.body.classList.toggle('watch-landscape',
    watchVideo.videoHeight>0&&watchVideo.videoWidth>watchVideo.videoHeight*1.12);
  watchVideo.addEventListener('loadedmetadata',syncWatchAspect);
