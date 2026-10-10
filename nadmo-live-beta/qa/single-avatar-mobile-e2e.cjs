@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict');
 const puppeteer=require('puppeteer-core');
 const base='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
-const photo='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLhJwAAAABJRU5ErkJggg==';
+const photo='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAIAAADZSiLoAAAAF0lEQVR4nGO8Pi2AgYGBgYGBiQEGECwAMasBw0+etQYAAAAASUVORK5CYII=';
 (async()=>{
  const browser=await puppeteer.launch({executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
   headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
