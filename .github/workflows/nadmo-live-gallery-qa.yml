@@ -1,0 +1,22 @@
+name: NADMO LIVE Real Gallery Upload QC
+on:
+  push:
+    branches: ['feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/qa/social-gallery-real-upload-e2e.mjs'
+      - '.github/workflows/nadmo-live-gallery-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gallery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify fixture tooling
+        run: command -v ffmpeg && node --check nadmo-live-beta/qa/social-gallery-real-upload-e2e.mjs
+      - name: Verify deployed R2 photos + video mixed-media end to end
+        run: node nadmo-live-beta/qa/social-gallery-real-upload-e2e.mjs
