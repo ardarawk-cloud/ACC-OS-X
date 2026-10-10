@@ -893,6 +893,62 @@ nav [data-tab="messagesPage"]{position:relative}
 .mast-login{border:1px solid #8fad63;border-radius:17px;background:#192519;color:#e7faaf;padding:7px 11px;font:900 10px Arial;cursor:pointer}.mast-login[hidden]{display:none!important}
 body.page-subview nav{display:none!important}body.page-subview #app{padding-bottom:22px}
 .mode-details[hidden]{display:none!important}
+
+/* v0.9 GAME + modern compact UI — black/lime identity and skewed GO LIVE retained */
+:root{--bg:#080c09;--panel:#101712;--line:#2d3b30;--paper:#edf4e9;--neon:#dfff6d}
+body:not(.live-immersive) .btn{border-radius:12px;transition:filter .18s}
+body:not(.live-immersive) .btn:active{filter:brightness(.84)}
+body:not(.live-immersive) .field{border-radius:12px;border-color:#334c37;background:#121a14}
+body:not(.live-immersive) .page-top{padding-top:15px;margin-top:6px}
+body:not(.live-immersive) .page-top h1{font-size:clamp(32px,8vw,44px)}
+body:not(.live-immersive) .show-label{margin:19px 0 10px;padding-top:11px}
+body:not(.live-immersive) .show-label b{font-size:17px}
+body:not(.live-immersive) #home .signal-stage{height:clamp(235px,37vh,340px);border-radius:18px}
+body:not(.live-immersive) .freq button{border-radius:12px;height:116px;background:#101912}
+nav button.broadcast i{box-shadow:0 2px 17px #dfff6d48;border-radius:5px}
+#studio .mode-grid button{min-height:75px;padding:10px 4px;border-radius:14px;background:#111a14}
+#studio .mode-grid button.active{background:#1c311c;color:#e4ff93;box-shadow:inset 0 0 0 1px #b9ec56}
+#studio>.panel,#studio #gameSetup{border:1px solid #344b35;background:#101912;border-radius:18px;padding:14px;margin:12px 0}
+#studio .viewfinder{border-radius:15px;overflow:hidden}
+#studio:has(#gameSetup:not(.hide))>.viewfinder,
+#studio:has(#gameSetup:not(.hide))>#camState,
+#studio:has(#gameSetup:not(.hide))>.actions:has(#preview){display:none}
+#studio #gameSetup .game-canvas-note{font:900 15px/1.5 Arial,sans-serif;color:#dcf7c3;letter-spacing:.8px}
+#gameSetup .game-canvas-note small{display:block;margin-top:10px;color:#8ca38b}
+#gameSetup .game-live-actions{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0 4px}
+#gameSetup .game-live-actions .btn{flex:1;min-width:90px}
+#gameSetup .game-live-actions [hidden]{display:none!important}
+#gameCaptureStatus{border-left:2px solid var(--neon);padding-left:9px;font-size:11px}
+body.live-immersive.watch-game #watch #remote{object-fit:contain!important;background:#030604}
+#gameRemoteFace[hidden]{display:none!important}
+body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(env(safe-area-inset-top) + 100px);right:14px;width:76px;height:76px;max-height:none;min-height:0;object-fit:cover;transform:scaleX(-1);border-radius:50%;border:2px solid var(--neon);box-shadow:0 8px 26px #0009;pointer-events:none;background:#172b19}
+@media(max-width:380px){body.live-immersive #watch #gameRemoteFace{width:65px;height:65px}}
+
+/* Creator-first polish: smaller menu rows, unified social/messages/me cards. */
+body:not(.live-immersive) .me-menu{background:#111b14;border:1px solid #344b35;border-radius:15px;overflow:hidden}
+body:not(.live-immersive) .me-menu button{min-height:51px;padding:11px 14px;font-size:13px;border-bottom:1px solid #2d3b2f}
+body:not(.live-immersive) .me-menu button:active{background:#223625}
+body:not(.live-immersive) .me-menu button b{font-size:20px}
+body:not(.live-immersive) #settings .profile-hero{background:linear-gradient(140deg,#19281a,#0e1711);border:1px solid #415c3a;border-radius:16px;padding:13px}
+body:not(.live-immersive) .message-thread,body:not(.live-immersive) .message-request{background:#101912;border:1px solid #304533;border-radius:14px;padding:12px;margin:7px 0;gap:10px}
+body:not(.live-immersive) .message-thread button,body:not(.live-immersive) .message-request button{border-radius:10px;min-height:36px}
+body:not(.live-immersive) .profile-post-feed>*,body:not(.live-immersive) #socialPublicFeed>*{border-radius:14px;overflow-wrap:anywhere}
+body:not(.live-immersive) #socialPage .profile-textarea{border-radius:13px;min-height:95px}
+body:not(.live-immersive) #explore #rooms .room{border-radius:14px;padding:10px;border:1px solid #304332;background:#0f1711;margin-bottom:8px}
+body:not(.live-immersive) #explore #rooms .room:first-child{border-top:1px solid #304332}
+body:not(.live-immersive) #explore #rooms .room-art{border-radius:11px;overflow:hidden}
+body:not(.live-immersive) #explore #searchLive{border-radius:11px}
+body:not(.live-immersive) .filterstrip button{border-radius:24px}
+@media(max-width:370px){body:not(.live-immersive) .me-menu button{font-size:12px;padding:10px 11px}}
+
+#gameOverlayPreview{min-height:166px;margin:9px 0 7px;border-radius:15px}
+#gameSetup .game-canvas-note{flex-direction:column;gap:3px;letter-spacing:1px}
+#gameSetup .game-canvas-note small{max-width:220px;line-height:1.45;margin:0;letter-spacing:0}
+#gameSetup .game-face-frame{top:10px;right:10px}
+#gameSetup .face-actions button{min-height:35px;padding:7px;font-size:10px}
+#studio #gameSetup{padding:12px}
+#studio #gameSetup .field{margin-bottom:9px}
+#studio #gameSetup .profile-note{margin:8px 0}
 </style></head>
 <body>
 <div class="app">
@@ -945,11 +1001,11 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
 <div class="mode-details" id="modeDetails" hidden></div>
 <div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select>
  <div id="gameOverlayPreview" aria-label="Pratinjau posisi kamera saat bermain">
-  <div class="game-canvas-note">Pratinjau posisi kamera<br>Rekaman layar game belum tersedia.</div>
+  <div class="game-canvas-note">LAYAR GAME<br><small>Android meminta izin sebelum siaran</small></div>
   <div class="game-face-frame" id="gameFaceFrame"><video id="gameFaceCam" autoplay muted playsinline></video></div>
  </div>
  <div class="face-actions"><button type="button" class="btn secondary" id="gameFaceToggle">KAMERA ON</button><button type="button" class="btn secondary" id="gameFaceSize">UKURAN</button><button type="button" class="btn ghost" id="gameFaceHide">SEMBUNYIKAN</button></div>
- <p id="gameCaptureStatus" class="profile-note">Mode GAME belum dapat siaran sampai perekaman layar Android siap.</p></div>
+ <p id="gameCaptureStatus" class="profile-note" role="status" aria-live="polite">Pilih game, aktifkan kamera jika perlu, lalu mulai.</p><div class="game-live-actions"><button type="button" class="btn secondary" id="gameLaunchGame" hidden>↗ BUKA GAME</button><button type="button" class="btn ghost" id="gameShareRoom" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="gameStopLive" hidden>■ AKHIRI LIVE</button></div></div>
 <div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
   <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
   <div class="status" id="camState">CAMERA / STANDBY</div>
@@ -979,7 +1035,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
-  <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
+  <div class="panel live-stage"><div class="viewfinder"><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div><div id="watchState" class="status">CONNECTING SIGNAL...</div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
   <div id="viewerTools" hidden><button class="btn secondary" id="tipQuick">Rp SAWER</button></div>
@@ -1406,6 +1462,29 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
  let gameFaceStream=null,gameFaceDiameter=76;
+ const nativeGame=typeof window.NadmoGame?.postMessage==='function';
+ let nativeGameState='stopped',nativeGameRoom='';
+ function applyGameFaceLayout(layout){
+  const video=$('gameRemoteFace');if(!video||!layout)return;
+  const x=Number(layout.x),y=Number(layout.y),size=Number(layout.size);
+  if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(size))return;
+  const safeSize=Math.max(56,Math.min(112,size));
+  video.style.width=safeSize+'px';video.style.height=safeSize+'px';
+  video.style.left=(Math.max(0,Math.min(.82,x))*100)+'%';
+  video.style.top=(Math.max(.02,Math.min(.85,y))*100)+'%';
+  video.style.right='auto';
+ }
+ function gameCommand(type,data={}){if(!nativeGame)return false;window.NadmoGame.postMessage(JSON.stringify({type,...data}));return true}
+ window.addEventListener('nadmo-game-status',event=>{
+  const d=event.detail||{};nativeGameState=d.state||'stopped';
+  if(d.room)nativeGameRoom=d.room;
+  if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
+  $('gameCaptureStatus').textContent=d.message||'Pilih game untuk mulai.';
+  $('gameLaunchGame').hidden=nativeGameState!=='live';
+  $('gameShareRoom').hidden=nativeGameState!=='live'||!nativeGameRoom;
+  $('gameStopLive').hidden=!['live','starting','reconnecting'].includes(nativeGameState);
+  if(selectedLiveMode==='gaming')chooseMode('gaming');
+ });
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
  // Profile and social link editor: local-only beta until authenticated account storage exists.
@@ -2996,19 +3075,20 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
   // Keep the screen quiet; show status only for unavailable modes.
-  const copy={camera:'',talk:'',gaming:'Perekaman layar belum tersedia.',studio:'Koneksi OBS belum tersedia.'};
+  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',studio:'Koneksi OBS belum tersedia.'};
   $('modeDetails').textContent=copy[mode];
   $('modeDetails').hidden=!copy[mode];
-  $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE NOT READY';
-  const ready=mode==='camera'||mode==='talk';
-  $('preview').disabled=!ready;$('createRoom').disabled=!ready;
-  $('createRoom').textContent=ready?'● TRANSMIT LIVE':mode==='gaming'?'SCREEN CAPTURE COMING SOON':'PC INGEST COMING SOON';
+  $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE VIA ANDROID';
+  const ready=mode==='camera'||mode==='talk'||(mode==='gaming'&&nativeGame);
+  $('preview').disabled=!(mode==='camera'||mode==='talk');
+  $('createRoom').disabled=!ready||(mode==='gaming'&&['live','starting','reconnecting'].includes(nativeGameState));
+  $('createRoom').textContent=mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
   if(mode==='gaming')$('category').value='Gaming';
   if(mode==='talk')$('category').value='Podcast';
   if(mode==='studio')$('category').value='DJ & Music';
   if(localStream&&!host){localStream.getTracks().forEach(t=>t.stop());localStream=null;stopTalkVisual();$('camera').srcObject=null}
  }
- document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>chooseMode(b.dataset.liveMode));
+ document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>{chooseMode(b.dataset.liveMode);if(b.dataset.liveMode==='gaming')gameCommand('status')});
 
  function gameFaceStop(){
   if(gameFaceStream){gameFaceStream.getTracks().forEach(track=>track.stop());gameFaceStream=null}
@@ -3021,7 +3101,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    if(selectedLiveMode!=='gaming'){stream.getTracks().forEach(track=>track.stop());return}
    gameFaceStream=stream;$('gameFaceCam').srcObject=stream;
    $('gameFaceFrame').classList.add('active');$('gameFaceToggle').textContent='KAMERA OFF';
-   $('gameCaptureStatus').textContent='Kamera siap untuk tata letak. Siaran layar game belum tersedia di Android.';
+   $('gameCaptureStatus').textContent='Kamera siap untuk siaran facecam kecil.';
   }catch(err){$('gameCaptureStatus').textContent='Kamera tidak tersedia: '+(err?.message||'izin ditolak')}
  };
  $('gameFaceSize').onclick=()=>{
@@ -3030,6 +3110,14 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
  };
  $('gameFaceHide').onclick=()=>{
   gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON';
+ };
+ $('gameLaunchGame').onclick=()=>gameCommand('launch');
+ $('gameStopLive').onclick=()=>{if(confirm('Akhiri GAME LIVE?'))gameCommand('stop')};
+ $('gameShareRoom').onclick=async()=>{
+  if(!nativeGameRoom)return;
+  const link=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(nativeGameRoom);
+  try{await navigator.clipboard.writeText(link);$('gameCaptureStatus').textContent='Link siaran disalin.'}
+  catch(e){window.prompt('Salin link GAME LIVE',link)}
  };
  $('gameFaceFrame').addEventListener('pointerdown',event=>{
   if(event.button!==0)return;
@@ -3129,14 +3217,37 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
       {type:'join',id:currentRoom,password:roomPassword}));
   },wait);
  }
+ // WebSocket.close() can stay CLOSING when a network handover interrupts
+ // the closing handshake. Recover the room rather than waiting indefinitely.
+ let socketGuardTimer=null, socketUnhealthySince=0;
+ function stopSocketGuard(){
+  if(socketGuardTimer){clearInterval(socketGuardTimer);socketGuardTimer=null}
+  socketUnhealthySince=0;
+ }
+ function guardSocket(conn){
+  stopSocketGuard();
+  socketGuardTimer=setInterval(()=>{
+   if(conn!==socket||manuallyLeaving){stopSocketGuard();return}
+   if(!currentRoom)return;
+   if(conn.readyState===WebSocket.OPEN){socketUnhealthySince=0;return}
+   if(!socketUnhealthySince)socketUnhealthySince=Date.now();
+   if(Date.now()-socketUnhealthySince<8000||reconnectTimer)return;
+   // Normal onclose remains the primary reconnect path.
+   conn.onclose=null;
+   try{conn.close()}catch(error){}
+   retryConnection();
+  },2500);
+ }
  function connect(fn){
   if(!server){notice('Server NADMO sedang tidak tersedia.','liveState');return}
   if(socket){socket.onclose=null;socket.close()}
   const conn=new WebSocket(wsurl());socket=conn;
+  guardSocket(conn);
   conn.onopen=()=>{if(conn===socket)fn()};
   conn.onerror=()=>{if(conn===socket)notice('Sambungan WebSocket terganggu.','liveState')};
   conn.onclose=e=>{
    if(conn!==socket)return;
+   stopSocketGuard();
    $('net').textContent='TERPUTUS';
    if(currentRoom&&!manuallyLeaving)retryConnection();
    else notice('Sambungan gagal. Silakan coba lagi.','liveState');
@@ -3587,9 +3698,25 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
   if(peers.get(id)===pc)signal(id,{description:pc.localDescription,reset:true});
  }
+ function checkViewerFrame(roomId,attempt=0){
+  setTimeout(()=>{
+   if(host||currentRoom!==roomId||!socket||socket.readyState!==WebSocket.OPEN)return;
+   const video=$('remote');
+   if(video?.videoWidth>0&&video.readyState>=2)return;
+   const ice=peer?.iceConnectionState||'belum ada ICE';
+   if(attempt<2){
+    $('watchState').textContent='Video belum menerima frame (ICE: '+ice+'). Meminta ulang stream '+(attempt+1)+'/2...';
+    markWatchWarning($('watchState').textContent);
+    transmit({type:'refresh-media'});checkViewerFrame(roomId,attempt+1);
+   }else{
+    $('watchState').textContent='Video tidak diterima (ICE: '+ice+'). Jaringan ini mungkin memerlukan relay TURN.';
+    markWatchWarning($('watchState').textContent);
+   }
+  },attempt===0?9000:12000);
+ }
  async function incoming(m){
   if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);$('watchRoomSubtitle').textContent=$('title').value.trim()||'Siaran langsung';$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
-  if(m.type==='joined'){stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false}
+  if(m.type==='joined'){if(m.facecam)applyGameFaceLayout(m.facecam);stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);$('watchRoomSubtitle').textContent=m.title||'Siaran langsung';$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false;checkViewerFrame(m.id)}
   if(m.type==='resumed'){stageLayout=normalizeLayout(m.layout);refreshGuestButtons();renderStageGuests();
     $('reportLive').hidden=true;$('hostModeration').hidden=false;
     mirrorBroadcast=m.mirrorBroadcast===true;applyMirroring();
@@ -3672,6 +3799,8 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
    if(!host&&m.data?.description?.type==='offer'&&m.data.reset&&peer){
     peer.close();peer=null;pendingIce.delete(m.from);$('remote').srcObject=null;
     guestRemoteStreams.clear();renderStageGuests();
+    $('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;
+    document.body.classList.remove('watch-game');
    }
    let pc;
    if(host)pc=peers.get(m.from);
@@ -3683,12 +3812,27 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
       for(const track of guestStream.getTracks())if(track.readyState==='live')peer.addTrack(track,guestStream);
      }
      peer.ontrack=e=>{
-      const media=e.streams?.[0];if(!media)return;
-      if(stageGuestsList.some(g=>g.streamId===media.id)||$('remote').srcObject){
+      // Microphone, gameplay and facecam may arrive in any order.
+      // Never treat an audio-only track as the stage's main video.
+      const media=e.streams?.[0]||new MediaStream([e.track]);
+      const screen=media.id==='NADMO_GAME_SCREEN',face=media.id==='NADMO_GAME_FACE';
+      if(face){
+       if(e.track.kind==='video'){
+        const faceVideo=$('gameRemoteFace');faceVideo.srcObject=media;faceVideo.hidden=false;
+        faceVideo.play().catch(()=>{});document.body.classList.add('watch-game');
+       }
+       return;
+      }
+      if(e.track.kind!=='video')return;
+      if(screen){
+       $('remote').srcObject=media;document.body.classList.add('watch-game');
+       applyMirroring();$('remote').play().catch(()=>{});
+       $('watchState').textContent='Sinyal layar game diterima. Menunggu frame...';
+      }else if(stageGuestsList.some(g=>g.streamId===media.id)||($('remote').srcObject&&$('remote').srcObject!==media)){
        guestRemoteStreams.set(media.id,media);
       }else{
-       $('remote').srcObject=media;
-       applyMirroring();$('watchState').textContent='Video tersambung';clearWatchWarning();
+       $('remote').srcObject=media;applyMirroring();$('remote').play().catch(()=>{});
+       $('watchState').textContent='Sinyal video diterima. Menunggu frame...';
       }
       renderStageGuests();
      };
@@ -3730,6 +3874,21 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   if(m.type==='error'){if(!$('reportPanel').classList.contains('hide'))$('reportStatus').textContent=m.message||'Gagal mengirim laporan';notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
  $('createRoom').onclick=async()=>{
+  if(selectedLiveMode==='gaming'){
+   if(!nativeGame){notice('GAME LIVE memerlukan APK Android NADMO.','liveState');return}
+   if(!adult())return;
+   const face=!!gameFaceStream;
+   if(face){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON'}
+   $('gameCaptureStatus').textContent='Meminta izin layar Android...';
+   const frame=$('gameFaceFrame'),preview=$('gameOverlayPreview');
+   const facecam=face?{
+    x:Math.max(0,Math.min(.82,frame.offsetLeft/Math.max(1,preview.clientWidth))),
+    y:Math.max(.02,Math.min(.85,frame.offsetTop/Math.max(1,preview.clientHeight))),
+    size:gameFaceDiameter
+   }:null;
+   gameCommand('start',{title:($('title').value.trim()||$('gameName').value+' LIVE').slice(0,60),game:$('gameName').value,face,facecam});
+   return;
+  }
   if(!['camera','talk'].includes(selectedLiveMode)){notice('Mode '+selectedLiveMode+' belum memiliki source live resmi.','liveState');return}
   if(!adult())return;if(!server){notice('Server NADMO sedang tidak tersedia, coba lagi nanti.','liveState');return}
   if(!localStream)await preview();if(!localStream)return;
@@ -3748,7 +3907,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   $('reportLive').hidden=true;$('hostModeration').hidden=true;
   $('reportPanel').classList.add('hide');$('moderationPanel').classList.add('hide');mutedViewerIds.clear();
   closeLiveSheets();$('viewerTools').hidden=true;
-  manuallyLeaving=true;stopRetry();
+  manuallyLeaving=true;stopRetry();stopSocketGuard();
   if(socket){
     const conn=socket;
     conn.onclose=null;
@@ -3770,7 +3929,7 @@ body.page-subview nav{display:none!important}body.page-subview #app{padding-bott
   if(peer){peer.close();peer=null}
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
-  $('remote').srcObject=null;$('remote').muted=false;$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
+  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game');$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
   $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';mirrorBroadcast=false;$('giftQuick').hidden=false;$('endLiveConfirm').classList.add('hide');applyMirroring();
   $('afkToggle').textContent='▤ KAMERA OFF';
   $('stopCamera').click();show('explore');manuallyLeaving=false;
