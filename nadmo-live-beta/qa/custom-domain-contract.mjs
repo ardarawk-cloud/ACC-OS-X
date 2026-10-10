@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const config=JSON.parse(readFileSync(new URL('../wrangler.json',import.meta.url),'utf8'));
+const html=readFileSync(new URL('../public/app/index.html',import.meta.url),'utf8');
+const worker=readFileSync(new URL('../worker.mjs',import.meta.url),'utf8');
+assert.equal(config.name,'nadmo-live-beta-20261009','must not fork or reset backend identity');
+assert.equal(config.workers_dev,true,'keep beta address/legacy shell functioning');
+assert.deepEqual(config.routes,[{pattern:'live.nadmo.id',custom_domain:true}]);
+assert.ok(config.durable_objects.bindings.some(x=>x.name==='ROOM_HUB'&&x.class_name==='RoomHub'),'same existing accounts, chats and room DO');
+assert.ok(html.includes("const NADMO_PUBLIC_ORIGIN='https://live.nadmo.id'"));
+assert.ok(html.includes('location.origin:NADMO_LEGACY_ORIGIN'),'must not route Android appassets to new domain');
+assert.ok(html.includes("socialPostLink=id=>NADMO_PUBLIC_ORIGIN+'/app/?post='"));
+assert.ok(html.includes('transform:skew(-10deg)'),'original GO LIVE identity must remain');
+assert.ok(worker.includes("if(url.hostname==='live.nadmo.id')"));
+assert.ok(worker.includes("target.search=url.search"),'invites and shared content preserve query');
+assert.ok(worker.includes('return Response.redirect(target.toString(),308)'));
+assert.ok(worker.includes('nadmo-beta-v1'),'must not change account/room namespace');
+console.log('PASS live.nadmo.id domain mapping, cross-origin compatibility, share and homepage contract');
