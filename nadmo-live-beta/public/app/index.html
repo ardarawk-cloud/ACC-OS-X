@@ -910,6 +910,10 @@ nav button.broadcast i{box-shadow:0 2px 17px #dfff6d48;border-radius:5px}
 #studio .mode-grid button.active{background:#1c311c;color:#e4ff93;box-shadow:inset 0 0 0 1px #b9ec56}
 #studio>.panel,#studio #gameSetup{border:1px solid #344b35;background:#101912;border-radius:18px;padding:14px;margin:12px 0}
 #studio .viewfinder{border-radius:15px;overflow:hidden}
+#studio:has(#gameSetup:not(.hide))>.viewfinder,
+#studio:has(#gameSetup:not(.hide))>#camState,
+#studio:has(#gameSetup:not(.hide))>.actions:has(#preview){display:none}
+#studio #gameSetup .game-canvas-note{font:900 15px/1.5 Arial,sans-serif;color:#dcf7c3;letter-spacing:.8px}
 #gameSetup .game-canvas-note small{display:block;margin-top:10px;color:#8ca38b}
 #gameSetup .game-live-actions{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0 4px}
 #gameSetup .game-live-actions .btn{flex:1;min-width:90px}
@@ -3048,7 +3052,7 @@ body.live-immersive #watch #gameRemoteFace{position:absolute;z-index:4;top:calc(
   if(mode==='studio')$('category').value='DJ & Music';
   if(localStream&&!host){localStream.getTracks().forEach(t=>t.stop());localStream=null;stopTalkVisual();$('camera').srcObject=null}
  }
- document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>chooseMode(b.dataset.liveMode));
+ document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>{chooseMode(b.dataset.liveMode);if(b.dataset.liveMode==='gaming')gameCommand('status')});
 
  function gameFaceStop(){
   if(gameFaceStream){gameFaceStream.getTracks().forEach(track=>track.stop());gameFaceStream=null}
