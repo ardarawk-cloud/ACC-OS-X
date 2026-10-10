@@ -24,7 +24,10 @@ const puppeteer=require('puppeteer-core');
    const box=id=>{const b=document.querySelector(id).getBoundingClientRect();return {x:b.x,y:b.y,w:b.width,h:b.height,right:b.right,bottom:b.bottom}};
    return {stage:box('#watch .live-stage'),frame:box('#watch .live-stage>.viewfinder'),
     hud:box('.deck-live-telemetry'),chat:box('#watch .live-chat'),
-    controls:box('.deck-player-controls'),
+    controls:box('.deck-player-controls'),gift:box('#desktopSawerBar'),
+    frame:box('.deck-shell-art'),metricCount:document.querySelectorAll('.deck-live-metric').length,
+    shellVisible:getComputedStyle(document.querySelector('.deck-shell-art')).display,
+    chatTitle:document.querySelector('#watch .live-chat .show-label b').textContent,
     background:getComputedStyle(document.querySelector('.deck-live-metric')).backgroundImage};
   });
   assert.ok(compact.stage.w>560,'PC stage too narrow '+JSON.stringify(compact));
@@ -35,6 +38,11 @@ const puppeteer=require('puppeteer-core');
    'Functional media HUD must not overlap live chat');
   assert.ok(compact.frame.bottom<compact.controls.y+8,'Controls should follow gameplay');
   assert.ok(compact.chat.x>compact.stage.right,'Chat cannot overlap video');
+  assert.equal(compact.metricCount,4,'Real video/audio/network/chat HUD must remain functional');
+  assert.equal(compact.shellVisible,'block','Reference-matched vector border must render on PC');
+  assert.equal(compact.chatTitle,'LIVE CHAT');
+  assert.ok(compact.gift.y>compact.controls.bottom-2&&compact.gift.bottom<compact.stage.bottom+3,
+   'Sawer row must remain inside the deck frame and below player controls: '+JSON.stringify(compact));
   assert.ok(compact.background.includes('gradient'),'Cyberdeck HUD visual styling missing');
   await page.click('#deckMute');
   assert.match(await page.$eval('#deckMute',x=>x.textContent),/SUARA OFF/);
