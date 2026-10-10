@@ -3149,13 +3149,43 @@ body.social-lightbox-open{overflow:hidden}
    }
   }catch(error){$('socialFeedEmpty').hidden=false;$('socialFeedEmpty').textContent='Postingan belum bisa dimuat.'}
  }
- async function publishSocialText(text,output,videoURL=''){
+ const queuedSocialMedia=[];
+ function clearSocialQueue(){
+  for(const item of queuedSocialMedia)URL.revokeObjectURL(item.preview);
+  queuedSocialMedia.length=0;drawSocialQueue();
+ }
+ function drawSocialQueue(){
+  const root=$('socialQueuedMedia');root.replaceChildren();
+  queuedSocialMedia.forEach((item,index)=>{
+   const card=document.createElement('div');card.className='social-queued-item';
+   const preview=document.createElement(item.file.type.startsWith('video/')?'video':'img');
+   preview.src=item.preview;
+   if(preview.tagName==='VIDEO'){preview.muted=true;preview.playsInline=true;preview.preload='metadata'}
+   else preview.alt='Preview '+item.file.name;
+   const name=document.createElement('small');name.textContent=(index+1)+'. '+item.file.name;
+   const controls=document.createElement('div');controls.className='social-queued-controls';
+   for(const [label,delta] of [['←',-1],['→',1],['✕',null]]){
+    const button=document.createElement('button');button.type='button';button.textContent=label;
+    button.setAttribute('aria-label',(delta===null?'Hapus':delta<0?'Geser ke kiri':'Geser ke kanan')+' '+item.file.name);
+    button.disabled=delta!==null&&(index+delta<0||index+delta>=queuedSocialMedia.length);
+    button.onclick=()=>{
+     if(delta===null){URL.revokeObjectURL(item.preview);queuedSocialMedia.splice(index,1)}
+     else{const other=queuedSocialMedia[index+delta];queuedSocialMedia[index+delta]=item;queuedSocialMedia[index]=other}
+     drawSocialQueue();
+    };
+    controls.append(button);
+   }
+   card.append(preview,name,controls);root.append(card);
+  });
+ }
+ async function publishSocialText(text,output,videoURL='',media=[]){
   const value=String(text||'').trim(),videoUrl=String(videoURL||'').trim();
-  if((!value&&!videoUrl)||value.length>2000){output.textContent='Tulis caption atau sertakan video yang valid.';return false}
+  if((!value&&!videoUrl&&!media.length)||value.length>2000){output.textContent='Isi caption atau pilih foto/video.';return false}
+  if(videoUrl&&media.length){output.textContent='Gunakan galeri upload ATAU link video, bukan keduanya.';return false}
   if(!activeAccount){output.textContent='Masuk akun untuk memposting.';show('authPage');return false}
-  output.textContent='Memposting...';
+  output.textContent='Mempublikasikan...';
   try{
-   const result=await accountRequest('/api/account/posts/publish','POST',{text:value,videoUrl});
+   const result=await accountRequest('/api/account/posts/publish','POST',{text:value,videoUrl,media});
    syncedPosts.unshift(result.post);renderSyncedPosts();await loadSocialFeed();
    output.textContent='Postingan berhasil dipublikasikan.';
    return true;
@@ -3165,28 +3195,51 @@ body.social-lightbox-open{overflow:hidden}
   if(!activeAccount){show('authPage');return}
   $('socialComposer').classList.toggle('hide');
  };
- $('socialPublish').onclick=async()=>{
-  if(await publishSocialText($('socialPostText').value,$('socialPostStatus'),$('socialVideoUrl').value)){
-   $('socialPostText').value='';$('socialVideoUrl').value='';$('socialComposer').classList.add('hide');
+ $('socialVideoFile').onchange=()=>{
+  const input=$('socialVideoFile'),files=Array.from(input.files||[]);input.value='';
+  const status=$('socialMediaStatus');
+  for(const file of files){
+   if(queuedSocialMedia.length>=10){status.textContent='Maksimal 10 foto/video dalam satu postingan.';break}
+   const kind=file.type.startsWith('image/')?'image':'video';
+   const formats=['image/jpeg','image/png','image/webp','video/mp4','video/webm'];
+   if(!formats.includes(file.type)||file.size<100||file.size>(kind==='image'?8:25)*1024*1024){
+    status.textContent='File tidak valid: '+file.name+'. Foto maksimal 8 MB, video 25 MB.';
+    continue;
+   }
+   queuedSocialMedia.push({file,preview:URL.createObjectURL(file),url:null});
   }
+  drawSocialQueue();
+  if(queuedSocialMedia.length)status.textContent=queuedSocialMedia.length+' media dipilih. Tekan POSTING untuk unggah.';
  };
- $('socialVideoFile').onchange=async()=>{
-  const input=$('socialVideoFile'),file=input.files?.[0];input.value='';
-  if(!file)return;
-  const status=$('socialMediaStatus');status.textContent='Menyiapkan video...';
+ $('socialPublish').onclick=async()=>{
+  const button=$('socialPublish'),status=$('socialMediaStatus');
+  if(button.disabled)return;
+  button.disabled=true;
   try{
-   if(!['video/mp4','video/webm'].includes(file.type)||file.size>25*1024*1024||file.size<100)
-    throw Error('Gunakan MP4/WebM maksimal 25 MB.');
-   const capability=await accountRequest('/api/social/media/status');
-   if(!capability.enabled)throw Error('Upload file menunggu penyimpanan media. Sementara gunakan link video.');
-   const response=await fetch(api('/api/social/media/upload'),{
-    method:'PUT',credentials:'include',headers:{'Content-Type':file.type},body:file,cache:'no-store'
-   });
-   const data=await response.json();
-   if(!response.ok)throw Error(data.error||'Video gagal diunggah');
-   $('socialVideoUrl').value=data.url;
-   status.textContent='Video terunggah. Tulis caption, lalu POSTING.';
-  }catch(e){status.textContent=e.message}
+   if(queuedSocialMedia.length){
+    const capability=await accountRequest('/api/social/media/status');
+    if(!capability.enabled)throw Error('Penyimpanan galeri belum aktif. Jangan hapus foto/video dari HP.');
+    if($('socialVideoUrl').value.trim())throw Error('Hapus link video jika ingin menggunakan galeri.');
+   }
+   const media=[];
+   for(let i=0;i<queuedSocialMedia.length;i++){
+    const item=queuedSocialMedia[i];status.textContent='Mengunggah '+(i+1)+' / '+queuedSocialMedia.length+'...';
+    if(!item.url){
+     const response=await fetch(api('/api/social/media/upload'),{
+      method:'PUT',credentials:'include',headers:{'Content-Type':item.file.type},body:item.file,cache:'no-store'
+     });
+     const result=await response.json();
+     if(!response.ok||!result.ok)throw Error(result.error||'Upload '+(i+1)+' gagal');
+     item.url=result.url;
+    }
+    media.push({type:item.file.type.startsWith('image/')?'image':'video',url:item.url});
+   }
+   if(await publishSocialText($('socialPostText').value,$('socialPostStatus'),$('socialVideoUrl').value,media)){
+    $('socialPostText').value='';$('socialVideoUrl').value='';clearSocialQueue();
+    $('socialComposer').classList.add('hide');status.textContent='Galeri siap.';
+   }
+  }catch(e){$('socialPostStatus').textContent=e.message;status.textContent='Belum dipublikasikan. Media tetap ada untuk dicoba lagi.'}
+  finally{button.disabled=false}
  };
  $('profilePostPublish').onclick=async()=>{
   if(await publishSocialText($('profilePostText').value,$('profilePostStatus'))){
@@ -3194,6 +3247,7 @@ body.social-lightbox-open{overflow:hidden}
   }
  };
  $('socialSaveDraft').onclick=()=>{
+  if(queuedSocialMedia.length&&!confirm('Draf saat ini hanya menyimpan caption, bukan file galeri. Simpan caption saja?'))return;
   $('profilePostText').value=$('socialPostText').value;
   $('socialPostText').value='';show('draftsPage');
   $('profilePostSave').click();
@@ -3201,8 +3255,8 @@ body.social-lightbox-open{overflow:hidden}
  async function refreshVideoCapability(){
   try{
    const cap=await accountRequest('/api/social/media/status');
-   $('socialMediaStatus').textContent=cap.enabled?'Video MP4/WebM maksimal 25 MB.':'Upload video belum aktif; gunakan tautan video dahulu.';
-  }catch(e){$('socialMediaStatus').textContent='Penyimpanan video belum siap.'}
+   $('socialMediaStatus').textContent=cap.enabled?'Galeri siap: sampai 10 foto/video.':'Upload galeri belum aktif; tautan video tetap dapat dipakai.';
+  }catch(e){$('socialMediaStatus').textContent='Penyimpanan galeri belum siap.'}
  }
  refreshVideoCapability();
  let activeChatHandle='',chatRefreshTimer=null,chatNotificationTimer=null,chatBusy=false,activeChatPeer=null;
