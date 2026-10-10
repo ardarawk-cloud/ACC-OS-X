@@ -4418,6 +4418,40 @@ body.social-lightbox-open{overflow:hidden}
  $('refreshVideo').onclick=()=>{lastForegroundRecovery=0;restoreForeground()};
  window.addEventListener('focus',restoreForeground);
  window.addEventListener('pageshow',event=>{if(event.persisted)restoreForeground()});
+  // GAME playback PCM over a WebRTC data channel. Regular host microphone
+  // stays on its separate audio track. Never fabricate an audio-ready state.
+  let gameAudioContext=null,gameAudioNext=0,gameAudioLastFrame=0;
+  const GAME_AUDIO_RATE=24000,GAME_AUDIO_FRAME_BYTES=960;
+  function prepareGameAudio(){
+   try{
+    if(!gameAudioContext){
+     const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+     if(!AudioContextClass)return;
+     gameAudioContext=new AudioContextClass({sampleRate:GAME_AUDIO_RATE});
+    }
+    if(gameAudioContext.state==='suspended')gameAudioContext.resume().catch(()=>{});
+   }catch(error){console.warn('GAME audio playback unavailable',error)}
+  }
+  function resetGameAudio(){
+   gameAudioNext=0;gameAudioLastFrame=0;
+   if(gameAudioContext){const ctx=gameAudioContext;gameAudioContext=null;ctx.close().catch(()=>{})}
+  }
+  function onGameAudioPacket(data){
+   if(host||!currentRoom||!gameAudioContext||gameAudioContext.state!=='running'||$('remote').muted)return;
+   if(!(data instanceof ArrayBuffer)||data.byteLength!==GAME_AUDIO_FRAME_BYTES)return;
+   try{
+    const ctx=gameAudioContext,pcm=new DataView(data),count=data.byteLength/2;
+    const buffer=ctx.createBuffer(1,count,GAME_AUDIO_RATE),samples=buffer.getChannelData(0);
+    let peak=0;
+    for(let i=0;i<count;i++){const x=pcm.getInt16(i*2,true)/32768;samples[i]=x;peak=Math.max(peak,Math.abs(x))}
+    const now=ctx.currentTime;
+    // No backlog after a network stall.
+    if(!gameAudioNext||gameAudioNext<now||gameAudioNext>now+.18)gameAudioNext=now+.035;
+    const src=ctx.createBufferSource();src.buffer=buffer;src.connect(ctx.destination);
+    src.start(gameAudioNext);gameAudioNext+=count/GAME_AUDIO_RATE;
+    if(peak>.007)gameAudioLastFrame=Date.now();
+   }catch(error){console.warn('GAME audio packet rejected',error)}
+  }
   function rtc(){
   const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]});
   let iceRepairTimer=null,lastMediaRefreshAt=0;
@@ -4863,6 +4897,12 @@ body.social-lightbox-open{overflow:hidden}
    else{
     if(!peer){
      peer=rtc();
+     peer.ondatachannel=event=>{
+      const channel=event.channel;
+      if(channel.label!=='nadmo-game-audio')return;
+      channel.binaryType='arraybuffer';
+      channel.onmessage=packet=>onGameAudioPacket(packet.data);
+     };
      // Guest media remains local until explicit request, approval and permission.
      if(guestOnStage&&guestStream){
       for(const track of guestStream.getTracks())if(track.readyState==='live')peer.addTrack(track,guestStream);
@@ -4952,7 +4992,7 @@ body.social-lightbox-open{overflow:hidden}
   const category=selectedLiveMode==='talk'?'Podcast':$('category').value;
   connect(()=>transmit({type:'create',title,category,mode:'public',hostName:activeAccount?.name||draftProfile.name||'Host'}));
  };
- function join(id,title,locked){if(!adult()){pendingInvite={id,title,locked};return}pendingInvite=null;let password='';if(locked){password=prompt('Kode akses room:')||'';if(!password)return}roomPassword=password;stopRetry();
+ function join(id,title,locked){prepareGameAudio();if(!adult()){pendingInvite={id,title,locked};return}pendingInvite=null;let password='';if(locked){password=prompt('Kode akses room:')||'';if(!password)return}roomPassword=password;stopRetry();
  connect(()=>transmit({type:'join',id,password}));$('watchTitle').textContent='Host';$('watchRoomSubtitle').textContent=title||''}
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
@@ -4983,6 +5023,7 @@ body.social-lightbox-open{overflow:hidden}
   }
   for(const pc of peers.values())pc.close();peers.clear();pendingIce.clear();
   if(peer){peer.close();peer=null}
+  resetGameAudio();
   if(afkTimer)clearInterval(afkTimer);afkTimer=null;afkTrack=null;afkMode=false;
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
   document.body.style.removeProperty('--deck-video-aspect');
@@ -5010,14 +5051,16 @@ body.social-lightbox-open{overflow:hidden}
   $('deckVideoStatus').textContent=videoStatus;
   const gameFeedState=$('mobileGameFeedState');
   if(gameFeedState)gameFeedState.textContent=playing?'● VIDEO AKTIF':watchVideo.error?'VIDEO ERROR':'MENUNGGU VIDEO';
-  $('deckAudioStatus').textContent=audio?'TERDETEKSI':'BELUM ADA';
+  $('deckAudioStatus').textContent=Date.now()-gameAudioLastFrame<2500?'MIC + GAME':audio?'MIC TERDETEKSI':'MENUNGGU AUDIO';
   $('deckNetStatus').textContent=['connected','completed'].includes(ice)?'TERHUBUNG':
     ice==='disconnected'?'TERPUTUS':ice==='failed'?'GAGAL':ice==='checking'?'MEMERIKSA':'MENYAMBUNG';
   $('deckChatStatus').textContent=socket?.readyState===WebSocket.OPEN&&currentRoom?'ROOM AKTIF':'OFFLINE';
   $('deckMediaLabel').textContent='STREAM / '+(playing?'VIDEO DITERIMA':videoStatus);
   $('deckMute').textContent=watchVideo.muted?'♫ SUARA OFF':'♫ SUARA ON';
  }
- $('deckMute').onclick=()=>{watchVideo.muted=!watchVideo.muted;updateDeckUI()};
+ $('deckMute').onclick=()=>{watchVideo.muted=!watchVideo.muted;if(!watchVideo.muted)prepareGameAudio();updateDeckUI()};
+ watchVideo.addEventListener('click',prepareGameAudio);
+ watchVideo.addEventListener('touchstart',prepareGameAudio,{passive:true});
  $('deckRefresh').onclick=()=>$('refreshVideo').click();
  $('deckFullscreen').onclick=()=>{
   if(document.fullscreenElement){document.exitFullscreen?.().catch(()=>{});return}
