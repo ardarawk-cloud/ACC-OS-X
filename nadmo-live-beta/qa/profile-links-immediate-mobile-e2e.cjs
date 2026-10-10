@@ -31,13 +31,13 @@ async function main(){
   await page.waitForFunction(()=>!document.querySelector('#meSigned').classList.contains('hide'),{timeout:18000});
   await page.$eval('nav [data-tab="settings"]',e=>e.click());
   assert.equal(await page.$eval('#profileBusinessLinks a',e=>e.textContent.includes('Booking')),true);
-  const before=await page.evaluate(async()=>await(await fetch('/api/profile/'+handle)).json());
+  const before=await page.evaluate(async userHandle=>await(await fetch('/api/profile/'+userHandle)).json(),handle);
   assert.equal(before.profile.links.length,1);
   await page.$eval('#editProfileBtn',e=>e.click());
   await page.$eval('#profileEditLinks button',e=>e.click());
   await page.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('Link dihapus dari akun'),{timeout:14000});
   assert.equal(await page.$eval('#profileBusinessLinks',e=>e.querySelectorAll('a').length),0);
-  const after=await page.evaluate(async()=>await(await fetch('/api/profile/'+handle)).json());
+  const after=await page.evaluate(async userHandle=>await(await fetch('/api/profile/'+userHandle)).json(),handle);
   assert.equal(after.profile.links.length,0);
   console.log('PASS immediate link sync, ME visibility, reload, public profile and remove');
  }finally{
