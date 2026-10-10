@@ -104,7 +104,8 @@ jobs:
           grep -q 'owner-phone-launcher-v1.js?rev=KAI_ONE_OWNER_PHONE_LAUNCHER_V3_FAST_TAP_BUILD10' service-worker.js
           grep -q 'KAI_ONE_HOME_LAUNCHER_CHAIN_V1' home-launcher-chain-v1.js
           grep -q 'my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE' home-launcher-chain-v1.js
-          grep -q 'my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V4_APK_PROJECT' home-launcher-chain-v1.js
+          grep -q 'my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V5_NADMO_LIVE' home-launcher-chain-v1.js
+          grep -q 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' my-projects-launcher-v1.js
           grep -q 'my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE' home-launcher-chain-v1.js
           grep -q 'launcher-layout-stability-v1.js?rev=KAI_ONE_LAUNCHER_LAYOUT_STABILITY_V6_BWD_ADMIN_OWNER' home-launcher-chain-v1.js
           grep -q 'window.ACCHomeLaunchpad=Object.freeze' home-launchpad.js

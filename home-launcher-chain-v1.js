@@ -43,7 +43,7 @@
       await loadScript("maps","./my-maps-launcher-v1.js?rev=KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE");
       window.ACCMyMaps?.render?.();
 
-      await loadScript("projects","./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V4_APK_PROJECT");
+      await loadScript("projects","./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V5_NADMO_LIVE");
       window.ACCMyProjects?.render?.();
 
       await loadScript("admin","./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE");

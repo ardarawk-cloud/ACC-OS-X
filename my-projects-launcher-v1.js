@@ -1,18 +1,19 @@
-// KAI ONE — ACC OS X MY PROJECTS launcher v4
+// KAI ONE — ACC OS X MY PROJECTS launcher v5
 // Map projects mirror MY MAPS order. CREATIVE LAB removed per owner instruction.
 (() => {
   "use strict";
 
-  const REVISION = "KAI_ONE_MY_PROJECTS_V4_APK_PROJECT";
+  const REVISION = "KAI_ONE_MY_PROJECTS_V5_NADMO_LIVE";
   const ROOT_ID = "acc-my-projects";
-  const STYLE_ID = "acc-my-projects-v4-style";
+  const STYLE_ID = "acc-my-projects-v5-style";
 
   const ICONS = {
     map:`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M9 17l14-6 18 7 14-6v35l-14 6-18-7-14 6z"/><path d="M23 11v35M41 18v35"/><path class="fill" d="M32 23c-5 0-9 4-9 9 0 7 9 15 9 15s9-8 9-15c0-5-4-9-9-9zm0 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>`,
     core:`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="13"/><path d="M32 7v8M32 49v8M7 32h8M49 32h8M14.3 14.3l5.7 5.7M44 44l5.7 5.7M49.7 14.3L44 20M20 44l-5.7 5.7"/><path class="fill" d="M32 23l8 4.6v8.8L32 41l-8-4.6v-8.8z"/></svg>`,
     personal:`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="23" r="10"/><path d="M15 52c2.3-10.4 8.1-15.6 17-15.6S46.7 41.6 49 52"/><path d="M11 11h10M43 11h10M11 53h10M43 53h10"/></svg>`,
     studio:`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 25h40v27H12z"/><path d="M12 25l4-13h40l-4 13z"/><path d="M19 12l7 13M33 12l7 13M47 12l7 13"/><path d="M27 34l13 7-13 7z" class="fill"/></svg>`,
-    business:`<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="20" width="44" height="32" rx="5"/><path d="M24 20v-6h16v6M10 32h44M27 32v6h10v-6"/><path d="M18 46l8-7 7 5 12-11"/><path d="M40 33h5v5"/></svg>`
+    business:`<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="20" width="44" height="32" rx="5"/><path d="M24 20v-6h16v6M10 32h44M27 32v6h10v-6"/><path d="M18 46l8-7 7 5 12-11"/><path d="M40 33h5v5"/></svg>`,
+    live:`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="6" class="fill"/><path d="M22 22c-5.5 5.5-5.5 14.5 0 20M42 22c5.5 5.5 5.5 14.5 0 20M15 15c-9.4 9.4-9.4 24.6 0 34M49 15c9.4 9.4 9.4 24.6 0 34"/></svg>`
   };
 
   const PROJECTS = [
@@ -25,6 +26,7 @@
     {key:"gunung-bbya",title:"Gunung BBYA",icon:ICONS.map,accent:"#22c55e",url:"https://chatgpt.com/g/g-p-6a99557b91d88191b871c4c0095ca41d-mount-bbya/project"},
     {key:"lost-found-night-shift",title:"Lost & Found: Night Shift",icon:ICONS.map,accent:"#f97316",url:"https://chatgpt.com/g/g-p-6a994791cff881918a3bfa94d3a8010f-lost-found-night-shift/project"},
     {key:"apk",title:"APK",icon:ICONS.core,accent:"#38bdf8",url:"https://chatgpt.com/g/g-p-6a9917452e288191a7e825f1607f6bd6-apk/project"},
+    {key:"nadmo-live",title:"NADMO LIVE",icon:ICONS.live,accent:"#b7ff2a",url:"https://chatgpt.com/g/g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project"},
     {key:"arda-core-corporation",title:"Arda Core Corporation",icon:ICONS.core,accent:"#d4af37",url:"https://chatgpt.com/g/g-p-6a6a04f609388191b86dc08d22436683-arda-core-corporation/project"},
     {key:"personal",title:"PERSONAL",icon:ICONS.personal,accent:"#60a5fa",url:"https://chatgpt.com/g/g-p-6a677e80c6448191bd234bc1329a47d6-personal/project"},
     {key:"am-studio",title:"AM STUDIO",icon:ICONS.studio,accent:"#f97316",url:"https://chatgpt.com/g/g-p-6a67814fa060819195148be158f327b2-am-studio/project"},
