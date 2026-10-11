@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-mobile-first-v3">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-viewer-video-hud-v4">
 <title>NADMO LIVE — Beta</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
@@ -2341,7 +2341,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
   .mobile-live-hud-footer
  ){display:none!important}
  body.live-immersive.watch-viewer:not(.watch-game) #watch .mobile-live-corner{
-  width:20px!important;height:20px!important;opacity:.46!important;filter:none!important
+  width:24px!important;height:24px!important;opacity:.8!important;filter:drop-shadow(0 0 2px var(--mobile-hud-glow))!important
  }
  body.live-immersive.watch-viewer:not(.watch-game) #watch .hud-tl{border-width:2px 0 0 2px!important}
  body.live-immersive.watch-viewer:not(.watch-game) #watch .hud-tr{border-width:2px 2px 0 0!important}
@@ -2377,7 +2377,52 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-chat .row{
   flex:0 0 auto!important
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud{
+ /* Keep the themed HUD attached to the VIDEO, not the empty chat area.
+    Only decorative HUD media are repositioned; original player, chat,
+    close, gifts and settings keep their existing DOM/action handlers. */
+ body.live-immersive.watch-viewer:not(.watch-game):not(.watch-clean) #watch.camera-frame-letterbox .mobile-live-hud{
+  display:block!important;
+  inset:0 0 auto 0!important;width:100%!important;
+  height:var(--camera-stage-height,300px)!important;
+  min-height:0!important;max-height:none!important;
+  overflow:hidden!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-outline{
+  display:block!important;position:absolute!important;inset:5px!important;
+  border:1px solid var(--mobile-hud-ink)!important;border-radius:3px!important;
+  clip-path:none!important;opacity:.64!important;
+  box-shadow:inset 0 0 0 1px #05060ab0,0 0 6px var(--mobile-hud-glow)!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-corner{
+  display:block!important;width:29px!important;height:29px!important;
+  opacity:.95!important;filter:drop-shadow(0 0 3px var(--mobile-hud-glow))!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-header{
+  display:none!important /* Host profile already identifies the stream. */
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-side{
+  display:flex!important;top:27%!important;height:36%!important;
+  opacity:.85!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-footer{
+  display:flex!important;position:absolute!important;
+  bottom:12px!important;left:auto!important;right:12px!important;
+  height:22px!important;width:auto!important;padding:0 8px!important;
+  border:1px solid var(--mobile-hud-ink)!important;border-radius:5px!important;
+  background:#05080acb!important;box-shadow:0 0 6px var(--mobile-hud-glow)!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-track{
+  display:flex!important;flex:none!important;font-size:10px!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-track b,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-track > i,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-bars{
+  display:none!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud-track span{
+  display:inline!important;font-size:9px!important;letter-spacing:1px!important
+ }
+ body.live-immersive.watch-viewer.watch-clean #watch.camera-frame-letterbox .mobile-live-hud{
   display:none!important
  }
 }
@@ -2501,7 +2546,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
 </section>
 <section id="watch" class="hide">
   <!-- Portrait HUD: themed transparent cyberdeck FRAME, never a video container. -->
-  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-mobile-first-v3" aria-hidden="true">
+  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-viewer-video-hud-v4" aria-hidden="true">
     <div class="mobile-live-hud-outline"></div>
     <span class="mobile-live-corner hud-tl"></span><span class="mobile-live-corner hud-tr"></span>
     <span class="mobile-live-corner hud-bl"></span><span class="mobile-live-corner hud-br"></span>
@@ -2623,7 +2668,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
       <p id="mirrorStatus" class="deck">Mirror Preview aktif hanya untuk kamera depan. Siaran penonton normal secara bawaan.</p>
     </div>
     <button type="button" class="btn ghost" id="settingsLeave" style="width:100%">KELUAR / AKHIRI LIVE</button>
-    <small class="deck" id="mobileUiBuild" style="display:block;margin-top:10px;opacity:.7">UI 20261012-MOBILE-FIRST-V3</small>
+    <small class="deck" id="mobileUiBuild" style="display:block;margin-top:10px;opacity:.7">UI 20261012-VIDEO-HUD-V4</small>
   </div>
   <div id="endLiveConfirm" class="end-live-dialog hide" role="dialog" aria-modal="true" aria-labelledby="endLiveTitle">
     <div class="end-live-card">
