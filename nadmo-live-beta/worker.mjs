@@ -541,17 +541,19 @@ export default {
     return new Response('Method Not Allowed',{status:405});
   // Serve the verified signed Android package from our own Cloudflare static assets.
   // Unlike a GitHub Actions artifact, this is a direct APK (no ZIP or GitHub webview).
-  if(['/download.apk','/NADMO-LIVE-v0.9.1-beta.apk','/NADMO-LIVE-v0.9.2-beta.apk'].includes(url.pathname)){
-    // The stable shortcut points at the latest owner-signed APK. Older version links stay immutable.
-    const filename=url.pathname.endsWith('v0.9.1-beta.apk')
-      ?'NADMO-LIVE-v0.9.1-beta.apk':'NADMO-LIVE-v0.9.2-beta.apk';
+  if(['/download.apk','/NADMO-LIVE-v0.9.1-beta.apk','/NADMO-LIVE-v0.9.2-beta.apk','/NADMO-LIVE-v0.9.4-beta.apk'].includes(url.pathname)){
+    // Official mutable alias upgrades to owner-signed v0.9.4 (same cert, higher versionCode).
+    // Older version-specific links remain immutable.
+    const filename=url.pathname.endsWith('v0.9.1-beta.apk')?'NADMO-LIVE-v0.9.1-beta.apk'
+      :url.pathname.endsWith('v0.9.2-beta.apk')?'NADMO-LIVE-v0.9.2-beta.apk'
+      :'NADMO-LIVE-v0.9.4-beta.apk';
     const asset=await env.ASSETS.fetch(new Request(url.origin+'/downloads/'+filename));
     if(asset.status!==200||!asset.body)return new Response('NADMO LIVE APK belum tersedia. Coba lagi nanti.',{status:503,headers:{'Cache-Control':'no-store'}});
     const headers=new Headers(asset.headers);
     headers.set('Content-Type','application/vnd.android.package-archive');
     headers.set('Content-Disposition','attachment; filename="'+filename+'"');
     headers.set('X-Content-Type-Options','nosniff');
-    headers.set('Cache-Control','public, max-age=3600');
+    headers.set('Cache-Control',url.pathname==='/download.apk'?'no-store':'public, max-age=86400, immutable');
     headers.set('Access-Control-Allow-Origin','*');
     return new Response(asset.body,{status:200,headers});
   }
