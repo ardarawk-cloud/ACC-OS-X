@@ -112,6 +112,8 @@ const puppeteer=require('puppeteer-core');
      feed:rect('#watch .mobile-game-feedline'),chat:rect('#watch .live-chat'),
      chatHeading:rect('#watch .live-chat .show-label'),chatMessages:rect('#watch #chat'),
      composer:rect('#watch .live-chat .row'),safety:rect('#watch .room-safety'),
+     safetyInsideSettings:document.querySelector('#watch .room-safety').parentElement.id==='liveSettingsPanel',
+     safetyHidden:getComputedStyle(document.querySelector('#watch .room-safety')).display==='none',
      brandVisible:getComputedStyle(document.querySelector('.mobile-game-brand')).display!=='none',
      chatHeadingVisible:getComputedStyle(document.querySelector('#watch .live-chat .show-label')).display!=='none',
      overflow:document.documentElement.scrollWidth>innerWidth+1};
@@ -123,8 +125,8 @@ const puppeteer=require('puppeteer-core');
    assert.ok(Math.abs(layout.video.w/layout.video.h-16/9)<.06,'Landscape game frame aspect was cropped or stretched: '+JSON.stringify(layout));
    assert.ok(layout.chat.y>=layout.stage.bottom+8&&layout.chat.y<layout.screen.h*.67,'Chat must begin immediately after gameplay: '+JSON.stringify(layout));
    assert.ok(layout.chatMessages.h>=30&&layout.composer.h>=38,'Chat and input must remain usable: '+JSON.stringify(layout));
-   assert.ok(layout.composer.bottom<=layout.safety.y+8,'Actions must stay below input: '+JSON.stringify(layout));
-   assert.ok(layout.safety.bottom<=layout.screen.h+1&&!layout.overflow,'No clipped controls / horizontal overflow: '+JSON.stringify(layout));
+   assert.ok(layout.safetyInsideSettings&&layout.safetyHidden,'Audience moderation/guest actions must be inside closed settings, not over the video: '+JSON.stringify(layout));
+   assert.ok(layout.composer.bottom<=layout.screen.h+1&&!layout.overflow,'No clipped composer or horizontal overflow: '+JSON.stringify(layout));
    assert.ok(layout.close.x>layout.header.right-14,'Close control must remain reachable');
   };
   const gameMobile=await inspectGame();
@@ -142,6 +144,8 @@ const puppeteer=require('puppeteer-core');
   await page.click('#moreQuick');
   assert.equal(await page.$eval('#liveSettingsPanel',el=>el.classList.contains('sheet-open')),true,
    'Game viewer settings must remain functional after UI refinement');
+  assert.equal(await page.$eval('#liveSettingsPanel .room-safety',el=>getComputedStyle(el).display),'block',
+   'Viewer safety/guest actions must become visible inside ⚙ settings');
   await page.click('#closeSettingsSheet');
   for(const size of [{width:360,height:720},{width:320,height:568}]){
    await page.setViewport({...size,deviceScaleFactor:1,isMobile:true,hasTouch:true});
