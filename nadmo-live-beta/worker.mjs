@@ -225,9 +225,10 @@ export class RoomHub{
    reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',selfId:s.id,hostId:room.hostId,facecam:room.facecam||null,mirrorBroadcast:room.mirrorBroadcast===true,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id),layout:room.stageLayout||[]});
    // Name comes from authenticated WebSocket session only, never the JOIN payload.
    // Anonymous guests get a distinguishable label, not a fabricated real name.
+   // Compact room notifications use exactly one identifier: profile name,
+   // falling back to @handle and finally the anonymous viewer ID.
    const joinedName=s.displayName||(s.handle?'@'+s.handle:'Penonton #'+s.id.slice(-4).toUpperCase());
-   const presenceLabel=s.handle&&s.displayName&&s.handle.toLowerCase()!==s.displayName.toLowerCase()
-    ?joinedName+' (@'+s.handle+')':joinedName;
+   const presenceLabel=joinedName;
    reply(host,{type:'viewer-joined',id:s.id,name:joinedName,handle:s.handle||null});
    // Emit a real system chat packet. This is displayed on web chat and also
    // follows the existing native GAME chat-overlay/notification bridge.
