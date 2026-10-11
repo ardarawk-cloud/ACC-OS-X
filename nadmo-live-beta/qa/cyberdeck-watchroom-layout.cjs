@@ -198,8 +198,8 @@ const puppeteer=require('puppeteer-core');
   await page.screenshot({path:path.join(dir,'cyberdeck-me-cover-uncropped-mobile-390x844.png')});
   console.log('ME_COVER_VISUAL_QC_PASS '+JSON.stringify(cover));
 
-  // Real mobile LIVE HUD: cyberdeck overlay visible by default for host/viewer,
-  // swiping right hides all ornamentation and left returns it, WITHOUT video resize.
+  // Mobile camera HUD: only subdued viewer corner accents, never a frame or
+  // divider across the person's image/chat. Swipe still hides/restores accents.
   await page.evaluate(()=>{
    document.querySelector('#settings').classList.add('hide');
    document.querySelector('#watch').classList.remove('hide');
@@ -213,9 +213,15 @@ const puppeteer=require('puppeteer-core');
    return {display:getComputedStyle(hud).display,pointer:getComputedStyle(hud).pointerEvents,
     text:hud.textContent,rect:{w:rect.width,h:rect.height},
     video:{w:video.width,h:video.height},color:getComputedStyle(hud).color,
+    border:getComputedStyle(document.querySelector('#watch'),'::before').display,
+    footer:getComputedStyle(hud.querySelector('.mobile-live-hud-footer')).display,
+    corner:getComputedStyle(hud.querySelector('.hud-tl')).borderTopWidth,
     theme:document.querySelector('#watch').dataset.hostTheme};
   });
-  assert.equal(mobileHud.display,'block','Mobile camera needs real Cyberdeck frame (not PC-only)');
+  assert.equal(mobileHud.display,'block','Viewer color accents must remain present');
+  assert.equal(mobileHud.border,'none','Do not enclose camera+chat in a neon full-screen border');
+  assert.equal(mobileHud.footer,'none','Decorative VIDEO FEED line must never cross image or chat');
+  assert.equal(mobileHud.corner,'2px','Keep small theme-colored corners instead');
   assert.equal(mobileHud.pointer,'none','Cyberdeck cannot block touch controls or swipe');
   assert.ok(mobileHud.rect.w>=380&&mobileHud.rect.h>=700,'HUD must occupy portrait screen');
   assert.ok(mobileHud.video.h>mobileHud.rect.h*.8,'HUD must sit OVER video, not constrain video');

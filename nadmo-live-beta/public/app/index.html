@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-mobile-hud-verify">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-natural-camera-stage-v2">
 <title>NADMO LIVE — Beta</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
@@ -2328,6 +2328,60 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
 /* Chat input and SEND remain beside the visible join/chat notifications.
    The settings sheet contains optional moderation/guest/mic actions only. */
 
+/* Owner camera QC 2026-10-12: preserve native pixels and an actual chat area.
+   A wider/square Android frame gets its own fitted stage ABOVE the comments,
+   not a small video floating halfway down a fullscreen black letterbox.
+   Genuine tall portrait video keeps immersive playback, with minimalist HUD. */
+@media(max-width:799px){
+ body.live-immersive.watch-viewer:not(.watch-game):not(.watch-clean) #watch::before{
+  display:none!important;content:none!important;border:0!important;box-shadow:none!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch :is(
+  .mobile-live-hud-outline,.mobile-live-hud-header,.mobile-live-hud-side,
+  .mobile-live-hud-footer
+ ){display:none!important}
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .mobile-live-corner{
+  width:20px!important;height:20px!important;opacity:.46!important;filter:none!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .hud-tl{border-width:2px 0 0 2px!important}
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .hud-tr{border-width:2px 2px 0 0!important}
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .hud-bl{border-width:0 0 2px 2px!important}
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .hud-br{border-width:0 2px 2px 0!important}
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox::after{display:none!important}
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-stage>.viewfinder{
+  position:absolute!important;inset:auto!important;left:0!important;right:0!important;
+  top:var(--camera-stage-top,100px)!important;width:100%!important;
+  height:var(--camera-stage-height,300px)!important;
+  min-height:0!important;max-height:none!important;
+  margin:0!important;padding:0!important;transform:none!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+  background:#050708!important;overflow:hidden!important
+ }
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox #remote{
+  width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center center!important;
+  background:#050708!important
+ }
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-chat{
+  top:calc(var(--camera-stage-top,100px) + var(--camera-stage-height,300px) + 10px)!important;
+  bottom:calc(env(safe-area-inset-bottom) + 12px)!important;
+  height:auto!important;display:flex!important;flex-direction:column!important;
+  justify-content:flex-end!important;overflow:hidden!important;
+  left:12px!important;right:80px!important
+ }
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox #chat{
+  flex:0 1 auto!important;height:auto!important;
+  min-height:42px!important;max-height:min(25dvh,190px)!important;
+  margin-bottom:8px!important;overflow-y:auto!important
+ }
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-chat .row{
+  flex:0 0 auto!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud{
+  display:none!important
+ }
+}
+
 </style></head>
 <body>
 <div class="app">
@@ -2408,7 +2462,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
 </section>
 <section id="watch" class="hide">
   <!-- Portrait HUD: themed transparent cyberdeck FRAME, never a video container. -->
-  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-mobile-hud-verify" aria-hidden="true">
+  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-natural-camera-stage-v2" aria-hidden="true">
     <div class="mobile-live-hud-outline"></div>
     <span class="mobile-live-corner hud-tl"></span><span class="mobile-live-corner hud-tr"></span>
     <span class="mobile-live-corner hud-bl"></span><span class="mobile-live-corner hud-br"></span>
@@ -5807,6 +5861,9 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
+  $('watch').classList.remove('camera-frame-letterbox','camera-source-landscape');
+  $('watch').style.removeProperty('--camera-stage-top');
+  $('watch').style.removeProperty('--camera-stage-height');
   viewerDisplayNames.clear();recentRoomJoins.clear();
   if(stageRefreshTimer){clearTimeout(stageRefreshTimer);stageRefreshTimer=null}
   stopGuestCapture();stageLayout=[];selectedStageGuest=null;stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();
@@ -5884,8 +5941,22 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
   const width=watchVideo.videoWidth,height=watchVideo.videoHeight;
   if(width>0&&height>0){
    // Inspect decoded dimensions. Never infer camera aspect from phone size.
-   $('watch').classList.toggle('camera-source-landscape',width>height*1.12);
-   $('watch').dataset.cameraSourceAspect=width+':'+height;
+   const watch=$('watch'),captureRatio=width/height;
+   watch.classList.toggle('camera-source-landscape',width>height*1.12);
+   watch.dataset.cameraSourceAspect=width+':'+height;
+   // Real decoded dimensions decide framing, never phone dimensions alone.
+   const phoneCamera=innerWidth<800&&!document.body.classList.contains('watch-game');
+   const naturalStage=phoneCamera&&captureRatio>(innerWidth/Math.max(innerHeight,1))*1.4;
+   watch.classList.toggle('camera-frame-letterbox',naturalStage);
+   if(naturalStage){
+    const stageTop=Math.max(72,Math.min(116,Math.round(innerHeight*.12)));
+    const stageHeight=Math.max(145,Math.min(innerWidth/captureRatio,innerHeight-stageTop-230));
+    watch.style.setProperty('--camera-stage-top',stageTop+'px');
+    watch.style.setProperty('--camera-stage-height',Math.round(stageHeight)+'px');
+   }else{
+    watch.style.removeProperty('--camera-stage-top');
+    watch.style.removeProperty('--camera-stage-height');
+   }
    document.body.classList.toggle('watch-landscape',width>height*1.12);
    document.body.style.setProperty('--deck-video-aspect',width+' / '+height);
    // Game broadcast sources can be wider than 16:9 (20:9 phone screens).
