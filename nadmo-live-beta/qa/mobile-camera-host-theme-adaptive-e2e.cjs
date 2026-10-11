@@ -129,6 +129,8 @@ const puppeteer=require('puppeteer-core');
   await page.setViewport({width:1280,height:800,isMobile:false,hasTouch:false,deviceScaleFactor:1});
   const desktopCamera=await page.evaluate(()=>{
    const watch=document.querySelector('#watch'),v=document.querySelector('#remote');
+   watch.classList.remove('hide');document.body.classList.add('live-immersive','watch-viewer');
+   document.body.classList.remove('watch-host','watch-game');
    Object.defineProperty(v,'videoWidth',{configurable:true,get:()=>720});
    Object.defineProperty(v,'videoHeight',{configurable:true,get:()=>1280});
    v.dispatchEvent(new Event('loadedmetadata'));
