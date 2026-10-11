@@ -2126,7 +2126,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
 /* PHONE CAMERA: visible cyberdeck only in normal overlay mode. Never a
    media wrapper. It sits above video as a fully pointer-transparent HUD. */
 @media(max-width:799px){
- body.live-immersive:not(.watch-game) #watch{--mobile-hud-ink:var(--neon,#d7ff36);--mobile-hud-glow:rgba(170,255,65,.55);--mobile-hud-surface:rgba(5,19,13,.63)}
+ body.live-immersive:not(.watch-game) #watch:not([data-host-theme]){--mobile-hud-ink:var(--neon,#d7ff36);--mobile-hud-glow:rgba(170,255,65,.55);--mobile-hud-surface:rgba(5,19,13,.63)}
  body.live-immersive:not(.watch-game) #watch::before{display:none!important}
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud{
   position:absolute;inset:0;z-index:8;display:block!important;pointer-events:none!important;
