@@ -2257,6 +2257,53 @@ body.live-immersive #watch[data-host-theme] :is(#hostAccessPanel,#viewerTipPanel
   object-fit:contain!important;object-position:center center!important;background:transparent!important;
  }
 }
+
+/* OWNER QC 2026-10-12: host preview is camera-first; themed cyberdeck is for
+   VIEWERS only. Keep the host's video pixels and remote player untouched. */
+@media(max-width:799px){
+ body.live-immersive.watch-host:not(.watch-game) #watch .mobile-live-hud{display:none!important}
+ body.live-immersive.watch-host:not(.watch-game) #watch::before{
+  display:none!important;content:none!important;border:0!important;box-shadow:none!important
+ }
+ body.live-immersive.watch-host:not(.watch-game) #watch .page-top{display:none!important}
+}
+body.live-immersive.watch-host #watch #leave{display:none!important}
+/* The original report/guest/moderation/mic controls remain the same DOM nodes
+   (and same click handlers); relocate their entire toolbar and panels into
+   the settings sheet. No floating buttons may cover the camera/chat/gear. */
+body.live-immersive #watch #liveSettingsPanel .room-safety{
+ position:static!important;inset:auto!important;display:block!important;
+ width:100%!important;max-width:none!important;max-height:none!important;
+ margin:12px 0 0!important;padding:12px 0 0!important;
+ border:0!important;border-top:1px solid var(--cbw-425341,#425341)!important;
+ background:transparent!important;box-shadow:none!important;
+ overflow:visible!important;pointer-events:auto!important
+}
+body.live-immersive #watch #liveSettingsPanel .safety-toolbar{
+ position:static!important;display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;
+ max-height:none!important;overflow:visible!important;
+ pointer-events:auto!important;align-items:stretch!important
+}
+body.live-immersive #watch #liveSettingsPanel .safety-toolbar button:not([hidden]){
+ position:static!important;display:block!important;width:100%!important;
+ min-width:0!important;min-height:46px!important;padding:10px 7px!important;
+ font:800 11px/1.25 Arial,sans-serif!important;
+ text-align:center!important;white-space:normal!important;
+ border-radius:11px!important;overflow-wrap:anywhere!important;
+ background:var(--cbw-233024,#233024)!important;
+ border:1px solid var(--cbw-596c55,#596c55)!important;
+ color:var(--cbw-e7f7e1,#e7f7e1)!important;box-shadow:none!important
+}
+body.live-immersive #watch #liveSettingsPanel .safety-toolbar button[hidden]{display:none!important}
+body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel{
+ position:static!important;inset:auto!important;z-index:auto!important;
+ width:100%!important;max-width:100%!important;max-height:40dvh!important;
+ margin:10px 0 0!important;padding:12px!important;overflow-y:auto!important;
+ pointer-events:auto!important
+}
+body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{display:none!important}
+
 </style></head>
 <body>
 <div class="app">
@@ -4607,6 +4654,10 @@ body.live-immersive #watch[data-host-theme] :is(#hostAccessPanel,#viewerTipPanel
   $('mirrorStatus').textContent='Mengirim pengaturan mirror ke penonton...';
  };
  $('giftQuick').onclick=()=>{if(!host){setTipRecipient('host',hostPublicIdentity.name);openLiveSheet($('viewerTipPanel'))}};
+ // Keep room controls inside ⚙ for host AND viewer; Rp sawer stays on the
+ // live video toolbar. Move nodes, don't clone them, to preserve listeners.
+ const liveRoomSafety=$('watch').querySelector('.live-chat .room-safety');
+ if(liveRoomSafety)$('liveSettingsPanel').appendChild(liveRoomSafety);
  $('moreQuick').onclick=()=>{
   $('mirrorSettings').hidden=!host;
   $('settingsCamera').hidden=!host;
