@@ -51,6 +51,7 @@ jobs:
           node --check nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
           node --check nadmo-live-beta/qa/viewer-invite-e2e.cjs
           node --check nadmo-live-beta/qa/guest-stage-media-e2e.cjs
+          node --check nadmo-live-beta/qa/viewer-presence-room-e2e.cjs
           node --check nadmo-live-beta/qa/ice-burst-signaling-e2e.mjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
       - name: Verify live.nadmo.id hostname, same-origin APIs and legacy Android compatibility
@@ -179,6 +180,8 @@ jobs:
         run: |
           command -v google-chrome || command -v google-chrome-stable || command -v chromium
           echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
+      - name: Verify actual viewer join notifications in LIVE chat and native GAME channel
+        run: node nadmo-live-beta/qa/viewer-presence-room-e2e.cjs
       - name: Verify real guest camera and voice uplink to host and viewer, mic/camera toggles
         run: node nadmo-live-beta/qa/guest-stage-media-e2e.cjs
       - name: Verify existing account can log in at official domain using only username and password

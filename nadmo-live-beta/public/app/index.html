@@ -2216,6 +2216,16 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-brand small{display:none}
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-side{opacity:.58}
 }
+
+/* Trusted JOIN messages in LIVE chat. Pure overlay, no video size changes. */
+#watch #chat .room-join-notice{
+ display:flex;align-items:center;gap:6px;min-width:0;
+ padding:4px 7px!important;background:color-mix(in srgb,var(--neon) 12%,#050909af)!important;
+ color:#f0f5ec!important;border-left:2px solid var(--neon)!important;
+ font:600 12px/1.35 Arial,sans-serif;overflow-wrap:anywhere
+}
+#watch #chat .room-join-mark{flex:none;color:var(--neon);font-weight:900;font-size:15px}
+#watch #chat .room-join-notice span:last-child{min-width:0;overflow-wrap:anywhere}
 </style></head>
 <body>
 <div class="app">
@@ -5387,6 +5397,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
   const mic=localStream.getAudioTracks()[0];if(!mic)return;
   mic.enabled=!mic.enabled;hostMute=!mic.enabled;refreshGuestButtons();
  };
+ const viewerDisplayNames=new Map(),recentRoomJoins=new Map();
  function renderHostModeration(){
   const panel=$('moderationPanel');panel.replaceChildren();
   if(!host||!currentRoom)return;
@@ -5396,7 +5407,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
   if(!peers.size){const empty=document.createElement('p');empty.textContent='Belum ada penonton terhubung.';panel.append(empty)}
   for(const id of peers.keys()){
    const line=document.createElement('div');line.className='safety-guest';
-   const name=document.createElement('small');name.textContent='VIEWER '+id.slice(-6);
+   const name=document.createElement('small');name.textContent=(viewerDisplayNames.get(id)||'Penonton #'+id.slice(-4).toUpperCase())+' · '+id.slice(-6);
    const actions=document.createElement('span');actions.className='actions';
    for(const action of [mutedViewerIds.has(id)?'unmute':'mute','kick','block']){
     const btn=document.createElement('button');btn.type='button';btn.textContent=action.toUpperCase();
@@ -5494,7 +5505,10 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
    $('privateStatus').textContent=m.mode==='public'?'Siaran kembali publik dan gratis.':'Room privat aktif. '+m.displaced+' penonton publik dilepas. Tarif Rp'+new Intl.NumberFormat('id-ID').format(m.offer?.amount||0)+' / '+(m.offer?.minutes||0)+' menit hanya LABEL. Pembayaran belum aktif.';
    flash(m.mode==='public'?'Siaran kembali publik':'Siaran sekarang privat, penonton publik dikeluarkan');
   }
-  if(m.type==='viewer-joined'&&host){await attachViewer(m.id)}
+  if(m.type==='viewer-joined'&&host){
+    viewerDisplayNames.set(m.id,String(m.name||'Penonton').slice(0,60));
+    await attachViewer(m.id);
+   }
   if(m.type==='media-refresh-request'&&host&&peers.has(m.id)){
     if(localStream?.getVideoTracks().some(t=>t.readyState==='ended'||t.muted)&&!afkMode){
       await recoverHostCapture();
@@ -5532,7 +5546,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
    stageGuestsList=Array.isArray(m.guests)?m.guests.slice(0,9):[];
    renderStageGuests();refreshGuestButtons();return;
   }
-  if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id);mutedViewerIds.delete(m.id);renderHostModeration()}
+  if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id);viewerDisplayNames.delete(m.id);mutedViewerIds.delete(m.id);renderHostModeration()}
   if(m.type==='signal'){
    if(!host&&m.data?.description?.type==='offer'&&m.data.reset&&peer){
     peer.close();peer=null;pendingIce.delete(m.from);$('remote').srcObject=null;
@@ -5606,6 +5620,21 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
     renderHostModeration();flash('Moderasi '+m.action.toUpperCase()+' berhasil');return
    }
    if(m.type==='chat'){
+    if(m.system==='viewer-joined'){
+     const identity=String(m.viewerName||'Penonton').slice(0,60),now=Date.now();
+     // Network handover can re-JOIN an existing room quickly; don't flood notices.
+     const prior=recentRoomJoins.get(identity);
+     if(prior&&now-prior<45000)return;
+     recentRoomJoins.set(identity,now);
+     if(recentRoomJoins.size>40)recentRoomJoins.delete(recentRoomJoins.keys().next().value);
+     const notice=document.createElement('div');notice.className='room-join-notice';
+     const marker=document.createElement('span');marker.className='room-join-mark';marker.textContent='↳';
+     const content=document.createElement('span');content.textContent=String(m.text||identity+' sudah bergabung').slice(0,160);
+     notice.append(marker,content);$('chat').append(notice);
+     while($('chat').childElementCount>80)$('chat').firstElementChild.remove();
+     $('chat').scrollTop=$('chat').scrollHeight;
+     return;
+    }
     const div=document.createElement('div'),b=document.createElement('b'),badge=makeSupporterBadge(m.supporterBadge);
     if(m.avatarVersion&&m.handle){
      const avatar=document.createElement('img');avatar.className='chat-user-avatar';avatar.alt='';
@@ -5613,7 +5642,9 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
     }
     if(badge)div.append(badge);
     b.textContent=(m.name||'Viewer')+': ';
-    div.append(b,document.createTextNode(m.text||''));$('chat').append(div);$('chat').scrollTop=$('chat').scrollHeight;
+    div.append(b,document.createTextNode(m.text||''));$('chat').append(div);
+    while($('chat').childElementCount>80)$('chat').firstElementChild.remove();
+    $('chat').scrollTop=$('chat').scrollHeight;
    }
   if(m.type==='error'){if(!$('reportPanel').classList.contains('hide'))$('reportStatus').textContent=m.message||'Gagal mengirim laporan';notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
@@ -5645,6 +5676,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
+  viewerDisplayNames.clear();recentRoomJoins.clear();
   if(stageRefreshTimer){clearTimeout(stageRefreshTimer);stageRefreshTimer=null}
   stopGuestCapture();stageLayout=[];selectedStageGuest=null;stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();
   $('guestRequestPanel').classList.add('hide');guestStatus('');renderStageGuests();refreshGuestButtons();
