@@ -2408,8 +2408,8 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
   inset:auto!important;
   left:50%!important;right:auto!important;top:calc(50% - 40px)!important;bottom:auto!important;
   transform:translate(-50%,-50%)!important;
-  width:min(calc(100% - 28px),calc((100dvh - 185px) * var(--camera-source-ratio,.5625)))!important;
-  height:min(calc(100% - 150px),calc(100dvh - 185px))!important;
+  width:min(calc(100% - 28px),var(--pc-camera-frame-width,310px))!important;
+  height:min(calc(100% - 150px),var(--pc-camera-frame-height,550px))!important;
   max-height:none!important;min-height:0!important;max-width:none!important;
   aspect-ratio:var(--camera-source-aspect,9 / 16)!important;
   border:0!important;box-shadow:none!important;
@@ -5904,6 +5904,8 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
   $('watch').classList.remove('camera-frame-letterbox','camera-source-landscape','camera-source-portrait');
   $('watch').style.removeProperty('--camera-source-aspect');
   $('watch').style.removeProperty('--camera-source-ratio');
+  $('watch').style.removeProperty('--pc-camera-frame-height');
+  $('watch').style.removeProperty('--pc-camera-frame-width');
   $('watch').style.removeProperty('--camera-stage-top');
   $('watch').style.removeProperty('--camera-stage-height');
   viewerDisplayNames.clear();recentRoomJoins.clear();
@@ -5989,6 +5991,11 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
    watch.dataset.cameraSourceAspect=width+':'+height;
    watch.style.setProperty('--camera-source-aspect',width+' / '+height);
    watch.style.setProperty('--camera-source-ratio',(width/height).toFixed(5));
+   // Computed pixels avoid unsupported CSS calc() multiplication on older
+   // Android WebViews and desktop browsers.
+   const pcPortraitH=Math.max(240,innerHeight-185);
+   watch.style.setProperty('--pc-camera-frame-height',Math.round(pcPortraitH)+'px');
+   watch.style.setProperty('--pc-camera-frame-width',Math.round(pcPortraitH*captureRatio)+'px');
    // Real decoded dimensions decide framing, never phone dimensions alone.
    const phoneCamera=innerWidth<800&&!document.body.classList.contains('watch-game');
    const naturalStage=phoneCamera&&captureRatio>(innerWidth/Math.max(innerHeight,1))*1.4;
