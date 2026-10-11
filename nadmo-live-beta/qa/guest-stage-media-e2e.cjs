@@ -58,6 +58,16 @@ async function main(){
    const elem=document.querySelector('#guestStageGrid video');
    return !!elem?.srcObject?.getVideoTracks()?.some(track=>track.readyState==='live');
   },{timeout:25000});
+  const layout=await host.page.evaluate(()=>{
+   const host=document.querySelector('#watch .live-stage').getBoundingClientRect();
+   const guest=document.querySelector('#guestStageGrid .stage-guest-tile').getBoundingClientRect();
+   return {split:document.querySelector('#watch').classList.contains('mobile-stage-split'),
+    hostLeft:host.left,hostRight:host.right,hostWidth:host.width,guestLeft:guest.left,guestWidth:guest.width};
+  });
+  assert.ok(layout.split,'auto-grid must activate');
+  assert.ok(layout.hostWidth>75&&layout.guestWidth>75,'two columns must be visible');
+  assert.ok(layout.guestLeft>=layout.hostRight-4,'guest must not cover host');
+  console.log('PASS mobile two-column host and guest layout');
   const guestCapture=await guest.page.evaluate(()=>({
    guestStageCount:document.querySelectorAll('#guestStageGrid .stage-guest-tile').length,
    ownVideo:document.querySelector('#guestStageGrid video')?.srcObject?.getVideoTracks().length||0,
@@ -90,6 +100,26 @@ async function main(){
   await guest.page.waitForFunction(()=>window.__stageQA.some(x=>x.type==='guest-exited'),{timeout:15000});
   await host.page.waitForFunction(()=>document.querySelectorAll('#guestStageGrid .stage-guest-tile').length===0,{timeout:15000});
   console.log('PASS guest descends stage and media tiles disappear for host');
+  const previousApprovals=await guest.page.evaluate(()=>window.__stageQA.filter(x=>x.type==='guest-approved').length);
+  await guest.page.$eval('#joinGuestVoice',el=>el.click());
+  await host.page.waitForFunction(()=>!!document.querySelector('#guestRequestPanel .guest-invite'),{timeout:14000});
+  await host.page.$eval('#guestRequestPanel .guest-invite button',el=>el.click());
+  await guest.page.waitForFunction(n=>window.__stageQA.filter(x=>x.type==='guest-approved').length>n,{timeout:14000},previousApprovals);
+  await host.page.waitForFunction(()=>document.querySelector('#guestStageGrid video')?.srcObject?.getAudioTracks()?.length>0,{timeout:30000});
+  const voice=await host.page.evaluate(()=>{
+   const video=document.querySelector('#guestStageGrid video');
+   const host=document.querySelector('#watch .live-stage').getBoundingClientRect();
+   const tile=document.querySelector('#guestStageGrid .stage-guest-tile').getBoundingClientRect();
+   return {audio:video?.srcObject?.getAudioTracks().length,video:video?.srcObject?.getVideoTracks().length,
+    separated:tile.left>=host.right-4,tag:document.querySelector('#guestStageGrid .stage-tag')?.textContent};
+  });
+  assert.equal(voice.audio,1,'voice has a real microphone track');
+  assert.equal(voice.video,0,'voice has no fake camera track');
+  assert.ok(voice.separated,'voice placeholder must not cover host');
+  assert.match(voice.tag,/VOICE/);
+  await guest.page.$eval('#guestLeaveStage',el=>el.click());
+  await host.page.waitForFunction(()=>document.querySelectorAll('#guestStageGrid .stage-guest-tile').length===0,{timeout:15000});
+  console.log('PASS join voice after host approval, audio-only and automatic grid reset');
   console.log('ALL NADMO GUEST MEDIA WEBRTC E2E TESTS PASSED');
  }finally{
   if(host)try{await host.page.$eval('#leave',el=>el.click())}catch{}
