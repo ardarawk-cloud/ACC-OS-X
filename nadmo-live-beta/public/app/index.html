@@ -1850,6 +1850,17 @@ html,body{background:#060b08}
 #coverUploadStatus{margin-bottom:0}
 @media(max-width:390px){.cover-actions button{font-size:11px}.cover-editor-heading{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.mast::after,.logo-name em{animation:none}}
+
+/* Global color-only theme: never recolor, filter or obscure uploaded media. */
+html[data-nadmo-ui-theme="cyberbw"]{--bg:#08090a;--panel:#111316;--paper:#fafafa;--ink:#c8cbd0;--line:#5a6063;--neon:#f9fafb;--cyan:#dde2e6;--dim:#8e969b;color-scheme:dark}
+html[data-nadmo-ui-theme="noir"]{--bg:#0c0a0b;--panel:#1a1516;--paper:#fff7ef;--ink:#cfc0bd;--line:#594a49;--neon:#ead0b9;--cyan:#ead0b9}
+html[data-nadmo-ui-theme="retro"]{--bg:#140e1b;--panel:#24192d;--paper:#fff1fd;--ink:#e4d1e8;--line:#6f4f6d;--neon:#ffb4db;--cyan:#ffb4db}
+html[data-nadmo-ui-theme="electric"]{--bg:#04121b;--panel:#092537;--paper:#eaffff;--ink:#b7e2ed;--line:#306273;--neon:#6df4ff;--cyan:#6df4ff}
+html[data-nadmo-ui-theme="cyberbw"] :is(.nadmo-profile,.public-me-skin)[data-theme="cyberbw"]{--skin-accent:#f8f9fa;--skin-bg:#101112;--skin-ink:#fafafa}
+html[data-nadmo-ui-theme="cyberbw"] :is(.app,nav,.panel,.mast,.ticker,.no-signal,.deck-system-bar,.profile-edit-box,.profile-hero){border-color:var(--line)}
+html[data-nadmo-ui-theme="cyberbw"] :is(.field,input,textarea,select){accent-color:var(--neon)}
+html[data-nadmo-ui-theme="cyberbw"] :is(.btn,.logo-mark,.eyebrow,.profile-business-link){border-color:var(--neon)}
+
 </style></head>
 <body>
 <div class="app">
@@ -2255,7 +2266,7 @@ html,body{background:#060b08}
       <input class="field" id="profileHandle" maxlength="24" placeholder="contoh: ardamoron">
       <label for="profileBio">BIO</label>
       <textarea class="field profile-textarea" id="profileBio" rows="3" maxlength="300" placeholder="Bisnis, karya, dan aktivitasmu"></textarea>
-      <div class="show-label"><b>PERSONALISASI ME</b><small>HANYA PROFIL — DASHBOARD TETAP</small></div>
+      <div class="show-label"><b>PERSONALISASI ME</b><small>WARNA APLIKASI + PROFIL</small></div>
       <div class="theme-choices">
        <label>TEMA <select class="field" id="profileTheme"><option value="nadmo">NADMO ORIGINAL</option><option value="cyberbw">CYBERPUNK BW</option><option value="noir">NOIR</option><option value="retro">RETRO</option><option value="electric">ELECTRIC</option></select></label>
        <label>FONT <select class="field" id="profileFont"><option value="system">ORIGINAL</option><option value="mono">MONOSPACE</option><option value="editorial">EDITORIAL</option></select></label>
@@ -2268,12 +2279,12 @@ html,body{background:#060b08}
        <p class="profile-note" id="coverUploadStatus" role="status" aria-live="polite">JPG, PNG, atau WebP. Foto otomatis diperkecil ke 16:9 sebelum disimpan.</p>
       </div><div class="theme-choices profile-font-row">
       </div>
-      <p class="profile-note">Tema CYBERPUNK BW hanya mengubah warna profil. Default NADMO ORIGINAL tetap hijau stabilo. Cover foto tampil di ME dan halaman profil publik.</p>
+      <p class="profile-note">Pilihan tema mengganti warna aplikasi dan profil. Default NADMO ORIGINAL tetap hijau stabilo. Cover foto tampil di ME dan halaman profil publik.</p>
       <div class="show-label"><b>LINK PIHAK KETIGA</b><small>MAKS. 12 LINK</small></div>
       <div class="profile-edit-row"><input class="field" id="profileLinkLabel" maxlength="40" placeholder="Nama link: Website, WhatsApp, Booking">
       <input class="field" id="profileLinkUrl" type="url" inputmode="url" maxlength="500" placeholder="https://..."></div>
       <div class="actions"><button class="btn secondary" type="button" id="profileAddLink">+ LINK</button><button class="btn" type="button" id="profileSave">SIMPAN PROFIL</button></div>
-      <p class="profile-note">+ LINK langsung tersimpan di akun dan tampil di ME. SIMPAN PROFIL untuk nama, bio, dan tampilan.</p>
+      <p class="profile-note">Tekan + LINK atau langsung SIMPAN PROFIL untuk menyimpan nama, bio, tema, dan URL sekaligus.</p>
       <div id="profileEditLinks" class="profile-edit-links"></div>
       <div class="status" id="profileEditStatus" role="status"></div>
     </div>
@@ -3758,6 +3769,9 @@ html,body{background:#060b08}
   fontId:['system','mono','editorial'].includes(safeProfile.fontId)?safeProfile.fontId:'system',
   coverId:['grid','waves','dots'].includes(safeProfile.coverId)?safeProfile.coverId:'grid'
  };
+ function applyGlobalTheme(themeId){
+  document.documentElement.dataset.nadmoUiTheme=['nadmo','cyberbw','noir','retro','electric'].includes(themeId)?themeId:'nadmo';
+ }
  let draftPosts=readDraft(POST_KEY,[]);
  draftPosts=Array.isArray(draftPosts)?draftPosts.filter(x=>x&&typeof x.text==='string')
   .slice(0,30).map(p=>({id:typeof p.id==='string'?p.id:'',text:p.text.slice(0,2000),at:Number(p.at)||0})):[];
@@ -3925,6 +3939,7 @@ html,body{background:#060b08}
  };
 
  function renderProfileDraft(){
+  applyGlobalTheme(draftProfile.themeId);
   applyProfileVisual($('betaSocialProfile'),draftProfile);
   applyProfileCover($('betaSocialProfile'),draftProfile.handle,activeAccount?.coverVersion||0);
   $('profileTheme').value=draftProfile.themeId;
@@ -3937,7 +3952,7 @@ html,body{background:#060b08}
   renderProfileLinks();
  }
  for(const [id,key] of [['profileTheme','themeId'],['profileFont','fontId']]){
-  $(id).onchange=()=>{draftProfile[key]=$(id).value;saveProfileDraft();applyProfileVisual($('betaSocialProfile'),draftProfile)};
+  $(id).onchange=()=>{draftProfile[key]=$(id).value;saveProfileDraft();applyProfileVisual($('betaSocialProfile'),draftProfile);applyGlobalTheme(draftProfile.themeId)};
  }
  $('editProfileBtn').onclick=()=>{
   $('profileEditBox').classList.remove('hide');show('accountPage');
@@ -3966,6 +3981,16 @@ html,body{background:#060b08}
   if(profileLinkBusy){$('profileEditStatus').textContent='Tunggu penyimpanan link selesai.';return}
   const handle=$('profileHandle').value.trim().toLowerCase().replace(/^@/,'');
   if(handle&&!/^[a-z0-9_]{3,24}$/.test(handle)){$('profileEditStatus').textContent='Username 3–24 karakter: huruf kecil, angka, atau garis bawah.';return}
+  // Treat the URL currently in the editor as part of SIMPAN PROFIL.
+  const pendingRaw=$('profileLinkUrl').value.trim(),pendingLabel=$('profileLinkLabel').value.trim().slice(0,40);
+  if(pendingRaw||pendingLabel){
+   const candidate=/^[a-z][a-z0-9+.-]*:/i.test(pendingRaw)?pendingRaw:'https://'+(pendingRaw.startsWith('//')?pendingRaw.slice(2):pendingRaw);
+   const url=validExternalLink(candidate);
+   const label=pendingLabel||(url?new URL(url).hostname.replace('www.','').slice(0,40):'');
+   if(!url||!label||isForbiddenExternalLink(label,url)){$('profileEditStatus').textContent='Masukkan URL HTTPS yang valid sebelum menyimpan profil.';return}
+   if(draftProfile.links.length>=12&&!draftProfile.links.some(l=>l.url===url)){$('profileEditStatus').textContent='Maksimal 12 link.';return}
+   if(!draftProfile.links.some(l=>l.url===url))draftProfile.links=[...draftProfile.links,{label,url}];
+  }
   draftProfile.name=$('profileName').value.trim().slice(0,60);
   draftProfile.handle=handle;
   draftProfile.bio=$('profileBio').value.trim().slice(0,300);
@@ -3979,8 +4004,8 @@ html,body{background:#060b08}
      {name:draftProfile.name||activeAccount.name,bio:draftProfile.bio,links:draftProfile.links,
        themeId:draftProfile.themeId,fontId:draftProfile.fontId,coverId:draftProfile.coverId});
     activeAccount=result.account;displayAccount();
-    $('profileEditStatus').textContent='Profil tersimpan dan tersinkron di perangkatmu.';
-   }catch(e){$('profileEditStatus').textContent='Tersimpan di perangkat saja, gagal sync: '+e.message;return}
+    $('profileLinkLabel').value='';$('profileLinkUrl').value='';$('profileEditStatus').textContent='Profil, tema dan link tersimpan di akun.';
+   }catch(e){$('profileEditStatus').textContent='Gagal menyimpan ke akun: '+e.message+' · Form tetap terbuka.';return}
   }else{
    renderProfileDraft();
    $('profileEditStatus').textContent='Draf tersimpan di HP ini. Masuk akun agar profil tersinkron.';
