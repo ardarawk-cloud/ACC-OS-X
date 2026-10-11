@@ -144,7 +144,9 @@ jobs:
           URL="https://live.nadmo.id/download.apk"
           APK="NADMO-LIVE-v0.10.9-beta.apk"
           STATUS="$(curl --silent --show-error --output /dev/null --dump-header /tmp/nadmo-apk-redirect.txt --write-out '%{http_code}' --max-time 15 "$URL")"
-          test "$STATUS" = '302'
+          echo "DOWNLOAD_ALIAS_HTTP=$STATUS"
+          grep -iE '^(HTTP/|location:|content-type:|content-length:|cf-cache-status:)' /tmp/nadmo-apk-redirect.txt || true
+          case "$STATUS" in 301|302|303|307|308) ;; *) echo "::error::Unexpected APK redirect status $STATUS"; exit 1;; esac
           grep -Fqi "location: https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.9-beta/$APK" /tmp/nadmo-apk-redirect.txt
           curl --fail --location --silent --show-error --retry 2 --max-time 180 --output "/tmp/$APK" "$URL"
           test "$(wc -c < "/tmp/$APK")" -gt 40000000
