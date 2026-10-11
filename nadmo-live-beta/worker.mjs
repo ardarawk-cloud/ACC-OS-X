@@ -569,8 +569,8 @@ export default {
   // release. Cloudflare Worker subrequests cannot reliably proxy this 50MB
   // GitHub asset (503), whereas browser download follows this URL directly.
   if(url.pathname==='/download.apk'){
-    const filename='NADMO-LIVE-v0.10.9-beta.apk';
-    return Response.redirect('https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.9-beta/'+filename,302);
+    const filename='NADMO-LIVE-v0.10.10-beta.apk';
+    return Response.redirect('https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.10-beta/'+filename,302);
   }
   // Serve the verified signed Android package from our own Cloudflare static assets.
   // Unlike a GitHub Actions artifact, this is a direct APK (no ZIP or GitHub webview).
