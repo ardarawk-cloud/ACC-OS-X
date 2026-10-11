@@ -38,8 +38,8 @@ const puppeteer=require('puppeteer-core');
   assert.equal(outcome.hudNoir,'rgb(234, 208, 185)');
   assert.deepEqual(outcome.landscape,{classSet:true,aspect:'1280:720',fit:'contain'},
     'LANDSCAPE capture on portrait phone must not crop faces');
-  assert.deepEqual(outcome.portrait,{classSet:false,aspect:'720:1280',fit:'cover'},
-    'true PORTRAIT capture must fill the screen');
+  assert.deepEqual(outcome.portrait,{classSet:false,aspect:'720:1280',fit:'contain'},
+    'portrait frame must not lose the face or shoulders to a cover crop');
 
   // Owner vs viewer on the same 390px phone: only audience gets cyberdeck.
   // All safety/guest/mic buttons must be inside the settings sheet, not
@@ -55,6 +55,9 @@ const puppeteer=require('puppeteer-core');
    const before={hud:getComputedStyle(document.getElementById('mobileLiveHud')).display,
     frame:getComputedStyle(watch,'::before').display,
     leave:getComputedStyle(document.getElementById('leave')).display,
+    leaveRect:getRect('leave'),
+    leaveHit:(()=>{const r=document.getElementById('leave').getBoundingClientRect();
+     return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.id})(),
     floatingSafety:safety.parentElement.classList.contains('live-chat'),
     safetyParent:safety.parentElement.id,
     sheetHidden:getComputedStyle(document.getElementById('liveSettingsPanel')).display==='none'};
@@ -71,13 +74,18 @@ const puppeteer=require('puppeteer-core');
   });
   assert.equal(hostUi.before.hud,'none','broadcaster must not see viewer cyberdeck HUD');
   assert.equal(hostUi.before.frame,'none','broadcaster preview must not have viewer neon frame');
-  assert.equal(hostUi.before.leave,'none','host exit action belongs to settings');
+  assert.notEqual(hostUi.before.leave,'none','host must keep a visible X to end LIVE');
+  assert.ok(hostUi.before.leaveRect.w>=44&&hostUi.before.leaveRect.h>=44,
+    'X must have a mobile-size touch target');
+  assert.equal(hostUi.before.leaveHit,'leave','nothing may cover the broadcaster close button');
   assert.equal(hostUi.before.floatingSafety,false,'room tools must not overlap camera');
   assert.equal(hostUi.before.safetyParent,'liveSettingsPanel','room tools belong in settings');
   assert.equal(hostUi.before.sheetHidden,true,'room actions must stay hidden until ⚙ opens');
   assert.equal(hostUi.opened,true,'broadcaster gear must open settings');
-  assert.equal(hostUi.composerParent,'hostSettingsComposer','host chat input must not obstruct camera');
-  assert.equal(hostUi.sendParent,'hostSettingsComposer','host SEND must be accessible only inside settings');
+  assert.equal(hostUi.composerParent,'','host chat input should use original visible composer row');
+  assert.equal(hostUi.sendParent,'','host SEND should be beside its input, not in settings');
+  assert.equal(await page.$eval('#message',el=>el.closest('.live-chat .row')!==null),true,
+    'host chat must remain visible on camera screen while settings exists');
   for(const c of hostUi.controls){
    assert.equal(c.visible,true,c.id+' must remain actionable inside settings');
    assert.ok(c.w>30&&c.h>=38&&c.x>=hostUi.panel.x&&c.right<=hostUi.panel.right+1

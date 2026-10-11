@@ -255,9 +255,9 @@ const puppeteer=require('puppeteer-core');
   console.log('MOBILE_CAMERA_CYBERDECK_OVERLAY_CLEAN_QC_PASS '+JSON.stringify({mobileHud,cleanState,noirHud}));
   await page.evaluate(()=>{document.body.classList.remove('live-immersive','watch-viewer');document.querySelector('#watch').classList.add('hide')});
 
-  // Camera-specific regression: Android wide sensor must not become a giant
-  // blank black portrait page. Portrait source must be full bleed. The game
-  // landscape visual contract is intentionally unchanged.
+  // Camera regression: preserve the entire decoded image, not a face-only
+  // center crop. Letterbox space is safer than cutting off the subject.
+  // GAME retains its independent landscape geometry.
   const testCameraLayout=async(kind)=>{
    return page.evaluate((kind)=>{
     const body=document.body,watch=document.querySelector('#watch'),video=document.querySelector('#remote');
@@ -277,15 +277,15 @@ const puppeteer=require('puppeteer-core');
   };
   for(const mode of ['host-portrait','viewer-portrait']){
    const layout=await testCameraLayout(mode);
-   assert.equal(layout.fit,'cover','Portrait LIVE camera must cover the phone: '+JSON.stringify(layout));
+   assert.equal(layout.fit,'contain','Portrait camera must not enlarge/crop the subject: '+JSON.stringify(layout));
    assert.equal(layout.bgDisplay,'none','A portrait camera should not incur duplicate video rendering');
    assert.ok(layout.height>=layout.screenHeight*.90,'Portrait video must fill screen height: '+JSON.stringify(layout));
   }
-  // Same portrait framing even when the Android sensor returns horizontal frames:
-  // the capture composer, not a CSS letterbox, converts the remote track to 9:16.
+  // Android devices that return horizontal camera frames must remain visible
+  // in full instead of stretching the face across a portrait phone.
   for(const mode of ['host-wide','viewer-wide']){
    const layout=await testCameraLayout(mode);
-   assert.equal(layout.fit,'cover','Camera must fill phone portrait in every source orientation: '+JSON.stringify(layout));
+   assert.equal(layout.fit,'contain','Landscape capture must fit without camera crop: '+JSON.stringify(layout));
    assert.equal(layout.bgDisplay,'none','No blurred backdrop or horizontal camera strip');
    assert.ok(layout.height>=layout.screenHeight*.90,'Wide source cannot shrink the LIVE viewport: '+JSON.stringify(layout));
   }

@@ -12,12 +12,13 @@ assert.match(camera,/getUserMedia\(/,'camera uses native media device');
 assert.match(camera,/return \{stream:raw,controller:null\}/,'return unprocessed camera track');
 assert.doesNotMatch(camera,/canvas|captureStream|drawImage|setInterval/,'never rasterize camera to low-resolution portrait');
 const constraints=between('function liveCameraConstraints(){','async function preview(){');
-assert.match(constraints,/aspectRatio:\{ideal:9\/16\}/,'portrait input requested on mobile');
+assert.match(constraints,/aspectRatio:\{ideal:3\/4\}/,'mobile requests a wider native portrait sensor instead of tight 9:16 crop');
 assert.match(constraints,/resizeMode:\{ideal:'none'\}/,'prevent browser crop-and-scale preference');
 assert.match(constraints,/16\/9/,'PC landscape remains supported');
 const hud=between('/* MOBILE CAMERA: original immersive TikTok-like composition.','/* LIVE CAMERA — prioritize a native portrait sensor');
 assert.match(hud,/@media\(max-width:799px\)/,'mobile-only portrait HUD');
-assert.match(hud,/object-fit:cover!important/,'fullscreen mobile video');
+assert.match(hud,/object-fit:cover!important/,'legacy mobile rule remains available');
+assert.match(html,/body\.live-immersive:not\(\.watch-game\) #watch #remote\{\s*object-fit:contain!important/,'owner no-crop override must win for mobile cameras');
 for(const id of ['#hostControls','#viewerTools','#giftQuick','#moreQuick','.room-safety','#chat']){
  assert.ok(hud.includes(id),'mobile camera HUD missing '+id);
 }

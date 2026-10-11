@@ -275,20 +275,19 @@ async function main(){
   assert.ok(recovered.width>0&&recovered.playing,'Recovered video must actually play');
   assert.ok(recovered.tracks?.includes('audio:live')&&recovered.tracks?.includes('video:live'));
   console.log('PASS video and audio resumed after host WebSocket network switch',JSON.stringify(recovered));
-  // Owner-only stop is deliberately inside ⚙ settings, not floating on video.
-  await host.locator('#moreQuick').click();
-  assert.equal(await host.$eval('#liveSettingsPanel',el=>el.classList.contains('sheet-open')),true,
-   'Broadcaster settings must expose the stop-live action');
-  console.log('HOST_SETTINGS_EXIT_VISIBLE '+JSON.stringify(await host.$eval('#settingsLeave',el=>{
-   const r=el.getBoundingClientRect();return {height:r.height,width:r.width,visible:r.height>0&&r.width>0};
-  })));
-  await host.locator('#settingsLeave').click();
+  // Host X is a permanent safety control. Settings also retains stop-live.
+  assert.equal(await host.$eval('#leave',el=>{
+   const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;
+  }),true,'Host end-live X must be accessible on the live stage');
+  await host.locator('#leave').click();
   assert.equal(await host.$eval('#endLiveConfirm',el=>!el.classList.contains('hide')),true,'Host sees confirmation instead of immediate end');
   await host.locator('#cancelEndLive').click();
   assert.equal(await host.$eval('#endLiveConfirm',el=>el.classList.contains('hide')),true,'Cancel preserves room');
   const roomStillLive=await viewer.$eval('#watch',el=>!el.classList.contains('hide'));
   assert.equal(roomStillLive,true,'Cancel must leave viewer connected');
   await host.locator('#moreQuick').click();
+  assert.equal(await host.$eval('#liveSettingsPanel',el=>el.classList.contains('sheet-open')),true,
+   'Settings stop-live action remains available too');
   await host.locator('#settingsLeave').click();
   await host.locator('#confirmEndLive').click();
   const sentLeave=await host.evaluate(()=>window.__nadmoQALog?.some(x=>x.startsWith('SEND leave')));
