@@ -46,8 +46,8 @@ const puppeteer=require('puppeteer-core');
   assert.equal(outcome.landscape.aspect,'1280:720');
   assert.equal(outcome.landscape.fit,'contain','wide camera cannot crop into faces');
   assert.equal(outcome.landscape.stageMode,true,'wide camera needs own stage, not a fullscreen black band');
-  assert.ok(outcome.landscape.stageTop>=65&&outcome.landscape.stageTop<210,
-    'wide camera should start near the top instead of halfway down the screen');
+  assert.ok(outcome.landscape.stageTop>=0&&outcome.landscape.stageTop<=3,
+    'mobile source must start at the top with no wasted camera header');
   assert.ok(outcome.landscape.chatTop>=outcome.landscape.stageBottom+8,
     'chat must begin BELOW uncropped camera frame, never over a footer line');
   assert.equal(outcome.landscape.hud,'none','do not frame empty black bands with neon');
