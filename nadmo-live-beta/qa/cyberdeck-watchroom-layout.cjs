@@ -113,7 +113,7 @@ const puppeteer=require('puppeteer-core');
      chatHeading:rect('#watch .live-chat .show-label'),chatMessages:rect('#watch #chat'),
      composer:rect('#watch .live-chat .row'),safety:rect('#watch .room-safety'),
      safetyInsideSettings:document.querySelector('#watch .room-safety').parentElement.id==='liveSettingsPanel',
-     safetyHidden:getComputedStyle(document.querySelector('#watch .room-safety')).display==='none',
+     safetyHidden:document.querySelector('#watch .room-safety').getClientRects().length===0,
      brandVisible:getComputedStyle(document.querySelector('.mobile-game-brand')).display!=='none',
      chatHeadingVisible:getComputedStyle(document.querySelector('#watch .live-chat .show-label')).display!=='none',
      overflow:document.documentElement.scrollWidth>innerWidth+1};
@@ -144,7 +144,7 @@ const puppeteer=require('puppeteer-core');
   await page.click('#moreQuick');
   assert.equal(await page.$eval('#liveSettingsPanel',el=>el.classList.contains('sheet-open')),true,
    'Game viewer settings must remain functional after UI refinement');
-  assert.equal(await page.$eval('#liveSettingsPanel .room-safety',el=>getComputedStyle(el).display),'block',
+  assert.equal(await page.$eval('#liveSettingsPanel .room-safety',el=>el.getClientRects().length>0),true,
    'Viewer safety/guest actions must become visible inside ⚙ settings');
   await page.click('#closeSettingsSheet');
   for(const size of [{width:360,height:720},{width:320,height:568}]){
