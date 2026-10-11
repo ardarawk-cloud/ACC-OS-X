@@ -223,7 +223,18 @@ export class RoomHub{
     return failure(ws,'Akses akun ke room ini telah diblokir oleh host.');
    s.roomId=id;s.role='viewer';save(ws,s);
    reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',selfId:s.id,hostId:room.hostId,facecam:room.facecam||null,mirrorBroadcast:room.mirrorBroadcast===true,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id),layout:room.stageLayout||[]});
-   reply(host,{type:'viewer-joined',id:s.id});
+   // Name comes from authenticated WebSocket session only, never the JOIN payload.
+   // Anonymous guests get a distinguishable label, not a fabricated real name.
+   const joinedName=s.displayName||(s.handle?'@'+s.handle:'Penonton #'+s.id.slice(-4).toUpperCase());
+   const presenceLabel=s.handle&&s.displayName&&s.handle.toLowerCase()!==s.displayName.toLowerCase()
+    ?joinedName+' (@'+s.handle+')':joinedName;
+   reply(host,{type:'viewer-joined',id:s.id,name:joinedName,handle:s.handle||null});
+   // Emit a real system chat packet. This is displayed on web chat and also
+   // follows the existing native GAME chat-overlay/notification bridge.
+   const presence={type:'chat',from:'nadmo:room-presence',name:'NADMO LIVE',
+    text:presenceLabel+' sudah bergabung',system:'viewer-joined',
+    viewerId:s.id,viewerName:joinedName,handle:null,avatarVersion:0};
+   for(const receiver of peers)if(receiver!==ws&&state(receiver).roomId===id)reply(receiver,presence);
     stageBroadcast(peers,id,room.stageLayout||[]);
    return;
   }
