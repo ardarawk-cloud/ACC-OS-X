@@ -58,7 +58,10 @@ async function main(){
   await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('Link tersimpan di akun'),{timeout:12000});
   assert.equal(await one.$eval('#profileBusinessLinks a',el=>el.href),'https://bookbwd.nadmo.id/');
   await one.$eval('#profileSave',el=>el.click());
-  await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('tersinkron'),{timeout:10000});
+  // Authenticated profile saves show an account-confirmed success message;
+  // "tersinkron" is reserved for a different offline-draft status.
+  await one.waitForFunction(()=>document.querySelector('#profileEditStatus').textContent.includes('Profil, tema dan link tersimpan di akun.'),{timeout:10000});
+  assert.equal(await one.$eval('#profileDisplayName',x=>x.textContent),'NADMO QA Creator');
   await fillOffscreen('#profilePostText','Book directly https://bookbwd.nadmo.id/ without walled gardens');
   await one.$eval('#profilePostSave',el=>el.click());
   await one.waitForFunction(()=>document.querySelector('#profileSyncedPosts').querySelectorAll('a').length===1,{timeout:10000});
