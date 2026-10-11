@@ -2025,6 +2025,65 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
   border:0!important;background:#050708!important
  }
 }
+
+/* MOBILE PORTRAIT: non-overlapping auto-grid; PC freeform remains intact. */
+@media(max-width:799px){
+ body.live-immersive:not(.watch-game) #watch{touch-action:pan-y}
+ body.live-immersive:not(.watch-game):not(.watch-clean) #watch::before{
+  content:"";position:absolute;inset:5px;z-index:5;pointer-events:none;
+  background:linear-gradient(var(--neon),var(--neon)) left top/22px 2px no-repeat,
+  linear-gradient(var(--neon),var(--neon)) left top/2px 22px no-repeat,
+  linear-gradient(var(--neon),var(--neon)) right top/22px 2px no-repeat,
+  linear-gradient(var(--neon),var(--neon)) right top/2px 22px no-repeat,
+  linear-gradient(var(--neon),var(--neon)) left bottom/22px 2px no-repeat,
+  linear-gradient(var(--neon),var(--neon)) left bottom/2px 22px no-repeat,
+  linear-gradient(var(--neon),var(--neon)) right bottom/22px 2px no-repeat,
+  linear-gradient(var(--neon),var(--neon)) right bottom/2px 22px no-repeat;opacity:.7
+ }
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split .live-stage{
+  position:absolute!important;inset:auto!important;left:var(--mobile-host-x)!important;
+  top:var(--mobile-host-y)!important;width:var(--mobile-host-w)!important;
+  height:var(--mobile-host-h)!important;border:1px solid var(--neon)!important;
+  overflow:hidden!important;z-index:3
+ }
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split .live-stage>.viewfinder{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important
+ }
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split #remote{
+  object-fit:contain!important;background:#080d0c!important
+ }
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split #guestStageGrid{
+  position:absolute!important;inset:0!important;left:0!important;right:0!important;
+  top:0!important;bottom:0!important;width:100%!important;height:100%!important;
+  max-height:none!important;overflow:visible!important;z-index:4!important;
+  display:block!important;pointer-events:none!important
+ }
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split .stage-guest-tile{
+  position:absolute!important;min-height:0!important;max-height:none!important;
+  aspect-ratio:auto!important;transform:none!important;border:1px solid var(--neon)!important;
+  border-radius:1px!important;pointer-events:none!important;overflow:hidden!important;background:#080d0c
+ }
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split .stage-guest-tile video{
+  object-fit:contain!important;background:#080d0c
+ }
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split .stage-guest-resize{display:none!important}
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split .stage-guest-tip{pointer-events:auto}
+ body.live-immersive:not(.watch-game) #watch.mobile-stage-split .live-stage::after{
+  content:"HOST";position:absolute;z-index:6;bottom:4px;left:4px;top:auto;right:auto;
+  background:#060c0bbc;color:var(--neon);padding:3px 6px;border:0;
+  font:800 10px Arial,sans-serif;pointer-events:none
+ }
+ body.live-immersive.watch-clean #watch::before,
+ body.live-immersive.watch-clean #watch::after{display:none!important}
+ body.live-immersive.watch-clean #watch :is(.live-chat,.room-safety,#hostControls,#viewerTools,#refreshVideo,#watchState,#watchStreamQuality,#guestJoinStatus,.mobile-game-brand,.mobile-game-feedline,.stage-tag,.stage-slot-number,.stage-fallback,.stage-guest-tip,.stage-guest-resize,.deck-player-controls,.deck-live-telemetry,.deck-shell-art){display:none!important}
+ body.live-immersive.watch-clean #watch .live-stage::after{display:none!important}
+ body.live-immersive.watch-clean #watch .page-top{z-index:9!important;background:transparent!important}
+ body.live-immersive.watch-clean #watch #watchRoomSubtitle,
+ body.live-immersive.watch-clean #watch .onair-label,
+ body.live-immersive.watch-clean #watch #hostIdentityHandle{display:none!important}
+ body.live-immersive.watch-clean #watch #hostProfileCard{background:#070a09a6!important;border:0!important;box-shadow:none!important}
+ body.live-immersive.watch-clean #watch #leave{z-index:12!important}
+}
 </style></head>
 <body>
 <div class="app">
@@ -4240,6 +4299,7 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
 
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
  function show(name){if(name==='settings'&&!activeAccount)name='authPage';
+  if(name!=='watch')document.body.classList.remove('watch-clean');
   const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialConnectionsPage','publicProfilePage'];
   document.body.classList.toggle('page-subview',subpages.includes(name));
   if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(name==='draftsPage'?'socialPage':subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
@@ -4785,6 +4845,20 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
  $('refreshVideo').onclick=()=>{lastForegroundRecovery=0;restoreForeground()};
  window.addEventListener('focus',restoreForeground);
  window.addEventListener('pageshow',event=>{if(event.persisted)restoreForeground()});
+ // Mobile touch swipe right hides only the overlay; left shows it again.
+ let liveSwipeStart=null;
+ $('watch').addEventListener('pointerdown',e=>{
+  if(window.innerWidth>=800||e.pointerType==='mouse'||e.target.closest('button,input,textarea,select,a,[role="dialog"],.safety-panel,.stage-guest-tile'))return;
+  liveSwipeStart={x:e.clientX,y:e.clientY,id:e.pointerId};
+ },{passive:true});
+ $('watch').addEventListener('pointerup',e=>{
+  const p=liveSwipeStart;liveSwipeStart=null;
+  if(!p||p.id!==e.pointerId||window.innerWidth>=800)return;
+  const dx=e.clientX-p.x,dy=e.clientY-p.y;
+  if(Math.abs(dx)>=65&&Math.abs(dx)>Math.abs(dy)*1.65)
+    document.body.classList.toggle('watch-clean',dx>0);
+ },{passive:true});
+ $('watch').addEventListener('pointercancel',()=>{liveSwipeStart=null},{passive:true});
   // GAME playback PCM over a WebRTC data channel. Regular host microphone
   // stays on its separate audio track. Never fabricate an audio-ready state.
   let gameAudioContext=null,gameAudioNext=0,gameAudioLastFrame=0;
@@ -4887,6 +4961,20 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
  function normalizeLayout(value){
   return Array.isArray(value)?value.map(normalizedRect).filter(Boolean).slice(0,9):[];
  }
+ // Auto grid reserves slot zero for the host (mobile only).
+ function mobileStageRect(index,total){
+  const cols=total<=2?total:total<=4?2:3;
+  const rows=Math.ceil(total/cols),gap=.6;
+  const w=(100-gap*(cols-1))/cols,h=(100-gap*(rows-1))/rows;
+  return {x:(index%cols)*(w+gap),y:Math.floor(index/cols)*(h+gap),w,h};
+ }
+ function syncMobileStage(){
+  const el=$('watch'),total=1+stageGuestsList.length;
+  el.classList.toggle('mobile-stage-split',total>1);
+  el.dataset.stageParticipants=String(total);
+  const r=mobileStageRect(0,total);
+  for(const [key,val] of [['--mobile-host-x',r.x],['--mobile-host-y',r.y],['--mobile-host-w',r.w],['--mobile-host-h',r.h]])el.style.setProperty(key,val+'%');
+ }
  function stageDefaultRect(index,count){
   const cols=count<=2?count:count<=4?2:3;
   const rows=Math.ceil(count/cols),gap=1.3;
@@ -4907,7 +4995,7 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
   transmit({type:'stage-layout',layout:stageLayout});
  }
  function stageDrag(tile,id,event,isResize=false){
-  if(!host||event.button!==0||!currentRoom)return;
+  if(!host||event.button!==0||!currentRoom||window.innerWidth<800)return;
   event.preventDefault();event.stopPropagation();selectedStageGuest=id;
   document.querySelectorAll('#guestStageGrid .stage-guest-tile').forEach(e=>e.classList.toggle('stage-selected',e.dataset.id===id));
   const parent=$('guestStageGrid'),bounds=parent.getBoundingClientRect();
@@ -4940,12 +5028,12 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
   target.addEventListener('pointercancel',finish,{once:true});
  }
  function renderStageGuests(){
-  const panel=$('guestStageGrid');panel.replaceChildren();
+  const panel=$('guestStageGrid');panel.replaceChildren();syncMobileStage();
   for(const [index,guest] of stageGuestsList.entries()){
    const tile=document.createElement('div');tile.className='stage-guest-tile';tile.dataset.id=guest.id;
    tile.dataset.camera=guest.camera?'on':'off';tile.tabIndex=host?0:-1;
    tile.setAttribute('aria-label','Tamu '+(guest.name||index+1));
-   paintStageRect(tile,stageRectFor(guest.id));
+   paintStageRect(tile,window.innerWidth<800?mobileStageRect(index+1,stageGuestsList.length+1):stageRectFor(guest.id));
    tile.classList.toggle('stage-selected',host&&selectedStageGuest===guest.id);
    const stream=guest.id===selfId&&guestOnStage?guestStream:guestRemoteStreams.get(guest.streamId);
    if(stream){
