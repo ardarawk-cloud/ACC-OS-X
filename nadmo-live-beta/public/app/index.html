@@ -905,7 +905,7 @@ body:not(.live-immersive) .show-label{margin:19px 0 10px;padding-top:11px}
 body:not(.live-immersive) .show-label b{font-size:17px}
 body:not(.live-immersive) #home .signal-stage{height:clamp(235px,37vh,340px);border-radius:18px}
 body:not(.live-immersive) .freq button{border-radius:12px;height:116px;background:#101912}
-nav button.broadcast i{box-shadow:0 2px 17px var(--neon)48;border-radius:5px}
+nav button.broadcast i{box-shadow:0 2px 17px color-mix(in srgb, var(--neon) 28%, transparent);border-radius:5px}
 #studio .mode-grid button{min-height:75px;padding:10px 4px;border-radius:14px;background:#111a14}
 #studio .mode-grid button.active{background:#1c311c;color:#e4ff93;box-shadow:inset 0 0 0 1px #b9ec56}
 #studio>.panel,#studio #gameSetup{border:1px solid #344b35;background:#101912;border-radius:18px;padding:14px;margin:12px 0}
@@ -961,7 +961,7 @@ body:not(.live-immersive)::before{
 }
 body:not(.live-immersive) .mast{border-bottom:1px solid #52715a;position:relative}
 body:not(.live-immersive) .mast::after{content:"";position:absolute;bottom:-1px;left:0;width:76px;height:2px;background:var(--deck-lime)}
-body:not(.live-immersive) .mast .logo-mark{box-shadow:inset 0 0 14px var(--neon)16,0 0 18px var(--neon)16}
+body:not(.live-immersive) .mast .logo-mark{box-shadow:inset 0 0 14px color-mix(in srgb, var(--neon) 9%, transparent),0 0 18px color-mix(in srgb, var(--neon) 9%, transparent)}
 body:not(.live-immersive) .panel,
 body:not(.live-immersive) .profile-hero,
 body:not(.live-immersive) .profile-post-card{
@@ -984,8 +984,8 @@ body:not(.live-immersive) #gameCaptureStatus{background:#101e16;border:1px solid
 body:not(.live-immersive) .game-live-actions{flex-wrap:wrap}
 body:not(.live-immersive) nav{background:#09120feF;border-top:1px solid #4e694f;box-shadow:0 -8px 22px #0005}
 body:not(.live-immersive) nav button{min-height:48px}
-body:not(.live-immersive) nav button.active{color:var(--deck-lime);text-shadow:0 0 12px var(--neon)50}
-body:not(.live-immersive) nav button.broadcast i{box-shadow:0 0 15px var(--neon)36}
+body:not(.live-immersive) nav button.active{color:var(--deck-lime);text-shadow:0 0 12px color-mix(in srgb, var(--neon) 31%, transparent)}
+body:not(.live-immersive) nav button.broadcast i{box-shadow:0 0 15px color-mix(in srgb, var(--neon) 21%, transparent)}
 body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;border-radius:9px}
 @media(max-width:799px){
  body:not(.live-immersive) .app{max-width:680px;padding-left:clamp(12px,4vw,18px);padding-right:clamp(12px,4vw,18px)}
@@ -1021,7 +1021,7 @@ body:not(.live-immersive) .chat{background:#0b1711;border:1px solid #425844;bord
  body.live-immersive.watch-viewer #watch .live-chat{
    border:1px solid #4c7258;border-radius:10px;
    background:linear-gradient(170deg,#14251b,#0a120d 78%);
-   box-shadow:inset 0 2px 0 var(--neon)2a,0 14px 32px #0007
+   box-shadow:inset 0 2px 0 color-mix(in srgb, var(--neon) 16%, transparent),0 14px 32px #0007
  }
  body.live-immersive.watch-viewer #watch .live-chat .show-label{border-color:#42694c}
  body.live-immersive.watch-viewer #watch #chat div{
@@ -1085,7 +1085,7 @@ body:not(.live-immersive) .signal-stage{
  linear-gradient(140deg,#1d3728,#07130c 58%,#1b3521)}
 body:not(.live-immersive) .signal-stage .circle{background:#0b1913b3;border:2px solid #88b55d;
  box-shadow:0 0 0 12px #c0f96a0b,inset 0 0 27px #b5f75a18}
-body:not(.live-immersive) .signal-stage .circle strong{text-shadow:0 0 24px var(--neon)75}
+body:not(.live-immersive) .signal-stage .circle strong{text-shadow:0 0 24px color-mix(in srgb, var(--neon) 46%, transparent)}
 body:not(.live-immersive) .stage-head{border-bottom:1px solid #53844e;padding-bottom:8px}
 body:not(.live-immersive) .freq button{
  border:1px solid #89a658;background:linear-gradient(145deg,#203a26,#0a1810);
@@ -1124,7 +1124,7 @@ body:not(.live-immersive) #studio #createRoom{
  padding:6px 8px;border:1px solid #679977;background:#07130fc8;
  font:800 9px Arial,sans-serif;letter-spacing:1px;color:#a8f3d1;pointer-events:none}
  body.live-immersive.watch-viewer #watch .live-chat{border:2px solid #83ad60;
- border-radius:5px;box-shadow:inset 0 1px var(--neon)55,0 18px 44px #0008}
+ border-radius:5px;box-shadow:inset 0 1px color-mix(in srgb, var(--neon) 33%, transparent),0 18px 44px #0008}
  body.live-immersive.watch-viewer #watch .live-chat:before{
  content:"COMM // 01";flex:none;color:#7fe3c5;font:800 9px Arial,sans-serif;
  letter-spacing:1px;padding:1px 0 7px}
@@ -1169,7 +1169,7 @@ body.live-immersive.watch-viewer #watch .page-top{
  width:215px;max-width:215px;padding:0;z-index:11;pointer-events:auto}
 body.live-immersive.watch-viewer #watch #hostProfileCard{
  border:1px solid #719e57;background:linear-gradient(120deg,#1c2d20ee,#09130ceb);
- border-radius:3px;padding:7px 10px 7px 7px;box-shadow:inset 0 1px var(--neon)2e}
+ border-radius:3px;padding:7px 10px 7px 7px;box-shadow:inset 0 1px color-mix(in srgb, var(--neon) 18%, transparent)}
 body.live-immersive.watch-viewer #watch #watchTitle{font:900 18px Arial,sans-serif;text-shadow:0 2px 8px #000}
 body.live-immersive.watch-viewer #watch .deck-live-telemetry{
  position:absolute;display:flex;z-index:10;top:16px;
