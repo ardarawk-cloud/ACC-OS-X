@@ -559,7 +559,8 @@ export default {
     const asset=await env.ASSETS.fetch(new Request(url.origin+'/app/index.html'));
     const headers=new Headers(asset.headers);
     headers.set('X-Content-Type-Options','nosniff');
-    headers.set('Cache-Control','public, max-age=60, must-revalidate');
+    headers.set('X-NADMO-LIVE-CAMERA','orientation-aware-20261011');
+    headers.set('Cache-Control','no-store, max-age=0');
     headers.set('Referrer-Policy','no-referrer');
     headers.set('Permissions-Policy','camera=(self), microphone=(self)');
     return new Response(asset.body,{status:asset.status,headers});
