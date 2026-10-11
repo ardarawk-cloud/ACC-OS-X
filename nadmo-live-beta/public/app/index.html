@@ -2304,6 +2304,28 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel{
 }
 body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{display:none!important}
 
+
+/* Broadcaster composer is a setting, not a camera obstruction.
+   Viewer chat composer and the always-accessible Rp sawer remain unchanged. */
+body.live-immersive #watch #liveSettingsPanel .host-settings-chat{
+ display:flex;flex-wrap:wrap;align-items:center;gap:9px;
+ margin:15px 0 0;padding:12px 0;
+ border-top:1px solid var(--cbw-425341,#425341)
+}
+body.live-immersive #watch #liveSettingsPanel .host-settings-chat[hidden]{display:none!important}
+body.live-immersive #watch #liveSettingsPanel .host-settings-chat label{
+ flex:0 0 100%;font:800 11px Arial,sans-serif;
+ color:var(--cbw-e7f7e1,#e7f7e1)
+}
+body.live-immersive #watch #liveSettingsPanel .host-settings-chat #message{
+ position:static!important;flex:1 1 170px;width:auto!important;
+ min-width:0!important;max-width:none!important;margin:0!important
+}
+body.live-immersive #watch #liveSettingsPanel .host-settings-chat #send{
+ position:static!important;flex:0 0 64px;min-width:64px;
+ height:40px!important;margin:0!important
+}
+
 </style></head>
 <body>
 <div class="app">
@@ -4540,7 +4562,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
   if(name!=='watch')document.body.classList.remove('watch-clean');
   const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialConnectionsPage','publicProfilePage'];
   document.body.classList.toggle('page-subview',subpages.includes(name));
-  if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(name==='draftsPage'?'socialPage':subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
+  if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);syncLiveChatComposer();for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(name==='draftsPage'?'socialPage':subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
   if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
   if(name==='socialPage'){loadSocialFeed();if(activeAccount)refreshSocialRelations().catch(()=>{});}
   if(name==='settings'&&activeAccount){refreshSocialRelations().catch(()=>{});loadMyReposts();}
@@ -4658,7 +4680,31 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  // live video toolbar. Move nodes, don't clone them, to preserve listeners.
  const liveRoomSafety=$('watch').querySelector('.live-chat .room-safety');
  if(liveRoomSafety)$('liveSettingsPanel').appendChild(liveRoomSafety);
+ const originalChatRow=$('watch').querySelector('.live-chat .row');
+ const settingsChatComposer=document.createElement('div');
+ settingsChatComposer.id='hostSettingsComposer';
+ settingsChatComposer.className='host-settings-chat';
+ settingsChatComposer.hidden=true;
+ const composerLabel=document.createElement('label');
+ composerLabel.htmlFor='message';composerLabel.textContent='KIRIM CHAT SIARAN';
+ settingsChatComposer.appendChild(composerLabel);
+ $('liveSettingsPanel').insertBefore(settingsChatComposer,liveRoomSafety||null);
+ function syncLiveChatComposer(){
+  const input=$('message'),send=$('send'),viewerGift=$('giftQuick');
+  if(document.body.classList.contains('live-immersive')&&document.body.classList.contains('watch-host')){
+   if(input.parentElement!==settingsChatComposer)settingsChatComposer.append(input,send);
+   settingsChatComposer.hidden=false;
+  }else{
+   if(input.parentElement!==originalChatRow){
+    originalChatRow.insertBefore(input,viewerGift);
+    originalChatRow.insertBefore(send,viewerGift);
+   }
+   settingsChatComposer.hidden=true;
+  }
+ }
+
  $('moreQuick').onclick=()=>{
+  syncLiveChatComposer();
   $('mirrorSettings').hidden=!host;
   $('settingsCamera').hidden=!host;
   $('settingsPrivate').hidden=!host;
