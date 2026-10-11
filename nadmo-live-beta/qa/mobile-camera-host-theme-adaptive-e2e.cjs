@@ -26,6 +26,10 @@ const puppeteer=require('puppeteer-core');
     stageMode:watch.classList.contains('camera-frame-letterbox'),
     stageTop:stage.top,stageBottom:stage.bottom,chatTop:chat.top,
     hud:getComputedStyle(document.querySelector('#mobileLiveHud')).display,
+    hudHeight:document.querySelector('#mobileLiveHud').getBoundingClientRect().height,
+    hudOutline:getComputedStyle(document.querySelector('.mobile-live-hud-outline')).display,
+    hudFooter:getComputedStyle(document.querySelector('.mobile-live-hud-footer')).display,
+    footerBottom:document.querySelector('.mobile-live-hud-footer').getBoundingClientRect().bottom,
     aspect:watch.dataset.cameraSourceAspect,fit:getComputedStyle(v).objectFit};
    Object.defineProperty(v,'videoWidth',{configurable:true,get:()=>720});
    Object.defineProperty(v,'videoHeight',{configurable:true,get:()=>1280});
@@ -50,7 +54,13 @@ const puppeteer=require('puppeteer-core');
     'mobile source must start at the top with no wasted camera header');
   assert.ok(outcome.landscape.chatTop>=outcome.landscape.stageBottom+8,
     'chat must begin BELOW uncropped camera frame, never over a footer line');
-  assert.equal(outcome.landscape.hud,'none','do not frame empty black bands with neon');
+  assert.equal(outcome.landscape.hud,'block','wide camera viewer MUST retain visible themed HUD');
+  assert.equal(outcome.landscape.hudOutline,'block','draw ornament ONLY around captured video');
+  assert.equal(outcome.landscape.hudFooter,'flex','ON AIR label must remain inside video');
+  assert.ok(Math.abs(outcome.landscape.hudHeight-outcome.landscape.stageBottom)<=3,
+    'themed frame must stop at lower video edge, not wrap empty chat');
+  assert.ok(outcome.landscape.footerBottom<=outcome.landscape.stageBottom+1,
+    'ON AIR badge must stay ABOVE chat');
   assert.deepEqual(outcome.portrait,{classSet:false,stageMode:false,aspect:'720:1280',fit:'contain'},
     'portrait camera should keep its original immersive player and not crop shoulders');
 
@@ -145,7 +155,7 @@ const puppeteer=require('puppeteer-core');
     'PC viewer must show PORTRAIT stage, not force 16:9 theater: '+JSON.stringify(desktopCamera));
   assert.ok(desktopCamera.chat.w>=290,'PC chat remains a separate side panel');
   assert.equal(desktopCamera.fit,'contain','PC portrait video remains uncropped');
-  assert.match(desktopCamera.build,/MOBILE-FIRST-V3/,'UI build visible only in settings for two-phone QC');
+  assert.match(desktopCamera.build,/VIDEO-HUD-V4/,'viewer and host can verify identical UI build in settings');
   console.log('DESKTOP_FOLLOWS_PHONE_PORTRAIT_QC_PASS '+JSON.stringify(desktopCamera));
   console.log('MOBILE_HOST_SETTINGS_AND_VIEWER_HUD_PASS '+JSON.stringify({hostUi,viewerUi}));
   console.log('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_PASS '+JSON.stringify(outcome));
