@@ -75,7 +75,10 @@ const selectors=['#watch','#watchTitle','#watchRoomSubtitle','#hostProfileCard',
      if(expected)assert.deepEqual(result,expected,'viewer skin changed LIVE appearance: '+label);
      else expected=result;
      if(!scenario.game&&scenario.width<800)assert.equal(result.hudColor,accents[hostTheme],label+' HUD accent');
-     assert.equal(result.hudDisplay,!scenario.game&&scenario.width<800?'block':'none',label+' phone HUD visibility');
+     // The fixture sends a real 1280x720 landscape track. For phone CAMERA
+     // that now gets its own video stage above chat, never a full-phone HUD.
+     // GAME and PC have their independent presentation.
+     assert.equal(result.hudDisplay,'none',label+' wide source must not frame black gaps');
      assert.equal(result.deckStroke,accents[hostTheme],label+' PC deck accent');
      for(const media of result.media)assert.ok(media.filters.every(v=>v==='none'),label+' must not filter video pixels');
      assert.equal(result.media[0].fit,'contain',label+' landscape frame must be preserved');
