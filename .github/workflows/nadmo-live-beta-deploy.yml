@@ -46,6 +46,7 @@ jobs:
           node --check nadmo-live-beta/qa/social-follow-structure.mjs
           node --check nadmo-live-beta/qa/cyberdeck-cover-contract.mjs
           node --check nadmo-live-beta/qa/native-portrait-live-contract.mjs
+          node --check nadmo-live-beta/qa/mobile-cyberdeck-stage-contract.mjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
           node --check nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
           node --check nadmo-live-beta/qa/viewer-invite-e2e.cjs
@@ -60,6 +61,8 @@ jobs:
         run: node nadmo-live-beta/qa/cyberdeck-cover-contract.mjs
       - name: Guard native high-resolution camera and TikTok-style mobile fullscreen
         run: node nadmo-live-beta/qa/native-portrait-live-contract.mjs
+      - name: Guard mobile automatic guest grid, swipe clean, and host theme
+        run: node nadmo-live-beta/qa/mobile-cyberdeck-stage-contract.mjs
       - name: Verify all supporter level and privacy calculation boundaries
         run: node nadmo-live-beta/qa/supporter-levels-unit.mjs
       - name: Verify wallet ledger and withdrawal safety
