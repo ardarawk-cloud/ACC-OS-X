@@ -67,7 +67,7 @@ jobs:
         run: node nadmo-live-beta/qa/supporter-levels-unit.mjs
       - name: Verify wallet ledger and withdrawal safety
         run: node nadmo-live-beta/qa/wallet-unit.mjs
-      - name: Prepare owner-signed NADMO LIVE v0.9.2 and legacy APK downloads
+      - name: Verify legacy APK archives (not the current native GAME APK)
         shell: bash
         run: |
           set -euo pipefail
@@ -137,19 +137,22 @@ jobs:
           done
           echo "::error::Custom domain not responding. Check Cloudflare zone nadmo.id and Worker custom domain/SSL permission."
           exit 1
-      - name: Verify official Android APK downloads directly from live.nadmo.id
+      - name: Verify official current native GAME APK downloads directly from live.nadmo.id
         shell: bash
         run: |
           set -euo pipefail
           URL="https://live.nadmo.id/download.apk"
-          curl --fail --silent --show-error --max-time 60 --dump-header /tmp/nadmo-apk-headers.txt \
-            --output /tmp/nadmo-live-direct.apk "$URL"
+          APK="NADMO-LIVE-v0.10.9-beta.apk"
+          curl --fail --location --silent --show-error --retry 2 --max-time 180 --dump-header /tmp/nadmo-apk-headers.txt --output "/tmp/$APK" "$URL"
           grep -Fqi 'Content-Type: application/vnd.android.package-archive' /tmp/nadmo-apk-headers.txt
-          grep -Fqi 'Content-Disposition: attachment; filename="NADMO-LIVE-v0.9.4-beta.apk"' /tmp/nadmo-apk-headers.txt
-          cmp /tmp/nadmo-live-direct.apk nadmo-live-beta/public/downloads/NADMO-LIVE-v0.9.4-beta.apk
-          curl --fail --silent --show-error --max-time 60 --output /tmp/nadmo-live-legacy.apk https://live.nadmo.id/NADMO-LIVE-v0.9.1-beta.apk
-          cmp /tmp/nadmo-live-legacy.apk nadmo-live-beta/public/downloads/NADMO-LIVE-v0.9.1-beta.apk
-          echo "DIRECT NADMO LIVE APK DOWNLOAD PASS: $(wc -c < /tmp/nadmo-live-direct.apk) bytes"
+          grep -Fqi "Content-Disposition: attachment; filename=\"$APK\"" /tmp/nadmo-apk-headers.txt
+          test "$(wc -c < "/tmp/$APK")" -gt 40000000
+          curl --fail --location --silent --show-error --max-time 30 \
+            "https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.9-beta/SHA256SUMS.txt" \
+            --output /tmp/nadmo-live-native-SHA256SUMS.txt
+          (cd /tmp && sha256sum --check nadmo-live-native-SHA256SUMS.txt)
+          unzip -t "/tmp/$APK" | tail -n 2
+          echo "CURRENT NATIVE APK v0.10.9 ORIGINAL SIGNED BYTES PASS"
       - name: Install creator ownership QA dependencies
         run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund ws@8
       - name: Verify ICE candidate bursts do not disconnect GAME hosts
