@@ -46,7 +46,7 @@ async function connect(){
   const note1=await host.next('chat',x=>x.system==='viewer-joined');
   assert.equal(note1.from,'nadmo:room-presence');
   assert.equal(note1.viewerId,joined1.selfId);
-  assert.ok(note1.text.includes(first.name)&&note1.text.includes('sudah bergabung'));
+  assert.equal(note1.text,first.name+' sudah bergabung','only one identity in JOIN notice');
   assert.ok(!note1.text.includes('ADMIN SPOOF'),'cannot spoof public name through JOIN');
   assert.equal(v1.inbox.some(x=>x.system==='viewer-joined'&&x.viewerId===joined1.selfId),false);
   const v2=await connect();
@@ -55,12 +55,16 @@ async function connect(){
   assert.ok(joined2.selfId);
   const second=await host.next('viewer-joined',x=>x.id===joined2.selfId);
   const note2=await host.next('chat',x=>x.system==='viewer-joined'&&x.viewerId===second.id);
-  assert.ok(note2.text.includes(second.name));
+  assert.equal(note2.text,second.name+' sudah bergabung','second JOIN notice uses one compact identity');
   const audienceNotice=await v1.next('chat',x=>x.system==='viewer-joined'&&x.viewerId===second.id);
   assert.equal(audienceNotice.text,note2.text,'existing viewer receives same message');
   // Normal host-to-audience chat still works after system presence.
   host.send({type:'chat',text:'Selamat datang di NADMO LIVE'});
   assert.equal((await v1.next('chat',x=>x.text==='Selamat datang di NADMO LIVE')).name,'Host');
+  const worker=readFileSync(resolve(__dirname,'../worker.mjs'),'utf8');
+  assert.match(worker,/const presenceLabel=joinedName;/,'room notice must use one identity only');
+  assert.match(worker,/announce=!fresh\.some\(item=>item\.key===presenceKey\)/,'authenticated fast reconnect must not duplicate room notice');
+  assert.match(worker,/reply\(host,\{type:'viewer-joined'/,'reconnect dedup must preserve host WebRTC attach');
   const html=readFileSync(resolve(__dirname,'../public/app/index.html'),'utf8');
   assert.match(html,/room-join-notice/);
   assert.match(html,/viewerDisplayNames\.set\(m.id/);
