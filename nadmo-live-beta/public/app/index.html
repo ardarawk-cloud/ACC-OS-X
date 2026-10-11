@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>NADMO LIVE — Beta</title>
 <style>
-:root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#e3fd72;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
+:root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--paper);font-family:Arial,"Helvetica Neue",system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
 html{scroll-behavior:smooth}button,input,select{font:inherit}button{cursor:pointer;color:inherit;-webkit-tap-highlight-color:transparent}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
@@ -1811,6 +1811,45 @@ body.live-immersive.watch-viewer #watch .live-chat .show-label small{font-size:8
 .social-media-lightbox-bar button{min-width:44px;min-height:44px;border:1px solid #698f59;color:#e3fd72;background:#15261a}
 body.social-lightbox-open{overflow:hidden}
 @media(max-width:799px){.social-gallery{width:100%}.social-queued-media{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* CYBERDECK POLISH 2026-10-11: keep the established NADMO layout and interaction contract. */
+:root{--neon:#dcff38;--skin-neon:#dcff38}
+html,body{background:#060b08}
+.app{background-image:linear-gradient(90deg,rgba(198,255,91,.022) 1px,transparent 1px),linear-gradient(0deg,rgba(198,255,91,.024) 1px,transparent 1px),radial-gradient(ellipse at 75% 4%,rgba(122,255,45,.075),transparent 42%);background-size:32px 32px,32px 32px,100% 100%}
+.mast{position:relative;border-bottom-color:#9acc28;box-shadow:0 8px 24px rgba(170,255,24,.035);padding-top:4px}
+.mast::after{content:"";position:absolute;left:0;bottom:-2px;width:84px;height:3px;background:var(--neon);box-shadow:0 0 14px rgba(219,255,56,.65);pointer-events:none}
+.logo-mark{border-width:3px;box-shadow:0 0 13px rgba(220,255,56,.23);color:var(--neon)}
+.logo-name em,.eyebrow,.micro strong{color:var(--neon);text-shadow:0 0 10px rgba(220,255,56,.12)}
+#settings .profile-hero,#socialPublicFeed .profile-post-card,.social-share-panel button,.me-menu,.panel,.signal-stage,.social-comment-box{border-color:#466a32;box-shadow:inset 0 1px 0 rgba(204,255,121,.1),0 0 0 1px rgba(135,255,41,.025)}
+#socialPublicFeed .profile-post-card,.panel,.me-menu,.signal-stage{position:relative}
+#socialPublicFeed .profile-post-card::after,.panel::after,.signal-stage::after{pointer-events:none}
+#socialPublicFeed .profile-post-card{background:linear-gradient(155deg,rgba(42,75,36,.24),transparent 38%),#0b120e;border:1px solid #466c35}
+#socialPublicFeed .profile-post-card::before{content:"";position:absolute;top:0;right:0;width:19px;height:3px;background:var(--neon);box-shadow:0 0 8px rgba(206,255,53,.35);pointer-events:none}
+.me-menu button:focus-visible,.btn:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+.btn:not(.secondary):not(.ghost){box-shadow:0 0 16px rgba(191,255,26,.09)}
+.signal-stage{outline:1px solid rgba(199,255,30,.15);outline-offset:3px}
+.nadmo-profile[data-theme="nadmo"],.public-me-skin[data-theme="nadmo"]{--skin-accent:#dcff38;--skin-bg:#0c1b12;--skin-ink:#f1ffe9}
+.nadmo-profile[data-theme="cyberbw"],.public-me-skin[data-theme="cyberbw"]{--skin-accent:#f6f8f7;--skin-bg:#090b0c;--skin-ink:#fff}
+.nadmo-profile[data-theme="cyberbw"] .profile-hero,.public-me-skin[data-theme="cyberbw"] .profile-hero{box-shadow:inset 0 0 0 2px rgba(255,255,255,.25),0 0 18px rgba(244,244,244,.1);border-radius:4px}
+.nadmo-profile[data-theme="cyberbw"] .profile-hero::before,.public-me-skin[data-theme="cyberbw"] .profile-hero::before{background:repeating-linear-gradient(100deg,transparent 0 36px,rgba(255,255,255,.08) 37px 39px),linear-gradient(180deg,transparent,rgba(0,0,0,.9));opacity:1}
+.nadmo-profile[data-theme="cyberbw"] .me-social-stats strong,.public-me-skin[data-theme="cyberbw"] .profile-business-link{color:#fff}
+.nadmo-profile[data-theme="cyberbw"] .profile-hero,.public-me-skin[data-theme="cyberbw"] .profile-hero{filter:grayscale(1)}
+.nadmo-profile[data-cover-photo="true"] .profile-hero,.public-me-skin[data-cover-photo="true"] .profile-hero{background-color:#101a11;background-position:center;background-size:cover;min-height:185px;align-items:end}
+.nadmo-profile[data-cover-photo="true"] .profile-hero::before,.public-me-skin[data-cover-photo="true"] .profile-hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,4,3,.04),rgba(2,4,3,.38) 44%,rgba(0,0,0,.88));opacity:1}
+.theme-choices.profile-font-row{display:none}
+.cover-editor{padding:10px;margin:8px 0 14px;background:#0b1410;border:1px solid #455d3d;border-radius:10px}
+.cover-editor-heading{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px;letter-spacing:.07em;font-size:11px}
+.cover-editor-heading small{color:var(--neon);font-size:9px}
+.cover-preview{aspect-ratio:16/9;min-height:112px;display:grid;place-items:center;position:relative;overflow:hidden;background:repeating-linear-gradient(90deg,transparent 0 27px,#263927 28px 29px),repeating-linear-gradient(0deg,#0b1810 0 27px,#263927 28px 29px);border:1px solid #567d3b;border-radius:7px;text-align:center;padding:12px}
+.cover-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cover-preview img[hidden]{display:none!important}
+.cover-preview span{position:relative;z-index:1;font-size:11px;color:#aeca9d}
+.cover-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cover-actions button{flex:1;min-height:42px}
+.cover-actions button[hidden]{display:none!important}
+#coverUploadStatus{margin-bottom:0}
+@media(max-width:390px){.cover-actions button{font-size:11px}.cover-editor-heading{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.mast::after,.logo-name em{animation:none}}
 </style></head>
 <body>
 <div class="app">
@@ -2218,11 +2257,18 @@ body.social-lightbox-open{overflow:hidden}
       <textarea class="field profile-textarea" id="profileBio" rows="3" maxlength="300" placeholder="Bisnis, karya, dan aktivitasmu"></textarea>
       <div class="show-label"><b>PERSONALISASI ME</b><small>HANYA PROFIL — DASHBOARD TETAP</small></div>
       <div class="theme-choices">
-       <label>TEMA <select class="field" id="profileTheme"><option value="nadmo">NADMO ORIGINAL</option><option value="noir">NOIR</option><option value="retro">RETRO</option><option value="electric">ELECTRIC</option></select></label>
+       <label>TEMA <select class="field" id="profileTheme"><option value="nadmo">NADMO ORIGINAL</option><option value="cyberbw">CYBERPUNK BW</option><option value="noir">NOIR</option><option value="retro">RETRO</option><option value="electric">ELECTRIC</option></select></label>
        <label>FONT <select class="field" id="profileFont"><option value="system">ORIGINAL</option><option value="mono">MONOSPACE</option><option value="editorial">EDITORIAL</option></select></label>
-       <label>COVER / THUMBNAIL <select class="field" id="profileCover"><option value="grid">GRID</option><option value="waves">WAVES</option><option value="dots">DOTS</option></select></label>
+       </div>
+      <div class="cover-editor" aria-label="Cover profil milik sendiri">
+       <div class="cover-editor-heading"><b>COVER / THUMBNAIL</b><small>UPLOAD FOTO SENDIRI</small></div>
+       <div class="cover-preview" id="coverPreview"><img id="coverPreviewImg" alt="Pratinjau foto cover profil" hidden><span id="coverPreviewFallback">Belum ada foto cover · Pilih foto dari galeri</span></div>
+       <input id="coverFile" type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Pilih foto untuk cover profil">
+       <div class="cover-actions"><button class="btn secondary" type="button" id="coverChoose">PILIH FOTO</button><button class="btn ghost" type="button" id="coverRemove" hidden>HAPUS FOTO</button></div>
+       <p class="profile-note" id="coverUploadStatus" role="status" aria-live="polite">JPG, PNG, atau WebP. Foto otomatis diperkecil ke 16:9 sebelum disimpan.</p>
+      </div><div class="theme-choices profile-font-row">
       </div>
-      <p class="profile-note">Tampilan personal untuk ME, tanpa mengubah LIVE, SOSIAL atau navigasi. Tema kreator/marketplace menyusul setelah pembayaran siap.</p>
+      <p class="profile-note">Tema CYBERPUNK BW hanya mengubah warna profil. Default NADMO ORIGINAL tetap hijau stabilo. Cover foto tampil di ME dan halaman profil publik.</p>
       <div class="show-label"><b>LINK PIHAK KETIGA</b><small>MAKS. 12 LINK</small></div>
       <div class="profile-edit-row"><input class="field" id="profileLinkLabel" maxlength="40" placeholder="Nama link: Website, WhatsApp, Booking">
       <input class="field" id="profileLinkUrl" type="url" inputmode="url" maxlength="500" placeholder="https://..."></div>
@@ -2670,6 +2716,7 @@ body.social-lightbox-open{overflow:hidden}
   if(!logged){followedHandles.clear();$('meFollowersCount').textContent='—';$('meFollowingCount').textContent='—';}
   $('avatarChoose').hidden=!logged;
   $('avatarRemove').hidden=!logged||!activeAccount.avatarVersion;
+  renderCoverEditor();
   setAvatarImage('profileAvatarImage',logged?activeAccount.handle:'',logged?activeAccount.avatarVersion:0);
   if(!logged)$('avatarUploadStatus').textContent='';
   if(logged){
@@ -2939,6 +2986,7 @@ body.social-lightbox-open{overflow:hidden}
    const res=await accountRequest('/api/profile/'+encodeURIComponent(handle));
    const p=res.profile||{};if(!$('publicProfilePage')||$('publicProfilePage').classList.contains('hide'))return;
    applyProfileVisual($('publicMeSkin'),p);
+   applyProfileCover($('publicMeSkin'),p.handle||handle,p.coverVersion||0);
    $('publicCreatorName').textContent=p.name||p.handle||'Kreator';
    $('publicCreatorHandle').textContent='@'+(p.handle||handle);
    $('publicCreatorBio').textContent=p.bio||'';
@@ -3706,7 +3754,7 @@ body.social-lightbox-open{overflow:hidden}
   bio:typeof safeProfile.bio==='string'?safeProfile.bio.slice(0,300):'',
   links:Array.isArray(safeProfile.links)?safeProfile.links.filter(l=>l&&validExternalLink(l.url)&&typeof l.label==='string')
        .slice(0,12).map(l=>({label:l.label.slice(0,40),url:validExternalLink(l.url)})):[],
-  themeId:['nadmo','noir','retro','electric'].includes(safeProfile.themeId)?safeProfile.themeId:'nadmo',
+  themeId:['nadmo','cyberbw','noir','retro','electric'].includes(safeProfile.themeId)?safeProfile.themeId:'nadmo',
   fontId:['system','mono','editorial'].includes(safeProfile.fontId)?safeProfile.fontId:'system',
   coverId:['grid','waves','dots'].includes(safeProfile.coverId)?safeProfile.coverId:'grid'
  };
@@ -3779,22 +3827,116 @@ body.social-lightbox-open{overflow:hidden}
   }
  }
  function applyProfileVisual(element,profile){
-  element.dataset.theme=['nadmo','noir','retro','electric'].includes(profile.themeId)?profile.themeId:'nadmo';
+  element.dataset.theme=['nadmo','cyberbw','noir','retro','electric'].includes(profile.themeId)?profile.themeId:'nadmo';
   element.dataset.font=['system','mono','editorial'].includes(profile.fontId)?profile.fontId:'system';
   element.dataset.cover=['grid','waves','dots'].includes(profile.coverId)?profile.coverId:'grid';
  }
+
+ // Uploaded cover images use an owner-authenticated compact image API and are visible to profile visitors.
+ // Never put a base64 cover in localStorage or in public account JSON.
+ function coverImageURL(handle,version){
+  if(!/^[a-z][a-z0-9_]{2,23}$/.test(handle||'')||!Number.isSafeInteger(Number(version))||Number(version)<=0)return '';
+  return api('/api/profile/'+encodeURIComponent(handle)+'/cover?v='+encodeURIComponent(String(version)));
+ }
+ function applyProfileCover(element,handle,version){
+  if(!element)return;
+  const hero=element.querySelector('.profile-hero');
+  if(!hero)return;
+  const source=coverImageURL(handle,version);
+  element.dataset.coverPhoto=source?'true':'false';
+  // Source is a fixed same-origin API path; profile handle is strictly validated above.
+  hero.style.backgroundImage=source?'url("'+source+'")':'';
+ }
+ function renderCoverEditor(){
+  const version=activeAccount?.coverVersion||0;
+  const source=coverImageURL(activeAccount?.handle,version);
+  const preview=$('coverPreviewImg'),empty=$('coverPreviewFallback');
+  if(!preview||!empty)return;
+  preview.hidden=!source;empty.hidden=!!source;
+  if(source)preview.src=source;else preview.removeAttribute('src');
+  $('coverRemove').hidden=!source;
+  $('coverChoose').textContent=source?'GANTI FOTO':'PILIH FOTO';
+  $('coverChoose').disabled=!activeAccount;
+  if(!activeAccount)$('coverUploadStatus').textContent='Masuk ke akun untuk menyimpan cover yang terlihat oleh pengunjung profil.';
+ }
+ async function createCoverBlob(file){
+  if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Pilih foto JPG, PNG, atau WebP.');
+  if(file.size>10*1024*1024)throw Error('Foto asli maksimal 10 MB.');
+  const url=URL.createObjectURL(file),picture=new Image();
+  try{
+   await new Promise((resolve,reject)=>{picture.onload=resolve;picture.onerror=()=>reject(Error('Foto tidak bisa dibuka.'));picture.src=url});
+   if(picture.naturalWidth<16||picture.naturalHeight<16)throw Error('Resolusi foto tidak valid.');
+   for(const width of [1200,960,800,640,480]){
+    const height=Math.round(width*9/16);
+    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+    const ctx=canvas.getContext('2d',{alpha:false});
+    if(!ctx)throw Error('Perangkat tidak mendukung pemrosesan foto.');
+    const sw=Math.min(picture.naturalWidth,picture.naturalHeight*16/9);
+    const sh=sw*9/16;
+    ctx.drawImage(picture,(picture.naturalWidth-sw)/2,(picture.naturalHeight-sh)/2,sw,sh,0,0,width,height);
+    for(const quality of [.82,.68,.52,.38]){
+     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+     if(blob&&blob.size>=100&&blob.size<=98304)return blob;
+    }
+   }
+   throw Error('Foto tidak dapat diperkecil. Coba foto lain.');
+  }finally{URL.revokeObjectURL(url)}
+ }
+ $('coverChoose').onclick=()=>{
+  if(!activeAccount){$('coverUploadStatus').textContent='Masuk akun dulu untuk memasang cover.';return}
+  $('coverFile').click();
+ };
+ $('coverFile').onchange=async()=>{
+  const input=$('coverFile'),file=input.files?.[0];input.value='';
+  if(!file||!activeAccount)return;
+  const owner=activeAccount.id;
+  $('coverChoose').disabled=true;$('coverRemove').disabled=true;
+  $('coverUploadStatus').textContent='Memproses dan menyimpan cover...';
+  try{
+   const blob=await createCoverBlob(file);
+   if(activeAccount?.id!==owner)throw Error('Sesi berubah. Silakan ulangi.');
+   const response=await fetch(api('/api/account/cover'),{
+    method:'PUT',credentials:'include',cache:'no-store',headers:{'Content-Type':'image/jpeg'},body:blob
+   });
+   const result=await response.json().catch(()=>({error:'Respons server tidak terbaca'}));
+   if(!response.ok)throw Error(result.error||'Cover gagal tersimpan');
+   if(activeAccount?.id!==owner)throw Error('Sesi berubah sebelum cover diperbarui');
+   activeAccount.coverVersion=result.coverVersion;
+   renderCoverEditor();renderProfileDraft();
+   $('coverUploadStatus').textContent='Cover berhasil disimpan dan tampil di ME serta profil publik.';
+  }catch(error){$('coverUploadStatus').textContent='Gagal: '+error.message}
+  finally{$('coverChoose').disabled=!activeAccount;$('coverRemove').disabled=false}
+ };
+ $('coverRemove').onclick=async()=>{
+  if(!activeAccount?.coverVersion)return;
+  const owner=activeAccount.id;
+  if(!confirm('Hapus foto cover dan kembali ke tampilan bawaan?'))return;
+  $('coverRemove').disabled=true;
+  $('coverUploadStatus').textContent='Menghapus cover...';
+  try{
+   const response=await fetch(api('/api/account/cover'),{method:'DELETE',credentials:'include',cache:'no-store'});
+   const result=await response.json().catch(()=>({error:'Server tidak merespons'}));
+   if(!response.ok)throw Error(result.error||'Cover gagal dihapus');
+   if(activeAccount?.id!==owner)throw Error('Sesi berubah');
+   activeAccount.coverVersion=0;renderCoverEditor();renderProfileDraft();
+   $('coverUploadStatus').textContent='Cover dihapus. Profil kembali ke cover default.';
+  }catch(error){$('coverUploadStatus').textContent='Gagal: '+error.message}
+  finally{$('coverRemove').disabled=false}
+ };
+
  function renderProfileDraft(){
   applyProfileVisual($('betaSocialProfile'),draftProfile);
+  applyProfileCover($('betaSocialProfile'),draftProfile.handle,activeAccount?.coverVersion||0);
   $('profileTheme').value=draftProfile.themeId;
   $('profileFont').value=draftProfile.fontId;
-  $('profileCover').value=draftProfile.coverId;
+  renderCoverEditor();
   $('profileDisplayName').textContent=draftProfile.name||'Profil NADMO';
   $('profileDisplayHandle').textContent=draftProfile.handle?'@'+draftProfile.handle:'@username';
   $('profileDisplayBio').textContent=draftProfile.bio||'Bisnis, musik, karya, dan komunitasmu bisa muncul di sini.';
   $('profileName').value=draftProfile.name;$('profileHandle').value=draftProfile.handle;$('profileBio').value=draftProfile.bio;
   renderProfileLinks();
  }
- for(const [id,key] of [['profileTheme','themeId'],['profileFont','fontId'],['profileCover','coverId']]){
+ for(const [id,key] of [['profileTheme','themeId'],['profileFont','fontId']]){
   $(id).onchange=()=>{draftProfile[key]=$(id).value;saveProfileDraft();applyProfileVisual($('betaSocialProfile'),draftProfile)};
  }
  $('editProfileBtn').onclick=()=>{
@@ -3829,7 +3971,7 @@ body.social-lightbox-open{overflow:hidden}
   draftProfile.bio=$('profileBio').value.trim().slice(0,300);
   draftProfile.themeId=$('profileTheme').value;
   draftProfile.fontId=$('profileFont').value;
-  draftProfile.coverId=$('profileCover').value;
+  // Preserve legacy background preset only when no uploaded cover is set.
   if(!saveProfileDraft())return;
   if(activeAccount){
    try{

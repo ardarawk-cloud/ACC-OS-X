@@ -15,13 +15,14 @@ const socialFollower=(a,b)=>'social-follower:'+a+':'+b;
 const socialCounts=account=>({followers:Math.max(0,Number(account?.followersCount)||0),following:Math.max(0,Number(account?.followingCount)||0)});
 
 const AVATAR_MAX_BYTES=65536;
+const COVER_MAX_BYTES=98304; // Compact 16:9 JPEG/WebP covers, never original camera files.
 // Creator-first social interactions. Counts and permissions come from durable server state.
 const postIdOK=id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(id)&&id.length===36;
 const socialLikesKey=(postId,id)=>'social-like:'+postId+':'+id;
 const socialUserLike=(id,postId)=>'social-user-like:'+id+':'+postId;
 const repostsKey=id=>'social-user-reposts:'+id;
 // Whitelisted creator profile visual options: scoped to a profile, never to app dashboard.
-const THEME_IDS=new Set(['nadmo','noir','retro','electric']);
+const THEME_IDS=new Set(['nadmo','cyberbw','noir','retro','electric']);
 const FONT_IDS=new Set(['system','mono','editorial']);
 const COVER_IDS=new Set(['grid','waves','dots']);
 const profileVisual=a=>({themeId:THEME_IDS.has(a?.themeId)?a.themeId:'nadmo',
@@ -88,7 +89,7 @@ async function getAccountBySessionFingerprint(storage,fingerprint){
  const session=await storage.get('auth-session:'+fingerprint);
  if(!session||session.expiresAt<Date.now())return null;
  const user=await storage.get('auth-user:'+session.id);
- return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
+ return user&&user.disabled!==true?{id:session.id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,coverVersion:user.coverVersion||0,verifiedAdult:user.verifiedAdult===true,kycStatus:user.kycStatus||'NOT_CONFIGURED'}:null;
 }
 async function getSessionFingerprint(request){
  const token=cookies(request);
@@ -249,6 +250,17 @@ export async function accountEndpoint(storage,request){
   return fail(404,'Halaman pesan tidak ditemukan');
  }
  if(p==='/api/streaming/capacity')return json({architecture:'P2P_WEBRTC',maxViewersPerRoom:4,turnConfigured:false,sfuConfigured:false,scaleReady:false});
+ if(p.startsWith('/api/profile/')&&p.endsWith('/cover')&&method==='GET'){
+  const handle=p.slice('/api/profile/'.length,-'/cover'.length).toLowerCase();
+  if(!handleOK(handle))return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  const id=await storage.get('auth-handle:'+handle);
+  if(!id)return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  const owner=await storage.get('auth-user:'+id);
+  if(!owner||owner.disabled)return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  const photo=await storage.get('auth-cover:'+id);
+  if(!photo?.data||!['image/jpeg','image/webp'].includes(photo.type))return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
+  return new Response(photo.data,{status:200,headers:{...AVATAR_RESPONSE_HEADERS,'Content-Type':photo.type}});
+ }
  if(p.startsWith('/api/profile/')&&p.endsWith('/avatar')&&method==='GET'){
   const handle=p.slice('/api/profile/'.length,-'/avatar'.length).toLowerCase();
   if(!handleOK(handle))return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
@@ -260,6 +272,35 @@ export async function accountEndpoint(storage,request){
   if(!photo||!photo.data||!['image/jpeg','image/webp'].includes(photo.type))
    return new Response('Not Found',{status:404,headers:AVATAR_RESPONSE_HEADERS});
   return new Response(photo.data,{status:200,headers:{...AVATAR_RESPONSE_HEADERS,'Content-Type':photo.type}});
+ }
+ if(p==='/api/account/cover'&&method==='GET')return fail(405,'Method not allowed');
+ if(p==='/api/account/cover'&&['PUT','DELETE'].includes(method)){
+  if(!originOK(request))return fail(403,'Same-origin request required');
+  const owner=await getAccount(storage,request);
+  if(!owner)return fail(401,'Masuk akun untuk mengubah cover');
+  if(!await throttle(storage,'cover:'+owner.id,15,15*60000))return fail(429,'Terlalu sering mengganti cover');
+  const record=await storage.get('auth-user:'+owner.id);
+  if(!record||record.disabled)return fail(401,'Akun tidak tersedia');
+  if(method==='DELETE'){
+   await storage.delete('auth-cover:'+owner.id);
+   record.coverVersion=0;record.updatedAt=Date.now();
+   await storage.put('auth-user:'+owner.id,record);
+   return json({ok:true,coverVersion:0});
+  }
+  const type=(request.headers.get('Content-Type')||'').toLowerCase();
+  if(!['image/jpeg','image/webp'].includes(type))return fail(415,'Gunakan gambar JPG atau WebP');
+  const length=Number(request.headers.get('Content-Length')||0);
+  if(length>COVER_MAX_BYTES)return fail(413,'Ukuran cover terlalu besar');
+  const buffer=await request.arrayBuffer();
+  if(buffer.byteLength<100||buffer.byteLength>COVER_MAX_BYTES)return fail(413,'Foto harus diperkecil terlebih dahulu');
+  const bytes=new Uint8Array(buffer);
+  const jpeg=type==='image/jpeg'&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+  const webp=type==='image/webp'&&bytes[0]===82&&bytes[1]===73&&bytes[2]===70&&bytes[3]===70&&String.fromCharCode(...bytes.slice(8,12))==='WEBP';
+  if(!jpeg&&!webp)return fail(415,'File cover tidak valid');
+  await storage.put('auth-cover:'+owner.id,{type,data:bytes});
+  record.coverVersion=Date.now();record.updatedAt=record.coverVersion;
+  await storage.put('auth-user:'+owner.id,record);
+  return json({ok:true,coverVersion:record.coverVersion});
  }
  if(p==='/api/account/avatar'&&method==='GET')return fail(405,'Method not allowed');
  if(p==='/api/account/avatar'&&['PUT','DELETE'].includes(method)){
@@ -302,7 +343,7 @@ export async function accountEndpoint(storage,request){
   const supporterBadge=await getPublicSupporterBadge(storage,account.id,account);
   const viewer=await getAccount(storage,request);
   const isFollowing=viewer?!!await storage.get(socialFollowing(viewer.id,id)):false;
-  return json({ok:true,isFollowing,profile:{...socialCounts(account),handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],...profileVisual(account),avatarVersion:account.avatarVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
+  return json({ok:true,isFollowing,profile:{...socialCounts(account),handle:account.handle,name:account.name,bio:account.bio||'',links:account.links||[],...profileVisual(account),avatarVersion:account.avatarVersion||0,coverVersion:account.coverVersion||0,verified:account.kycStatus==='verified',supporterBadge,posts:posts.filter(x=>x.status==='published').slice(0,20)}});
  }
  if(!p.startsWith('/api/account/')&&!p.startsWith('/api/messages/')&&p!=='/api/wallet/withdraw')return fail(404,'Not Found');
  if(p==='/api/account/me'&&method==='GET'){
@@ -340,7 +381,7 @@ export async function accountEndpoint(storage,request){
   await storage.put('auth-user:'+id,user);
   await storage.put('auth-handle:'+handle,id);
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle,name,bio:'',links:[],...profileVisual(user),avatarVersion:0,kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle,name,bio:'',links:[],...profileVisual(user),avatarVersion:0,coverVersion:0,kycStatus:'NOT_CONFIGURED',verifiedAdult:false}},201,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/login'&&method==='POST'){
   const handle=clean(payload.handle,24).toLowerCase(),pw=payload.password;
@@ -349,7 +390,7 @@ export async function accountEndpoint(storage,request){
   const id=await storage.get('auth-handle:'+handle),user=id&&await storage.get('auth-user:'+id);
   if(!user||user.disabled||!safeCompare(await passwordHash(pw,user.salt),user.passhash))return fail(401,'Username atau kata sandi salah');
   const token=await createSession(storage,user);
-  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
+  return json({ok:true,account:{id,handle:user.handle,name:user.name,bio:user.bio||'',links:user.links||[],...profileVisual(user),avatarVersion:user.avatarVersion||0,coverVersion:user.coverVersion||0,kycStatus:user.kycStatus||'NOT_CONFIGURED',verifiedAdult:user.verifiedAdult===true}},200,{'Set-Cookie':cookie(token)});
  }
  if(p==='/api/account/logout'&&method==='POST'){
   const token=cookies(request);
@@ -595,7 +636,7 @@ export async function accountEndpoint(storage,request){
   if(!THEME_IDS.has(themeId)||!FONT_IDS.has(fontId)||!COVER_IDS.has(coverId))return fail(400,'Pilihan tema, font atau cover tidak valid');
   record.name=name;record.bio=bio;record.links=validated;record.themeId=themeId;record.fontId=fontId;record.coverId=coverId;record.updatedAt=Date.now();
   await storage.put('auth-user:'+user.id,record);
-  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,...profileVisual(record),avatarVersion:record.avatarVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
+  return json({ok:true,account:{id:record.id,handle:record.handle,name,bio,links:validated,...profileVisual(record),avatarVersion:record.avatarVersion||0,coverVersion:record.coverVersion||0,verifiedAdult:user.verifiedAdult,kycStatus:user.kycStatus}});
  }
  if(p==='/api/account/social/upload-allowed'&&method==='POST'){
   // File storage is a separate optional R2 dependency. Limit allocations per user.
