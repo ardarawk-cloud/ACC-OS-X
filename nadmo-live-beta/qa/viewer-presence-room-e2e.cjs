@@ -61,6 +61,10 @@ async function connect(){
   // Normal host-to-audience chat still works after system presence.
   host.send({type:'chat',text:'Selamat datang di NADMO LIVE'});
   assert.equal((await v1.next('chat',x=>x.text==='Selamat datang di NADMO LIVE')).name,'Host');
+  const worker=readFileSync(resolve(__dirname,'../worker.mjs'),'utf8');
+  assert.match(worker,/const presenceLabel=joinedName;/,'room notice must use one identity only');
+  assert.match(worker,/announce=!fresh\.some\(item=>item\.key===presenceKey\)/,'authenticated fast reconnect must not duplicate room notice');
+  assert.match(worker,/reply\(host,\{type:'viewer-joined'/,'reconnect dedup must preserve host WebRTC attach');
   const html=readFileSync(resolve(__dirname,'../public/app/index.html'),'utf8');
   assert.match(html,/room-join-notice/);
   assert.match(html,/viewerDisplayNames\.set\(m.id/);
