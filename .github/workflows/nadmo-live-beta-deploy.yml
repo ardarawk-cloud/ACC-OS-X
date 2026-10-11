@@ -53,6 +53,7 @@ jobs:
           node --check nadmo-live-beta/qa/guest-stage-media-e2e.cjs
           node --check nadmo-live-beta/qa/viewer-presence-room-e2e.cjs
           node --check nadmo-live-beta/qa/live-branding-clarity-contract.cjs
+          node --check nadmo-live-beta/qa/live-remote-hud-production-e2e.cjs
           node --check nadmo-live-beta/qa/ice-burst-signaling-e2e.mjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
       - name: Verify live.nadmo.id hostname, same-origin APIs and legacy Android compatibility
@@ -131,7 +132,8 @@ jobs:
               && grep -Fq '"service":"nadmo-live-beta"' /tmp/nadmo-live-domain-health.json \
               && [ "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 12 https://live.nadmo.id/)" = '308' ] \
               && curl --silent --show-error --fail --location --max-time 12 --output /tmp/nadmo-live-domain-app.html https://live.nadmo.id/ \
-              && grep -Fq 'NADMO LIVE' /tmp/nadmo-live-domain-app.html; then
+              && grep -Fq 'NADMO LIVE' /tmp/nadmo-live-domain-app.html \
+              && grep -Fq '20261012-mobile-hud-verify' /tmp/nadmo-live-domain-app.html; then
               echo "OFFICIAL NADMO LIVE DOMAIN HTTPS + APPLICATION PASS"
               exit 0
             fi
@@ -181,6 +183,8 @@ jobs:
         run: |
           command -v google-chrome || command -v google-chrome-stable || command -v chromium
           echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
+      - name: Verify actual official web production mobile overlay (not local file mock)
+        run: node nadmo-live-beta/qa/live-remote-hud-production-e2e.cjs
       - name: Guard one product header, meaningful room subtitles and viewer sender notifications
         run: node nadmo-live-beta/qa/live-branding-clarity-contract.cjs
       - name: Verify actual viewer join notifications in LIVE chat and native GAME channel
