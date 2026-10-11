@@ -2235,6 +2235,22 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
 }
 #watch #chat .room-join-mark{flex:none;color:var(--neon);font-weight:900;font-size:15px}
 #watch #chat .room-join-notice span:last-child{min-width:0;overflow-wrap:anywhere}
+/* Room accent is always host-owned, not the viewer's locally selected skin. */
+#watch[data-host-theme="nadmo"]{--neon:#d7ff36;--line:#6b8842;--mobile-hud-ink:#d7ff36}
+#watch[data-host-theme="electric"]{--neon:#6df4ff;--line:#3a8694;--mobile-hud-ink:#6df4ff}
+#watch[data-host-theme="noir"]{--neon:#ead0b9;--line:#756861;--mobile-hud-ink:#ead0b9}
+#watch[data-host-theme="cyberbw"]{--neon:#f4f4f4;--line:#999999;--mobile-hud-ink:#f4f4f4}
+#watch[data-host-theme="retro"]{--neon:#ffb4db;--line:#995576;--mobile-hud-ink:#ffb4db}
+/* Only a real portrait camera frame can fill portrait without crop. Preserve
+   landscape frames instead of zooming faces; PC and GAME layouts unchanged. */
+@media(max-width:799px){
+ body.live-immersive:not(.watch-game) #watch.camera-source-landscape .live-stage>.viewfinder{
+  background:radial-gradient(ellipse at 48% 45%,rgba(33,45,45,.92),#060909 75%)!important;
+ }
+ body.live-immersive:not(.watch-game) #watch.camera-source-landscape #remote{
+  object-fit:contain!important;object-position:center center!important;background:transparent!important;
+ }
+}
 </style></head>
 <body>
 <div class="app">
@@ -5770,6 +5786,9 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
  const syncWatchAspect=()=>{
   const width=watchVideo.videoWidth,height=watchVideo.videoHeight;
   if(width>0&&height>0){
+   // Inspect decoded dimensions. Never infer camera aspect from phone size.
+   $('watch').classList.toggle('camera-source-landscape',width>height*1.12);
+   $('watch').dataset.cameraSourceAspect=width+':'+height;
    document.body.classList.toggle('watch-landscape',width>height*1.12);
    document.body.style.setProperty('--deck-video-aspect',width+' / '+height);
    // Game broadcast sources can be wider than 16:9 (20:9 phone screens).
