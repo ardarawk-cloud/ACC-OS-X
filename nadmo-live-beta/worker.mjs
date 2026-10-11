@@ -539,9 +539,32 @@ export default {
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
   if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT'))
     return new Response('Method Not Allowed',{status:405});
+  // Serve the current native GAME APK without presenting a GitHub web page.
+  // v0.10.9 is ~50MB and cannot be packed as a tiny static-asset APK.
+  // Stream the signed immutable GitHub release bytes through the official domain.
+  if(url.pathname==='/download.apk'){
+    const filename='NADMO-LIVE-v0.10.9-beta.apk';
+    const upstreamUrl='https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.9-beta/'+filename;
+    let upstream;
+    try{upstream=await fetch(upstreamUrl,{redirect:'follow'})}catch(e){
+      return new Response('Unduhan APK sementara tidak tersedia.',{status:503,headers:{'Cache-Control':'no-store'}});
+    }
+    if(!upstream.ok||!upstream.body){
+      return new Response('APK terbaru belum tersedia. Coba lagi nanti.',{status:503,headers:{'Cache-Control':'no-store'}});
+    }
+    const headers=new Headers({
+      'Content-Type':'application/vnd.android.package-archive',
+      'Content-Disposition':'attachment; filename="'+filename+'"',
+      'Cache-Control':'no-store',
+      'X-Content-Type-Options':'nosniff'
+    });
+    const length=upstream.headers.get('Content-Length');
+    if(length)headers.set('Content-Length',length);
+    return new Response(upstream.body,{status:200,headers});
+  }
   // Serve the verified signed Android package from our own Cloudflare static assets.
   // Unlike a GitHub Actions artifact, this is a direct APK (no ZIP or GitHub webview).
-  if(['/download.apk','/NADMO-LIVE-v0.9.1-beta.apk','/NADMO-LIVE-v0.9.2-beta.apk','/NADMO-LIVE-v0.9.4-beta.apk'].includes(url.pathname)){
+  if(['/NADMO-LIVE-v0.9.1-beta.apk','/NADMO-LIVE-v0.9.2-beta.apk','/NADMO-LIVE-v0.9.4-beta.apk'].includes(url.pathname)){
     // Official mutable alias upgrades to owner-signed v0.9.4 (same cert, higher versionCode).
     // Older version-specific links remain immutable.
     const filename=url.pathname.endsWith('v0.9.1-beta.apk')?'NADMO-LIVE-v0.9.1-beta.apk'
