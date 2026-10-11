@@ -44,6 +44,7 @@ jobs:
           node --check nadmo-live-beta/qa/profile-links-immediate-mobile-e2e.cjs
           node --check nadmo-live-beta/qa/moshi-chat-modern-e2e.mjs
           node --check nadmo-live-beta/qa/social-follow-structure.mjs
+          node --check nadmo-live-beta/qa/cyberdeck-cover-contract.mjs
           node --check nadmo-live-beta/qa/live-feed-compact-e2e.cjs
           node --check nadmo-live-beta/qa/streamer-name-layout-e2e.cjs
           node --check nadmo-live-beta/qa/viewer-invite-e2e.cjs
@@ -54,6 +55,8 @@ jobs:
         run: node nadmo-live-beta/qa/custom-domain-contract.mjs
       - name: Verify ME Followers/Following and locked GO LIVE signature
         run: node nadmo-live-beta/qa/social-follow-structure.mjs
+      - name: Verify cyberdeck theme, photo upload privacy and public cover persistence
+        run: node nadmo-live-beta/qa/cyberdeck-cover-contract.mjs
       - name: Verify all supporter level and privacy calculation boundaries
         run: node nadmo-live-beta/qa/supporter-levels-unit.mjs
       - name: Verify wallet ledger and withdrawal safety
