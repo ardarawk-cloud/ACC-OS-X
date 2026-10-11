@@ -194,6 +194,62 @@ const puppeteer=require('puppeteer-core');
   await page.screenshot({path:path.join(dir,'cyberdeck-me-cover-uncropped-mobile-390x844.png')});
   console.log('ME_COVER_VISUAL_QC_PASS '+JSON.stringify(cover));
 
+  // Real mobile LIVE HUD: cyberdeck overlay visible by default for host/viewer,
+  // swiping right hides all ornamentation and left returns it, WITHOUT video resize.
+  await page.evaluate(()=>{
+   document.querySelector('#settings').classList.add('hide');
+   document.querySelector('#watch').classList.remove('hide');
+   document.body.classList.remove('watch-game','watch-clean','watch-host','watch-landscape');
+   document.body.classList.add('live-immersive','watch-viewer');
+   document.querySelector('#watch').dataset.hostTheme='electric';
+  });
+  const mobileHud=await page.evaluate(()=>{
+   const hud=document.querySelector('#mobileLiveHud'),player=document.querySelector('#remote');
+   const rect=hud.getBoundingClientRect(),video=player.getBoundingClientRect();
+   return {display:getComputedStyle(hud).display,pointer:getComputedStyle(hud).pointerEvents,
+    text:hud.textContent,rect:{w:rect.width,h:rect.height},
+    video:{w:video.width,h:video.height},color:getComputedStyle(hud).color,
+    theme:document.querySelector('#watch').dataset.hostTheme};
+  });
+  assert.equal(mobileHud.display,'block','Mobile camera needs real Cyberdeck frame (not PC-only)');
+  assert.equal(mobileHud.pointer,'none','Cyberdeck cannot block touch controls or swipe');
+  assert.ok(mobileHud.rect.w>=380&&mobileHud.rect.h>=700,'HUD must occupy portrait screen');
+  assert.ok(mobileHud.video.h>mobileHud.rect.h*.8,'HUD must sit OVER video, not constrain video');
+  assert.match(mobileHud.text,/NADMO LIVE/);
+  assert.match(mobileHud.color,/109, 244, 255/,'Electric HUD must inherit host cyan');
+  await page.screenshot({path:path.join(dir,'cyberdeck-live-camera-mobile-normal-390x844.png')});
+  const cleanState=await page.evaluate(()=>{
+   const player=document.querySelector('#remote'),before=player.getBoundingClientRect();
+   player.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch',pointerId:2,clientX:48,clientY:460}));
+   player.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerType:'touch',pointerId:2,clientX:220,clientY:466}));
+   const hud=document.querySelector('#mobileLiveHud');
+   const clean={body:document.body.classList.contains('watch-clean'),display:getComputedStyle(hud).display,
+    video:player.getBoundingClientRect()};
+   player.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch',pointerId:3,clientX:290,clientY:460}));
+   player.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerType:'touch',pointerId:3,clientX:70,clientY:465}));
+   const restored={body:document.body.classList.contains('watch-clean'),display:getComputedStyle(hud).display,
+    video:player.getBoundingClientRect()};
+   return {before:{w:before.width,h:before.height},clean:{body:clean.body,display:clean.display,video:{w:clean.video.width,h:clean.video.height}},
+     restored:{body:restored.body,display:restored.display,video:{w:restored.video.width,h:restored.video.height}}};
+  });
+  assert.equal(cleanState.clean.body,true,'Swipe right must enter clean mode');
+  assert.equal(cleanState.clean.display,'none','Cyberdeck must vanish on clean mode');
+  assert.equal(cleanState.restored.body,false,'Swipe left must restore normal mode');
+  assert.equal(cleanState.restored.display,'block','Cyberdeck must return on swipe left');
+  assert.equal(cleanState.before.w,cleanState.clean.video.w);
+  assert.equal(cleanState.before.h,cleanState.clean.video.h);
+  assert.equal(cleanState.before.w,cleanState.restored.video.w);
+  assert.equal(cleanState.before.h,cleanState.restored.video.h);
+  await page.screenshot({path:path.join(dir,'cyberdeck-live-camera-mobile-restored-390x844.png')});
+  // Theme selection does not change the stream.
+  const noirHud=await page.evaluate(()=>{
+   document.querySelector('#watch').dataset.hostTheme='noir';
+   return getComputedStyle(document.querySelector('#mobileLiveHud')).color;
+  });
+  assert.match(noirHud,/234, 208, 185/,'Noir must use warm monochrome, not default green');
+  console.log('MOBILE_CAMERA_CYBERDECK_OVERLAY_CLEAN_QC_PASS '+JSON.stringify({mobileHud,cleanState,noirHud}));
+  await page.evaluate(()=>{document.body.classList.remove('live-immersive','watch-viewer');document.querySelector('#watch').classList.add('hide')});
+
   // Camera-specific regression: Android wide sensor must not become a giant
   // blank black portrait page. Portrait source must be full bleed. The game
   // landscape visual contract is intentionally unchanged.

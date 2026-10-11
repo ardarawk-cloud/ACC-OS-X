@@ -2122,6 +2122,100 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
  #betaSocialProfile .profile-hero>img.profile-cover-photo,.public-me-skin .profile-hero>img.profile-cover-photo{object-fit:cover!important;object-position:center!important}
  #betaSocialProfile .profile-hero::before,.public-me-skin .profile-hero::before{background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.75) 100%)!important}
 }
+
+/* PHONE CAMERA: visible cyberdeck only in normal overlay mode. Never a
+   media wrapper. It sits above video as a fully pointer-transparent HUD. */
+@media(max-width:799px){
+ body.live-immersive:not(.watch-game) #watch:not([data-host-theme]){--mobile-hud-ink:var(--neon,#d7ff36);--mobile-hud-glow:rgba(170,255,65,.55);--mobile-hud-surface:rgba(5,19,13,.63)}
+ body.live-immersive:not(.watch-game) #watch::before{display:none!important}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud{
+  position:absolute;inset:0;z-index:8;display:block!important;pointer-events:none!important;
+  color:var(--mobile-hud-ink);font:700 10px/1.2 Arial,sans-serif;letter-spacing:.65px;
+  overflow:hidden;isolation:isolate
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud *{pointer-events:none!important}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-outline{
+  position:absolute;inset:6px 7px 5px;border:1px solid color-mix(in srgb,var(--mobile-hud-ink) 65%,transparent);
+  box-shadow:inset 0 0 0 1px #0007,0 0 9px var(--mobile-hud-glow);
+  clip-path:polygon(0 0,24% 0,24% 2px,76% 2px,76% 0,100% 0,100% 100%,0 100%);
+  opacity:.65
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-corner{
+  position:absolute;width:36px;height:36px;border-style:solid;border-color:var(--mobile-hud-ink);
+  filter:drop-shadow(0 0 4px var(--mobile-hud-glow));opacity:1
+ }
+ body.live-immersive:not(.watch-game) #watch .hud-tl{left:7px;top:6px;border-width:3px 0 0 3px;clip-path:polygon(0 0,100% 0,100% 30%,28% 30%,28% 100%,0 100%)}
+ body.live-immersive:not(.watch-game) #watch .hud-tr{right:7px;top:6px;border-width:3px 3px 0 0;clip-path:polygon(0 0,100% 0,100% 100%,72% 100%,72% 30%,0 30%)}
+ body.live-immersive:not(.watch-game) #watch .hud-bl{left:7px;bottom:5px;border-width:0 0 3px 3px;clip-path:polygon(0 0,28% 0,28% 70%,100% 70%,100% 100%,0 100%)}
+ body.live-immersive:not(.watch-game) #watch .hud-br{right:7px;bottom:5px;border-width:0 3px 3px 0;clip-path:polygon(72% 0,100% 0,100% 100%,0 100%,0 70%,72% 70%)}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-header{
+  position:absolute;top:6px;left:49px;right:49px;height:16px;display:flex;
+  align-items:center;gap:6px;opacity:.95;text-shadow:0 1px 4px #000
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-mark{
+  font-size:14px;font-weight:950;font-style:italic;line-height:1
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-brand{
+  min-width:0;flex:1;font-size:9px;font-weight:900;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-brand small{
+  font-size:7px;font-weight:600;opacity:.80
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-signal{
+  display:flex;gap:4px;align-items:center;font-size:9px
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-signal i{
+  width:5px;height:5px;border-radius:50%;background:var(--mobile-hud-ink);box-shadow:0 0 7px var(--mobile-hud-ink)
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-side{
+  position:absolute;top:25%;height:43%;width:15px;display:flex;flex-direction:column;
+  align-items:center;justify-content:space-between;opacity:.80
+ }
+ body.live-immersive:not(.watch-game) #watch .hud-side-left{left:9px}
+ body.live-immersive:not(.watch-game) #watch .hud-side-right{right:9px}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-side span{
+  writing-mode:vertical-rl;font-size:8px;white-space:nowrap;opacity:.86;
+  text-shadow:0 1px 4px #000
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-side i{
+  width:2px;height:32px;background:linear-gradient(var(--mobile-hud-ink),transparent);
+  box-shadow:0 0 7px var(--mobile-hud-glow)
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-footer{
+  position:absolute;bottom:calc(env(safe-area-inset-bottom) + 164px);left:13px;right:13px;
+  height:26px;display:flex;align-items:center;gap:7px;
+  border-top:1px solid color-mix(in srgb,var(--mobile-hud-ink) 70%,transparent);
+  background:linear-gradient(180deg,var(--mobile-hud-surface),transparent);
+  padding:0 7px;text-shadow:0 1px 3px #000
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-track{
+  flex:1;display:flex;gap:6px;align-items:center;min-width:0;font-size:9px
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-track b{font-weight:950;white-space:nowrap}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-track>i{
+  flex:1;height:1px;background:linear-gradient(90deg,var(--mobile-hud-ink),transparent)
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-track span{font-size:8px;white-space:nowrap}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-bars{display:flex;align-items:end;gap:2px;height:15px}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-bars i{
+  width:3px;background:var(--mobile-hud-ink);box-shadow:0 0 4px var(--mobile-hud-glow)
+ }
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-bars i:nth-child(4n+1){height:40%}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-bars i:nth-child(4n+2){height:100%}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-bars i:nth-child(4n+3){height:60%}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-bars i:nth-child(4n){height:80%}
+ body.live-immersive.watch-clean #watch .mobile-live-hud{display:none!important}
+}
+#watch[data-host-theme="nadmo"]{--mobile-hud-ink:#d7ff36;--mobile-hud-glow:#adfc6480;--mobile-hud-surface:#06150ba8}
+#watch[data-host-theme="electric"]{--mobile-hud-ink:#6df4ff;--mobile-hud-glow:#6df4ff80;--mobile-hud-surface:#061b28af}
+#watch[data-host-theme="noir"]{--mobile-hud-ink:#ead0b9;--mobile-hud-glow:#ead0b970;--mobile-hud-surface:#171317b0}
+#watch[data-host-theme="cyberbw"]{--mobile-hud-ink:#f4f4f4;--mobile-hud-glow:#ffffff65;--mobile-hud-surface:#101010a8}
+#watch[data-host-theme="retro"]{--mobile-hud-ink:#ffb4db;--mobile-hud-glow:#ffb4db80;--mobile-hud-surface:#291629ac}
+@media(max-width:359px){
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-brand small{display:none}
+ body.live-immersive:not(.watch-game) #watch .mobile-live-hud-side{opacity:.58}
+}
 </style></head>
 <body>
 <div class="app">
@@ -2201,6 +2295,24 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
   </div>
 </section>
 <section id="watch" class="hide">
+  <!-- Portrait HUD: themed transparent cyberdeck FRAME, never a video container. -->
+  <div id="mobileLiveHud" class="mobile-live-hud" aria-hidden="true">
+    <div class="mobile-live-hud-outline"></div>
+    <span class="mobile-live-corner hud-tl"></span><span class="mobile-live-corner hud-tr"></span>
+    <span class="mobile-live-corner hud-bl"></span><span class="mobile-live-corner hud-br"></span>
+    <div class="mobile-live-hud-header">
+      <span class="mobile-live-hud-mark">N/</span>
+      <span class="mobile-live-hud-brand">NADMO LIVE <small>// BROADCAST SYSTEM</small></span>
+      <span class="mobile-live-hud-signal"><i></i> LIVE</span>
+    </div>
+    <div class="mobile-live-hud-side hud-side-left"><i></i><span>◈ LIVE / TRANSMISSION</span><i></i></div>
+    <div class="mobile-live-hud-side hud-side-right"><i></i><span id="mobileLiveHudTheme">CYBERDECK</span><i></i></div>
+    <div class="mobile-live-hud-footer">
+      <div class="mobile-live-hud-track"><b>NADMO / LIVE</b><i></i><span>ON AIR</span></div>
+      <div class="mobile-live-hud-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+
   <!-- Functional cyberdeck chrome: independent of the stream; never rasterize the mockup into UI. -->
   <div class="deck-shell-art desktop-watch-only" aria-hidden="true">
     <svg class="deck-shell-svg" viewBox="0 0 1680 940" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -4336,7 +4448,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
  renderDraftPosts();
 
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){if(name==='settings'&&!activeAccount)name='authPage';
+ function show(name){if(name==='watch'&&!document.body.classList.contains('live-immersive'))document.body.classList.remove('watch-clean');if(name==='settings'&&!activeAccount)name='authPage';
   if(name!=='watch')document.body.classList.remove('watch-clean');
   const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialConnectionsPage','publicProfilePage'];
   document.body.classList.toggle('page-subview',subpages.includes(name));
@@ -5135,7 +5247,12 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
   }
  }
  const liveThemes=['nadmo','cyberbw','noir','retro','electric'];
- function setWatchTheme(theme){$('watch').dataset.hostTheme=liveThemes.includes(theme)?theme:'nadmo'}
+ function setWatchTheme(theme){
+   const selected=liveThemes.includes(theme)?theme:'nadmo';
+   $('watch').dataset.hostTheme=selected;
+   const label=$('mobileLiveHudTheme');
+   if(label)label.textContent=selected==='nadmo'?'NADMO // CYBERDECK':selected==='cyberbw'?'BLACK / WHITE':selected.toUpperCase()+' // LIVE';
+  }
  function updateHostCard(room){
   setWatchTheme(room.hostThemeId||(host?draftProfile.themeId:'nadmo'));
   const name=String(room.hostName||'Host').slice(0,60),handle=room.hostHandle||'';
