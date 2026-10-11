@@ -100,6 +100,7 @@ async function main(){
   await guest.page.waitForFunction(()=>window.__stageQA.some(x=>x.type==='guest-exited'),{timeout:15000});
   await host.page.waitForFunction(()=>document.querySelectorAll('#guestStageGrid .stage-guest-tile').length===0,{timeout:15000});
   console.log('PASS guest descends stage and media tiles disappear for host');
+  await guest.page.waitForFunction(()=>document.querySelector('#joinGuestVoice')?.hidden===false,{timeout:10000});
   const previousApprovals=await guest.page.evaluate(()=>window.__stageQA.filter(x=>x.type==='guest-approved').length);
   await guest.page.$eval('#joinGuestVoice',el=>el.click());
   await host.page.waitForFunction(()=>!!document.querySelector('#guestRequestPanel .guest-invite'),{timeout:14000});
