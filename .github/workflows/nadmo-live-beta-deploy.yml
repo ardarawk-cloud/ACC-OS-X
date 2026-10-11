@@ -54,6 +54,7 @@ jobs:
           node --check nadmo-live-beta/qa/viewer-presence-room-e2e.cjs
           node --check nadmo-live-beta/qa/live-branding-clarity-contract.cjs
           node --check nadmo-live-beta/qa/live-remote-hud-production-e2e.cjs
+          node --check nadmo-live-beta/qa/mobile-camera-host-theme-adaptive-e2e.cjs
           node --check nadmo-live-beta/qa/ice-burst-signaling-e2e.mjs
           node -e "const fs=require('fs'),vm=require('vm'); const s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8'); const js=s.match(/<script>([\\s\\S]*?)<\\/script>/); if(!js)process.exit(1);new vm.Script(js[1]);console.log('APP INLINE JAVASCRIPT SYNTAX PASS')"
       - name: Verify live.nadmo.id hostname, same-origin APIs and legacy Android compatibility
@@ -183,6 +184,8 @@ jobs:
         run: |
           command -v google-chrome || command -v google-chrome-stable || command -v chromium
           echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
+      - name: Verify camera aspect crop safety and broadcaster-owned LIVE themes
+        run: node nadmo-live-beta/qa/mobile-camera-host-theme-adaptive-e2e.cjs
       - name: Verify actual official web production mobile overlay (not local file mock)
         run: node nadmo-live-beta/qa/live-remote-hud-production-e2e.cjs
       - name: Guard one product header, meaningful room subtitles and viewer sender notifications
