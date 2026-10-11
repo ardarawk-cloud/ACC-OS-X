@@ -124,6 +124,27 @@ const puppeteer=require('puppeteer-core');
   assert.equal(viewerUi.composerParent,'row','viewer chat input must remain on video');
   assert.equal(viewerUi.sendParent,'row','viewer SEND must remain on video');
   assert.notEqual(viewerUi.viewerLeave,'none','viewer exit must remain reachable');
+  // Mobile-first: PC spectator follows decoded phone portrait orientation.
+  // Camera on PC host and true GAME streams remain their own landscape mode.
+  await page.setViewport({width:1280,height:800,isMobile:false,hasTouch:false,deviceScaleFactor:1});
+  const desktopCamera=await page.evaluate(()=>{
+   const watch=document.querySelector('#watch'),v=document.querySelector('#remote');
+   Object.defineProperty(v,'videoWidth',{configurable:true,get:()=>720});
+   Object.defineProperty(v,'videoHeight',{configurable:true,get:()=>1280});
+   v.dispatchEvent(new Event('loadedmetadata'));
+   const screen=watch.querySelector('.live-stage>.viewfinder').getBoundingClientRect();
+   const chat=watch.querySelector('.live-chat').getBoundingClientRect();
+   return {portrait:watch.classList.contains('camera-source-portrait'),
+    frame:{w:screen.width,h:screen.height},chat:{x:chat.x,w:chat.width},fit:getComputedStyle(v).objectFit,
+    build:document.getElementById('mobileUiBuild')?.textContent};
+  });
+  assert.equal(desktopCamera.portrait,true,'desktop detects actual portrait PHONE source');
+  assert.ok(desktopCamera.frame.h>desktopCamera.frame.w*1.15,
+    'PC viewer must show PORTRAIT stage, not force 16:9 theater: '+JSON.stringify(desktopCamera));
+  assert.ok(desktopCamera.chat.w>=290,'PC chat remains a separate side panel');
+  assert.equal(desktopCamera.fit,'contain','PC portrait video remains uncropped');
+  assert.match(desktopCamera.build,/MOBILE-FIRST-V3/,'UI build visible only in settings for two-phone QC');
+  console.log('DESKTOP_FOLLOWS_PHONE_PORTRAIT_QC_PASS '+JSON.stringify(desktopCamera));
   console.log('MOBILE_HOST_SETTINGS_AND_VIEWER_HUD_PASS '+JSON.stringify({hostUi,viewerUi}));
   console.log('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_PASS '+JSON.stringify(outcome));
  }finally{await browser.close()}
