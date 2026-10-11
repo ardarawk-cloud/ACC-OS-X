@@ -23,4 +23,16 @@ for(const id of ['#hostControls','#viewerTools','#giftQuick','#moreQuick','.room
 }
 assert.ok(html.includes('body.live-immersive.watch-viewer.watch-game'),'game surface remains');
 assert.ok(html.includes('/* LIVE PC is a landscape cyberdeck'),'PC landscape contract remains');
+// Wide Android camera sources must keep their field of view (no forced zoom).
+const fovGuard=html.slice(html.indexOf('/* CAMERA FOV GUARD'),html.indexOf('</style></head>'));
+assert.match(fovGuard,/\.watch-landscape:not\(\.watch-game\)[^\{]+\{[^}]*object-fit:contain!important/s,
+ 'landscape camera keeps natural field of view');
+assert.match(fovGuard,/:not\(\.watch-landscape\):not\(\.watch-game\)[^\{]+\{[^}]*object-fit:cover!important/s,
+ 'portrait source still fills screen');
+assert.match(html,/classList\.toggle\('watch-landscape',width>height\*1\.12\)/,
+ 'stream dimensions determine fitted mobile video');
+const worker=await readFile(new URL('../worker.mjs',import.meta.url),'utf8');
+assert.match(worker,/headers\.set\('Cache-Control','no-store, max-age=0'\)/,
+ 'WebView receives fresh HTML on new navigation');
+
 console.log('NADMO LIVE NATIVE CAMERA + MOBILE RIGHT RAIL CONTRACT PASS');
