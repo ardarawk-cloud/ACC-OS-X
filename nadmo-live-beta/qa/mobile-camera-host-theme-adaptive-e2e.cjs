@@ -20,12 +20,18 @@ const puppeteer=require('puppeteer-core');
    Object.defineProperty(v,'videoWidth',{configurable:true,get:()=>1280});
    Object.defineProperty(v,'videoHeight',{configurable:true,get:()=>720});
    v.dispatchEvent(new Event('loadedmetadata'));
+   const stage=watch.querySelector('.live-stage>.viewfinder').getBoundingClientRect();
+   const chat=watch.querySelector('.live-chat').getBoundingClientRect();
    const landscape={classSet:watch.classList.contains('camera-source-landscape'),
+    stageMode:watch.classList.contains('camera-frame-letterbox'),
+    stageTop:stage.top,stageBottom:stage.bottom,chatTop:chat.top,
+    hud:getComputedStyle(document.querySelector('#mobileLiveHud')).display,
     aspect:watch.dataset.cameraSourceAspect,fit:getComputedStyle(v).objectFit};
    Object.defineProperty(v,'videoWidth',{configurable:true,get:()=>720});
    Object.defineProperty(v,'videoHeight',{configurable:true,get:()=>1280});
    v.dispatchEvent(new Event('resize'));
    const portrait={classSet:watch.classList.contains('camera-source-landscape'),
+    stageMode:watch.classList.contains('camera-frame-letterbox'),
     aspect:watch.dataset.cameraSourceAspect,fit:getComputedStyle(v).objectFit};
    watch.dataset.hostTheme='noir';
    const noir=getComputedStyle(watch).getPropertyValue('--neon').trim();
@@ -36,10 +42,17 @@ const puppeteer=require('puppeteer-core');
   assert.equal(outcome.noir,'#ead0b9','viewer must inherit host Noir, not viewer skin');
   assert.equal(outcome.hudElectric,'rgb(109, 244, 255)');
   assert.equal(outcome.hudNoir,'rgb(234, 208, 185)');
-  assert.deepEqual(outcome.landscape,{classSet:true,aspect:'1280:720',fit:'contain'},
-    'LANDSCAPE capture on portrait phone must not crop faces');
-  assert.deepEqual(outcome.portrait,{classSet:false,aspect:'720:1280',fit:'contain'},
-    'portrait frame must not lose the face or shoulders to a cover crop');
+  assert.equal(outcome.landscape.classSet,true);
+  assert.equal(outcome.landscape.aspect,'1280:720');
+  assert.equal(outcome.landscape.fit,'contain','wide camera cannot crop into faces');
+  assert.equal(outcome.landscape.stageMode,true,'wide camera needs own stage, not a fullscreen black band');
+  assert.ok(outcome.landscape.stageTop>=65&&outcome.landscape.stageTop<210,
+    'wide camera should start near the top instead of halfway down the screen');
+  assert.ok(outcome.landscape.chatTop>=outcome.landscape.stageBottom+8,
+    'chat must begin BELOW uncropped camera frame, never over a footer line');
+  assert.equal(outcome.landscape.hud,'none','do not frame empty black bands with neon');
+  assert.deepEqual(outcome.portrait,{classSet:false,stageMode:false,aspect:'720:1280',fit:'contain'},
+    'portrait camera should keep its original immersive player and not crop shoulders');
 
   // Owner vs viewer on the same 390px phone: only audience gets cyberdeck.
   // All safety/guest/mic buttons must be inside the settings sheet, not
@@ -106,7 +119,7 @@ const puppeteer=require('puppeteer-core');
     viewerLeave:getComputedStyle(document.getElementById('leave')).display};
   });
   assert.equal(viewerUi.hud,'block','viewer must keep original cyberdeck');
-  assert.equal(viewerUi.frame,'block','viewer must keep neon frame');
+  assert.equal(viewerUi.frame,'none','viewer camera must not be enclosed in a neon rectangle');
   assert.equal(viewerUi.giftOutside,true,'Rp sawer must stay outside settings');
   assert.equal(viewerUi.composerParent,'row','viewer chat input must remain on video');
   assert.equal(viewerUi.sendParent,'row','viewer SEND must remain on video');
