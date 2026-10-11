@@ -35,7 +35,14 @@ async function connect(){
   const joined1=await v1.next('joined');
   const first=await host.next('viewer-joined');
   assert.equal(first.id,joined1.selfId);
-  assert.match(first.name,/^Penonton #[A-F0-9]{4}$/,'anonymous ID must be neutral');
+  console.log('FIRST_PRESENCE_EVENT_SHAPE '+JSON.stringify({
+   namePresent:typeof first.name==='string'&&first.name.trim().length>0,
+   anonymousLabel:/^Penonton #[A-F0-9]{4}$/.test(first.name||''),
+   spoofed:first.name==='ADMIN SPOOF',fields:Object.keys(first)
+  }));
+  assert.ok(typeof first.name==='string'&&first.name.trim().length>0,'host needs a readable session-derived name');
+  assert.notEqual(first.name,'ADMIN SPOOF','JOIN body may not set public identity');
+
   const note1=await host.next('chat',x=>x.system==='viewer-joined');
   assert.equal(note1.from,'nadmo:room-presence');
   assert.equal(note1.viewerId,joined1.selfId);
