@@ -144,8 +144,14 @@ async function main(){
     immersive:document.body.classList.contains('live-immersive'),
     visibleChat:document.querySelector('#chat').getBoundingClientRect().height>50,
     messageVisible:document.querySelector('#message').getBoundingClientRect().bottom<=innerHeight+2,
-    navHidden:getComputedStyle(document.querySelector('nav')).display==='none'
+    navHidden:getComputedStyle(document.querySelector('nav')).display==='none',
+    debug:{source:[document.querySelector('#remote').videoWidth,document.querySelector('#remote').videoHeight],
+      stageMode:document.querySelector('#watch').classList.contains('camera-frame-letterbox'),
+      chatHeight:document.querySelector('#chat').getBoundingClientRect().height,
+      msgBottom:document.querySelector('#message').getBoundingClientRect().bottom,
+      viewport:innerHeight,uiBuild:document.querySelector('#mobileUiBuild')?.textContent}
   }));
+  console.log('MOBILE_VIEWER_CHAT_LAYOUT '+JSON.stringify(viewerLayout));
   assert.ok(viewerLayout.immersive&&viewerLayout.visibleChat&&viewerLayout.messageVisible&&viewerLayout.navHidden,'Viewer immersive overlay/chat must be visible without scrolling');
   await viewer.locator('#giftQuick').click();
   assert.equal(await viewer.$eval('#viewerTipPanel',el=>el.classList.contains('sheet-open')),true);
