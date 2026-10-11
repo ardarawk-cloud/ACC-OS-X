@@ -1932,6 +1932,75 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
 .public-me-skin[data-cover-photo="true"] .profile-hero{filter:none!important}
 
 
+/* MOBILE CAMERA: original immersive TikTok-like composition.
+   Camera fills the viewport; HUD and chat float above it, actions on right.
+   Does not affect PC or GAME streaming, and never alters actual video pixels. */
+@media(max-width:799px){
+ body.live-immersive.watch-viewer:not(.watch-game) #watch{
+  width:100vw;height:100dvh;overflow:hidden;background:#050708;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .live-stage,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .live-stage>.viewfinder{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  max-height:none!important;max-width:none!important;min-height:0!important;
+  transform:none!important;margin:0!important;padding:0!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #remote{
+  width:100%!important;height:100%!important;max-height:none!important;
+  object-fit:cover!important;object-position:center!important;
+  background:#050708!important;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .live-chat{
+  left:12px!important;right:80px!important;bottom:calc(env(safe-area-inset-bottom) + 13px)!important;
+  background:transparent!important;border:0!important;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #chat{
+  height:min(31dvh,240px)!important;min-height:80px!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #chat div{
+  background:#090e0c77!important;border:0!important;border-radius:10px!important;
+  padding:4px 6px!important;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #hostControls,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #viewerTools{right:10px!important}
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #hostControls .btn,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #viewerTools .btn{
+  width:60px;min-height:47px;padding:6px 3px;border-radius:24px;background:#101615ba;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #giftQuick,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #moreQuick{
+  position:fixed;right:13px;z-index:10;width:52px;height:52px;
+  display:grid;place-items:center;border-radius:50%;
+  background:#121a17cc;pointer-events:auto;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #giftQuick{
+  bottom:calc(env(safe-area-inset-bottom) + 83px)
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch #moreQuick{
+  bottom:calc(env(safe-area-inset-bottom) + 20px)
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .room-safety{
+  position:fixed;right:9px;bottom:calc(env(safe-area-inset-bottom) + 152px);
+  width:76px;max-height:32dvh;z-index:10;pointer-events:none;
+  margin:0;padding:0;border:0;background:transparent;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .safety-toolbar{
+  display:flex;flex-direction:column;align-items:stretch;gap:5px;
+  max-height:32dvh;overflow-y:auto;pointer-events:auto;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .safety-toolbar button:not([hidden]){
+  width:100%;min-height:39px;white-space:normal;overflow-wrap:anywhere;
+  padding:5px 3px;font-size:9px;line-height:1.15;border-radius:12px;
+  background:#101816d9;
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .room-safety .safety-panel{
+  position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 86px);
+  width:auto;max-height:55dvh;overflow-y:auto;pointer-events:auto;z-index:14;
+ }
+}
+
 /* LIVE CAMERA — prioritize a native portrait sensor, otherwise protect face framing. */
 #watch #cameraBackdrop,#watch #cameraFitToggle{display:none!important}
 @media(max-width:799px){
@@ -4430,85 +4499,26 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
  });
 
 
- // Android WebView sometimes ignores portrait camera constraints. Compose
- // the actual broadcast VIDEO as portrait 360x640 instead of faking the UI.
- let portraitCameraCapture=null;
- function stopPortraitCameraCapture(){
-  const old=portraitCameraCapture;portraitCameraCapture=null;
-  if(!old)return;
-  clearInterval(old.timer);
-  old.video.pause();old.video.srcObject=null;old.video.remove();
-  old.raw.getVideoTracks().forEach(t=>t.stop());
- }
+ // Android WebView portrait video must use the original sensor stream:
+ // do not resample it to a blurry 360x640 canvas or crop the face.
+ function stopPortraitCameraCapture(){}
  async function openLiveCamera(audio=true){
   const raw=await navigator.mediaDevices.getUserMedia({
-   video:liveCameraConstraints(),audio:audio?{echoCancellation:true}:false
+   video:liveCameraConstraints(),
+   audio:audio?{echoCancellation:true}:false
   });
-  if(window.innerWidth>=800)return {stream:raw,controller:null};
-  let video=null,timer=null;
-  try{
-   video=document.createElement('video');
-   video.autoplay=true;video.muted=true;video.playsInline=true;
-   video.style.cssText='position:fixed;left:-5px;top:-5px;width:1px;height:1px;opacity:0;pointer-events:none';
-   video.setAttribute('playsinline','');
-   document.body.append(video);
-   const metadata=new Promise((resolve,reject)=>{
-    const timeout=setTimeout(()=>reject(new Error('Kamera tidak memberikan resolusi')),7000);
-    if(video.readyState>=1&&video.videoWidth){clearTimeout(timeout);resolve();return;}
-    video.addEventListener('loadedmetadata',()=>{clearTimeout(timeout);resolve();},{once:true});
-   });
-   video.srcObject=raw;await video.play();await metadata;
-   if(!video.videoWidth||!video.videoHeight)throw Error('Frame kamera belum siap');
-   // A real portrait feed is already correctly oriented: publish it directly,
-   // preserving camera pixels, resolution and field of view without any crop.
-   if(video.videoHeight>video.videoWidth*1.1){
-    video.pause();video.srcObject=null;video.remove();
-    return {stream:raw,controller:null};
-   }
-   // Android WebView sometimes supplies a horizontal front-camera feed.
-   // A full 9:16 cover crop discarded most of the picture and looked zoomed.
-   // Limit horizontal sensor cropping to reduce subject magnification instead. Fill the remaining
-   // vertical canvas using an ambient copy of the same frame, not black bars.
-   const canvas=document.createElement('canvas');canvas.width=360;canvas.height=640;
-   const ctx=canvas.getContext('2d',{alpha:false});
-   if(!ctx||!canvas.captureStream)throw Error('Perangkat tidak mendukung LIVE portrait');
-   const draw=()=>{
-    if(video.readyState<2||!video.videoWidth||!video.videoHeight)return;
-    const w=video.videoWidth,h=video.videoHeight,ratio=w/h;
-    // Only the soft ambient layer fills the screen; it is never the subject.
-    const bgRatio=360/640;
-    const bgW=ratio>bgRatio?h*bgRatio:w,bgH=ratio>bgRatio?h:w/bgRatio;
-    ctx.save();ctx.filter='blur(22px) brightness(0.55)';
-    ctx.drawImage(video,(w-bgW)/2,(h-bgH)/2,bgW,bgH,0,0,360,640);
-    ctx.restore();
-    // Limit apparent subject magnification: at most 1.55x versus old ~3x.
-    const safeRatio=Math.max(1.15,Math.min(1.35,ratio));
-    const sw=Math.min(w,h*safeRatio),sh=Math.min(h,w/safeRatio);
-    const drawnHeight=360*sh/sw,top=(640-drawnHeight)/2;
-    ctx.drawImage(video,(w-sw)/2,(h-sh)/2,sw,sh,0,top,360,drawnHeight);
-   };
-   draw();const out=canvas.captureStream(20),track=out.getVideoTracks()[0];
-   if(!track)throw Error('LIVE portrait gagal dibentuk');
-   timer=setInterval(draw,50);
-   return {stream:new MediaStream([...raw.getAudioTracks(),track]),controller:{raw,video,timer,canvas}};
-  }catch(e){
-   if(timer)clearInterval(timer);
-   if(video){video.pause();video.srcObject=null;video.remove();}
-   raw.getTracks().forEach(t=>t.stop());throw e;
-  }
+  return {stream:raw,controller:null};
  }
  function useLiveCamera(result){
-  stopPortraitCameraCapture();
-  portraitCameraCapture=result.controller;
   return result.stream;
  }
  if(location.protocol==='file:')window.__nadmoCameraQATest={openLiveCamera};
-
+ 
  function liveCameraConstraints(){
   // PC camera stays landscape. Handsets prefer portrait; ideals may fall back.
   return window.innerWidth>=800
    ? {width:{ideal:1280},height:{ideal:720},aspectRatio:{ideal:16/9}}
-   : {facingMode:'user',width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:9/16},frameRate:{ideal:24}};
+   : {facingMode:{ideal:'user'},width:{ideal:1080},height:{ideal:1920},aspectRatio:{ideal:9/16},resizeMode:{ideal:'none'},frameRate:{ideal:30,max:30}};
  }
  async function preview(){
   try{
