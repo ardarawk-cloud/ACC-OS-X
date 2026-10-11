@@ -275,18 +275,21 @@ async function main(){
   assert.ok(recovered.width>0&&recovered.playing,'Recovered video must actually play');
   assert.ok(recovered.tracks?.includes('audio:live')&&recovered.tracks?.includes('video:live'));
   console.log('PASS video and audio resumed after host WebSocket network switch',JSON.stringify(recovered));
-  await host.$eval('#leave',el=>el.scrollIntoView({block:'center',behavior:'instant'}));
-  console.log('LEAVE_BUTTON_GEOMETRY '+JSON.stringify(await host.$eval('#leave',el=>{
-    const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
-    return{y:r.y,height:r.height,hit:hit?.tagName,hitId:hit?.id,text:hit?.textContent?.slice(0,35)}
+  // Owner-only stop is deliberately inside ⚙ settings, not floating on video.
+  await host.locator('#moreQuick').click();
+  assert.equal(await host.$eval('#liveSettingsPanel',el=>el.classList.contains('sheet-open')),true,
+   'Broadcaster settings must expose the stop-live action');
+  console.log('HOST_SETTINGS_EXIT_VISIBLE '+JSON.stringify(await host.$eval('#settingsLeave',el=>{
+   const r=el.getBoundingClientRect();return {height:r.height,width:r.width,visible:r.height>0&&r.width>0};
   })));
-  await host.locator('#leave').click();
+  await host.locator('#settingsLeave').click();
   assert.equal(await host.$eval('#endLiveConfirm',el=>!el.classList.contains('hide')),true,'Host sees confirmation instead of immediate end');
   await host.locator('#cancelEndLive').click();
   assert.equal(await host.$eval('#endLiveConfirm',el=>el.classList.contains('hide')),true,'Cancel preserves room');
   const roomStillLive=await viewer.$eval('#watch',el=>!el.classList.contains('hide'));
   assert.equal(roomStillLive,true,'Cancel must leave viewer connected');
-  await host.locator('#leave').click();
+  await host.locator('#moreQuick').click();
+  await host.locator('#settingsLeave').click();
   await host.locator('#confirmEndLive').click();
   const sentLeave=await host.evaluate(()=>window.__nadmoQALog?.some(x=>x.startsWith('SEND leave')));
   console.log('HOST_LEAVE_SENT '+JSON.stringify({sentLeave,events:await host.evaluate(()=>window.__nadmoQALog?.slice(-12))}));
@@ -318,7 +321,8 @@ async function main(){
     document.body.classList.contains('live-immersive')&&document.querySelector('#watch').getBoundingClientRect().height>700,{timeout:20000});
   assert.equal(await host.$eval('#watchState',el=>getComputedStyle(el).display),'none');
   console.log('PASS Ngobrol mode starts real microphone audio live with fullscreen visual');
-  await host.locator('#leave').click();
+  await host.locator('#moreQuick').click();
+  await host.locator('#settingsLeave').click();
   await host.locator('#confirmEndLive').click();
   assert.equal(faults.length,0,'Browser uncaught exceptions: '+faults.join('; '));
   console.log('ALL HEADLESS WEBRTC BROADCAST TESTS PASSED');
