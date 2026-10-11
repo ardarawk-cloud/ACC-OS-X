@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-natural-camera-stage-v2">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-mobile-first-v3">
 <title>NADMO LIVE — Beta</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
@@ -2350,7 +2350,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox::after{display:none!important}
  body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-stage>.viewfinder{
   position:absolute!important;inset:auto!important;left:0!important;right:0!important;
-  top:var(--camera-stage-top,100px)!important;width:100%!important;
+  top:var(--camera-stage-top,0px)!important;width:100%!important;
   height:var(--camera-stage-height,300px)!important;
   min-height:0!important;max-height:none!important;
   margin:0!important;padding:0!important;transform:none!important;
@@ -2363,7 +2363,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
   background:#050708!important
  }
  body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-chat{
-  top:calc(var(--camera-stage-top,100px) + var(--camera-stage-height,300px) + 10px)!important;
+  top:calc(var(--camera-stage-top,0px) + var(--camera-stage-height,300px) + 10px)!important;
   bottom:calc(env(safe-area-inset-bottom) + 12px)!important;
   height:auto!important;display:flex!important;flex-direction:column!important;
   justify-content:flex-end!important;overflow:hidden!important;
@@ -2379,6 +2379,45 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  }
  body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-frame-letterbox .mobile-live-hud{
   display:none!important
+ }
+}
+
+/* MOBILE FIRST v3: VIDEO follows the source.  The audience must never see a
+   black header above a floating 4:3/16:9 camera. Profile and X remain overlay
+   controls; JOIN/chat lives after the camera frame. Portrait video remains
+   immersive, with no decorative line across the chat. */
+@media(max-width:799px){
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-stage>.viewfinder{
+  top:0!important
+ }
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox .live-chat{
+  top:calc(var(--camera-stage-height,300px) + 10px)!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .mobile-live-hud-footer,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .mobile-live-hud-track,
+ body.live-immersive.watch-viewer:not(.watch-game) #watch .mobile-live-hud-bars{
+  display:none!important
+ }
+}
+/* DESKTOP FOLLOWS THE PHONE CAMERA.  A real portrait stream is shown as a
+   portrait video INSIDE desktop theatre, not arbitrarily reformatted 16:9.
+   PC-origin landscape camera and GAME remain wide. */
+@media(min-width:800px){
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-source-portrait .live-stage>.viewfinder{
+  position:absolute!important;
+  inset:auto!important;
+  left:50%!important;right:auto!important;top:calc(50% - 40px)!important;bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+  width:min(calc(100% - 28px),var(--pc-camera-frame-width,310px))!important;
+  height:min(calc(100% - 150px),var(--pc-camera-frame-height,550px))!important;
+  max-height:none!important;min-height:0!important;max-width:none!important;
+  aspect-ratio:var(--camera-source-aspect,9 / 16)!important;
+  border:0!important;box-shadow:none!important;
+  background:#050708!important;overflow:hidden!important
+ }
+ body.live-immersive.watch-viewer:not(.watch-game) #watch.camera-source-portrait #remote{
+  width:100%!important;height:100%!important;object-fit:contain!important;
+  object-position:center!important;background:#050708!important
  }
 }
 
@@ -2462,7 +2501,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
 </section>
 <section id="watch" class="hide">
   <!-- Portrait HUD: themed transparent cyberdeck FRAME, never a video container. -->
-  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-natural-camera-stage-v2" aria-hidden="true">
+  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-mobile-first-v3" aria-hidden="true">
     <div class="mobile-live-hud-outline"></div>
     <span class="mobile-live-corner hud-tl"></span><span class="mobile-live-corner hud-tr"></span>
     <span class="mobile-live-corner hud-bl"></span><span class="mobile-live-corner hud-br"></span>
@@ -2584,6 +2623,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
       <p id="mirrorStatus" class="deck">Mirror Preview aktif hanya untuk kamera depan. Siaran penonton normal secara bawaan.</p>
     </div>
     <button type="button" class="btn ghost" id="settingsLeave" style="width:100%">KELUAR / AKHIRI LIVE</button>
+    <small class="deck" id="mobileUiBuild" style="display:block;margin-top:10px;opacity:.7">UI 20261012-MOBILE-FIRST-V3</small>
   </div>
   <div id="endLiveConfirm" class="end-live-dialog hide" role="dialog" aria-modal="true" aria-labelledby="endLiveTitle">
     <div class="end-live-card">
@@ -5861,7 +5901,11 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
-  $('watch').classList.remove('camera-frame-letterbox','camera-source-landscape');
+  $('watch').classList.remove('camera-frame-letterbox','camera-source-landscape','camera-source-portrait');
+  $('watch').style.removeProperty('--camera-source-aspect');
+  $('watch').style.removeProperty('--camera-source-ratio');
+  $('watch').style.removeProperty('--pc-camera-frame-height');
+  $('watch').style.removeProperty('--pc-camera-frame-width');
   $('watch').style.removeProperty('--camera-stage-top');
   $('watch').style.removeProperty('--camera-stage-height');
   viewerDisplayNames.clear();recentRoomJoins.clear();
@@ -5943,14 +5987,23 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
    // Inspect decoded dimensions. Never infer camera aspect from phone size.
    const watch=$('watch'),captureRatio=width/height;
    watch.classList.toggle('camera-source-landscape',width>height*1.12);
+   watch.classList.toggle('camera-source-portrait',height>width*1.12);
    watch.dataset.cameraSourceAspect=width+':'+height;
+   watch.style.setProperty('--camera-source-aspect',width+' / '+height);
+   watch.style.setProperty('--camera-source-ratio',(width/height).toFixed(5));
+   // Computed pixels avoid unsupported CSS calc() multiplication on older
+   // Android WebViews and desktop browsers.
+   const pcPortraitH=Math.max(240,innerHeight-185);
+   watch.style.setProperty('--pc-camera-frame-height',Math.round(pcPortraitH)+'px');
+   watch.style.setProperty('--pc-camera-frame-width',Math.round(pcPortraitH*captureRatio)+'px');
    // Real decoded dimensions decide framing, never phone dimensions alone.
    const phoneCamera=innerWidth<800&&!document.body.classList.contains('watch-game');
    const naturalStage=phoneCamera&&captureRatio>(innerWidth/Math.max(innerHeight,1))*1.4;
    watch.classList.toggle('camera-frame-letterbox',naturalStage);
    if(naturalStage){
-    const stageTop=Math.max(72,Math.min(116,Math.round(innerHeight*.12)));
-    const stageHeight=Math.max(145,Math.min(innerWidth/captureRatio,innerHeight-stageTop-230));
+    // Video starts beneath the system status bar, not 100px below the X/header.
+    const stageTop=0;
+    const stageHeight=Math.max(145,Math.min(innerWidth/captureRatio,innerHeight-230));
     watch.style.setProperty('--camera-stage-top',stageTop+'px');
     watch.style.setProperty('--camera-stage-height',Math.round(stageHeight)+'px');
    }else{
