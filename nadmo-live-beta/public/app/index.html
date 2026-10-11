@@ -2716,6 +2716,7 @@ html,body{background:#060b08}
   if(!logged){followedHandles.clear();$('meFollowersCount').textContent='—';$('meFollowingCount').textContent='—';}
   $('avatarChoose').hidden=!logged;
   $('avatarRemove').hidden=!logged||!activeAccount.avatarVersion;
+  renderCoverEditor();
   setAvatarImage('profileAvatarImage',logged?activeAccount.handle:'',logged?activeAccount.avatarVersion:0);
   if(!logged)$('avatarUploadStatus').textContent='';
   if(logged){
@@ -2985,6 +2986,7 @@ html,body{background:#060b08}
    const res=await accountRequest('/api/profile/'+encodeURIComponent(handle));
    const p=res.profile||{};if(!$('publicProfilePage')||$('publicProfilePage').classList.contains('hide'))return;
    applyProfileVisual($('publicMeSkin'),p);
+   applyProfileCover($('publicMeSkin'),p.handle||handle,p.coverVersion||0);
    $('publicCreatorName').textContent=p.name||p.handle||'Kreator';
    $('publicCreatorHandle').textContent='@'+(p.handle||handle);
    $('publicCreatorBio').textContent=p.bio||'';
@@ -3752,7 +3754,7 @@ html,body{background:#060b08}
   bio:typeof safeProfile.bio==='string'?safeProfile.bio.slice(0,300):'',
   links:Array.isArray(safeProfile.links)?safeProfile.links.filter(l=>l&&validExternalLink(l.url)&&typeof l.label==='string')
        .slice(0,12).map(l=>({label:l.label.slice(0,40),url:validExternalLink(l.url)})):[],
-  themeId:['nadmo','noir','retro','electric'].includes(safeProfile.themeId)?safeProfile.themeId:'nadmo',
+  themeId:['nadmo','cyberbw','noir','retro','electric'].includes(safeProfile.themeId)?safeProfile.themeId:'nadmo',
   fontId:['system','mono','editorial'].includes(safeProfile.fontId)?safeProfile.fontId:'system',
   coverId:['grid','waves','dots'].includes(safeProfile.coverId)?safeProfile.coverId:'grid'
  };
@@ -3825,22 +3827,116 @@ html,body{background:#060b08}
   }
  }
  function applyProfileVisual(element,profile){
-  element.dataset.theme=['nadmo','noir','retro','electric'].includes(profile.themeId)?profile.themeId:'nadmo';
+  element.dataset.theme=['nadmo','cyberbw','noir','retro','electric'].includes(profile.themeId)?profile.themeId:'nadmo';
   element.dataset.font=['system','mono','editorial'].includes(profile.fontId)?profile.fontId:'system';
   element.dataset.cover=['grid','waves','dots'].includes(profile.coverId)?profile.coverId:'grid';
  }
+
+ // Uploaded cover images use an owner-authenticated compact image API and are visible to profile visitors.
+ // Never put a base64 cover in localStorage or in public account JSON.
+ function coverImageURL(handle,version){
+  if(!/^[a-z][a-z0-9_]{2,23}$/.test(handle||'')||!Number.isSafeInteger(Number(version))||Number(version)<=0)return '';
+  return api('/api/profile/'+encodeURIComponent(handle)+'/cover?v='+encodeURIComponent(String(version)));
+ }
+ function applyProfileCover(element,handle,version){
+  if(!element)return;
+  const hero=element.querySelector('.profile-hero');
+  if(!hero)return;
+  const source=coverImageURL(handle,version);
+  element.dataset.coverPhoto=source?'true':'false';
+  // Source is a fixed same-origin API path; profile handle is strictly validated above.
+  hero.style.backgroundImage=source?'url("'+source+'")':'';
+ }
+ function renderCoverEditor(){
+  const version=activeAccount?.coverVersion||0;
+  const source=coverImageURL(activeAccount?.handle,version);
+  const preview=$('coverPreviewImg'),empty=$('coverPreviewFallback');
+  if(!preview||!empty)return;
+  preview.hidden=!source;empty.hidden=!!source;
+  if(source)preview.src=source;else preview.removeAttribute('src');
+  $('coverRemove').hidden=!source;
+  $('coverChoose').textContent=source?'GANTI FOTO':'PILIH FOTO';
+  $('coverChoose').disabled=!activeAccount;
+  if(!activeAccount)$('coverUploadStatus').textContent='Masuk ke akun untuk menyimpan cover yang terlihat oleh pengunjung profil.';
+ }
+ async function createCoverBlob(file){
+  if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Pilih foto JPG, PNG, atau WebP.');
+  if(file.size>10*1024*1024)throw Error('Foto asli maksimal 10 MB.');
+  const url=URL.createObjectURL(file),picture=new Image();
+  try{
+   await new Promise((resolve,reject)=>{picture.onload=resolve;picture.onerror=()=>reject(Error('Foto tidak bisa dibuka.'));picture.src=url});
+   if(picture.naturalWidth<16||picture.naturalHeight<16)throw Error('Resolusi foto tidak valid.');
+   for(const width of [1200,960,800,640,480]){
+    const height=Math.round(width*9/16);
+    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+    const ctx=canvas.getContext('2d',{alpha:false});
+    if(!ctx)throw Error('Perangkat tidak mendukung pemrosesan foto.');
+    const sw=Math.min(picture.naturalWidth,picture.naturalHeight*16/9);
+    const sh=sw*9/16;
+    ctx.drawImage(picture,(picture.naturalWidth-sw)/2,(picture.naturalHeight-sh)/2,sw,sh,0,0,width,height);
+    for(const quality of [.82,.68,.52,.38]){
+     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+     if(blob&&blob.size>=100&&blob.size<=98304)return blob;
+    }
+   }
+   throw Error('Foto tidak dapat diperkecil. Coba foto lain.');
+  }finally{URL.revokeObjectURL(url)}
+ }
+ $('coverChoose').onclick=()=>{
+  if(!activeAccount){$('coverUploadStatus').textContent='Masuk akun dulu untuk memasang cover.';return}
+  $('coverFile').click();
+ };
+ $('coverFile').onchange=async()=>{
+  const input=$('coverFile'),file=input.files?.[0];input.value='';
+  if(!file||!activeAccount)return;
+  const owner=activeAccount.id;
+  $('coverChoose').disabled=true;$('coverRemove').disabled=true;
+  $('coverUploadStatus').textContent='Memproses dan menyimpan cover...';
+  try{
+   const blob=await createCoverBlob(file);
+   if(activeAccount?.id!==owner)throw Error('Sesi berubah. Silakan ulangi.');
+   const response=await fetch(api('/api/account/cover'),{
+    method:'PUT',credentials:'include',cache:'no-store',headers:{'Content-Type':'image/jpeg'},body:blob
+   });
+   const result=await response.json().catch(()=>({error:'Respons server tidak terbaca'}));
+   if(!response.ok)throw Error(result.error||'Cover gagal tersimpan');
+   if(activeAccount?.id!==owner)throw Error('Sesi berubah sebelum cover diperbarui');
+   activeAccount.coverVersion=result.coverVersion;
+   renderCoverEditor();renderProfileDraft();
+   $('coverUploadStatus').textContent='Cover berhasil disimpan dan tampil di ME serta profil publik.';
+  }catch(error){$('coverUploadStatus').textContent='Gagal: '+error.message}
+  finally{$('coverChoose').disabled=!activeAccount;$('coverRemove').disabled=false}
+ };
+ $('coverRemove').onclick=async()=>{
+  if(!activeAccount?.coverVersion)return;
+  const owner=activeAccount.id;
+  if(!confirm('Hapus foto cover dan kembali ke tampilan bawaan?'))return;
+  $('coverRemove').disabled=true;
+  $('coverUploadStatus').textContent='Menghapus cover...';
+  try{
+   const response=await fetch(api('/api/account/cover'),{method:'DELETE',credentials:'include',cache:'no-store'});
+   const result=await response.json().catch(()=>({error:'Server tidak merespons'}));
+   if(!response.ok)throw Error(result.error||'Cover gagal dihapus');
+   if(activeAccount?.id!==owner)throw Error('Sesi berubah');
+   activeAccount.coverVersion=0;renderCoverEditor();renderProfileDraft();
+   $('coverUploadStatus').textContent='Cover dihapus. Profil kembali ke cover default.';
+  }catch(error){$('coverUploadStatus').textContent='Gagal: '+error.message}
+  finally{$('coverRemove').disabled=false}
+ };
+
  function renderProfileDraft(){
   applyProfileVisual($('betaSocialProfile'),draftProfile);
+  applyProfileCover($('betaSocialProfile'),draftProfile.handle,activeAccount?.coverVersion||0);
   $('profileTheme').value=draftProfile.themeId;
   $('profileFont').value=draftProfile.fontId;
-  $('profileCover').value=draftProfile.coverId;
+  renderCoverEditor();
   $('profileDisplayName').textContent=draftProfile.name||'Profil NADMO';
   $('profileDisplayHandle').textContent=draftProfile.handle?'@'+draftProfile.handle:'@username';
   $('profileDisplayBio').textContent=draftProfile.bio||'Bisnis, musik, karya, dan komunitasmu bisa muncul di sini.';
   $('profileName').value=draftProfile.name;$('profileHandle').value=draftProfile.handle;$('profileBio').value=draftProfile.bio;
   renderProfileLinks();
  }
- for(const [id,key] of [['profileTheme','themeId'],['profileFont','fontId'],['profileCover','coverId']]){
+ for(const [id,key] of [['profileTheme','themeId'],['profileFont','fontId']]){
   $(id).onchange=()=>{draftProfile[key]=$(id).value;saveProfileDraft();applyProfileVisual($('betaSocialProfile'),draftProfile)};
  }
  $('editProfileBtn').onclick=()=>{
@@ -3875,7 +3971,7 @@ html,body{background:#060b08}
   draftProfile.bio=$('profileBio').value.trim().slice(0,300);
   draftProfile.themeId=$('profileTheme').value;
   draftProfile.fontId=$('profileFont').value;
-  draftProfile.coverId=$('profileCover').value;
+  // Preserve legacy background preset only when no uploaded cover is set.
   if(!saveProfileDraft())return;
   if(activeAccount){
    try{
