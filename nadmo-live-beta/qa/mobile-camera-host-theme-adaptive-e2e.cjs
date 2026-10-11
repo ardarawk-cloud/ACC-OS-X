@@ -40,6 +40,58 @@ const puppeteer=require('puppeteer-core');
     'LANDSCAPE capture on portrait phone must not crop faces');
   assert.deepEqual(outcome.portrait,{classSet:false,aspect:'720:1280',fit:'cover'},
     'true PORTRAIT capture must fill the screen');
+
+  // Owner vs viewer on the same 390px phone: only audience gets cyberdeck.
+  // All safety/guest/mic buttons must be inside the settings sheet, not
+  // floating on top of the broadcaster's camera or join notifications.
+  const hostUi=await page.evaluate(()=>{
+   const watch=document.querySelector('#watch'),safety=watch.querySelector('.room-safety');
+   const getRect=id=>{const r=document.getElementById(id).getBoundingClientRect();
+    return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom}};
+   document.body.classList.remove('watch-viewer','watch-game','watch-clean');
+   document.body.classList.add('watch-host');
+   for(const id of ['hostModeration','hostGuestRequests','hostMicToggle'])
+    document.getElementById(id).hidden=false;
+   const before={hud:getComputedStyle(document.getElementById('mobileLiveHud')).display,
+    frame:getComputedStyle(watch,'::before').display,
+    leave:getComputedStyle(document.getElementById('leave')).display,
+    floatingSafety:safety.parentElement.classList.contains('live-chat'),
+    safetyParent:safety.parentElement.id,
+    sheetHidden:getComputedStyle(document.getElementById('liveSettingsPanel')).display==='none'};
+   document.getElementById('moreQuick').click();
+   const panel=getRect('liveSettingsPanel');
+   const controls=['hostModeration','hostGuestRequests','hostMicToggle'].map(id=>{
+    const rect=getRect(id);return {id,...rect,visible:getComputedStyle(document.getElementById(id)).display!=='none'};
+   });
+   return {before,panel,controls,opened:document.getElementById('liveSettingsPanel').classList.contains('sheet-open')};
+  });
+  assert.equal(hostUi.before.hud,'none','broadcaster must not see viewer cyberdeck HUD');
+  assert.equal(hostUi.before.frame,'none','broadcaster preview must not have viewer neon frame');
+  assert.equal(hostUi.before.leave,'none','host exit action belongs to settings');
+  assert.equal(hostUi.before.floatingSafety,false,'room tools must not overlap camera');
+  assert.equal(hostUi.before.safetyParent,'liveSettingsPanel','room tools belong in settings');
+  assert.equal(hostUi.before.sheetHidden,true,'room actions must stay hidden until ⚙ opens');
+  assert.equal(hostUi.opened,true,'broadcaster gear must open settings');
+  for(const c of hostUi.controls){
+   assert.equal(c.visible,true,c.id+' must remain actionable inside settings');
+   assert.ok(c.w>30&&c.h>=38&&c.x>=hostUi.panel.x&&c.right<=hostUi.panel.right+1
+    &&c.y>=hostUi.panel.y&&c.bottom<=hostUi.panel.bottom+1,
+    c.id+' must not overflow the settings sheet');
+  }
+  const viewerUi=await page.evaluate(()=>{
+   document.getElementById('closeSettingsSheet').click();
+   document.body.classList.remove('watch-host');
+   document.body.classList.add('watch-viewer');
+   return {hud:getComputedStyle(document.getElementById('mobileLiveHud')).display,
+    frame:getComputedStyle(document.getElementById('watch'),'::before').display,
+    giftOutside:!document.getElementById('giftQuick').closest('#liveSettingsPanel'),
+    viewerLeave:getComputedStyle(document.getElementById('leave')).display};
+  });
+  assert.equal(viewerUi.hud,'block','viewer must keep original cyberdeck');
+  assert.equal(viewerUi.frame,'block','viewer must keep neon frame');
+  assert.equal(viewerUi.giftOutside,true,'Rp sawer must stay outside settings');
+  assert.notEqual(viewerUi.viewerLeave,'none','viewer exit must remain reachable');
+  console.log('MOBILE_HOST_SETTINGS_AND_VIEWER_HUD_PASS '+JSON.stringify({hostUi,viewerUi}));
   console.log('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_PASS '+JSON.stringify(outcome));
  }finally{await browser.close()}
 })().catch(e=>{console.error('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_FAIL',e.stack||e);process.exitCode=1});
