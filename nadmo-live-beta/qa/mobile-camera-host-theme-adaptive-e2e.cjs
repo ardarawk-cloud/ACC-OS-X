@@ -65,7 +65,9 @@ const puppeteer=require('puppeteer-core');
     el.scrollIntoView({block:'nearest'}); // controls may live below the fold inside the scrollable sheet
     const rect=getRect(id);return {id,...rect,visible:getComputedStyle(el).display!=='none'};
    });
-   return {before,panel,controls,opened:document.getElementById('liveSettingsPanel').classList.contains('sheet-open')};
+   return {before,panel,controls,opened:document.getElementById('liveSettingsPanel').classList.contains('sheet-open'),
+    composerParent:document.getElementById('message').parentElement.id,
+    sendParent:document.getElementById('send').parentElement.id};
   });
   assert.equal(hostUi.before.hud,'none','broadcaster must not see viewer cyberdeck HUD');
   assert.equal(hostUi.before.frame,'none','broadcaster preview must not have viewer neon frame');
@@ -74,6 +76,8 @@ const puppeteer=require('puppeteer-core');
   assert.equal(hostUi.before.safetyParent,'liveSettingsPanel','room tools belong in settings');
   assert.equal(hostUi.before.sheetHidden,true,'room actions must stay hidden until ⚙ opens');
   assert.equal(hostUi.opened,true,'broadcaster gear must open settings');
+  assert.equal(hostUi.composerParent,'hostSettingsComposer','host chat input must not obstruct camera');
+  assert.equal(hostUi.sendParent,'hostSettingsComposer','host SEND must be accessible only inside settings');
   for(const c of hostUi.controls){
    assert.equal(c.visible,true,c.id+' must remain actionable inside settings');
    assert.ok(c.w>30&&c.h>=38&&c.x>=hostUi.panel.x&&c.right<=hostUi.panel.right+1
@@ -84,7 +88,11 @@ const puppeteer=require('puppeteer-core');
    document.getElementById('closeSettingsSheet').click();
    document.body.classList.remove('watch-host');
    document.body.classList.add('watch-viewer');
-   return {hud:getComputedStyle(document.getElementById('mobileLiveHud')).display,
+   document.getElementById('moreQuick').click();
+   document.getElementById('closeSettingsSheet').click();
+   return {composerParent:document.getElementById('message').parentElement.className,
+    sendParent:document.getElementById('send').parentElement.className,
+    hud:getComputedStyle(document.getElementById('mobileLiveHud')).display,
     frame:getComputedStyle(document.getElementById('watch'),'::before').display,
     giftOutside:!document.getElementById('giftQuick').closest('#liveSettingsPanel'),
     viewerLeave:getComputedStyle(document.getElementById('leave')).display};
@@ -92,6 +100,8 @@ const puppeteer=require('puppeteer-core');
   assert.equal(viewerUi.hud,'block','viewer must keep original cyberdeck');
   assert.equal(viewerUi.frame,'block','viewer must keep neon frame');
   assert.equal(viewerUi.giftOutside,true,'Rp sawer must stay outside settings');
+  assert.equal(viewerUi.composerParent,'row','viewer chat input must remain on video');
+  assert.equal(viewerUi.sendParent,'row','viewer SEND must remain on video');
   assert.notEqual(viewerUi.viewerLeave,'none','viewer exit must remain reachable');
   console.log('MOBILE_HOST_SETTINGS_AND_VIEWER_HUD_PASS '+JSON.stringify({hostUi,viewerUi}));
   console.log('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_PASS '+JSON.stringify(outcome));
