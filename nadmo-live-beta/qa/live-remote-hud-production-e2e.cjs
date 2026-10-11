@@ -3,7 +3,7 @@
 // and the owner-observed missing HUD in the actual public app.
 const puppeteer=require('puppeteer-core');
 const assert=require('node:assert/strict');
-const REV='20261012-mobile-hud-verify';
+const REV='20261012-natural-camera-stage-v2';
 (async()=>{
  const browser=await puppeteer.launch({
   executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
@@ -47,8 +47,8 @@ const REV='20261012-mobile-hud-verify';
   assert.equal(shown.hud.pointer,'none','HUD must not block touch');
   assert.ok(shown.hud.rectW>=385&&shown.hud.rectH>=790,'HUD must fill portrait phone');
   assert.match(shown.hud.color,/109, 244, 255/,'Electric HUD theme lost');
-  assert.equal(shown.frame.display,'block','fallback frame must be visible');
-  assert.equal(shown.frame.borderWidth,'2px','real pixel border must be prominent');
+  assert.equal(shown.frame.display,'none','do not draw a neon border around the entire phone');
+  assert.equal(shown.frame.borderWidth,'0px','camera layout must not be a cyberdeck rectangle');
   assert.ok(shown.hud.text.includes('SIGNAL')&& !shown.hud.text.includes('NADMO LIVE'),'duplicate brand in HUD');
   await page.evaluate(()=>{
    const el=document.querySelector('#remote');
@@ -71,10 +71,10 @@ const REV='20261012-mobile-hud-verify';
    display:getComputedStyle(document.querySelector('#mobileLiveHud')).display,
    frame:getComputedStyle(document.querySelector('#watch'),'::before').display
   }));
-  assert.deepEqual(restored,{clean:false,display:'block',frame:'block'},'left swipe must restore overlay');
+  assert.deepEqual(restored,{clean:false,display:'block',frame:'none'},'left swipe restores subtle corner HUD, never a full rectangle');
   assert.ok(!errors.some(x=>/SyntaxError|ReferenceError/.test(x)),'production app scripts failed: '+errors.join('; '));
   console.log('OFFICIAL_REMOTE_MOBILE_HUD_PASS '+JSON.stringify({
    revision:shown.rev,viewport:shown.viewport,HUD:'visible electric cyan',
-   fallbackFrame:'2px visible',swipe:'right clean / left restore'}));
+   fallbackFrame:'disabled for natural camera',swipe:'right clean / left restore'}));
  }finally{await browser.close()}
 })().catch(e=>{console.error('OFFICIAL_REMOTE_MOBILE_HUD_FAIL',e.stack||e);process.exitCode=1});
