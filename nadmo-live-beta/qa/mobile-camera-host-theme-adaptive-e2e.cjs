@@ -61,7 +61,9 @@ const puppeteer=require('puppeteer-core');
    document.getElementById('moreQuick').click();
    const panel=getRect('liveSettingsPanel');
    const controls=['hostModeration','hostGuestRequests','hostMicToggle'].map(id=>{
-    const rect=getRect(id);return {id,...rect,visible:getComputedStyle(document.getElementById(id)).display!=='none'};
+    const el=document.getElementById(id);
+    el.scrollIntoView({block:'nearest'}); // controls may live below the fold inside the scrollable sheet
+    const rect=getRect(id);return {id,...rect,visible:getComputedStyle(el).display!=='none'};
    });
    return {before,panel,controls,opened:document.getElementById('liveSettingsPanel').classList.contains('sheet-open')};
   });
