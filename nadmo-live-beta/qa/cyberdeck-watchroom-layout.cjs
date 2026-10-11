@@ -164,6 +164,35 @@ const puppeteer=require('puppeteer-core');
   assert.ok(mobile.goLiveHeight>=50,'Creator GO LIVE tap target too small');
   assert.ok(mobile.brand&&/BELUM TERSEDIA/.test(mobile.audio));
   await page.screenshot({path:path.join(dir,'cyberdeck-mobile-390x844.png')});
+  // Regression: editor cover and ME/public profile must show the identical
+  // 16:9 image, never a zoomed 1200px CSS background on a 390px phone.
+  const cover=await page.evaluate(async()=>{
+   document.querySelector('#studio').classList.add('hide');
+   document.querySelector('#settings').classList.remove('hide');
+   const me=document.querySelector('#betaSocialProfile');
+   me.dataset.coverPhoto='true';me.dataset.theme='cyberbw';
+   const hero=me.querySelector('.profile-hero'),img=hero.querySelector('img.profile-cover-photo');
+   const preview=document.querySelector('#coverPreviewImg');
+   const url='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675"><rect width="1200" height="675" fill="#202030"/><rect x="0" width="250" height="675" fill="#ff2bb9"/><circle cx="700" cy="350" r="135" fill="#8affdc"/></svg>');
+   img.hidden=false;img.src=url;preview.hidden=false;preview.src=url;
+   await Promise.all([img.decode(),preview.decode()]);
+   const bounds=hero.getBoundingClientRect(),photo=img.getBoundingClientRect();
+   return {heroWidth:bounds.width,heroHeight:bounds.height,imgWidth:photo.width,imgHeight:photo.height,
+    aspect:bounds.width/bounds.height,objectFit:getComputedStyle(img).objectFit,
+    position:getComputedStyle(img).position,filter:getComputedStyle(hero).filter,
+    bg:getComputedStyle(hero).backgroundImage,imgSourceEqualsPreview:img.src===preview.src};
+  });
+  assert.ok(cover.heroWidth>300&&cover.heroWidth<450&&Math.abs(cover.aspect-16/9)<.12,
+    'Cover must have original 16:9 proportions: '+JSON.stringify(cover));
+  assert.ok(Math.abs(cover.imgWidth-cover.heroWidth)<3&&Math.abs(cover.imgHeight-cover.heroHeight)<3,
+    'Cover photo must fill actual banner frame, not intrinsic image dimensions: '+JSON.stringify(cover));
+  assert.equal(cover.objectFit,'contain','Never crop the uploaded cover on ME');
+  assert.equal(cover.position,'absolute','Banner image cannot change content layout');
+  assert.equal(cover.filter,'none','BW accents must not desaturate uploaded photos');
+  assert.equal(cover.bg,'none','Do not render a second zoomed CSS background');
+  assert.ok(cover.imgSourceEqualsPreview,'Preview and ME must use the exact same image');
+  await page.screenshot({path:path.join(dir,'cyberdeck-me-cover-uncropped-mobile-390x844.png')});
+  console.log('ME_COVER_VISUAL_QC_PASS '+JSON.stringify(cover));
   console.log('PASS actual cyberdeck desktop + mobile layout '+JSON.stringify({compact,wide,mobile}));
  }finally{await browser.close()}
 })().catch(e=>{console.error('CYBERDECK_QC_FAIL',e);process.exit(1)});
