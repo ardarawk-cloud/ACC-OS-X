@@ -3,7 +3,7 @@
 // and the owner-observed missing HUD in the actual public app.
 const puppeteer=require('puppeteer-core');
 const assert=require('node:assert/strict');
-const REV='20261012-mobile-first-v3';
+const REV='20261012-viewer-video-hud-v4';
 (async()=>{
  const browser=await puppeteer.launch({
   executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
@@ -50,6 +50,32 @@ const REV='20261012-mobile-first-v3';
   assert.equal(shown.frame.display,'none','do not draw a neon border around the entire phone');
   assert.equal(shown.frame.borderWidth,'0px','camera layout must not be a cyberdeck rectangle');
   assert.ok(shown.hud.text.includes('SIGNAL')&& !shown.hud.text.includes('NADMO LIVE'),'duplicate brand in HUD');
+  // Real production HTML: simulate decoded 4:3 Android WebRTC camera dimensions
+  // and assert frame is anchored ONLY to the video, not its empty chat area.
+  const bounded=await page.evaluate(()=>{
+   const v=document.querySelector('#remote'),watch=document.querySelector('#watch');
+   Object.defineProperty(v,'videoWidth',{configurable:true,get:()=>360});
+   Object.defineProperty(v,'videoHeight',{configurable:true,get:()=>480});
+   v.dispatchEvent(new Event('loadedmetadata'));
+   const box=(sel)=>{const r=document.querySelector(sel).getBoundingClientRect();return{top:r.top,bottom:r.bottom,height:r.height}};
+   return {camera:watch.classList.contains('camera-frame-letterbox'),
+    hud:box('#mobileLiveHud'),stage:box('.live-stage>.viewfinder'),chat:box('.live-chat'),
+    footer:box('.mobile-live-hud-footer'),
+    shown:getComputedStyle(document.querySelector('#mobileLiveHud')).display,
+    outline:getComputedStyle(document.querySelector('.mobile-live-hud-outline')).display,
+    footerDisplay:getComputedStyle(document.querySelector('.mobile-live-hud-footer')).display,
+    footerLine:getComputedStyle(document.querySelector('.mobile-live-hud-track b')).display,
+    pointer:getComputedStyle(document.querySelector('#mobileLiveHud')).pointerEvents};
+  });
+  assert.equal(bounded.camera,true,'4:3 Android camera must use uncropped stage');
+  assert.equal(bounded.shown,'block','themed viewer HUD cannot vanish for 4:3 captures');
+  assert.equal(bounded.outline,'block','HUD should frame decoded CAMERA only');
+  assert.equal(bounded.footerDisplay,'flex','small ON AIR badge must remain inside camera');
+  assert.equal(bounded.footerLine,'none','VIDEO FEED line cannot cross chat');
+  assert.ok(Math.abs(bounded.hud.bottom-bounded.stage.bottom)<=3,'HUD must end at camera boundary');
+  assert.ok(bounded.chat.top>=bounded.stage.bottom+8,'chat stays below video');
+  assert.ok(bounded.footer.bottom<=bounded.stage.bottom+1,'ON AIR badge stays above chat');
+  assert.equal(bounded.pointer,'none','frame is never a touch blocker');
   await page.evaluate(()=>{
    const el=document.querySelector('#remote');
    el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch',pointerId:19,clientX:35,clientY:470}));
@@ -75,6 +101,6 @@ const REV='20261012-mobile-first-v3';
   assert.ok(!errors.some(x=>/SyntaxError|ReferenceError/.test(x)),'production app scripts failed: '+errors.join('; '));
   console.log('OFFICIAL_REMOTE_MOBILE_HUD_PASS '+JSON.stringify({
    revision:shown.rev,viewport:shown.viewport,HUD:'visible electric cyan',
-   fallbackFrame:'disabled for natural camera',swipe:'right clean / left restore'}));
+   fallbackFrame:'bounded video only',cameraBounds:bounded,swipe:'right clean / left restore'}));
  }finally{await browser.close()}
 })().catch(e=>{console.error('OFFICIAL_REMOTE_MOBILE_HUD_FAIL',e.stack||e);process.exitCode=1});
