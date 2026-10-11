@@ -5,6 +5,7 @@ on:
     paths:
       - 'nadmo-live-beta/public/app/index.html'
       - 'nadmo-live-beta/qa/cyberdeck-watchroom-layout.cjs'
+      - 'nadmo-live-beta/qa/host-theme-viewer-isolation-e2e.cjs'
       - 'nadmo-live-beta/account.mjs'
       - 'nadmo-live-beta/worker.mjs'
       - '.github/workflows/nadmo-live-beta-publish.yml'
@@ -45,6 +46,7 @@ jobs:
           npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
           export CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)"
           node nadmo-live-beta/qa/cyberdeck-watchroom-layout.cjs
+          node nadmo-live-beta/qa/host-theme-viewer-isolation-e2e.cjs
       - name: Deploy same existing NADMO LIVE Worker
         uses: cloudflare/wrangler-action@v4
         with:
