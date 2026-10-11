@@ -245,8 +245,8 @@ export class RoomHub{
    }
    // Send room entry as server-trusted system chat to web and GAME overlays.
    if(announce){
-    const presence={type:'chat',from:'nadmo:room-presence',name:'NADMO LIVE',
-     text:presenceLabel+' sudah bergabung',system:'viewer-joined',
+    const presence={type:'chat',from:'nadmo:room-presence',name:joinedName,
+     text:'sudah bergabung',system:'viewer-joined',
      viewerId:s.id,viewerName:joinedName,handle:null,avatarVersion:0};
     for(const receiver of peers)if(receiver!==ws&&state(receiver).roomId===id)reply(receiver,presence);
    }

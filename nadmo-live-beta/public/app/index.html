@@ -5629,7 +5629,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
      if(recentRoomJoins.size>40)recentRoomJoins.delete(recentRoomJoins.keys().next().value);
      const notice=document.createElement('div');notice.className='room-join-notice';
      const marker=document.createElement('span');marker.className='room-join-mark';marker.textContent='↳';
-     const content=document.createElement('span');content.textContent=String(m.text||identity+' sudah bergabung').slice(0,160);
+     const content=document.createElement('span');content.textContent=identity+' sudah bergabung';
      notice.append(marker,content);$('chat').append(notice);
      while($('chat').childElementCount>80)$('chat').firstElementChild.remove();
      $('chat').scrollTop=$('chat').scrollHeight;
