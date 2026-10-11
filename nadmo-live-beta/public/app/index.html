@@ -1936,66 +1936,68 @@ html[data-nadmo-ui-theme="cyberbw"]{--cbw-dcff38:#e9e9e9;--cbw-d5f37b:#e4e4e4;--
    Camera fills the viewport; HUD and chat float above it, actions on right.
    Does not affect PC or GAME streaming, and never alters actual video pixels. */
 @media(max-width:799px){
- body.live-immersive.watch-viewer:not(.watch-game) #watch{
+ body.live-immersive:not(.watch-game) #watch{
   width:100vw;height:100dvh;overflow:hidden;background:#050708;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch .live-stage,
- body.live-immersive.watch-viewer:not(.watch-game) #watch .live-stage>.viewfinder{
+ body.live-immersive:not(.watch-game) #watch .live-stage,
+ body.live-immersive:not(.watch-game) #watch .live-stage>.viewfinder{
   position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
   max-height:none!important;max-width:none!important;min-height:0!important;
   transform:none!important;margin:0!important;padding:0!important;
   border:0!important;border-radius:0!important;box-shadow:none!important;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch #remote{
+ body.live-immersive:not(.watch-game) #watch #remote{
   width:100%!important;height:100%!important;max-height:none!important;
   object-fit:cover!important;object-position:center!important;
   background:#050708!important;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch .live-chat{
+ body.live-immersive:not(.watch-game) #watch .live-chat{
   left:12px!important;right:80px!important;bottom:calc(env(safe-area-inset-bottom) + 13px)!important;
   background:transparent!important;border:0!important;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch #chat{
+ body.live-immersive:not(.watch-game) #watch #chat{
   height:min(31dvh,240px)!important;min-height:80px!important;
   background:transparent!important;border:0!important;box-shadow:none!important;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch #chat div{
+ body.live-immersive:not(.watch-game) #watch #chat div{
   background:#090e0c77!important;border:0!important;border-radius:10px!important;
   padding:4px 6px!important;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch #hostControls,
- body.live-immersive.watch-viewer:not(.watch-game) #watch #viewerTools{right:10px!important}
- body.live-immersive.watch-viewer:not(.watch-game) #watch #hostControls .btn,
- body.live-immersive.watch-viewer:not(.watch-game) #watch #viewerTools .btn{
+ body.live-immersive:not(.watch-game) #watch #hostControls,
+ body.live-immersive:not(.watch-game) #watch #viewerTools{right:10px!important}
+ body.live-immersive:not(.watch-game) #watch #hostControls .btn,
+ body.live-immersive:not(.watch-game) #watch #viewerTools .btn{
   width:60px;min-height:47px;padding:6px 3px;border-radius:24px;background:#101615ba;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch #giftQuick,
- body.live-immersive.watch-viewer:not(.watch-game) #watch #moreQuick{
+ body.live-immersive:not(.watch-game) #watch #giftQuick,
+ body.live-immersive:not(.watch-game) #watch #moreQuick{
   position:fixed;right:13px;z-index:10;width:52px;height:52px;
   display:grid;place-items:center;border-radius:50%;
   background:#121a17cc;pointer-events:auto;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch #giftQuick{
+ body.live-immersive:not(.watch-game) #watch #giftQuick{
   bottom:calc(env(safe-area-inset-bottom) + 83px)
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch #moreQuick{
+ body.live-immersive:not(.watch-game) #watch #moreQuick{
   bottom:calc(env(safe-area-inset-bottom) + 20px)
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch .room-safety{
+ body.live-immersive:not(.watch-game) #watch #giftQuick[hidden],
+ body.live-immersive:not(.watch-game) #watch #moreQuick[hidden]{display:none!important}
+ body.live-immersive:not(.watch-game) #watch .room-safety{
   position:fixed;right:9px;bottom:calc(env(safe-area-inset-bottom) + 152px);
   width:76px;max-height:32dvh;z-index:10;pointer-events:none;
   margin:0;padding:0;border:0;background:transparent;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch .safety-toolbar{
+ body.live-immersive:not(.watch-game) #watch .safety-toolbar{
   display:flex;flex-direction:column;align-items:stretch;gap:5px;
   max-height:32dvh;overflow-y:auto;pointer-events:auto;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch .safety-toolbar button:not([hidden]){
+ body.live-immersive:not(.watch-game) #watch .safety-toolbar button:not([hidden]){
   width:100%;min-height:39px;white-space:normal;overflow-wrap:anywhere;
   padding:5px 3px;font-size:9px;line-height:1.15;border-radius:12px;
   background:#101816d9;
  }
- body.live-immersive.watch-viewer:not(.watch-game) #watch .room-safety .safety-panel{
+ body.live-immersive:not(.watch-game) #watch .room-safety .safety-panel{
   position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 86px);
   width:auto;max-height:55dvh;overflow-y:auto;pointer-events:auto;z-index:14;
  }
