@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-mobile-hud-verify">
 <title>NADMO LIVE — Beta</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
@@ -2127,21 +2127,30 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
    media wrapper. It sits above video as a fully pointer-transparent HUD. */
 @media(max-width:799px){
  body.live-immersive:not(.watch-game) #watch:not([data-host-theme]){--mobile-hud-ink:var(--neon,#d7ff36);--mobile-hud-glow:rgba(170,255,65,.55);--mobile-hud-surface:rgba(5,19,13,.63)}
- body.live-immersive:not(.watch-game) #watch::before{display:none!important}
+ /* Keep a no-dependency frame as fallback for older Android WebViews.
+    Never rely solely on color-mix() or clip-path for visible HUD corners. */
+ body.live-immersive:not(.watch-game):not(.watch-clean) #watch::before{
+  display:block!important;content:"";position:absolute;inset:5px;
+  border:2px solid var(--mobile-hud-ink,var(--neon,#dcff38))!important;
+  border-radius:6px;opacity:.82;z-index:8;pointer-events:none!important;
+  box-shadow:inset 0 0 0 1px #080b09ad,0 0 11px var(--mobile-hud-glow,#d7ff3666)!important;
+  background:none!important;
+ }
+ body.live-immersive.watch-clean #watch::before{display:none!important}
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud{
-  position:absolute;inset:0;z-index:8;display:block!important;pointer-events:none!important;
+  position:absolute;inset:0;z-index:9;display:block!important;pointer-events:none!important;
   color:var(--mobile-hud-ink);font:700 10px/1.2 Arial,sans-serif;letter-spacing:.65px;
   overflow:hidden;isolation:isolate
  }
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud *{pointer-events:none!important}
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-outline{
-  position:absolute;inset:6px 7px 5px;border:1px solid color-mix(in srgb,var(--mobile-hud-ink) 65%,transparent);
+  position:absolute;inset:6px 7px 5px;border:1px solid var(--mobile-hud-ink);
   box-shadow:inset 0 0 0 1px #0007,0 0 9px var(--mobile-hud-glow);
   clip-path:polygon(0 0,24% 0,24% 2px,76% 2px,76% 0,100% 0,100% 100%,0 100%);
   opacity:.65
  }
  body.live-immersive:not(.watch-game) #watch .mobile-live-corner{
-  position:absolute;width:36px;height:36px;border-style:solid;border-color:var(--mobile-hud-ink);
+  position:absolute;width:40px;height:40px;border-style:solid;border-color:var(--mobile-hud-ink);
   filter:drop-shadow(0 0 4px var(--mobile-hud-glow));opacity:1
  }
  body.live-immersive:not(.watch-game) #watch .hud-tl{left:7px;top:6px;border-width:3px 0 0 3px;clip-path:polygon(0 0,100% 0,100% 30%,28% 30%,28% 100%,0 100%)}
@@ -2153,14 +2162,14 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
   align-items:center;gap:6px;opacity:.95;text-shadow:0 1px 4px #000
  }
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-mark{
-  font-size:14px;font-weight:950;font-style:italic;line-height:1
+  font-size:16px;font-weight:950;font-style:italic;line-height:1
  }
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-brand{
   min-width:0;flex:1;font-size:9px;font-weight:900;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis
  }
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-brand small{
-  font-size:7px;font-weight:600;opacity:.80
+  font-size:8px;font-weight:600;opacity:.92
  }
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-signal{
   display:flex;gap:4px;align-items:center;font-size:9px
@@ -2185,7 +2194,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
  body.live-immersive:not(.watch-game) #watch .mobile-live-hud-footer{
   position:absolute;bottom:calc(env(safe-area-inset-bottom) + 164px);left:13px;right:13px;
   height:26px;display:flex;align-items:center;gap:7px;
-  border-top:1px solid color-mix(in srgb,var(--mobile-hud-ink) 70%,transparent);
+  border-top:2px solid var(--mobile-hud-ink);
   background:linear-gradient(180deg,var(--mobile-hud-surface),transparent);
   padding:0 7px;text-shadow:0 1px 3px #000
  }
@@ -2306,7 +2315,7 @@ html[data-nadmo-ui-theme="retro"] :is(.mast,.me-menu,.cover-editor,.profile-post
 </section>
 <section id="watch" class="hide">
   <!-- Portrait HUD: themed transparent cyberdeck FRAME, never a video container. -->
-  <div id="mobileLiveHud" class="mobile-live-hud" aria-hidden="true">
+  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-mobile-hud-verify" aria-hidden="true">
     <div class="mobile-live-hud-outline"></div>
     <span class="mobile-live-corner hud-tl"></span><span class="mobile-live-corner hud-tr"></span>
     <span class="mobile-live-corner hud-bl"></span><span class="mobile-live-corner hud-br"></span>
