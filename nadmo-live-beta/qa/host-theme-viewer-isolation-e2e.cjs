@@ -68,6 +68,10 @@ const selectors=['#watch','#watchTitle','#watchRoomSubtitle','#hostProfileCard',
       });
       return {colors,media,hudColor:getComputedStyle(document.querySelector('#mobileLiveHud')).color,
        hudDisplay:getComputedStyle(document.querySelector('#mobileLiveHud')).display,
+       hudBottom:document.querySelector('#mobileLiveHud').getBoundingClientRect().bottom,
+       videoBottom:document.querySelector('.live-stage>.viewfinder').getBoundingClientRect().bottom,
+       chatTop:document.querySelector('.live-chat').getBoundingClientRect().top,
+       hudOutline:getComputedStyle(document.querySelector('.mobile-live-hud-outline')).display,
        deckStroke:getComputedStyle(document.querySelector('.deck-shell-svg [stroke]')).stroke,
        neon:getComputedStyle(watch).getPropertyValue('--neon').trim()};
      },{scenario,hostTheme,viewerTheme,selectors});
@@ -75,10 +79,18 @@ const selectors=['#watch','#watchTitle','#watchRoomSubtitle','#hostProfileCard',
      if(expected)assert.deepEqual(result,expected,'viewer skin changed LIVE appearance: '+label);
      else expected=result;
      if(!scenario.game&&scenario.width<800)assert.equal(result.hudColor,accents[hostTheme],label+' HUD accent');
-     // The fixture sends a real 1280x720 landscape track. For phone CAMERA
-     // that now gets its own video stage above chat, never a full-phone HUD.
-     // GAME and PC have their independent presentation.
-     assert.equal(result.hudDisplay,'none',label+' wide source must not frame black gaps');
+     // The fixture sends 1280x720 into a narrow phone camera. Cyberdeck
+     // decorates ONLY decoded video: it must not disappear or frame chat/void.
+     if(!scenario.game&&scenario.width<800){
+      assert.equal(result.hudDisplay,'block',label+' missing viewer cyberdeck');
+      assert.equal(result.hudOutline,'block',label+' missing in-video outline');
+      assert.ok(Math.abs(result.hudBottom-result.videoBottom)<=3,
+       label+' themed HUD does not end at real video boundary');
+      assert.ok(result.chatTop>=result.videoBottom+8,
+       label+' video frame must not overlap viewer chat');
+     }else{
+      assert.equal(result.hudDisplay,'none',label+' nonmobile/game HUD must stay off');
+     }
      assert.equal(result.deckStroke,accents[hostTheme],label+' PC deck accent');
      for(const media of result.media)assert.ok(media.filters.every(v=>v==='none'),label+' must not filter video pixels');
      assert.equal(result.media[0].fit,'contain',label+' landscape frame must be preserved');
