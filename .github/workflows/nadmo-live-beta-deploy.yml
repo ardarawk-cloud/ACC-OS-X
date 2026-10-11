@@ -143,9 +143,10 @@ jobs:
           set -euo pipefail
           URL="https://live.nadmo.id/download.apk"
           APK="NADMO-LIVE-v0.10.9-beta.apk"
-          curl --fail --location --silent --show-error --retry 2 --max-time 180 --dump-header /tmp/nadmo-apk-headers.txt --output "/tmp/$APK" "$URL"
-          grep -Fqi 'Content-Type: application/vnd.android.package-archive' /tmp/nadmo-apk-headers.txt
-          grep -Fqi "Content-Disposition: attachment; filename=\"$APK\"" /tmp/nadmo-apk-headers.txt
+          STATUS="$(curl --silent --show-error --output /dev/null --dump-header /tmp/nadmo-apk-redirect.txt --write-out '%{http_code}' --max-time 15 "$URL")"
+          test "$STATUS" = '302'
+          grep -Fqi "location: https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.9-beta/$APK" /tmp/nadmo-apk-redirect.txt
+          curl --fail --location --silent --show-error --retry 2 --max-time 180 --output "/tmp/$APK" "$URL"
           test "$(wc -c < "/tmp/$APK")" -gt 40000000
           curl --fail --location --silent --show-error --max-time 30 \
             "https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.9-beta/SHA256SUMS.txt" \
