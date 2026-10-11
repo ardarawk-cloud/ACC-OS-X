@@ -215,7 +215,8 @@ const puppeteer=require('puppeteer-core');
   assert.equal(mobileHud.pointer,'none','Cyberdeck cannot block touch controls or swipe');
   assert.ok(mobileHud.rect.w>=380&&mobileHud.rect.h>=700,'HUD must occupy portrait screen');
   assert.ok(mobileHud.video.h>mobileHud.rect.h*.8,'HUD must sit OVER video, not constrain video');
-  assert.match(mobileHud.text,/NADMO LIVE/);
+  assert.match(mobileHud.text,/SIGNAL/,'mobile HUD must identify stream state');
+  assert.doesNotMatch(mobileHud.text,/NADMO LIVE/,'app brand must not repeat in mobile watch HUD');
   assert.match(mobileHud.color,/109, 244, 255/,'Electric HUD must inherit host cyan');
   await page.screenshot({path:path.join(dir,'cyberdeck-live-camera-mobile-normal-390x844.png')});
   const cleanState=await page.evaluate(()=>{
