@@ -3,7 +3,7 @@
 // and the owner-observed missing HUD in the actual public app.
 const puppeteer=require('puppeteer-core');
 const assert=require('node:assert/strict');
-const REV='20261012-mobile-video-fill-v5';
+const REV='20261012-mobile-video-fill-v6';
 (async()=>{
  const browser=await puppeteer.launch({
   executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
