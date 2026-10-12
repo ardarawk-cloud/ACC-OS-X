@@ -44,7 +44,7 @@ assert(!/audio\.captureStream\(|youtube.*MediaProjection/i.test(html),'No rebroa
   });
   await page.goto('http://nadmo-radio-qc.test/app/',{waitUntil:'domcontentloaded'});
   await page.waitForSelector('#radioListen');
-  await page.click('[data-tab="radio"]');
+  await page.evaluate(()=>document.querySelector('#home [data-tab="radio"]').click());
   await page.waitForFunction(()=>document.querySelector('#radioStatusText').textContent.includes('BELUM DIKONFIGURASI'),{timeout:14000});
   const offline=await page.evaluate(()=>{
    const r=document.querySelector('#radioStage').getBoundingClientRect();
@@ -84,7 +84,7 @@ assert(!/audio\.captureStream\(|youtube.*MediaProjection/i.test(html),'No rebroa
   });
   await page.click('#radioListen');
   await page.waitForFunction(()=>!document.querySelector('#radioMiniDock').hidden,{timeout:6000});
-  await page.click('[data-tab="home"]');
+  await page.evaluate(()=>document.querySelector('nav [data-tab="home"]').click());
   assert.equal(await page.$eval('#radioMiniDock',el=>el.hidden),false,'Player persists across app tabs');
   mode='outage';
   await page.evaluate(()=>document.querySelector('#radioRefresh').click());
