@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-viewer-video-hud-v4">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-mobile-video-fill-v5">
 <title>NADMO LIVE — Beta</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
@@ -2466,6 +2466,43 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  }
 }
 
+/* MOBILE FIRST v5 — draw the decoded 4:3/3:4 camera closer to the first chat
+   bubble. Modest max 18% scale/crop across WIDTH, never fake extra vertical
+   pixels. GAME and wide landscapes retain full frame with contain. */
+@media(max-width:799px){
+ body.live-immersive:not(.watch-game) #watch.camera-frame-letterbox.camera-stage-softfill #remote{
+  object-fit:cover!important;object-position:center center!important;
+ }
+}
+/* PC viewer playback tools no longer obstruct the bottom of camera footage.
+   They are actual working buttons inside the persistent chat sidebar. */
+@media(min-width:800px){
+ body.live-immersive.watch-viewer #watch .live-chat>.deck-player-controls.desktop-watch-only{
+  position:relative!important;inset:auto!important;
+  top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
+  z-index:auto!important;transform:none!important;
+  width:100%!important;height:auto!important;min-height:42px!important;
+  max-width:100%!important;padding:4px!important;margin:8px 0 6px!important;
+  flex:0 0 auto!important;gap:5px!important;display:flex!important;align-items:center!important;
+  background:var(--cbw-071911,#071911)!important;
+  border:1px solid var(--cbw-66934e,#66934e)!important;
+  box-shadow:none!important;overflow:visible!important
+ }
+ body.live-immersive.watch-viewer #watch .live-chat>.deck-player-controls .deck-player-live{
+  font-size:10px!important;white-space:nowrap!important
+ }
+ body.live-immersive.watch-viewer #watch .live-chat>.deck-player-controls #deckMute{
+  font-size:10px!important;min-width:0!important;padding:5px!important;white-space:nowrap!important
+ }
+ body.live-immersive.watch-viewer #watch .live-chat>.deck-player-controls #deckMediaLabel{
+  display:none!important
+ }
+ body.live-immersive.watch-viewer #watch .live-chat>.deck-player-controls :is(#deckRefresh,#deckFullscreen){
+  width:31px!important;height:31px!important;min-height:31px!important;flex:0 0 31px!important;
+  padding:0!important
+ }
+}
+
 </style></head>
 <body>
 <div class="app">
@@ -2546,7 +2583,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
 </section>
 <section id="watch" class="hide">
   <!-- Portrait HUD: themed transparent cyberdeck FRAME, never a video container. -->
-  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-viewer-video-hud-v4" aria-hidden="true">
+  <div id="mobileLiveHud" class="mobile-live-hud" data-ui-revision="20261012-mobile-video-fill-v5" aria-hidden="true">
     <div class="mobile-live-hud-outline"></div>
     <span class="mobile-live-corner hud-tl"></span><span class="mobile-live-corner hud-tr"></span>
     <span class="mobile-live-corner hud-bl"></span><span class="mobile-live-corner hud-br"></span>
@@ -2606,14 +2643,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
   <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div>
-   <div class="deck-player-controls desktop-watch-only" aria-label="Kontrol pemutar video">
-    <span class="deck-player-live">● LIVE</span>
-    <button id="deckMute" type="button" aria-label="Bisukan suara video">♫ SUARA ON</button>
-    <small id="deckMediaLabel">STREAM / MENUNGGU</small>
-    <span class="deck-player-spacer"></span>
-    <button id="deckRefresh" type="button" aria-label="Pulihkan stream">↻</button>
-    <button id="deckFullscreen" type="button" aria-label="Video layar penuh">⛶</button>
-   </div><div id="watchState" class="status">CONNECTING SIGNAL...</div><div id="watchStreamQuality" class="status" aria-live="off" style="font-size:10px;opacity:.85" hidden></div>
+<div id="watchState" class="status">CONNECTING SIGNAL...</div><div id="watchStreamQuality" class="status" aria-live="off" style="font-size:10px;opacity:.85" hidden></div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
   <div id="viewerTools" hidden><button class="btn secondary" id="tipQuick">Rp SAWER</button></div>
@@ -2668,7 +2698,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
       <p id="mirrorStatus" class="deck">Mirror Preview aktif hanya untuk kamera depan. Siaran penonton normal secara bawaan.</p>
     </div>
     <button type="button" class="btn ghost" id="settingsLeave" style="width:100%">KELUAR / AKHIRI LIVE</button>
-    <small class="deck" id="mobileUiBuild" style="display:block;margin-top:10px;opacity:.7">UI 20261012-VIDEO-HUD-V4</small>
+    <small class="deck" id="mobileUiBuild" style="display:block;margin-top:10px;opacity:.7">UI 20261012-VIDEO-FILL-V5</small>
   </div>
   <div id="endLiveConfirm" class="end-live-dialog hide" role="dialog" aria-modal="true" aria-labelledby="endLiveTitle">
     <div class="end-live-card">
@@ -2686,7 +2716,16 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
     <button type="button" data-pc-sawer="custom">CUSTOM</button>
     <small>PREVIEW · BELUM AKTIF</small>
   </div>
-  <div class="panel live-chat"><div class="show-label"><b>LIVE CHAT</b><small>BACKCHANNEL</small></div><div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button><button type="button" class="live-bar-button" id="giftQuick" aria-label="Saweran rupiah" title="Sawer">🎁</button><button type="button" class="live-bar-button" id="moreQuick" aria-label="Pengaturan live" title="Pengaturan">⚙</button></div>
+  <div class="panel live-chat"><div class="show-label"><b>LIVE CHAT</b><small>BACKCHANNEL</small></div>
+   <div class="deck-player-controls desktop-watch-only" aria-label="Kontrol pemutar video">
+    <span class="deck-player-live">● LIVE</span>
+    <button id="deckMute" type="button" aria-label="Bisukan suara video">♫ SUARA ON</button>
+    <small id="deckMediaLabel">STREAM / MENUNGGU</small>
+    <span class="deck-player-spacer"></span>
+    <button id="deckRefresh" type="button" aria-label="Pulihkan stream">↻</button>
+    <button id="deckFullscreen" type="button" aria-label="Video layar penuh">⛶</button>
+   </div>
+<div class="chat" id="chat"></div><div class="row"><input class="field" id="message" placeholder="Say something..." maxlength="250"><button class="btn secondary" id="send">SEND</button><button type="button" class="live-bar-button" id="giftQuick" aria-label="Saweran rupiah" title="Sawer">🎁</button><button type="button" class="live-bar-button" id="moreQuick" aria-label="Pengaturan live" title="Pengaturan">⚙</button></div>
 <div class="room-safety">
  <div class="safety-toolbar">
     <button id="reportLive" type="button" hidden>LAPORKAN LIVE</button>
@@ -5946,7 +5985,7 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
-  $('watch').classList.remove('camera-frame-letterbox','camera-source-landscape','camera-source-portrait');
+  $('watch').classList.remove('camera-frame-letterbox','camera-stage-softfill','camera-source-landscape','camera-source-portrait');
   $('watch').style.removeProperty('--camera-source-aspect');
   $('watch').style.removeProperty('--camera-source-ratio');
   $('watch').style.removeProperty('--pc-camera-frame-height');
@@ -6048,10 +6087,17 @@ body.live-immersive #watch #liveSettingsPanel .room-safety .safety-panel.hide{di
    if(naturalStage){
     // Video starts beneath the system status bar, not 100px below the X/header.
     const stageTop=0;
-    const stageHeight=Math.max(145,Math.min(innerWidth/captureRatio,innerHeight-230));
+    const sensorHeight=innerWidth/captureRatio;
+    // Grow ordinary mobile portrait camera ~18% into the previously unused
+    // black region.  A moderate horizontal trim makes use of portrait space;
+    // never stretch pixels or apply face-only zoom to landscape/PC/GAME.
+    const allowSoftFill=captureRatio>=.60&&captureRatio<=1.05;
+    const stageHeight=Math.max(145,Math.min(sensorHeight*(allowSoftFill?1.18:1),innerHeight-205));
+    watch.classList.toggle('camera-stage-softfill',allowSoftFill&&stageHeight>sensorHeight*1.035);
     watch.style.setProperty('--camera-stage-top',stageTop+'px');
     watch.style.setProperty('--camera-stage-height',Math.round(stageHeight)+'px');
    }else{
+    watch.classList.remove('camera-stage-softfill');
     watch.style.removeProperty('--camera-stage-top');
     watch.style.removeProperty('--camera-stage-height');
    }
