@@ -25,6 +25,7 @@ const puppeteer=require('puppeteer-core');
     document.body.classList.add('live-immersive','watch-viewer','watch-radio');
     const watch=document.getElementById('watch');
     watch.classList.remove('hide');
+    document.getElementById('studio').classList.remove('hide'); // measurable grid, not display:none
     document.getElementById('radioLiveCanvas').removeAttribute('hidden');
     const stage=document.querySelector('#watch .live-stage').getBoundingClientRect();
     const poster=document.querySelector('#radioLiveCanvas').getBoundingClientRect();
