@@ -36,13 +36,16 @@ const puppeteer=require('puppeteer-core');
    'Gameplay must preserve real Android game aspect '+JSON.stringify(compact));
   assert.ok(compact.hud.x>compact.stage.x&&compact.hud.right<compact.chat.x,
    'Functional media HUD must not overlap live chat');
-  assert.ok(compact.player.bottom<compact.controls.y+8,'Controls should follow gameplay');
+  assert.ok(compact.controls.x>=compact.chat.x&&compact.controls.right<=compact.chat.right+1,
+   'Functional PLAYBACK controls must be INSIDE chat sidebar, not obstruct video: '+JSON.stringify(compact));
+  assert.ok(compact.controls.y>=compact.chat.y&&compact.controls.bottom<compact.chat.bottom-45,
+   'Mute/refresh/fullscreen controls must remain above chat input');
   assert.ok(compact.chat.x>compact.stage.right,'Chat cannot overlap video');
   assert.equal(compact.metricCount,4,'Real video/audio/network/chat HUD must remain functional');
   assert.equal(compact.shellVisible,'block','Reference-matched vector border must render on PC');
   assert.equal(compact.chatTitle,'LIVE CHAT');
-  assert.ok(compact.gift.y>compact.controls.bottom-2&&compact.gift.bottom<compact.stage.bottom+3,
-   'Sawer row must remain inside the deck frame and below player controls: '+JSON.stringify(compact));
+  assert.ok(compact.gift.y>compact.stage.y&&compact.gift.bottom<compact.stage.bottom+3,
+   'Sawer controls stay under the camera deck without moving to chat: '+JSON.stringify(compact));
   assert.ok(compact.background.includes('gradient'),'Cyberdeck HUD visual styling missing');
   await page.click('#deckMute');
   assert.match(await page.$eval('#deckMute',x=>x.textContent),/SUARA OFF/);
