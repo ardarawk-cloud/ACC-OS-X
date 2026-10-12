@@ -455,7 +455,12 @@ export class RoomHub{
     room.mutedSessions=room.mutedSessions.filter(id=>id!==targetId);
     const wasGuest=targetState.role==='guest';
     targetState.role=null;targetState.roomId=null;save(target,targetState);
-    if(wasGuest)reply(ws,{type:'guest-left',id:targetId});
+    if(wasGuest){
+     if(room.pk&&room.pk.status!=='finished'&&room.pk.invited.includes(targetId)){
+      room.pk=finishPK(room.pk,'participant-removed',now);broadcastPK(this.sockets(),room.id,room.pk);
+     }
+     reply(ws,{type:'guest-left',id:targetId});
+    }
     stageBroadcast(this.sockets(),room.id,room.stageLayout||[]);
     reply(target,{type:'moderated',action,reason:action==='block'?'Akun diblokir dari room ini.':'Host mengeluarkan Anda dari room ini.'});
     reply(ws,{type:'viewer-left',id:targetId});
@@ -541,6 +546,9 @@ export class RoomHub{
   }else{
    const room=await this.ctx.storage.get('room:'+roomId);
    if(room){
+    if(role==='guest'&&room.pk&&room.pk.status!=='finished'&&room.pk.invited.includes(s.id)){
+     room.pk=finishPK(room.pk,'participant-left',Date.now());await this.ctx.storage.put('room:'+roomId,room);broadcastPK(peers,roomId,room.pk);
+    }
     const host=getHost(peers,room.hostId);
     if(host){reply(host,{type:'viewer-left',id:s.id});if(role==='guest')reply(host,{type:'guest-left',id:s.id})}
     stageBroadcast(peers,roomId,room.stageLayout||[]);
