@@ -2918,6 +2918,10 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
 </section>
 <section id="radio" class="hide" aria-label="NADMO RADIO ONE">
   <div class="page-top"><div><span class="eyebrow">FREQUENCY / 04</span><h1>RADIO ONE<span style="color:var(--neon)">.</span></h1></div><span class="edition">AUDIO 24/7</span></div>
+  <div class="panel" id="radioCreatorEntry"><b>RADIO LIVE — SIARAN SENDIRI</b>
+   <p class="deck">Panggung sebesar LIVE CAMERA. Tekan MULAI RADIO kemudian OPEN MUSIC untuk memilih aplikasi musik apa pun di HP. Layar aplikasi pribadi tidak disiarkan dan audio hanya dapat ditangkap jika pemutar mengizinkan.</p>
+   <button type="button" class="btn" id="radioGoStudio">● BUAT RADIO LIVE</button>
+  </div>
   <div class="radio-portrait" id="radioStage" data-playing="false" aria-label="Panggung radio besar setara LIVE kamera">
     <div class="radio-upper"><span>◉ NADMO / RADIO 001</span><span id="radioOnAir">STANDBY</span></div>
     <div class="radio-center">
@@ -2936,8 +2940,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   <div class="actions"><button class="btn secondary" id="radioRefresh" type="button">↻ PERIKSA RADIO</button></div>
   <div class="notice">RADIO 24/7 memakai AutoDJ server, sehingga siaran tetap berjalan saat HP host ditutup. Channel aktif hanya setelah server musik dan hak siar dikonfigurasi. Pemutar radio tidak merekam layar atau aplikasi musik pengguna.</div>
   <div class="show-label"><b>SUMBER MUSIK</b><small>HANYA YANG BERIZIN</small></div>
-  <p class="deck">Spotify dan YouTube Music dapat dibuka terpisah untuk referensi musik pribadi, bukan sumber audio yang boleh direlai otomatis ke radio publik.</p>
-  <div class="radio-links"><a href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">BUKA SPOTIFY ↗</a><a href="https://music.youtube.com/" target="_blank" rel="noopener noreferrer">BUKA YT MUSIC ↗</a></div>
+  <p class="deck">OPEN MUSIC tidak dibatasi ke merek tertentu. Pilihan aplikasi bukan izin untuk menyiarkan ulang musik berhak cipta; host tetap perlu hak siar yang sah.</p>
 </section>
 <div id="radioMiniDock" hidden aria-label="Pemutar radio tetap aktif di aplikasi"><button id="radioMiniOpen" type="button" aria-label="Kembali ke RADIO">N/</button><b id="radioMiniTitle">NADMO RADIO</b><button type="button" id="radioMiniPause" aria-label="Jeda pemutar">Ⅱ JEDA</button></div>
 <section id="signal" class="hide">
@@ -5070,6 +5073,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   }
   paintRadio();
  }
+ $('radioGoStudio').onclick=()=>{show('studio');chooseMode('radio');gameCommand('status')};
  $('radioListen').onclick=toggleRadio;
  $('radioMiniPause').onclick=stopRadioPlayback;
  $('radioMiniOpen').onclick=()=>show('radio');
