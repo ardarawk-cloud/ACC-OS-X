@@ -540,10 +540,15 @@ async function radioStatus(env){
   // Station backend may return a stream URL on another hostname. For the pilot,
   // play only verified same-origin HTTPS URLs, never arbitrary redirect targets.
   let streamUrl=null;
+  // AzuraCast audio CDN may use a different hostname than the station API.
+  // Never trust an arbitrary nowplaying.listen_url: permit only a separately
+  // configured exact HTTPS RADIO_STREAM_ORIGIN, or the main RADIO_ORIGIN.
+  const streamOrigin=secureOrigin(env.RADIO_STREAM_ORIGIN);
+  const allowedStreamOrigins=new Set([origin,streamOrigin].filter(Boolean));
   if(np.station.listen_url&&typeof np.station.listen_url==='string'){
    try{
     const u=new URL(np.station.listen_url);
-    if(u.protocol==='https:'&&!u.username&&!u.password&&!u.hash&&u.origin===origin)
+    if(u.protocol==='https:'&&!u.username&&!u.password&&!u.hash&&allowedStreamOrigins.has(u.origin))
      streamUrl=u.href;
    }catch{}
   }
