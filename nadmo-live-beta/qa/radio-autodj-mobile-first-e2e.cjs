@@ -84,7 +84,7 @@ assert(!/audio\.captureStream\(|youtube.*MediaProjection/i.test(html),'No rebroa
   });
   await page.click('#radioListen');
   await page.waitForFunction(()=>!document.querySelector('#radioMiniDock').hidden,{timeout:6000});
-  await page.evaluate(()=>document.querySelector('nav [data-tab="home"]').click());
+  await page.evaluate(()=>document.querySelector('nav [data-tab="explore"]').click());
   assert.equal(await page.$eval('#radioMiniDock',el=>el.hidden),false,'Player persists across app tabs');
   mode='outage';
   await page.evaluate(()=>document.querySelector('#radioRefresh').click());
