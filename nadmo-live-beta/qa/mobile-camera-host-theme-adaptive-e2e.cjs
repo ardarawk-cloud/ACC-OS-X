@@ -48,7 +48,7 @@ const puppeteer=require('puppeteer-core');
   assert.equal(outcome.hudNoir,'rgb(234, 208, 185)');
   assert.equal(outcome.landscape.classSet,true);
   assert.equal(outcome.landscape.aspect,'1280:720');
-  assert.equal(outcome.landscape.fit,'contain','wide camera cannot crop into faces');
+  assert.equal(outcome.landscape.fit,'contain','wide landscape sensor must remain uncropped');
   assert.equal(outcome.landscape.stageMode,true,'wide camera needs own stage, not a fullscreen black band');
   assert.ok(outcome.landscape.stageTop>=0&&outcome.landscape.stageTop<=3,
     'mobile source must start at the top with no wasted camera header');
@@ -62,7 +62,25 @@ const puppeteer=require('puppeteer-core');
   assert.ok(outcome.landscape.footerBottom<=outcome.landscape.stageBottom+1,
     'ON AIR badge must stay ABOVE chat');
   assert.deepEqual(outcome.portrait,{classSet:false,stageMode:false,aspect:'720:1280',fit:'contain'},
-    'portrait camera should keep its original immersive player and not crop shoulders');
+    'true portrait camera must keep natural immersive layout');
+  const softFill=await page.evaluate(()=>{
+   const w=document.querySelector('#watch'),v=document.querySelector('#remote');
+   Object.defineProperty(v,'videoWidth',{configurable:true,get:()=>360});
+   Object.defineProperty(v,'videoHeight',{configurable:true,get:()=>480});
+   v.dispatchEvent(new Event('resize'));
+   const stage=w.querySelector('.live-stage>.viewfinder').getBoundingClientRect();
+   const chat=w.querySelector('.live-chat').getBoundingClientRect();
+   const hud=document.querySelector('#mobileLiveHud').getBoundingClientRect();
+   return {enabled:w.classList.contains('camera-stage-softfill'),nativeHeight:innerWidth*480/360,
+    stageHeight:stage.height,chatTop:chat.top,hudBottom:hud.bottom,stageBottom:stage.bottom,
+    fit:getComputedStyle(v).objectFit};
+  });
+  assert.equal(softFill.enabled,true,'3:4 phone sensor must extend into unused black space');
+  assert.ok(softFill.stageHeight>softFill.nativeHeight*1.10&&softFill.stageHeight<=softFill.nativeHeight*1.19,
+    'limit camera growth to 18% to avoid huge face zoom: '+JSON.stringify(softFill));
+  assert.ok(softFill.chatTop>=softFill.stageBottom+8&&Math.abs(softFill.hudBottom-softFill.stageBottom)<3,
+    'chat remains BELOW extended video, themed frame follows video only');
+  assert.equal(softFill.fit,'cover','soft fill should crop only side edges, not distort image');
 
   // Owner vs viewer on the same 390px phone: only audience gets cyberdeck.
   // All safety/guest/mic buttons must be inside the settings sheet, not
@@ -155,7 +173,7 @@ const puppeteer=require('puppeteer-core');
     'PC viewer must show PORTRAIT stage, not force 16:9 theater: '+JSON.stringify(desktopCamera));
   assert.ok(desktopCamera.chat.w>=290,'PC chat remains a separate side panel');
   assert.equal(desktopCamera.fit,'contain','PC portrait video remains uncropped');
-  assert.match(desktopCamera.build,/VIDEO-HUD-V4/,'viewer and host can verify identical UI build in settings');
+  assert.match(desktopCamera.build,/VIDEO-FILL-V5/,'viewer and host can verify identical UI build in settings');
   console.log('DESKTOP_FOLLOWS_PHONE_PORTRAIT_QC_PASS '+JSON.stringify(desktopCamera));
   console.log('MOBILE_HOST_SETTINGS_AND_VIEWER_HUD_PASS '+JSON.stringify({hostUi,viewerUi}));
   console.log('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_PASS '+JSON.stringify(outcome));
