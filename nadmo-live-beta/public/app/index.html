@@ -2796,6 +2796,16 @@ body.live-immersive #watch #liveRestReminder{
       <label class="mirror-option"><span><b>Mirror Siaran</b><small>Balik tampilan bagi penonton NADMO (teks juga terbalik)</small></span><input type="checkbox" id="mirrorBroadcastToggle"></label>
       <p id="mirrorStatus" class="deck">Mirror Preview aktif hanya untuk kamera depan. Siaran penonton normal secara bawaan.</p>
     </div>
+    <div id="guestLayoutSettings" hidden style="margin:10px 0;padding:8px;border:1px solid #52734d;border-radius:8px">
+      <div class="show-label"><b>LAYOUT MULTI-GUEST</b><small>HOST CONTROL</small></div>
+      <div class="pk-controls" style="display:flex;gap:6px">
+       <select class="field" id="stagePresetChoice" aria-label="Susunan kolom tamu">
+         <option value="auto">GRID OTOMATIS</option><option value="focus">HOST BESAR</option><option value="random">ACAK KOLOM</option>
+       </select>
+       <button type="button" class="btn secondary" id="stageShuffle" style="flex:0 0 auto">ACAK LAGI</button>
+      </div>
+      <small id="stagePresetInfo">Mengubah ukuran dan susunan panggung untuk semua penonton.</small>
+    </div>
     <div id="pkSettings" hidden><div class="show-label"><b>PK BATTLE</b><small>UNDANGAN SUKARELA</small></div>
 <div class="pk-controls"><select class="field" id="pkMode" aria-label="Mode PK"><option value="1v1">1 VS 1</option><option value="2v2">2 VS 2</option></select><select class="field" id="pkMinutes" aria-label="Durasi PK"><option value="3">3 MENIT</option><option value="5" selected>5 MENIT</option><option value="10">10 MENIT</option></select></div>
 <div id="pkCandidates"></div><div class="pk-actions"><button type="button" id="pkInvite" class="btn secondary">UNDANG PK</button><button type="button" id="pkRandom" class="btn secondary">ACAK TAMU</button><button type="button" id="pkEnd" class="btn ghost">AKHIRI PK</button></div><small id="pkStatus" role="status">PK antar-host beda room belum aktif. Poin PK gratis, bukan uang.</small></div>
@@ -3208,7 +3218,7 @@ body.live-immersive #watch #liveRestReminder{
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
- let pkBattle=null,pkPicked=new Set();
+ let pkBattle=null,pkPicked=new Set(),stagePreset='auto',stageRandomSeed=0;
  let gameFaceStream=null,gameFaceDiameter=76;
 
  // Worker-supplied createdAt is stable across reconnects and viewer joins.
@@ -5689,6 +5699,18 @@ body.live-immersive #watch #liveRestReminder{
  }
  // Auto grid reserves slot zero for the host (mobile only).
  function mobileStageRect(index,total){
+  if(stagePreset==='focus'&&total>1){
+   if(index===0)return {x:0,y:0,w:100,h:65};
+   const guests=total-1,cols=Math.min(3,guests),rows=Math.ceil(guests/cols),slot=index-1,gap=.5;
+   const w=(100-gap*(cols-1))/cols,h=(35-gap*(rows-1))/rows;
+   return {x:(slot%cols)*(w+gap),y:65+Math.floor(slot/cols)*(h+gap),w,h};
+  }
+  if(stagePreset==='random'&&total>1){
+   const gcd=(a,b)=>b?gcd(b,a%b):a;
+   const steps=Array.from({length:total},(_,i)=>i+1).filter(n=>gcd(n,total)===1);
+   const seed=stageRandomSeed||1,step=steps[seed%steps.length],offset=Math.floor(seed/steps.length)%total;
+   index=(index*step+offset)%total;
+  }
   const cols=total<=2?total:total<=4?2:3;
   const rows=Math.ceil(total/cols),gap=.6;
   const w=(100-gap*(cols-1))/cols,h=(100-gap*(rows-1))/rows;
@@ -5870,7 +5892,7 @@ body.live-immersive #watch #liveRestReminder{
  };
  $('stageLayoutReset').onclick=()=>{
   if(!host)return;
-  stageLayout=[];selectedStageGuest=null;renderStageGuests();publishStageLayout();
+  stageLayout=[];selectedStageGuest=null;renderStageGuests();publishStageLayout();transmit({type:'stage-preset',preset:'auto'});
  };
  function renderGuestRequests(){
   const panel=$('guestRequestPanel');panel.replaceChildren();
@@ -6079,6 +6101,8 @@ body.live-immersive #watch #liveRestReminder{
   if(!random&&participants.length!==required){$('pkStatus').textContent='Pilih tepat '+required+' tamu.';return}
   transmit({type:'pk-start',mode,minutes:Number($('pkMinutes').value),random:!!random,...(random?{}:{participants})});
  }
+ $('stagePresetChoice').onchange=()=>{if(host&&currentRoom)transmit({type:'stage-preset',preset:$('stagePresetChoice').value})};
+ $('stageShuffle').onclick=()=>{if(host&&currentRoom)transmit({type:'stage-preset',preset:'random'})};
  $('pkMode').onchange=pkCandidates;
  $('pkInvite').onclick=()=>pkRequest(false);
  $('pkRandom').onclick=()=>pkRequest(true);
@@ -6107,7 +6131,20 @@ body.live-immersive #watch #liveRestReminder{
     }
     for(const viewerId of activeViewers)await attachViewer(viewerId);
    }
-  if(['created','joined','resumed'].includes(m.type)){pkApply(m.pk||null);pkCandidates()}
+  if(['created','joined','resumed'].includes(m.type)){
+   stagePreset=['auto','focus','random'].includes(m.stagePreset)?m.stagePreset:'auto';
+   stageRandomSeed=Number.isInteger(m.stageRandomSeed)?m.stageRandomSeed:0;
+   $('stagePresetChoice').value=stagePreset;
+   $('guestLayoutSettings').hidden=!host;
+   renderStageGuests();pkApply(m.pk||null);pkCandidates();
+  }
+  if(m.type==='stage-preset-updated'){
+   stagePreset=['auto','focus','random'].includes(m.preset)?m.preset:'auto';
+   stageRandomSeed=Number.isInteger(m.seed)?m.seed:0;
+   $('stagePresetChoice').value=stagePreset;
+   $('stagePresetInfo').textContent=stagePreset==='focus'?'Host diperbesar untuk semua penonton.':stagePreset==='random'?'Panggung diacak oleh host.':'Grid otomatis untuk semua peserta.';
+   renderStageGuests();return;
+  }
   if(m.type==='host-reconnecting'){
    $('watchState').textContent='Host sementara kehilangan jaringan. Menunggu sampai 90 detik tanpa mengakhiri room...';markWatchWarning($('watchState').textContent);
   }
