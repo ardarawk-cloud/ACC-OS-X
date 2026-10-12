@@ -11,7 +11,7 @@ const puppeteer=require('puppeteer-core');
  assert(html.includes("gameCommand('launch-music')"),'Android launch bridge missing');
  assert(html.includes('nativeRadioSupported'),'Old Android APK must be feature-gated');
  assert(html.includes("nativeRadioSupported=d.radioMusicSupported===true"),'Missing explicit capability handshake');
- assert(worker.includes("broadcastKind:['radio','gaming']"),'Worker must store host radio kind');
+ assert(worker.includes("broadcastKind:['radio','gaming','talk']"),'Worker must preserve RADIO and TALK mode independently');
  assert(worker.includes("broadcastKind:room.broadcastKind||'camera'"),'Viewer must see trusted radio kind');
  assert(html.includes('body.live-immersive.watch-radio #watch .live-stage'),'Radio viewport must use camera stage');
  const browser=await puppeteer.launch({executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
@@ -58,7 +58,8 @@ const puppeteer=require('puppeteer-core');
    assert(voice.main.width>=size.width*.9,'VOICE stage not full camera width '+JSON.stringify(voice));
    assert(voice.main.height>=size.height*.60,'VOICE stage wrongly split '+JSON.stringify(voice));
    assert(voice.tile.width<=voice.main.width*.43,'VOICE guest must be a compact overlay '+JSON.stringify(voice));
-   assert.match(html,/voiceOnly=stageGuestsList\.length>0&&stageGuestsList\.every/,'VOICE no-split must derive from microphone-only guests');
+   assert.match(html,/voiceOnly=roomBroadcastKind==='talk'\|\|/,'TALK must always use full CAMERA-sized stage');
+   assert.match(worker,/category:room\.category/,'Worker must publish persisted category');
    console.log('PASS VOICE camera-sized stage and compact guest '+size.width+'px');
    console.log('PASS RADIO portrait '+size.width+'x'+size.height+': '+Math.round(geometry.stage.width)+'x'+Math.round(geometry.stage.height));
    await page.close();
