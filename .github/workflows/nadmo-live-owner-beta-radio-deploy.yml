@@ -2,7 +2,9 @@ name: NADMO LIVE owner BETA RADIO live.nadmo.id deployment
 on:
   push:
     branches: ['feat/nadmo-live-unified-stage-pk-20261012']
-    paths: ['.github/workflows/nadmo-live-owner-beta-radio-deploy.yml']
+    paths:
+      - '.github/workflows/nadmo-live-owner-beta-radio-deploy.yml'
+      - 'nadmo-live-beta/public/app/index.html'
   workflow_dispatch:
 permissions:
   contents: read
@@ -39,6 +41,10 @@ jobs:
             if(js.trim())new vm.Script(js);
           console.log('Radio CAMERA stage, capability gate, Worker kind, JS syntax PASS');
           NODE
+      - name: Validate full-camera VOICE and RADIO mobile layout
+        run: |
+          npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+          CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs
       - name: Deploy existing NADMO LIVE beta Worker and app
         uses: cloudflare/wrangler-action@v4
         with:
