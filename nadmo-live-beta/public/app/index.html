@@ -3372,7 +3372,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   nativeRadioSupported=d.radioMusicSupported===true;updateNativeGameClock(nativeGameState,d.startedAt);
   if(d.room)nativeGameRoom=d.room;
   if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
-  $('gameCaptureStatus').textContent=['error','reconnecting'].includes(d.state)?(d.message||'GAGAL TERHUBUNG'):'';
+  $('gameCaptureStatus').textContent=['error','reconnecting'].includes(d.state)?(d.message||'GAGAL TERHUBUNG'):(d.state==='stopped'&&/TIMEOUT|FAILED|ERROR|PROJECTION|WS_|CAPTURE_|DITOLAK|TERPUTUS|GAGAL/i.test(d.message||'')?(d.message||'GAGAL TERHUBUNG'):'');
   const gameActive=['live','reconnecting'].includes(nativeGameState);
   $('gameDeckMic').textContent='MIC / '+(nativeGameState==='paused'?'JEDA':gameActive?'AKTIF':'MENUNGGU');
   $('gameDeckScreen').textContent='LAYAR / '+(nativeGameState==='paused'?'JEDA PRIVASI':nativeGameState==='live'?'AKTIF':nativeGameState==='reconnecting'?'MENYAMBUNG ULANG':nativeGameState==='starting'?'MENYIAPKAN':'BERHENTI');
@@ -3387,7 +3387,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   $('gameStopLive').hidden=!['live','paused','starting','reconnecting'].includes(nativeGameState);
   if(selectedLiveMode==='gaming')chooseMode('gaming');
   if(selectedLiveMode==='radio'){
-   $('radioLiveStatus').textContent=['error','reconnecting'].includes(d.state)?(d.message||'GAGAL TERHUBUNG'):'';
+   $('radioLiveStatus').textContent=['error','reconnecting'].includes(d.state)?(d.message||'GAGAL TERHUBUNG'):(d.state==='stopped'&&/TIMEOUT|FAILED|ERROR|PROJECTION|WS_|CAPTURE_|DITOLAK|TERPUTUS|GAGAL/i.test(d.message||'')?(d.message||'GAGAL TERHUBUNG'):'');
    const running=nativeBroadcastKind==='radio'&&['live','paused'].includes(nativeGameState);
    $('radioOpenMusic').hidden=false;
    $('radioOpenMusic').disabled=!running;
