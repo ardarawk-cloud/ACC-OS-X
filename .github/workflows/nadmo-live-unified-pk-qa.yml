@@ -8,6 +8,7 @@ on:
       - 'nadmo-live-beta/pk-battle.mjs'
       - 'nadmo-live-beta/public/app/index.html'
       - 'nadmo-live-beta/qa/pk-battle-unit.mjs'
+      - 'nadmo-live-beta/qa/pk-room-websocket-e2e.mjs'
       - '.github/workflows/nadmo-live-unified-pk-qa.yml'
   workflow_dispatch:
 permissions:
@@ -26,6 +27,8 @@ jobs:
           node --check nadmo-live-beta/pk-battle.mjs
       - name: Validate PK state and anti-fake-payment assertions
         run: node nadmo-live-beta/qa/pk-battle-unit.mjs
+      - name: Verify live-room websocket PK, multi-guest, host-layout authorization
+        run: node nadmo-live-beta/qa/pk-room-websocket-e2e.mjs
       - name: Parse embedded web client and check UI boundaries
         run: |
           node <<'NODE'
