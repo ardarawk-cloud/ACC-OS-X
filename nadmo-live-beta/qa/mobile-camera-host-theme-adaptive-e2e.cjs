@@ -76,8 +76,8 @@ const puppeteer=require('puppeteer-core');
     fit:getComputedStyle(v).objectFit};
   });
   assert.equal(softFill.enabled,true,'3:4 phone sensor must extend into unused black space');
-  assert.ok(softFill.stageHeight>softFill.nativeHeight*1.10&&softFill.stageHeight<=softFill.nativeHeight*1.19,
-    'limit camera growth to 18% to avoid huge face zoom: '+JSON.stringify(softFill));
+  assert.ok(softFill.stageHeight>softFill.nativeHeight*1.25&&softFill.stageHeight<=softFill.nativeHeight*1.29,
+    'limit camera growth to 28% while leaving the chat and SEND usable: '+JSON.stringify(softFill));
   assert.ok(softFill.chatTop>=softFill.stageBottom+8&&Math.abs(softFill.hudBottom-softFill.stageBottom)<3,
     'chat remains BELOW extended video, themed frame follows video only');
   assert.equal(softFill.fit,'cover','soft fill should crop only side edges, not distort image');
@@ -173,7 +173,7 @@ const puppeteer=require('puppeteer-core');
     'PC viewer must show PORTRAIT stage, not force 16:9 theater: '+JSON.stringify(desktopCamera));
   assert.ok(desktopCamera.chat.w>=290,'PC chat remains a separate side panel');
   assert.equal(desktopCamera.fit,'contain','PC portrait video remains uncropped');
-  assert.match(desktopCamera.build,/VIDEO-FILL-V5/,'viewer and host can verify identical UI build in settings');
+  assert.match(desktopCamera.build,/VIDEO-FILL-V6/,'viewer and host can verify identical UI build in settings');
   console.log('DESKTOP_FOLLOWS_PHONE_PORTRAIT_QC_PASS '+JSON.stringify(desktopCamera));
   console.log('MOBILE_HOST_SETTINGS_AND_VIEWER_HUD_PASS '+JSON.stringify({hostUi,viewerUi}));
   console.log('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_PASS '+JSON.stringify(outcome));
