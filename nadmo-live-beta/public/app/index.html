@@ -2635,6 +2635,11 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
 .radio-live-waves i:nth-child(2n){height:25px;animation-delay:.15s}
 @keyframes radioStagePulse{to{transform:scaleY(.45)}}
 @media(prefers-reduced-motion:reduce){.radio-live-waves i{animation:none}}
+
+/* Five stream choices remain on one row without covering neighboring buttons. */
+#studio .mode-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+#studio .mode-grid button{font-size:clamp(8px,2.3vw,11px);min-width:0;padding:10px 2px;overflow-wrap:anywhere}
+@media(max-width:370px){#studio .mode-grid button .mode-icon{font-size:20px}}
 </style></head>
 <body>
 <div class="app">
@@ -3325,7 +3330,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  }
 
  const nativeGame=typeof window.NadmoGame?.postMessage==='function';
- let nativeGameState='stopped',nativeGameRoom='',nativeBroadcastKind='gaming';
+ let nativeGameState='stopped',nativeGameRoom='',nativeBroadcastKind='gaming',nativeRadioSupported=false;
  function applyGameFaceLayout(layout){
   const video=$('gameRemoteFace');if(!video||!layout)return;
   const x=Number(layout.x),y=Number(layout.y),size=Number(layout.size);
@@ -3339,7 +3344,8 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  function gameCommand(type,data={}){if(!nativeGame)return false;window.NadmoGame.postMessage(JSON.stringify({type,...data}));return true}
  window.addEventListener('nadmo-game-status',event=>{
   const d=event.detail||{};nativeGameState=d.state||'stopped';
-  nativeBroadcastKind=d.broadcastKind==='radio'?'radio':'gaming';updateNativeGameClock(nativeGameState,d.startedAt);
+  nativeBroadcastKind=d.broadcastKind==='radio'?'radio':'gaming';
+  nativeRadioSupported=d.radioMusicSupported===true;updateNativeGameClock(nativeGameState,d.startedAt);
   if(d.room)nativeGameRoom=d.room;
   if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
   $('gameCaptureStatus').textContent=d.message||'Pilih game untuk mulai.';
@@ -5277,14 +5283,14 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   $('radioLiveSetup').classList.toggle('hide',mode!=='radio');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
   // Keep the screen quiet; show status only for unavailable modes.
-  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',radio:nativeGame?'':'RADIO OPEN MUSIC memerlukan APK Android NADMO yang mendukung.',studio:'Koneksi OBS belum tersedia.'};
+  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',radio:nativeRadioSupported?'':'RADIO OPEN MUSIC memerlukan update APK yang mendukung RADIO.',studio:'Koneksi OBS belum tersedia.'};
   $('modeDetails').textContent=copy[mode];
   $('modeDetails').hidden=!copy[mode];
   $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE VIA ANDROID';
-  const ready=mode==='camera'||mode==='talk'||(['gaming','radio'].includes(mode)&&nativeGame);
+  const ready=mode==='camera'||mode==='talk'||(mode==='gaming'&&nativeGame)||(mode==='radio'&&nativeGame&&nativeRadioSupported);
   $('preview').disabled=!(mode==='camera'||mode==='talk');
   $('createRoom').disabled=!ready||(['gaming','radio'].includes(mode)&&['live','paused','starting','reconnecting'].includes(nativeGameState));
-  $('createRoom').textContent=mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):mode==='radio'?(nativeGame?'● MULAI RADIO LIVE':'KHUSUS APK ANDROID'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
+  $('createRoom').textContent=mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):mode==='radio'?(nativeRadioSupported?'● MULAI RADIO LIVE':'PERLU UPDATE APK'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
   if(mode==='gaming')$('category').value='Gaming';
   if(mode==='radio')$('category').value='DJ & Music';
   if(mode==='talk')$('category').value='Podcast';
@@ -6389,7 +6395,8 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  };
  $('createRoom').onclick=async()=>{
   if(selectedLiveMode==='radio'){
-   if(!nativeGame||!adult())return;
+   if(!nativeGame||!nativeRadioSupported){$('radioLiveStatus').textContent='Mode RADIO membutuhkan APK NADMO yang mendukung OPEN MUSIC.';return}
+   if(!adult())return;
    $('radioLiveStatus').textContent='Meminta izin Android. Layar aplikasi musik tetap privat.';
    gameCommand('start',{broadcastKind:'radio',title:($('title').value.trim()||'NADMO RADIO LIVE').slice(0,60),quality:'low',face:false});
    return;
