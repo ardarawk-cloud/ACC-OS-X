@@ -6166,6 +6166,16 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  $('pkCheerB').onclick=()=>transmit({type:'pk-support',side:'B'});
  setInterval(()=>{if(pkBattle?.status==='active'||pkBattle?.status==='pending')pkPaint()},1000);
 
+ function paintBroadcastKind(kind,heading){
+  roomBroadcastKind=kind==='radio'?'radio':kind==='gaming'?'gaming':'camera';
+  const radio=roomBroadcastKind==='radio';
+  document.body.classList.toggle('watch-radio',radio);
+  if(radio){
+   document.body.classList.remove('watch-game','watch-landscape');
+   $('watch').classList.remove('camera-frame-letterbox','camera-stage-softfill','camera-source-landscape');
+   $('radioLiveTitle').textContent=String(heading||'ON AIR').slice(0,40);
+  }
+ }
  async function incoming(m){
   if(m.type==='pk-state'){pkApply(m.pk);return}
   if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
@@ -6185,6 +6195,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
     for(const viewerId of activeViewers)await attachViewer(viewerId);
    }
   if(['created','joined','resumed'].includes(m.type)){
+   paintBroadcastKind(m.broadcastKind,m.title||m.hostName||'RADIO LIVE');
    stagePreset=['auto','focus','random'].includes(m.stagePreset)?m.stagePreset:'auto';
    stageRandomSeed=Number.isInteger(m.stageRandomSeed)?m.stageRandomSeed:0;
    $('stagePresetChoice').value=stagePreset;
@@ -6301,9 +6312,11 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
       }
       if(e.track.kind!=='video')return;
       if(screen){
-       $('remote').srcObject=media;document.body.classList.add('watch-game');
+       $('remote').srcObject=media;
+       document.body.classList.toggle('watch-game',roomBroadcastKind!=='radio');
+       document.body.classList.toggle('watch-radio',roomBroadcastKind==='radio');
        applyMirroring();$('remote').play().catch(()=>{});
-       $('watchState').textContent='Sinyal layar game diterima. Menunggu frame...';
+       $('watchState').textContent=roomBroadcastKind==='radio'?'Sinyal radio diterima. Audio hanya bila pemutar mengizinkan.':'Sinyal layar game diterima. Menunggu frame...';
       }else if(stageGuestsList.some(g=>g.streamId===media.id)||($('remote').srcObject&&$('remote').srcObject!==media)){
        guestRemoteStreams.set(media.id,media);
       }else{
@@ -6448,7 +6461,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
   document.body.style.removeProperty('--deck-video-aspect');
   document.body.style.removeProperty('--game-stage-height-live');
-  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game','watch-landscape');$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
+  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game','watch-landscape','watch-radio');roomBroadcastKind='camera';$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
   $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';mirrorBroadcast=false;$('giftQuick').hidden=false;$('endLiveConfirm').classList.add('hide');applyMirroring();
   $('afkToggle').textContent='▤ KAMERA OFF';
   $('stopCamera').click();show('explore');manuallyLeaving=false;
@@ -6491,6 +6504,11 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   watchVideo.addEventListener(event,updateDeckUI);
  const syncWatchAspect=()=>{
   const width=watchVideo.videoWidth,height=watchVideo.videoHeight;
+  if(roomBroadcastKind==='radio'){
+   document.body.classList.remove('watch-game','watch-landscape');
+   $('watch').classList.remove('camera-frame-letterbox','camera-stage-softfill');
+   return;
+  }
   if(width>0&&height>0){
    // Inspect decoded dimensions. Never infer camera aspect from phone size.
    const watch=$('watch'),captureRatio=width/height;
