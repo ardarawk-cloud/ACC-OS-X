@@ -596,7 +596,7 @@ export default {
     const headers=new Headers(asset.headers);
     headers.set('X-Content-Type-Options','nosniff');
     headers.set('Cache-Control','no-store, max-age=0');
-    headers.set('X-NADMO-LIVE-VERSION','20261012-mobile-video-fill-v6');
+    headers.set('X-NADMO-LIVE-VERSION','20261012-live-hourly-break-v7');
     headers.set('Referrer-Policy','no-referrer');
     headers.set('Permissions-Policy','camera=(self), microphone=(self)');
     return new Response(asset.body,{status:asset.status,headers});
