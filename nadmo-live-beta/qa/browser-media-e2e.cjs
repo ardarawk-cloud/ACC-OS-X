@@ -79,7 +79,11 @@ async function main(){
   }));
   console.log('HOST_IMMERSIVE_LAYOUT '+JSON.stringify(hostLayout));
   assert.ok(hostLayout.body&&hostLayout.navHidden&&hostLayout.chatVisible,'Host must use immersive live layout with overlay chat');
-  assert.ok(Math.abs(hostLayout.watch[3]-hostLayout.viewport[1])<=3&&hostLayout.video[1]>=hostLayout.viewport[1]-3,'Live video must fill viewport height');
+  assert.ok(Math.abs(hostLayout.watch[3]-hostLayout.viewport[1])<=3,
+    'The immersive WATCH container must fill the phone viewport');
+  assert.ok(hostLayout.video[1]>hostLayout.viewport[1]*.29&&
+    hostLayout.video[1]<=hostLayout.viewport[1]+3,
+    'The mobile portrait camera must preserve sensor aspect and keep video in the viewport, not stretch to the entire screen');
   assert.ok(hostLayout.controls>0,'Bottom Settings control must be visible');
   assert.equal(await host.$eval('#watchState',el=>getComputedStyle(el).display),'none','Normal status labels must not obstruct video');
   assert.equal(await host.$eval('.page-top',el=>el.innerText.includes('CURRENT TRANSMISSION')),false,'Technical header removed');
