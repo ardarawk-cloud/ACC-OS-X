@@ -3346,8 +3346,8 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  function updateNativeGameClock(state,startedAt){
   const n=Number(startedAt);
   if(Number.isFinite(n)&&n>1600000000000&&n<=Date.now()+60000)nativeGameStartedAt=n;
-  else if(state==='stopped'||state==='error')nativeGameStartedAt=0;
-  else if(!nativeGameStartedAt)nativeGameStartedAt=Date.now();
+  else if(state==='stopped'||state==='error'||state==='starting')nativeGameStartedAt=0;
+  // Before the actual server room ACK, 'starting' must not fabricate LIVE elapsed time.
   if(!liveClockTimer&&nativeGameStartedAt)liveClockTimer=setInterval(renderLiveClock,1000);
   if(!nativeGameStartedAt&&!liveClockRoom&&liveClockTimer){clearInterval(liveClockTimer);liveClockTimer=null}
   renderLiveClock();
