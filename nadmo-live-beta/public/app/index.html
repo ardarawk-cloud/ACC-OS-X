@@ -4897,7 +4897,8 @@ body.live-immersive #watch #liveRestReminder{
  renderDraftPosts();
 
  $('server').value=server; $('adult').checked=localStorage.getItem('nadmo.adult')==='yes';
- function show(name){if(name==='watch'&&!document.body.classList.contains('live-immersive'))document.body.classList.remove('watch-clean');if(name==='settings'&&!activeAccount)name='authPage';
+ function show(name){if(name==='watch'&&!document.body.classList.contains('live-immersive'))document.body.classList.remove('watch-clean');
+  if(name==='watch'&&typeof radioAudio!=='undefined'&&!radioAudio.paused)stopRadioPlayback();if(name==='settings'&&!activeAccount)name='authPage';
   if(name!=='watch')document.body.classList.remove('watch-clean');
   const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialConnectionsPage','publicProfilePage'];
   document.body.classList.toggle('page-subview',subpages.includes(name));
@@ -4916,7 +4917,7 @@ body.live-immersive #watch #liveRestReminder{
  // RADIO ONE is a standalone continuous audio STATION. It never creates a
  // phone-dependent WebRTC room, and never captures Spotify/YouTube media.
  const radioAudio=$('radioStream');
- let radioInfo=null,radioPolling=null,radioWantedPlay=false,radioLastStream='';
+ let radioInfo=null,radioPolling=null,radioWantedPlay=false,radioLastStream='',radioStatusWarning='';
  const validRadioStream=url=>{
   try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password&&!u.hash}
   catch{return false}
@@ -4931,10 +4932,11 @@ body.live-immersive #watch #liveRestReminder{
   $('radioListen').disabled=!online;
   $('radioListen').textContent=online?(playing?'Ⅱ JEDA MENDENGARKAN':'▶ DENGARKAN RADIO'):'RADIO BELUM AKTIF';
   $('radioStage').dataset.playing=String(playing&&online);
-  $('radioStatusText').textContent=online?'Sumber AutoDJ tersambung. Putar radio untuk mendengarkan.':
+  $('radioStatusText').textContent=radioStatusWarning||(
+   online?'Sumber AutoDJ tersambung. Putar radio untuk mendengarkan.':
    radioInfo?.configured===false?'SERVER RADIO BELUM DIKONFIGURASI':
    radioInfo?.state==='UNAVAILABLE'?'SERVER RADIO TIDAK TERJANGKAU':
-   'BELUM ADA STREAM RADIO AKTIF';
+   'BELUM ADA STREAM RADIO AKTIF');
   $('radioMiniTitle').textContent='N/ '+(online?(radioInfo.nowPlaying?.title||radioInfo.station||'RADIO ONE'):'RADIO ONE');
   $('radioMiniDock').hidden=!playing;
   $('radioMiniPause').textContent='Ⅱ JEDA';
@@ -4948,6 +4950,7 @@ body.live-immersive #watch #liveRestReminder{
     signal:AbortSignal.timeout(7000)});
    if(!response.ok)throw Error('HTTP '+response.status);
    const data=await response.json();
+   radioStatusWarning='';
    radioInfo=data&&typeof data==='object'?data:null;
    const good=radioInfo?.online===true&&validRadioStream(radioInfo.streamUrl);
    if(!good){stopRadioPlayback();radioAudio.removeAttribute('src');radioLastStream=''}
@@ -4957,8 +4960,10 @@ body.live-immersive #watch #liveRestReminder{
     if(keepPlaying){try{await radioAudio.play()}catch(e){radioWantedPlay=false}}
    }
   }catch(error){
-   radioInfo={configured:true,state:'UNAVAILABLE',online:false};
-   stopRadioPlayback();radioAudio.removeAttribute('src');radioLastStream='';
+   // A temporary metadata/API outage must NEVER interrupt an otherwise
+   // healthy 24/7 audio stream. Only a confirmed OFF_AIR response stops it.
+   radioStatusWarning='Info radio sementara tidak tersedia; audio yang sedang diputar tetap berjalan.';
+   if(!radioInfo)radioInfo={configured:true,state:'UNAVAILABLE',online:false};
   }
   paintRadio();
  }
@@ -4970,7 +4975,7 @@ body.live-immersive #watch #liveRestReminder{
   try{await radioAudio.play()}
   catch(error){
    radioWantedPlay=false;
-   $('radioStatusText').textContent='Tidak bisa memutar radio. Periksa sumber audio dan koneksi.';
+   radioStatusWarning='Tidak bisa memutar radio. Periksa sumber audio dan koneksi.';
   }
   paintRadio();
  }
@@ -4983,7 +4988,7 @@ body.live-immersive #watch #liveRestReminder{
  radioAudio.addEventListener('ended',stopRadioPlayback);
  radioAudio.addEventListener('error',()=>{
   radioWantedPlay=false;
-  $('radioStatusText').textContent='Stream audio gagal diputar, coba PERIKSA RADIO.';
+  radioStatusWarning='Stream audio gagal diputar, coba PERIKSA RADIO.';
   paintRadio();
  });
  refreshRadio();
