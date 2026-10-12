@@ -1,6 +1,17 @@
 # NADMO LIVE — RADIO / AUTODJ 24/7 (product contract v1)
 Date: 2026-10-09
-Status: PLANNED / NOT YET RUNNING. Do not advertise continuous broadcast before server deployment and independent uptime test.
+Status: CLIENT RADIO PLAYER IMPLEMENTED ON FEATURE BRANCH; AUTODJ BACKEND NOT YET VERIFIED ACTIVE. Do not advertise continuous broadcast before server deployment and independent uptime test.
+
+## 2026-10-12 client implementation checkpoint
+- RADIO ONE mobile stage is now roughly camera-sized, not the former 310px placeholder.
+- Public listener controls: play/pause; station ON AIR vs OFF AIR; song, artist and real listener count; 30-second now-playing refresh; persistent in-app mini-player on other tabs.
+- Existing Worker route `/api/radio/status` integrates read-only with AzuraCast `RADIO_ORIGIN`, `RADIO_STATION` and optional `RADIO_STREAM_ORIGIN` as explicitly approved HTTPS media origin.
+- Status outages do not cut an existing audio session. A confirmed OFF AIR stops the local player. The player remains muted/stopped until an explicit user tap.
+- Spotify and YouTube Music are only separately opened personal music services; public stream rebroadcast is not permitted by ordinary subscriptions.
+- The phone is never the 24/7 audio source. Do not enable GO RADIO, autoplay or "ON AIR" status until rights-cleared AutoDJ is deployed.
+- Viewer chat, individual tipping, creator uploads, DJ takeover, per-station moderation and unattended 24-hour playback need separately verified backend implementation. UI does not claim these features are active.
+- Native Android background playback while screen is locked is NOT promised by this web-only stage; evaluate media foreground service only if physically necessary, after GAME regression is stabilized.
+- No new Android build or signing key is required for this web player.
 
 ## Correct product definition
 AFK for music creators means "start a radio station, keep music and community live while owner is away, locks phone, changes apps or even closes the app." Merely replacing a camera frame with an AFK canvas is NOT this feature.

@@ -1,0 +1,26 @@
+name: NADMO RADIO camera-sized AutoDJ browser QA
+on:
+  push:
+    branches: ['feat/nadmo-radio-camera-size-autodj-player-20261012', 'feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/worker.mjs'
+      - 'nadmo-live-beta/qa/radio-autodj-mobile-first-e2e.cjs'
+      - '.github/workflows/nadmo-live-radio-autodj-qa.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  radio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install browser automation
+        run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+      - name: Locate Chrome
+        shell: bash
+        run: echo "CHROME_BIN=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" >> "$GITHUB_ENV"
+      - name: Verify station availability, mobile scale, audio controls and radio-only boundaries
+        run: node nadmo-live-beta/qa/radio-autodj-mobile-first-e2e.cjs
