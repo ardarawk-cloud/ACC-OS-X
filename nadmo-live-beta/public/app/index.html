@@ -2600,6 +2600,41 @@ body.live-immersive #watch #liveRestReminder{
 #pkCandidates label{border:1px solid #45643e;padding:6px;border-radius:6px;font-size:11px}
 #pkSettings .pk-actions{display:flex;gap:6px;flex-wrap:wrap}
 #pkSettings .pk-actions button{flex:1;min-width:80px}
+
+/* RADIO is CAMERA-SIZED; GAME landscape height does not apply. */
+#radioLiveSetup.hide,#radioLiveCanvas{display:none}
+body.live-immersive.watch-radio #watch .live-stage,
+body.live-immersive.watch-viewer.watch-radio #watch .live-stage{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ max-height:none!important;min-height:0!important;aspect-ratio:auto!important;margin:0!important;overflow:hidden!important}
+body.live-immersive.watch-radio #watch .live-stage>.viewfinder{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ max-height:none!important;aspect-ratio:auto!important;overflow:hidden!important;border:0!important;
+ border-radius:0!important;background:#09100c!important}
+body.live-immersive.watch-radio #watch #remote{
+ opacity:0!important;position:absolute!important;width:100%!important;height:100%!important;pointer-events:none!important}
+body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
+#radioLiveCanvas{
+ position:absolute;inset:0;z-index:11;align-items:center;justify-content:center;
+ width:100%;height:100%;pointer-events:none;overflow:hidden;
+ background:radial-gradient(ellipse at 50% 42%,#264633 0%,#122318 35%,#060c09 84%)}
+#radioLiveCanvas:before{content:'';position:absolute;inset:10px;border:1px solid #b8f38567;border-radius:12px}
+#radioLiveCanvas .radio-live-cover{
+ display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+ width:95%;min-height:40%;padding:18px 8px;text-align:center;color:#edffe1}
+.radio-live-logo{
+ width:min(43vw,180px);height:min(43vw,180px);min-width:118px;min-height:118px;
+ display:flex;justify-content:center;align-items:center;border:2px solid var(--neon);
+ border-radius:50%;background:#182c1e;box-shadow:0 0 0 14px #d2ff3911;
+ font:900 clamp(55px,16vw,95px) Impact,Arial,sans-serif;color:var(--neon)}
+.radio-live-eyebrow,.radio-live-sub{font:800 11px ui-monospace,monospace;letter-spacing:1.5px}
+#radioLiveTitle{font:900 clamp(30px,9vw,62px) Impact,Arial,sans-serif;letter-spacing:1px}
+.radio-live-waves{display:flex;align-items:center;justify-content:center;gap:6px;height:38px}
+.radio-live-waves i{width:5px;height:12px;border-radius:3px;background:var(--neon);animation:radioStagePulse .7s alternate infinite}
+.radio-live-waves i:nth-child(3n){height:33px;animation-delay:.3s}
+.radio-live-waves i:nth-child(2n){height:25px;animation-delay:.15s}
+@keyframes radioStagePulse{to{transform:scaleY(.45)}}
+@media(prefers-reduced-motion:reduce){.radio-live-waves i{animation:none}}
 </style></head>
 <body>
 <div class="app">
@@ -2649,6 +2684,7 @@ body.live-immersive #watch #liveRestReminder{
 <button type="button" data-live-mode="talk"><span class="mode-icon">♫</span>NGOBROL</button>
 <button type="button" data-live-mode="camera" class="active"><span class="mode-icon">◉</span>KAMERA</button>
 <button type="button" data-live-mode="gaming"><span class="mode-icon">▣</span>GAMING</button>
+ <button type="button" data-live-mode="radio"><span class="mode-icon">≋</span>RADIO</button>
 <button type="button" data-live-mode="studio"><span class="mode-icon">⌘</span>STUDIO PC</button></div>
 <div class="mode-details" id="modeDetails" hidden></div>
 <div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select>
@@ -2666,6 +2702,12 @@ body.live-immersive #watch #liveRestReminder{
  </div>
  <button type="button" class="btn ghost" id="gameChatSettings" hidden>AKTIFKAN NOTIFIKASI CHAT</button><button type="button" class="btn secondary" id="gameChatOverlaySettings" hidden>IZINKAN CHAT MELAYANG DI ATAS GAME</button>
  <div class="game-live-actions"><button type="button" class="btn secondary" id="gameLaunchGame" hidden>↗ BUKA GAME</button><button type="button" class="btn ghost" id="gameShareRoom" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="gameStopLive" hidden>■ AKHIRI LIVE</button></div></div>
+<div id="radioLiveSetup" class="panel hide" aria-label="RADIO LIVE dengan pemutar musik host">
+<div class="show-label"><b>RADIO LIVE</b><small>OPEN MUSIC</small></div>
+<p class="deck">Layar penonton sebesar LIVE CAMERA, bukan GAME. Video aplikasi musik tidak disiarkan. Audio aplikasi hanya dapat direkam bila Android dan pemutarnya mengizinkan.</p>
+<div class="actions"><button type="button" class="btn secondary" id="radioOpenMusic" hidden>↗ OPEN MUSIC</button><button type="button" class="btn ghost" id="radioShareLive" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="radioStopLive" hidden>AKHIRI RADIO</button></div>
+<div id="radioLiveStatus" class="status" role="status">Mulai RADIO LIVE, buka aplikasi musik pilihanmu, lalu RESUME lewat tombol melayang. Pakai musik yang memiliki izin siar.</div>
+</div>
 <div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
   <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
   <div class="status" id="camState">CAMERA / STANDBY</div>
@@ -2739,7 +2781,7 @@ body.live-immersive #watch #liveRestReminder{
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
-  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video>
+  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video><div id="radioLiveCanvas" aria-hidden="true"><div class="radio-live-cover"><span class="radio-live-logo">N/</span><span class="radio-live-eyebrow">NADMO RADIO LIVE</span><strong id="radioLiveTitle">ON AIR</strong><div class="radio-live-waves"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="radio-live-sub">MUSIC & TALK · AUDIO ONLY</span></div></div>
 <div id="pkBattleHud" hidden><div class="pk-score"><span><small id="pkNameA">TIM A</small><b id="pkPointsA">0</b></span><span><b>PK</b><small id="pkClock">00:00</small></span><span><small id="pkNameB">TIM B</small><b id="pkPointsB">0</b></span></div><div class="pk-cheers"><button type="button" id="pkCheerA">DUKUNG A GRATIS</button><button type="button" id="pkCheerB">DUKUNG B GRATIS</button></div><small id="pkNotice">Dukungan gratis, bukan saweran uang.</small></div>
 <div id="pkGuestInvite" hidden><strong>UNDANGAN PK</strong><p>Ikut PK bersama host? Kamu bebas menolak.</p><button class="btn" id="pkAccept" type="button">TERIMA</button><button class="btn secondary" id="pkDecline" type="button">TOLAK</button></div></div>
 <div id="watchState" class="status">CONNECTING SIGNAL...</div><div id="liveRestReminder" role="status" aria-live="polite" hidden><span><strong>WAKTUNYA ISTIRAHAT</strong> — Kamu sudah LIVE <span id="liveRestHour">1 jam</span>. Istirahat sebentar bila perlu. Siaran tetap berjalan.</span><button type="button" id="liveRestDismiss">LANJUT</button></div><div id="watchStreamQuality" class="status" aria-live="off" style="font-size:10px;opacity:.85" hidden></div>
