@@ -5319,7 +5319,8 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   const ready=mode==='camera'||mode==='talk'||(mode==='gaming'&&nativeGame)||(mode==='radio'&&nativeGame&&nativeRadioSupported);
   $('preview').disabled=!(mode==='camera'||mode==='talk');
   $('createRoom').disabled=!ready||(['gaming','radio'].includes(mode)&&['live','paused','starting','reconnecting'].includes(nativeGameState));
-  $('createRoom').textContent=mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):mode==='radio'?(nativeRadioSupported?'● MULAI RADIO LIVE':'PERLU UPDATE APK'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
+  $('createRoom').textContent=host&&currentRoom?'↗ KEMBALI KE LIVE':mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):mode==='radio'?(nativeRadioSupported?'● MULAI RADIO LIVE':'PERLU UPDATE APK'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
+  if(host&&currentRoom)$('createRoom').disabled=false;
   if(mode==='gaming')$('category').value='Gaming';
   if(mode==='radio')$('category').value='DJ & Music';
   if(mode==='talk')$('category').value='Podcast';
@@ -6432,6 +6433,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   catch(error){window.prompt('Salin link Radio',url)}
  };
  $('createRoom').onclick=async()=>{
+  if(host&&currentRoom){show('watch');return}
   if(selectedLiveMode==='radio'){
    if(!nativeGame||!nativeRadioSupported){$('radioLiveStatus').textContent='Mode RADIO membutuhkan APK NADMO yang mendukung OPEN MUSIC.';return}
    if(!adult())return;
