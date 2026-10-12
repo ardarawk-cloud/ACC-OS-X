@@ -1,0 +1,21 @@
+name: NADMO LIVE hourly duration & rest reminder
+on:
+  push:
+    branches: ['feat/nadmo-live-elapsed-rest-hour-20261012', 'feat/nadmo-live-beta-worker-20261009']
+    paths:
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/worker.mjs'
+      - 'nadmo-live-beta/qa/live-hourly-duration-contract.cjs'
+      - '.github/workflows/nadmo-live-hourly-duration-qa.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  duration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Check authoritative duration, hourly reminder, and native GAME status contract
+        run: node nadmo-live-beta/qa/live-hourly-duration-contract.cjs
