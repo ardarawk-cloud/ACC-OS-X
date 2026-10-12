@@ -10,7 +10,7 @@ for(const script of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/
  if(script[1].trim())new vm.Script(script[1],{filename:'NADMO-live-radio-inline.js'});
 }
 assert(worker.includes("url.pathname==='/api/radio/status'"),'Radio station has server-backed endpoint');
-assert(worker.includes('origin===origin')||worker.includes('u.origin===origin'),'Stream cannot redirect to arbitrary host');
+assert(worker.includes('allowedStreamOrigins.has(u.origin)'),'Only operator-approved HTTPS stream origins may feed radio');
 assert(html.includes('data-tab="radio"'),'Existing RADIO channel navigation preserved');
 assert(html.includes('id="radioStream"'),'Only rights-cleared, user-initiated audio element exists');
 assert(!/audio\.captureStream\(|youtube.*MediaProjection/i.test(html),'No rebroadcast capture of commercial media providers');
