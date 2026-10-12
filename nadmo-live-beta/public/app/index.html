@@ -2524,6 +2524,64 @@ body.live-immersive #watch #liveRestReminder{
 #liveRestReminder strong{color:#d9ff6d}
 #liveRestReminder button{margin-left:auto;flex:0 0 auto;padding:7px 9px;
  background:#25362b;color:white;border:1px solid #b5d56b;border-radius:7px;cursor:pointer}
+
+/* RADIO ONE camera-sized station: durable AzuraCast AutoDJ stream, not a
+   fake WebRTC room, silent autoplay, or screen-recorded music application. */
+#radio .radio-portrait{
+ position:relative;isolation:isolate;overflow:hidden;
+ height:clamp(440px,calc(100dvh - 148px),850px);
+ margin:12px 0 14px;border:1px solid var(--neon);
+ background:radial-gradient(ellipse at 50% 45%,#29392f 0%,#101912 38%,#030807 100%);
+ box-shadow:inset 0 0 0 5px #0b100e,0 0 25px #b5ef5620;
+}
+#radio .radio-portrait::after{content:"";position:absolute;inset:11px;pointer-events:none;
+ border:1px solid #c7f2854a;border-radius:6px}
+#radio .radio-upper{position:absolute;inset:19px 20px auto;z-index:2;
+ display:flex;justify-content:space-between;align-items:center;gap:8px;
+ font:800 11px ui-monospace,monospace;color:#dcffad;letter-spacing:1px}
+#radio .radio-upper #radioOnAir{border:1px solid #d8fca0;padding:5px 9px;
+ border-radius:11px;background:#0b130ee8}
+#radio .radio-center{position:absolute;inset:10% 12px 24%;display:flex;
+ flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;z-index:1}
+#radio .radio-art{height:min(37vw,220px);width:min(37vw,220px);min-height:130px;min-width:130px;
+ display:flex;justify-content:center;align-items:center;border:2px solid var(--neon);
+ border-radius:50%;background:radial-gradient(circle,#304535,#0c140f 75%);
+ box-shadow:0 0 0 12px #baf56c10,0 0 0 26px #baf56c08}
+#radio .radio-art strong{font:900 clamp(56px,13vw,90px) Impact,Arial,sans-serif;
+ color:var(--neon);letter-spacing:-4px}
+#radio .radio-center h2{font:900 clamp(26px,8vw,54px)/1 Impact,Arial,sans-serif;
+ letter-spacing:1px;max-width:95%;overflow-wrap:anywhere}
+#radio .radio-center p{font-size:13px;font-weight:600;margin:0;max-width:88%;color:#e1e9d8}
+#radio .radio-waves{display:flex;height:36px;align-items:center;justify-content:center;gap:4px}
+#radio .radio-waves i{height:11px;width:5px;background:var(--neon);opacity:.6;border-radius:4px}
+#radio .radio-waves i:nth-child(4n+1){height:22px}
+#radio .radio-waves i:nth-child(3n+2){height:31px}
+#radio .radio-portrait[data-playing="true"] .radio-waves i{animation:radioBounce .65s ease-in-out infinite alternate}
+#radio .radio-portrait[data-playing="true"] .radio-waves i:nth-child(2n){animation-delay:.24s}
+@keyframes radioBounce{to{transform:scaleY(.55)}}
+@media(prefers-reduced-motion:reduce){#radio .radio-portrait .radio-waves i{animation:none!important}}
+#radio .radio-controls{position:absolute;z-index:3;inset:auto 16px 20px;
+ display:flex;flex-direction:column;align-items:stretch;gap:8px}
+#radio .radio-controls button{min-height:54px;font-size:14px;border-radius:12px}
+#radio .radio-controls button:disabled{opacity:.56}
+#radio .radio-controls small{font:600 11px/1.45 Arial,sans-serif;
+ color:#d7e5cf;text-align:center}
+#radio .radio-links{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#radio .radio-links a{padding:9px 12px;border:1px solid #526b4b;border-radius:8px;
+ color:#c8dfb6;text-decoration:none;font:800 12px Arial,sans-serif}
+#radioMiniDock[hidden]{display:none!important}
+#radioMiniDock{position:fixed;bottom:calc(66px + env(safe-area-inset-bottom));
+ left:8px;right:8px;z-index:37;max-width:480px;margin:0 auto;padding:9px 12px;
+ display:flex;align-items:center;gap:10px;background:#0b1610f5;
+ border:1px solid #c8ed80;border-radius:15px;box-shadow:0 6px 26px #000b}
+#radioMiniDock b{font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#radioMiniDock button{background:transparent;color:#eaffce;border:1px solid #597c57;
+ border-radius:9px;min-width:40px;min-height:38px;font-size:13px;font-weight:800}
+@media(min-width:800px){
+ #radio .radio-portrait{max-width:530px;height:min(82dvh,790px);margin-inline:auto}
+ #radioMiniDock{bottom:20px}
+}
+
 </style></head>
 <body>
 <div class="app">
@@ -2778,12 +2836,30 @@ body.live-immersive #watch #liveRestReminder{
   <div class="signal-stage" style="height:270px"><div class="stage-head"><span>CHANNEL / NTV-01</span><span class="liveflag">OFF AIR</span></div><div class="stage-core"><div class="circle" style="height:108px;width:108px"><strong style="font-size:46px">TV</strong></div><p>STUDIO TRANSMISSION PENDING</p></div><div class="stage-foot"><small>TEST PROGRAM SOURCE / NOT LIVE</small><div class="bars"><i></i><i></i><i></i><i></i></div></div></div>
   <div class="notice">Jadwal TV, sumber OBS, dan playout belum aktif. Channel ini belum menyiarkan konten.</div>
 </section>
-<section id="radio" class="hide">
-  <div class="page-top"><div><span class="eyebrow">FREQUENCY / 04</span><h1>RADIO ONE<span style="color:var(--neon)">.</span></h1></div><span class="edition">AUDIO</span></div>
-  <p class="deck">Talk, sound, dan obrolan malam. Stay on frequency.</p>
-  <div class="signal-stage" style="height:310px"><div class="stage-head"><span>FM / NADMO 001</span><span class="liveflag">STANDBY</span></div><div class="stage-core"><div class="circle"><strong style="font-size:62px">≋</strong></div><p>AWAITING AUDIO SOURCE</p></div><div class="stage-foot"><small>AUTODJ SERVER / BELUM AKTIF</small><div class="bars"><i></i><i></i><i></i><i></i></div></div></div>
-  <div class="notice">Radio 24/7 akan memakai AutoDJ server: streamer mengunggah musik yang boleh disiarkan, memilih playlist, lalu radio terus mengudara saat HP ditutup. Belum tersedia di beta ini.</div>
+<section id="radio" class="hide" aria-label="NADMO RADIO ONE">
+  <div class="page-top"><div><span class="eyebrow">FREQUENCY / 04</span><h1>RADIO ONE<span style="color:var(--neon)">.</span></h1></div><span class="edition">AUDIO 24/7</span></div>
+  <div class="radio-portrait" id="radioStage" data-playing="false" aria-label="Panggung radio besar setara LIVE kamera">
+    <div class="radio-upper"><span>◉ NADMO / RADIO 001</span><span id="radioOnAir">STANDBY</span></div>
+    <div class="radio-center">
+      <div class="radio-art" aria-hidden="true"><strong>N/</strong></div>
+      <div class="radio-waves" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <h2 id="radioTrackName">NADMO RADIO</h2>
+      <p id="radioTrackArtist">Menunggu sumber siaran resmi.</p>
+    </div>
+    <div class="radio-controls">
+      <button class="btn" type="button" id="radioListen" disabled>RADIO BELUM AKTIF</button>
+      <small id="radioStatusText" role="status" aria-live="polite">Memeriksa server AutoDJ…</small>
+      <small id="radioListenerCount">PENDENGAR 0</small>
+    </div>
+  </div>
+  <audio id="radioStream" preload="none" playsinline></audio>
+  <div class="actions"><button class="btn secondary" id="radioRefresh" type="button">↻ PERIKSA RADIO</button></div>
+  <div class="notice">RADIO 24/7 memakai AutoDJ server, sehingga siaran tetap berjalan saat HP host ditutup. Channel aktif hanya setelah server musik dan hak siar dikonfigurasi. Pemutar radio tidak merekam layar atau aplikasi musik pengguna.</div>
+  <div class="show-label"><b>SUMBER MUSIK</b><small>HANYA YANG BERIZIN</small></div>
+  <p class="deck">Spotify dan YouTube Music dapat dibuka terpisah untuk referensi musik pribadi, bukan sumber audio yang boleh direlai otomatis ke radio publik.</p>
+  <div class="radio-links"><a href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">BUKA SPOTIFY ↗</a><a href="https://music.youtube.com/" target="_blank" rel="noopener noreferrer">BUKA YT MUSIC ↗</a></div>
 </section>
+<div id="radioMiniDock" hidden aria-label="Pemutar radio tetap aktif di aplikasi"><button id="radioMiniOpen" type="button" aria-label="Kembali ke RADIO">N/</button><b id="radioMiniTitle">NADMO RADIO</b><button type="button" id="radioMiniPause" aria-label="Jeda pemutar">Ⅱ JEDA</button></div>
 <section id="signal" class="hide">
   <div class="page-top"><div><span class="eyebrow">INDEPENDENT / PUBLIC INFORMATION</span><h1>SIGNAL<span style="color:var(--neon)">.</span></h1></div><span class="edition">COMMUNITY</span></div>
   <p class="deck">Ruang komunikasi komunitas dan informasi publik yang terverifikasi. Kritik, perbedaan pendapat, dan laporan masyarakat tidak otomatis dianggap pelanggaran; ancaman, intimidasi, dan doxing tetap dilarang.</p>
@@ -4836,6 +4912,83 @@ body.live-immersive #watch #liveRestReminder{
   if(name==='authPage'&&!activeAccount&&!authRegisterVisible)toggleRegistration(false);
   window.scrollTo(0,0);}
  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.tab)));
+
+ // RADIO ONE is a standalone continuous audio STATION. It never creates a
+ // phone-dependent WebRTC room, and never captures Spotify/YouTube media.
+ const radioAudio=$('radioStream');
+ let radioInfo=null,radioPolling=null,radioWantedPlay=false,radioLastStream='';
+ const validRadioStream=url=>{
+  try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password&&!u.hash}
+  catch{return false}
+ };
+ function paintRadio(){
+  const online=radioInfo?.online===true&&validRadioStream(radioInfo.streamUrl);
+  const playing=!radioAudio.paused&&!radioAudio.ended&&radioAudio.readyState>0;
+  $('radioOnAir').textContent=online?(radioInfo.djLive?'● DJ LIVE':'● ON AIR'):'OFF AIR';
+  $('radioTrackName').textContent=online?(radioInfo.nowPlaying?.title||'NADMO RADIO'):'NADMO RADIO';
+  $('radioTrackArtist').textContent=online?(radioInfo.nowPlaying?.artist||radioInfo.station||'RADIO ONE'):'Menunggu server radio 24/7';
+  $('radioListenerCount').textContent=online?'PENDENGAR '+new Intl.NumberFormat('id-ID').format(Math.max(0,Number(radioInfo.listeners)||0)):'BELUM ADA SIARAN';
+  $('radioListen').disabled=!online;
+  $('radioListen').textContent=online?(playing?'Ⅱ JEDA MENDENGARKAN':'▶ DENGARKAN RADIO'):'RADIO BELUM AKTIF';
+  $('radioStage').dataset.playing=String(playing&&online);
+  $('radioStatusText').textContent=online?'Sumber AutoDJ tersambung. Putar radio untuk mendengarkan.':
+   radioInfo?.configured===false?'SERVER RADIO BELUM DIKONFIGURASI':
+   radioInfo?.state==='UNAVAILABLE'?'SERVER RADIO TIDAK TERJANGKAU':
+   'BELUM ADA STREAM RADIO AKTIF';
+  $('radioMiniTitle').textContent='N/ '+(online?(radioInfo.nowPlaying?.title||radioInfo.station||'RADIO ONE'):'RADIO ONE');
+  $('radioMiniDock').hidden=!playing;
+  $('radioMiniPause').textContent='Ⅱ JEDA';
+ }
+ function stopRadioPlayback(){
+  radioWantedPlay=false;radioAudio.pause();paintRadio();
+ }
+ async function refreshRadio(){
+  try{
+   const response=await fetch(DEFAULT_BACKEND+'/api/radio/status',{cache:'no-store',credentials:'omit',
+    signal:AbortSignal.timeout(7000)});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   const data=await response.json();
+   radioInfo=data&&typeof data==='object'?data:null;
+   const good=radioInfo?.online===true&&validRadioStream(radioInfo.streamUrl);
+   if(!good){stopRadioPlayback();radioAudio.removeAttribute('src');radioLastStream=''}
+   else if(radioLastStream!==radioInfo.streamUrl){
+    const keepPlaying=radioWantedPlay;
+    radioAudio.pause();radioAudio.src=radioInfo.streamUrl;radioLastStream=radioInfo.streamUrl;
+    if(keepPlaying){try{await radioAudio.play()}catch(e){radioWantedPlay=false}}
+   }
+  }catch(error){
+   radioInfo={configured:true,state:'UNAVAILABLE',online:false};
+   stopRadioPlayback();radioAudio.removeAttribute('src');radioLastStream='';
+  }
+  paintRadio();
+ }
+ async function toggleRadio(){
+  if(!radioInfo?.online||!validRadioStream(radioInfo.streamUrl))return;
+  if(!radioAudio.paused){stopRadioPlayback();return}
+  radioWantedPlay=true;
+  if(!radioAudio.src){radioAudio.src=radioInfo.streamUrl;radioLastStream=radioInfo.streamUrl}
+  try{await radioAudio.play()}
+  catch(error){
+   radioWantedPlay=false;
+   $('radioStatusText').textContent='Tidak bisa memutar radio. Periksa sumber audio dan koneksi.';
+  }
+  paintRadio();
+ }
+ $('radioListen').onclick=toggleRadio;
+ $('radioMiniPause').onclick=stopRadioPlayback;
+ $('radioMiniOpen').onclick=()=>show('radio');
+ $('radioRefresh').onclick=refreshRadio;
+ radioAudio.addEventListener('play',paintRadio);
+ radioAudio.addEventListener('pause',paintRadio);
+ radioAudio.addEventListener('ended',stopRadioPlayback);
+ radioAudio.addEventListener('error',()=>{
+  radioWantedPlay=false;
+  $('radioStatusText').textContent='Stream audio gagal diputar, coba PERIKSA RADIO.';
+  paintRadio();
+ });
+ refreshRadio();
+ radioPolling=setInterval(refreshRadio,30000);
+
  const offgridModal=$('offgridModal'),offgridEntry=$('offgridEntry'),offgridClose=$('offgridClose');
  function closeOffgrid(){
   offgridModal.classList.add('hide');offgridEntry.focus({preventScroll:true});
