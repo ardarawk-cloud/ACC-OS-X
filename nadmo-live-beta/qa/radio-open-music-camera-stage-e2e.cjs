@@ -43,6 +43,23 @@ const puppeteer=require('puppeteer-core');
    assert(geometry.poster.width>=geometry.stage.width*.9,'Radio poster must fill camera stage');
    assert(geometry.poster.height>=geometry.stage.height*.9,'Radio poster must fill camera stage');
    assert.equal(geometry.modeColumns.trim().split(/\s+/).length,5,'Creator modes should fit a single five-column row');
+   const voice=await page.evaluate(()=>{
+     document.body.classList.remove('watch-radio');
+     const watch=document.getElementById('watch');
+     watch.classList.add('mobile-stage-voice');
+     watch.classList.remove('mobile-stage-split');
+     const main=watch.querySelector('.live-stage').getBoundingClientRect();
+     const guest=document.createElement('div');guest.className='stage-guest-tile';
+     guest.style.left='67%';guest.style.top='14%';guest.style.width='29%';guest.style.height='18%';
+     document.getElementById('guestStageGrid').append(guest);
+     const tile=guest.getBoundingClientRect();
+     return {main:{width:main.width,height:main.height},tile:{width:tile.width,height:tile.height}};
+   });
+   assert(voice.main.width>=size.width*.9,'VOICE stage not full camera width '+JSON.stringify(voice));
+   assert(voice.main.height>=size.height*.60,'VOICE stage wrongly split '+JSON.stringify(voice));
+   assert(voice.tile.width<=voice.main.width*.43,'VOICE guest must be a compact overlay '+JSON.stringify(voice));
+   assert.match(html,/voiceOnly=stageGuestsList\.length>0&&stageGuestsList\.every/,'VOICE no-split must derive from microphone-only guests');
+   console.log('PASS VOICE camera-sized stage and compact guest '+size.width+'px');
    console.log('PASS RADIO portrait '+size.width+'x'+size.height+': '+Math.round(geometry.stage.width)+'x'+Math.round(geometry.stage.height));
    await page.close();
   }
