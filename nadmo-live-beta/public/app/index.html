@@ -376,7 +376,7 @@ body.live-immersive #watch .sheet-close:focus-visible{
 .nadmo-profile{margin:12px 0 27px}
 .profile-hero{display:flex;align-items:center;gap:12px;padding:17px 12px;border:1px solid var(--cbw-3b513d,#3b513d);border-radius:14px;background:var(--cbw-131b14,#131b14)}
 .profile-avatar{flex:0 0 54px;height:54px;display:grid;place-items:center;background:var(--cbw-233325,#233325);border:1px solid var(--cbw-b9d35a,#b9d35a);border-radius:50%;font:bold 26px Impact,Arial,sans-serif;color:var(--neon)}
-.profile-hero>div:nth-child(2){display:flex;flex-direction:column;min-width:0;flex:1;gap:5px}
+.profile-hero>div:nth-of-type(2){display:flex;flex-direction:column;min-width:0;flex:1;gap:5px}
 .profile-hero b{font-size:17px;overflow:hidden;text-overflow:ellipsis}
 .profile-hero small{font-size:12px;color:var(--cbw-c2d3be,#c2d3be)}
 .profile-hero button{font-size:11px;padding:10px;min-height:38px}
@@ -726,7 +726,8 @@ nav button{touch-action:manipulation}
 .public-me-skin{padding:0 0 16px}
 .profile-open{background:none;border:none;color:var(--neon);font-weight:900;font-size:13px;text-align:left;padding:2px 0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--cbw-607c56,#607c56);text-underline-offset:3px}
 .public-me-skin .profile-hero{margin:10px 0 13px}
-.public-me-skin .profile-avatar{flex-basis:54px}
+.public-me-skin .profile-avatar{flex:0 0 64px!important;width:64px!important;height:64px!important;min-width:64px!important;max-width:64px!important;min-height:64px!important;max-height:64px!important;aspect-ratio:1!important;position:relative!important;overflow:hidden!important;align-self:end!important;box-sizing:border-box!important}
+.public-me-skin .profile-hero>.profile-avatar img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
 .public-me-skin .profile-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .public-profile-meta{display:flex;gap:8px;padding:9px 0;align-items:center;flex-wrap:wrap}
 .public-profile-meta button{border:1px solid var(--cbw-667a5c,#667a5c);border-radius:8px;padding:9px;color:var(--neon);background:var(--cbw-19241b,#19241b)}
@@ -2735,9 +2736,11 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
 <div id="radioLiveStatus" class="status" role="status"></div>
 </div>
 <div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
-  <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
-  <div class="status" id="camState">CAMERA / STANDBY</div>
-  <div class="actions"><button class="btn secondary" id="preview">◉ ENABLE CAMERA</button><button class="btn ghost" id="stopCamera">STOP CAMERA</button></div>
+  <div id="localCameraSetup">
+   <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
+   <div class="status" id="camState">CAMERA / STANDBY</div>
+   <div class="actions"><button class="btn secondary" id="preview">◉ ENABLE CAMERA</button><button class="btn ghost" id="stopCamera">STOP CAMERA</button></div>
+  </div>
   <div class="show-label"><b>LIVE</b></div>
   <div class="panel">
     <label for="title" class="creator-advanced-only">BROADCAST TITLE</label><input class="field" id="title" maxlength="60" placeholder="Midnight conversation #001">
@@ -5313,6 +5316,8 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
   $('radioLiveSetup').classList.toggle('hide',mode!=='radio');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
+  $('localCameraSetup').classList.toggle('hide',!['camera','talk'].includes(mode));
+  $('liveState').hidden=!['camera','talk'].includes(mode);
   // Keep the screen quiet; show status only for unavailable modes.
   const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',radio:nativeRadioSupported?'':'RADIO OPEN MUSIC memerlukan update APK yang mendukung RADIO.',studio:'Koneksi OBS belum tersedia.'};
   $('modeDetails').textContent=copy[mode];
