@@ -3325,7 +3325,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  }
 
  const nativeGame=typeof window.NadmoGame?.postMessage==='function';
- let nativeGameState='stopped',nativeGameRoom='';
+ let nativeGameState='stopped',nativeGameRoom='',nativeBroadcastKind='gaming';
  function applyGameFaceLayout(layout){
   const video=$('gameRemoteFace');if(!video||!layout)return;
   const x=Number(layout.x),y=Number(layout.y),size=Number(layout.size);
@@ -3338,7 +3338,8 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  }
  function gameCommand(type,data={}){if(!nativeGame)return false;window.NadmoGame.postMessage(JSON.stringify({type,...data}));return true}
  window.addEventListener('nadmo-game-status',event=>{
-  const d=event.detail||{};nativeGameState=d.state||'stopped';updateNativeGameClock(nativeGameState,d.startedAt);
+  const d=event.detail||{};nativeGameState=d.state||'stopped';
+  nativeBroadcastKind=d.broadcastKind==='radio'?'radio':'gaming';updateNativeGameClock(nativeGameState,d.startedAt);
   if(d.room)nativeGameRoom=d.room;
   if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
   $('gameCaptureStatus').textContent=d.message||'Pilih game untuk mulai.';
@@ -3353,6 +3354,14 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   $('gameShareRoom').hidden=!['live','paused'].includes(nativeGameState)||!nativeGameRoom;
   $('gameStopLive').hidden=!['live','paused','starting','reconnecting'].includes(nativeGameState);
   if(selectedLiveMode==='gaming')chooseMode('gaming');
+  if(selectedLiveMode==='radio'){
+   $('radioLiveStatus').textContent=d.message||'Menunggu status RADIO...';
+   const running=nativeBroadcastKind==='radio'&&['live','paused'].includes(nativeGameState);
+   $('radioOpenMusic').hidden=!running;
+   $('radioShareLive').hidden=!running||!nativeGameRoom;
+   $('radioStopLive').hidden=nativeBroadcastKind!=='radio'||!['live','paused','starting','reconnecting'].includes(nativeGameState);
+   chooseMode('radio');
+  }
  });
  let cachedRooms=[], selectedFilter='all', savedIds=new Set(JSON.parse(localStorage.getItem('nadmo.beta.saved')||'[]')), afkTrack=null, afkTimer=null, afkMode=false, pendingIce=new Map(), resumeToken='', roomPassword='', reconnectTimer=null, reconnectDeadline=0, reconnectCount=0, manuallyLeaving=false, activeAccessMode='public', recoveringForeground=false, lastForegroundRecovery=0, lastBackgroundAt=0, mirrorPreview=localStorage.getItem('nadmo.mirror.preview')!=='off', mirrorBroadcast=false;
 
@@ -5256,7 +5265,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  }
  document.querySelectorAll('#tipPresets button').forEach(b=>b.onclick=()=>{$('tipCustom').value=b.dataset.tip;updateTipPreview()});
  $('tipCustom').addEventListener('input',updateTipPreview);updateTipPreview();
- let selectedLiveMode='camera',talkVisualTimer=null;
+ let selectedLiveMode='camera',talkVisualTimer=null,roomBroadcastKind='camera';
  function stopTalkVisual(){if(talkVisualTimer)clearInterval(talkVisualTimer);talkVisualTimer=null}
  function chooseMode(mode){
   selectedLiveMode=mode;
@@ -5265,22 +5274,24 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   }
   if(mode!=='gaming'&&gameFaceStream){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON'}
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
+  $('radioLiveSetup').classList.toggle('hide',mode!=='radio');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
   // Keep the screen quiet; show status only for unavailable modes.
-  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',studio:'Koneksi OBS belum tersedia.'};
+  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',radio:nativeGame?'':'RADIO OPEN MUSIC memerlukan APK Android NADMO yang mendukung.',studio:'Koneksi OBS belum tersedia.'};
   $('modeDetails').textContent=copy[mode];
   $('modeDetails').hidden=!copy[mode];
   $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE VIA ANDROID';
-  const ready=mode==='camera'||mode==='talk'||(mode==='gaming'&&nativeGame);
+  const ready=mode==='camera'||mode==='talk'||(['gaming','radio'].includes(mode)&&nativeGame);
   $('preview').disabled=!(mode==='camera'||mode==='talk');
-  $('createRoom').disabled=!ready||(mode==='gaming'&&['live','paused','starting','reconnecting'].includes(nativeGameState));
-  $('createRoom').textContent=mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
+  $('createRoom').disabled=!ready||(['gaming','radio'].includes(mode)&&['live','paused','starting','reconnecting'].includes(nativeGameState));
+  $('createRoom').textContent=mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):mode==='radio'?(nativeGame?'● MULAI RADIO LIVE':'KHUSUS APK ANDROID'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
   if(mode==='gaming')$('category').value='Gaming';
+  if(mode==='radio')$('category').value='DJ & Music';
   if(mode==='talk')$('category').value='Podcast';
   if(mode==='studio')$('category').value='DJ & Music';
   if(localStream&&!host){localStream.getTracks().forEach(t=>t.stop());stopPortraitCameraCapture();localStream=null;stopTalkVisual();$('camera').srcObject=null}
  }
- document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>{chooseMode(b.dataset.liveMode);if(b.dataset.liveMode==='gaming')gameCommand('status')});
+ document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>{chooseMode(b.dataset.liveMode);if(['gaming','radio'].includes(b.dataset.liveMode))gameCommand('status')});
 
  function gameFaceStop(){
   if(gameFaceStream){gameFaceStream.getTracks().forEach(track=>track.stop());gameFaceStream=null}
@@ -6355,7 +6366,21 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
    }
   if(m.type==='error'){if(!$('reportPanel').classList.contains('hide'))$('reportStatus').textContent=m.message||'Gagal mengirim laporan';notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
+ $('radioOpenMusic').onclick=()=>gameCommand('launch-music');
+ $('radioStopLive').onclick=()=>{if(confirm('Akhiri RADIO LIVE?'))gameCommand('stop')};
+ $('radioShareLive').onclick=async()=>{
+  if(!nativeGameRoom)return;
+  const url=DEFAULT_BACKEND+'/app/?room='+encodeURIComponent(nativeGameRoom);
+  try{await navigator.clipboard.writeText(url);$('radioLiveStatus').textContent='Link Radio disalin.'}
+  catch(error){window.prompt('Salin link Radio',url)}
+ };
  $('createRoom').onclick=async()=>{
+  if(selectedLiveMode==='radio'){
+   if(!nativeGame||!adult())return;
+   $('radioLiveStatus').textContent='Meminta izin Android. Layar aplikasi musik tetap privat.';
+   gameCommand('start',{broadcastKind:'radio',title:($('title').value.trim()||'NADMO RADIO LIVE').slice(0,60),quality:'low',face:false});
+   return;
+  }
   if(selectedLiveMode==='gaming'){
    if(!nativeGame){notice('GAME LIVE memerlukan APK Android NADMO.','liveState');return}
    if(!adult())return;
@@ -6368,7 +6393,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
     y:Math.max(.02,Math.min(.85,frame.offsetTop/Math.max(1,preview.clientHeight))),
     size:gameFaceDiameter
    }:null;
-   gameCommand('start',{title:($('title').value.trim()||$('gameName').value+' LIVE').slice(0,60),game:$('gameName').value,quality:$('gameStreamQuality').value,face,facecam});
+   gameCommand('start',{broadcastKind:'gaming',title:($('title').value.trim()||$('gameName').value+' LIVE').slice(0,60),game:$('gameName').value,quality:$('gameStreamQuality').value,face,facecam});
    return;
   }
   if(!['camera','talk'].includes(selectedLiveMode)){notice('Mode '+selectedLiveMode+' belum memiliki source live resmi.','liveState');return}
