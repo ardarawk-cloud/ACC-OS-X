@@ -36,6 +36,21 @@ const puppeteer=require('puppeteer-core');
       display:radioStyle.display,modes,modeColumns:getComputedStyle(document.querySelector('#liveModeGrid')).gridTemplateColumns,
       viewport:{width:innerWidth,height:innerHeight},modeWidth:group.width};
    });
+   assert.match(html,/\.profile-hero>div:nth-of-type\(2\)/,'Profile metadata must NOT flex/stretch the avatar');
+   assert.doesNotMatch(html,/\.profile-hero>div:nth-child\(2\)\{display:flex/,'Mis-targeted metadata selector stretches public avatars');
+   assert.match(html,/\$\('localCameraSetup'\)\.classList\.toggle\('hide',!\['camera','talk'\]\.includes\(mode\)\)/,
+     'RADIO/GAME cannot show local CAMERA preview and controls');
+   const profile=await page.evaluate(()=>{
+     const publicPage=document.getElementById('publicProfilePage');
+     publicPage.classList.remove('hide');
+     const avatar=publicPage.querySelector('.profile-hero>.profile-avatar');
+     const hero=publicPage.querySelector('.profile-hero');
+     hero.style.width='100%';
+     const rect=avatar.getBoundingClientRect(),style=getComputedStyle(avatar);
+     publicPage.classList.add('hide');
+     return {width:rect.width,height:rect.height,flex:style.flex,ratio:rect.width/Math.max(1,rect.height)};
+   });
+   assert(Math.abs(profile.ratio-1)<.02,'Creator avatar must be circular, not elongated: '+JSON.stringify(profile));
    assert(geometry.modes.includes('radio'));
    assert.equal(geometry.display,'flex','Radio artwork must be visible');
    assert(geometry.stage.width>=size.width*.88,'Radio width must be camera-sized: '+JSON.stringify(geometry));
