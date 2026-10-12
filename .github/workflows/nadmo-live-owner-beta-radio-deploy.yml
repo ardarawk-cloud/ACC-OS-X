@@ -46,6 +46,19 @@ jobs:
           npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
           CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs
       - name: Deploy existing NADMO LIVE beta Worker and app
+        id: first_deploy
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          workingDirectory: nadmo-live-beta
+          command: deploy --config wrangler.json
+      # CF's Workers script API occasionally returns a transient 504 HTML page.
+      # Retry once; a failed rollout must not be called successful.
+      - name: Retry deploy after transient Cloudflare 504
+        if: steps.first_deploy.outcome == 'failure'
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
