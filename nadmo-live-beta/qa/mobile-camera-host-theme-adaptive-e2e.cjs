@@ -173,7 +173,7 @@ const puppeteer=require('puppeteer-core');
     'PC viewer must show PORTRAIT stage, not force 16:9 theater: '+JSON.stringify(desktopCamera));
   assert.ok(desktopCamera.chat.w>=290,'PC chat remains a separate side panel');
   assert.equal(desktopCamera.fit,'contain','PC portrait video remains uncropped');
-  assert.match(desktopCamera.build,/VIDEO-FILL-V6/,'viewer and host can verify identical UI build in settings');
+  assert.match(desktopCamera.build,/LIVE-HOURLY-V7/,'viewer and host can verify identical UI build in settings');
   console.log('DESKTOP_FOLLOWS_PHONE_PORTRAIT_QC_PASS '+JSON.stringify(desktopCamera));
   console.log('MOBILE_HOST_SETTINGS_AND_VIEWER_HUD_PASS '+JSON.stringify({hostUi,viewerUi}));
   console.log('MOBILE_CAMERA_ASPECT_AND_HOST_THEME_PASS '+JSON.stringify(outcome));
