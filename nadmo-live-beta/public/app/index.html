@@ -5788,7 +5788,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  }
  // Auto grid reserves slot zero for the host (mobile only).
  function mobileStageRect(index,total){
-  const voiceOnly=stageGuestsList.length>0&&stageGuestsList.every(g=>g.camera!==true);
+  const voiceOnly=roomBroadcastKind==='talk'||(stageGuestsList.length>0&&stageGuestsList.every(g=>g.camera!==true));
   if(voiceOnly){
    if(index===0)return {x:0,y:0,w:100,h:100};
    const count=total-1,cols=Math.min(3,count),rows=Math.ceil(count/cols),slot=index-1;
@@ -5814,7 +5814,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  }
  function syncMobileStage(){
   const el=$('watch'),total=1+stageGuestsList.length;
-  const voiceOnly=stageGuestsList.length>0&&stageGuestsList.every(g=>g.camera!==true);
+  const voiceOnly=roomBroadcastKind==='talk'||(stageGuestsList.length>0&&stageGuestsList.every(g=>g.camera!==true));
   el.classList.toggle('mobile-stage-voice',voiceOnly);
   el.classList.toggle('mobile-stage-split',total>1&&!voiceOnly);
   el.dataset.stageParticipants=String(total);
@@ -6212,7 +6212,8 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  setInterval(()=>{if(pkBattle?.status==='active'||pkBattle?.status==='pending')pkPaint()},1000);
 
  function paintBroadcastKind(kind,heading){
-  roomBroadcastKind=kind==='radio'?'radio':kind==='gaming'?'gaming':'camera';
+  roomBroadcastKind=kind==='radio'?'radio':kind==='gaming'?'gaming':kind==='talk'?'talk':'camera';
+  if(roomBroadcastKind==='talk')document.body.classList.remove('watch-game','watch-landscape');
   const radio=roomBroadcastKind==='radio';
   document.body.classList.toggle('watch-radio',radio);
   if(radio){
@@ -6240,7 +6241,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
     for(const viewerId of activeViewers)await attachViewer(viewerId);
    }
   if(['created','joined','resumed'].includes(m.type)){
-   paintBroadcastKind(m.broadcastKind,m.title||m.hostName||'RADIO LIVE');
+   paintBroadcastKind(m.broadcastKind||(m.category==='Podcast'?'talk':'camera'),m.title||m.hostName||'RADIO LIVE');
    stagePreset=['auto','focus','random'].includes(m.stagePreset)?m.stagePreset:'auto';
    stageRandomSeed=Number.isInteger(m.stageRandomSeed)?m.stageRandomSeed:0;
    $('stagePresetChoice').value=stagePreset;
@@ -6461,7 +6462,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   if(!localStream)await preview();if(!localStream)return;
   const title=$('title').value.trim()||'Siaran langsung';
   const category=selectedLiveMode==='talk'?'Podcast':$('category').value;
-  connect(()=>transmit({type:'create',title,category,mode:'public',themeId:draftProfile.themeId,hostName:activeAccount?.name||draftProfile.name||'Host'}));
+  connect(()=>transmit({type:'create',title,category,broadcastKind:selectedLiveMode==='talk'?'talk':'camera',mode:'public',themeId:draftProfile.themeId,hostName:activeAccount?.name||draftProfile.name||'Host'}));
  };
  function join(id,title,locked){prepareGameAudio();if(!adult()){pendingInvite={id,title,locked};return}pendingInvite=null;let password='';if(locked){password=prompt('Kode akses room:')||'';if(!password)return}roomPassword=password;stopRetry();
  connect(()=>transmit({type:'join',id,password}));$('watchTitle').textContent='Host';setRoomSubtitle(title)}
