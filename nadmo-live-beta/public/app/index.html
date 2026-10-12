@@ -6064,7 +6064,7 @@ body.live-immersive #watch #liveRestReminder{
    $('pkPointsB').textContent=String(p.scores?.B||0);
    $('pkNameA').textContent=(p.teams?.A||[]).map(pkMemberName).join('+').slice(0,32)||'TIM A';
    $('pkNameB').textContent=(p.teams?.B||[]).map(pkMemberName).join('+').slice(0,32)||'TIM B';
-   const t=Math.max(0,Math.ceil(((active?p.endsAt:p.pendingUntil)||0)-Date.now())/1000);
+   const t=Math.max(0,Math.ceil((((active?p.endsAt:p.pendingUntil)||0)-Date.now())/1000));
    $('pkClock').textContent=p.status==='finished'?'SELESAI':String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
    $('pkNotice').textContent=p.status==='finished'?(p.winner==='draw'?'HASIL SERI':p.winner?'TIM '+p.winner+' MENANG':'PK BERAKHIR'):'Poin dukungan gratis, bukan uang.';
   }
