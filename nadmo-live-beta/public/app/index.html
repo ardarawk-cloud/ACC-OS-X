@@ -3110,6 +3110,68 @@ body.live-immersive #watch #liveRestReminder{
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
  let gameFaceStream=null,gameFaceDiameter=76;
+
+ // Worker-supplied createdAt is stable across reconnects and viewer joins.
+ let liveStartedAt=0,liveClockRoom='',liveClockTimer=null,lastReminderHour=0,restDismissTimer=null;
+ let nativeGameStartedAt=0;
+ const formatLiveElapsed=ms=>{
+  const sec=Math.max(0,Math.floor(ms/1000));
+  return String(Math.floor(sec/3600)).padStart(2,'0')+':'+String(Math.floor(sec%3600/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
+ };
+ function dismissRestReminder(){
+  $('liveRestReminder').hidden=true;
+  if(restDismissTimer){clearTimeout(restDismissTimer);restDismissTimer=null}
+ }
+ $('liveRestDismiss').onclick=dismissRestReminder;
+ function renderLiveClock(){
+  const now=Date.now();
+  if(liveStartedAt&&currentRoom&&liveClockRoom===currentRoom){
+   const elapsed=Math.max(0,now-liveStartedAt),hour=Math.floor(elapsed/3600000);
+   $('liveElapsed').textContent='◷ '+formatLiveElapsed(elapsed);$('liveElapsed').hidden=false;
+   if(host&&hour>=1&&hour>lastReminderHour){
+    lastReminderHour=hour;
+    try{sessionStorage.setItem('nadmo.live.rest.'+currentRoom,String(hour))}catch(_){}
+    if(document.visibilityState==='visible'){
+     $('liveRestHour').textContent=hour+' jam';$('liveRestReminder').hidden=false;
+     if(restDismissTimer)clearTimeout(restDismissTimer);
+     restDismissTimer=setTimeout(dismissRestReminder,12000);
+    }
+   }
+  }else $('liveElapsed').hidden=true;
+  if(nativeGameStartedAt&&['starting','live','paused','reconnecting'].includes(nativeGameState)){
+   $('gameLiveElapsed').textContent='DURASI LIVE '+formatLiveElapsed(now-nativeGameStartedAt);
+   $('gameLiveElapsed').hidden=false;
+  }else $('gameLiveElapsed').hidden=true;
+ }
+ function activateLiveClock(id,stamp){
+  if(!id)return;
+  const changed=liveClockRoom!==id;
+  liveClockRoom=id;
+  if(changed){dismissRestReminder();lastReminderHour=0}
+  const valid=Number(stamp);
+  if(Number.isFinite(valid)&&valid>1600000000000&&valid<=Date.now()+60000)
+   liveStartedAt=valid;
+  else if(changed||!liveStartedAt)liveStartedAt=Date.now();
+  if(changed){try{lastReminderHour=Number(sessionStorage.getItem('nadmo.live.rest.'+id))||0}catch(_){}}
+  if(!liveClockTimer)liveClockTimer=setInterval(renderLiveClock,1000);
+  renderLiveClock();
+ }
+ function clearLiveClock(){
+  liveClockRoom='';liveStartedAt=0;lastReminderHour=0;dismissRestReminder();
+  $('liveElapsed').hidden=true;
+  if(!nativeGameStartedAt&&liveClockTimer){clearInterval(liveClockTimer);liveClockTimer=null}
+ }
+ // GAME foreground service handles over-game reminders; avoid WebView duplicates.
+ function updateNativeGameClock(state,startedAt){
+  const n=Number(startedAt);
+  if(Number.isFinite(n)&&n>1600000000000&&n<=Date.now()+60000)nativeGameStartedAt=n;
+  else if(state==='stopped'||state==='error')nativeGameStartedAt=0;
+  else if(!nativeGameStartedAt)nativeGameStartedAt=Date.now();
+  if(!liveClockTimer&&nativeGameStartedAt)liveClockTimer=setInterval(renderLiveClock,1000);
+  if(!nativeGameStartedAt&&!liveClockRoom&&liveClockTimer){clearInterval(liveClockTimer);liveClockTimer=null}
+  renderLiveClock();
+ }
+
  const nativeGame=typeof window.NadmoGame?.postMessage==='function';
  let nativeGameState='stopped',nativeGameRoom='';
  function applyGameFaceLayout(layout){
@@ -3124,7 +3186,7 @@ body.live-immersive #watch #liveRestReminder{
  }
  function gameCommand(type,data={}){if(!nativeGame)return false;window.NadmoGame.postMessage(JSON.stringify({type,...data}));return true}
  window.addEventListener('nadmo-game-status',event=>{
-  const d=event.detail||{};nativeGameState=d.state||'stopped';
+  const d=event.detail||{};nativeGameState=d.state||'stopped';updateNativeGameClock(nativeGameState,d.startedAt);
   if(d.room)nativeGameRoom=d.room;
   if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
   $('gameCaptureStatus').textContent=d.message||'Pilih game untuk mulai.';
@@ -5794,13 +5856,13 @@ body.live-immersive #watch #liveRestReminder{
   },attempt===0?9000:12000);
  }
  async function incoming(m){
-  if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
-  if(m.type==='joined'){if(m.facecam)applyGameFaceLayout(m.facecam);stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle(m.title);$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false;checkViewerFrame(m.id)}
+  if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='joined'){if(m.facecam)applyGameFaceLayout(m.facecam);stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle(m.title);$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false;checkViewerFrame(m.id)}
   if(m.type==='resumed'){stageLayout=normalizeLayout(m.layout);refreshGuestButtons();renderStageGuests();
     $('reportLive').hidden=true;$('hostModeration').hidden=false;
     mirrorBroadcast=m.mirrorBroadcast===true;applyMirroring();
     setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);
-    stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;$('net').textContent='SERVER ONLINE';
+    stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('net').textContent='SERVER ONLINE';
     for(const pc of peers.values())pc.close();peers.clear();pendingIce.clear();
     $('restartRoom').classList.add('hide');
     const activeViewers=Array.isArray(m.viewers)?m.viewers:[];
@@ -6006,6 +6068,7 @@ body.live-immersive #watch #liveRestReminder{
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
+  clearLiveClock();
   $('watch').classList.remove('camera-frame-letterbox','camera-stage-softfill','camera-source-landscape','camera-source-portrait');
   $('watch').style.removeProperty('--camera-source-aspect');
   $('watch').style.removeProperty('--camera-source-ratio');
