@@ -1,5 +1,4 @@
 'use strict';
-// NADMO LIVE countdown contract. No browser automation clock spoofing or prod mutation.
 const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
@@ -7,29 +6,28 @@ const assert=require('node:assert/strict');
 const base=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(base,'public/app/index.html'),'utf8');
 const worker=fs.readFileSync(path.join(base,'worker.mjs'),'utf8');
-const scripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/g)]
+const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
   .map(x=>x[1]).filter(Boolean);
 assert(scripts.length,'LIVE document must include JS');
 for(const js of scripts)new vm.Script(js,{filename:'nadmo-live-public.js'});
 for(const id of ['liveElapsed','gameLiveElapsed','liveRestReminder','liveRestHour','liveRestDismiss'])
  assert(html.includes('id="'+id+'"'),'Missing '+id);
-assert.match(worker,/stageLayout:\[\],createdAt:n/,'room must store creation time');
-assert.match(worker,/type:'created'[^\n]*createdAt:room\.createdAt/,'host start is authoritative');
-assert.match(worker,/type:'resumed'[^\n]*createdAt:room\.createdAt/,'reconnect may NOT reset the clock');
-assert.match(worker,/type:'joined'[^\n]*createdAt:room\.createdAt/,'viewers show same duration');
-assert.match(html,/activateLiveClock\(m\.id,m\.createdAt\)/,'socket events must apply Worker time');
-assert.match(html,/lastReminderHour=hour/,'reminder fires once per hour');
-assert.match(html,/sessionStorage\.setItem\('nadmo\.live\.rest\.'/,'do not replay dismissed reminders after reload');
-assert.match(html,/hour=Math\.floor\(elapsed\/3600000\)/,'every full hour');
-assert.match(html,/if\(host&&hour>=1&&hour>lastReminderHour\)/,'viewer MUST NOT receive rest prompts');
-assert.match(html,/document\.visibilityState==='visible'/,'hidden browser must not show a stale overlay');
-assert.match(html,/renderLiveClock,1000/,'duration refresh cadence');
-assert.match(html,/clearLiveClock\(\);[\s\S]{0,80}\$\('watch'\)\.classList/,'leaving room stops the timer');
-assert.match(html,/updateNativeGameClock\(nativeGameState,d\.startedAt\)/,'native GAME timestamp shown');
-assert.match(html,/NADMO LIVE|NADMO/);
+assert(worker.includes('stageLayout:[],createdAt:n'),'room must store its original start');
+for(const type of ['created','resumed','joined']){
+ const response=worker.split("type:'"+type+"'")[1]?.split('});')[0]||'';
+ assert(response.includes('createdAt:room.createdAt'),type+' must provide original timestamp');
+}
+assert(html.includes('activateLiveClock(m.id,m.createdAt)'),'socket events use Worker room time');
+assert(html.includes('lastReminderHour=hour'),'a reminder fires only once per hour');
+assert(html.includes("sessionStorage.setItem('nadmo.live.rest.'"),'avoid reminder replay on reload');
+assert(html.includes('hour=Math.floor(elapsed/3600000)'),'exact full-hour milestones');
+assert(html.includes('if(host&&hour>=1&&hour>lastReminderHour)'),'viewer never gets host reminder');
+assert(html.includes("document.visibilityState==='visible'"),'do not show hidden overlays');
+assert(html.includes('renderLiveClock,1000'),'elapsed clock increments each second');
+assert(/function leave\(\)\{\s*clearLiveClock\(\)/.test(html),'leave clears timer');
+assert(html.includes('updateNativeGameClock(nativeGameState,d.startedAt)'),'native GAME exposes clock');
 const from=html.indexOf(' const formatLiveElapsed=ms=>');
 const to=html.indexOf(' function dismissRestReminder()',from);
-assert(from>=0&&to>from,'clock formatter must be present');
-const source=html.slice(from,to)+'\nformatLiveElapsed(3723000)';
-assert.equal(vm.runInNewContext(source,{}),'01:02:03','elapsed displays HH:MM:SS');
-console.log('PASS LIVE hourly duration: web JS parses, Worker create/join/resume stamp, per-hour host rest, viewer clock and native GAME duration');
+assert(from>=0&&to>from,'formatter is present');
+assert.equal(vm.runInNewContext(html.slice(from,to)+'\nformatLiveElapsed(3723000)',{}),'01:02:03');
+console.log('PASS LIVE duration & breaks: JS syntax, server create/join/resume time, hourly host reminder, native GAME');
