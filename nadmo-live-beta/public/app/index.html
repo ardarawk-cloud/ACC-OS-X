@@ -2582,6 +2582,24 @@ body.live-immersive #watch #liveRestReminder{
  #radioMiniDock{bottom:20px}
 }
 
+
+#pkBattleHud[hidden],#pkGuestInvite[hidden],#pkSettings[hidden]{display:none!important}
+#watch .viewfinder{position:relative}
+#pkBattleHud{position:absolute;z-index:39;left:50%;top:15%;transform:translateX(-50%);width:min(88%,410px);padding:8px;border:1px solid var(--neon);border-radius:10px;background:#07110ce8;color:#eaffd9;text-align:center;box-shadow:0 2px 12px #0009}
+#pkBattleHud .pk-score{display:grid;grid-template-columns:1fr auto 1fr;gap:5px;align-items:center;font-size:13px}
+#pkBattleHud b{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkBattleHud .pk-cheers{display:flex;gap:6px;margin-top:5px}
+#pkBattleHud button{flex:1;border:1px solid #91b977;background:#163524;color:white;border-radius:6px;padding:6px;font-size:10px}
+#pkBattleHud button[hidden]{display:none!important}
+#pkGuestInvite{position:absolute;z-index:45;left:10%;right:10%;bottom:22%;background:#101c17ef;border:1px solid var(--neon);border-radius:10px;padding:15px;text-align:center}
+#pkGuestInvite button{margin:5px;min-height:42px}
+#pkSettings{border:1px solid #4c7841;border-radius:8px;padding:10px;margin:12px 0}
+#pkSettings .pk-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#pkSettings .pk-controls>*{min-width:0;width:100%}
+#pkCandidates{display:flex;flex-wrap:wrap;gap:6px;padding:7px 0}
+#pkCandidates label{border:1px solid #45643e;padding:6px;border-radius:6px;font-size:11px}
+#pkSettings .pk-actions{display:flex;gap:6px;flex-wrap:wrap}
+#pkSettings .pk-actions button{flex:1;min-width:80px}
 </style></head>
 <body>
 <div class="app">
@@ -2721,7 +2739,9 @@ body.live-immersive #watch #liveRestReminder{
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
-  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div>
+  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video>
+<div id="pkBattleHud" hidden><div class="pk-score"><span><small id="pkNameA">TIM A</small><b id="pkPointsA">0</b></span><span><b>PK</b><small id="pkClock">00:00</small></span><span><small id="pkNameB">TIM B</small><b id="pkPointsB">0</b></span></div><div class="pk-cheers"><button type="button" id="pkCheerA">DUKUNG A GRATIS</button><button type="button" id="pkCheerB">DUKUNG B GRATIS</button></div><small id="pkNotice">Dukungan gratis, bukan saweran uang.</small></div>
+<div id="pkGuestInvite" hidden><strong>UNDANGAN PK</strong><p>Ikut PK bersama host? Kamu bebas menolak.</p><button class="btn" id="pkAccept" type="button">TERIMA</button><button class="btn secondary" id="pkDecline" type="button">TOLAK</button></div></div>
 <div id="watchState" class="status">CONNECTING SIGNAL...</div><div id="liveRestReminder" role="status" aria-live="polite" hidden><span><strong>WAKTUNYA ISTIRAHAT</strong> — Kamu sudah LIVE <span id="liveRestHour">1 jam</span>. Istirahat sebentar bila perlu. Siaran tetap berjalan.</span><button type="button" id="liveRestDismiss">LANJUT</button></div><div id="watchStreamQuality" class="status" aria-live="off" style="font-size:10px;opacity:.85" hidden></div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
@@ -2776,7 +2796,10 @@ body.live-immersive #watch #liveRestReminder{
       <label class="mirror-option"><span><b>Mirror Siaran</b><small>Balik tampilan bagi penonton NADMO (teks juga terbalik)</small></span><input type="checkbox" id="mirrorBroadcastToggle"></label>
       <p id="mirrorStatus" class="deck">Mirror Preview aktif hanya untuk kamera depan. Siaran penonton normal secara bawaan.</p>
     </div>
-    <button type="button" class="btn ghost" id="settingsLeave" style="width:100%">KELUAR / AKHIRI LIVE</button>
+    <div id="pkSettings" hidden><div class="show-label"><b>PK BATTLE</b><small>UNDANGAN SUKARELA</small></div>
+<div class="pk-controls"><select class="field" id="pkMode" aria-label="Mode PK"><option value="1v1">1 VS 1</option><option value="2v2">2 VS 2</option></select><select class="field" id="pkMinutes" aria-label="Durasi PK"><option value="3">3 MENIT</option><option value="5" selected>5 MENIT</option><option value="10">10 MENIT</option></select></div>
+<div id="pkCandidates"></div><div class="pk-actions"><button type="button" id="pkInvite" class="btn secondary">UNDANG PK</button><button type="button" id="pkRandom" class="btn secondary">ACAK TAMU</button><button type="button" id="pkEnd" class="btn ghost">AKHIRI PK</button></div><small id="pkStatus" role="status">PK antar-host beda room belum aktif. Poin PK gratis, bukan uang.</small></div>
+<button type="button" class="btn ghost" id="settingsLeave" style="width:100%">KELUAR / AKHIRI LIVE</button>
     <small class="deck" id="mobileUiBuild" style="display:block;margin-top:10px;opacity:.7">UI 20261012-LIVE-HOURLY-V7</small>
   </div>
   <div id="endLiveConfirm" class="end-live-dialog hide" role="dialog" aria-modal="true" aria-labelledby="endLiveTitle">
@@ -3185,6 +3208,7 @@ body.live-immersive #watch #liveRestReminder{
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
  let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
+ let pkBattle=null,pkPicked=new Set();
  let gameFaceStream=null,gameFaceDiameter=76;
 
  // Worker-supplied createdAt is stable across reconnects and viewer joins.
@@ -6013,7 +6037,60 @@ body.live-immersive #watch #liveRestReminder{
    }
   },attempt===0?9000:12000);
  }
+
+ function pkMemberName(id){const g=stageGuestsList.find(x=>x.id===id);return g?.name||(g?'Tamu':hostPublicIdentity.name||'Host')}
+ function pkCandidates(){
+  const out=$('pkCandidates');out.replaceChildren();
+  const ready=stageGuestsList.filter(x=>x.ready===true);
+  for(const id of pkPicked)if(!ready.some(x=>x.id===id))pkPicked.delete(id);
+  for(const g of ready){
+   const label=document.createElement('label'),box=document.createElement('input');
+   box.type='checkbox';box.checked=pkPicked.has(g.id);
+   box.onchange=()=>{if(box.checked)pkPicked.add(g.id);else pkPicked.delete(g.id)};
+   label.append(box,document.createTextNode(' '+String(g.name||'Tamu').slice(0,32)));out.append(label);
+  }
+  if(!ready.length)out.textContent='Belum ada tamu aktif untuk PK.';
+ }
+ function pkPaint(){
+  const p=pkBattle,active=!!currentRoom&&p?.status==='active',pending=!!currentRoom&&p?.status==='pending';
+  $('pkSettings').hidden=!host||!currentRoom;
+  $('pkInvite').disabled=!host||!currentRoom||active||pending;
+  $('pkRandom').disabled=!host||!currentRoom||active||pending;
+  $('pkEnd').disabled=!host||!currentRoom||!(active||pending);
+  $('pkGuestInvite').hidden=!(pending&&guestOnStage&&p.invited?.includes(selfId)&&!p.accepted?.includes(selfId));
+  $('pkBattleHud').hidden=!(active||!!currentRoom&&p?.status==='finished');
+  if(p){
+   $('pkPointsA').textContent=String(p.scores?.A||0);
+   $('pkPointsB').textContent=String(p.scores?.B||0);
+   $('pkNameA').textContent=(p.teams?.A||[]).map(pkMemberName).join('+').slice(0,32)||'TIM A';
+   $('pkNameB').textContent=(p.teams?.B||[]).map(pkMemberName).join('+').slice(0,32)||'TIM B';
+   const t=Math.max(0,Math.ceil(((active?p.endsAt:p.pendingUntil)||0)-Date.now())/1000);
+   $('pkClock').textContent=p.status==='finished'?'SELESAI':String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+   $('pkNotice').textContent=p.status==='finished'?(p.winner==='draw'?'HASIL SERI':p.winner?'TIM '+p.winner+' MENANG':'PK BERAKHIR'):'Poin dukungan gratis, bukan uang.';
+  }
+  $('pkCheerA').hidden=!active||host||guestOnStage;
+  $('pkCheerB').hidden=!active||host||guestOnStage;
+  if(host&&currentRoom)$('pkStatus').textContent=pending?'Menunggu persetujuan tamu.':active?'PK berjalan; live tetap aktif.':'Pilih tamu atau acak tamu yang sudah di panggung. Saweran berbayar belum aktif.';
+ }
+ function pkApply(p){pkBattle=p&&typeof p==='object'?p:null;pkPaint()}
+ function pkRequest(random){
+  if(!host||!currentRoom)return;
+  const mode=$('pkMode').value,participants=[...pkPicked],required=mode==='2v2'?3:1;
+  if(!random&&participants.length!==required){$('pkStatus').textContent='Pilih tepat '+required+' tamu.';return}
+  transmit({type:'pk-start',mode,minutes:Number($('pkMinutes').value),random:!!random,...(random?{}:{participants})});
+ }
+ $('pkMode').onchange=pkCandidates;
+ $('pkInvite').onclick=()=>pkRequest(false);
+ $('pkRandom').onclick=()=>pkRequest(true);
+ $('pkEnd').onclick=()=>{if(confirm('Akhiri PK saja? Live tetap berjalan.'))transmit({type:'pk-end'})};
+ $('pkAccept').onclick=()=>transmit({type:'pk-consent',accept:true});
+ $('pkDecline').onclick=()=>transmit({type:'pk-consent',accept:false});
+ $('pkCheerA').onclick=()=>transmit({type:'pk-support',side:'A'});
+ $('pkCheerB').onclick=()=>transmit({type:'pk-support',side:'B'});
+ setInterval(()=>{if(pkBattle?.status==='active'||pkBattle?.status==='pending')pkPaint()},1000);
+
  async function incoming(m){
+  if(m.type==='pk-state'){pkApply(m.pk);return}
   if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
   if(m.type==='joined'){if(m.facecam)applyGameFaceLayout(m.facecam);stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle(m.title);$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false;checkViewerFrame(m.id)}
   if(m.type==='resumed'){stageLayout=normalizeLayout(m.layout);refreshGuestButtons();renderStageGuests();
@@ -6030,6 +6107,7 @@ body.live-immersive #watch #liveRestReminder{
     }
     for(const viewerId of activeViewers)await attachViewer(viewerId);
    }
+  if(['created','joined','resumed'].includes(m.type)){pkApply(m.pk||null);pkCandidates()}
   if(m.type==='host-reconnecting'){
    $('watchState').textContent='Host sementara kehilangan jaringan. Menunggu sampai 90 detik tanpa mengakhiri room...';markWatchWarning($('watchState').textContent);
   }
@@ -6094,7 +6172,7 @@ body.live-immersive #watch #liveRestReminder{
   if(m.type==='stage-updated'){
    stageLayout=normalizeLayout(m.layout);
    stageGuestsList=Array.isArray(m.guests)?m.guests.slice(0,9):[];
-   renderStageGuests();refreshGuestButtons();return;
+   renderStageGuests();refreshGuestButtons();pkCandidates();pkPaint();return;
   }
   if(m.type==='viewer-left'&&host){peers.get(m.id)?.close();peers.delete(m.id);viewerDisplayNames.delete(m.id);mutedViewerIds.delete(m.id);renderHostModeration()}
   if(m.type==='signal'){
