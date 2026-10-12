@@ -2640,6 +2640,27 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
 #studio .mode-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
 #studio .mode-grid button{font-size:clamp(8px,2.3vw,11px);min-width:0;padding:10px 2px;overflow-wrap:anywhere}
 @media(max-width:370px){#studio .mode-grid button .mode-icon{font-size:20px}}
+
+/* Host sees clear functional controls. Technical status remains accessible to code/ARIA but not displayed. */
+#studio .creator-advanced-only,#studio #category,#studio #gameShareRoom,#studio #radioShareLive{display:none!important}
+#studio #gameDeckMic,#studio #gameDeckScreen,#studio #gameDeckAudio,#studio #gameDeckChat{display:none!important}
+#studio #gameCaptureStatus:empty,#studio #radioLiveStatus:empty{display:none!important}
+#studio #liveState{font-size:12px;min-height:0}
+#studio #gameLaunchGame:not(:disabled),#studio #radioOpenMusic:not(:disabled){border-color:var(--neon);color:var(--neon);font-weight:900}
+body.live-immersive #watch.mobile-stage-voice .live-stage{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ border:0!important;max-height:none!important;margin:0!important}
+body.live-immersive #watch.mobile-stage-voice .live-stage>.viewfinder{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
+body.live-immersive #watch.mobile-stage-voice #guestStageGrid{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ display:block!important;pointer-events:none!important;z-index:9!important}
+body.live-immersive #watch.mobile-stage-voice .stage-guest-tile{
+ position:absolute!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:auto!important;border:1px solid var(--neon)!important;border-radius:14px!important;
+ overflow:hidden!important;background:#08150ede!important}
+body.live-immersive #watch.mobile-stage-voice .stage-guest-tile .stage-fallback{background:transparent!important}
+body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:auto!important}
 </style></head>
 <body>
 <div class="app">
@@ -2693,12 +2714,12 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
 <button type="button" data-live-mode="studio"><span class="mode-icon">⌘</span>STUDIO PC</button></div>
 <div class="mode-details" id="modeDetails" hidden></div>
 <div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select>
- <label for="gameStreamQuality">KUALITAS VIDEO GAME</label><select class="field" id="gameStreamQuality"><option value="stable" selected>STABIL — 720p / 18 FPS (disarankan)</option><option value="low">HEMAT DATA — 640p / 15 FPS</option><option value="quality">DETAIL — 960p / 20 FPS (internet cepat)</option></select><p class="profile-note">Jika video dan suara tersendat, coba HEMAT DATA pada LIVE berikutnya. Kualitas bisa dipilih sebelum mulai siaran.</p><div id="gameOverlayPreview" aria-label="Pratinjau posisi kamera saat bermain">
-  <div class="game-canvas-note">LAYAR GAME<br><small>Android meminta izin sebelum siaran</small></div>
+ <label for="gameStreamQuality">KUALITAS VIDEO GAME</label><select class="field" id="gameStreamQuality"><option value="stable" selected>STABIL — 720p / 18 FPS (disarankan)</option><option value="low">HEMAT DATA — 640p / 15 FPS</option><option value="quality">DETAIL — 960p / 20 FPS (internet cepat)</option></select><div id="gameOverlayPreview" aria-label="Pratinjau posisi kamera saat bermain">
+  <div class="game-canvas-note">GAME</div>
   <div class="game-face-frame" id="gameFaceFrame"><video id="gameFaceCam" autoplay muted playsinline></video></div>
  </div>
  <div class="face-actions"><button type="button" class="btn secondary" id="gameFaceToggle">KAMERA ON</button><button type="button" class="btn secondary" id="gameFaceSize">UKURAN</button><button type="button" class="btn ghost" id="gameFaceHide">SEMBUNYIKAN</button></div>
- <p id="gameCaptureStatus" class="profile-note" role="status" aria-live="polite">Pilih game, aktifkan kamera jika perlu, lalu mulai.</p>
+ <p id="gameCaptureStatus" class="profile-note" role="status" aria-live="polite"></p>
  <div class="game-deck-health" aria-label="Status siaran GAME">
   <span id="gameDeckMic">MIC / MENUNGGU</span>
   <span id="gameDeckScreen">LAYAR / MENUNGGU</span>
@@ -2709,18 +2730,18 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  <div class="game-live-actions"><button type="button" class="btn secondary" id="gameLaunchGame" hidden>↗ BUKA GAME</button><button type="button" class="btn ghost" id="gameShareRoom" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="gameStopLive" hidden>■ AKHIRI LIVE</button></div></div>
 <div id="radioLiveSetup" class="panel hide" aria-label="RADIO LIVE dengan pemutar musik host">
 <div class="show-label"><b>RADIO LIVE</b><small>OPEN MUSIC</small></div>
-<p class="deck">Layar penonton sebesar LIVE CAMERA, bukan GAME. Video aplikasi musik tidak disiarkan. Audio aplikasi hanya dapat direkam bila Android dan pemutarnya mengizinkan.</p>
+
 <div class="actions"><button type="button" class="btn secondary" id="radioOpenMusic" hidden>↗ OPEN MUSIC</button><button type="button" class="btn ghost" id="radioShareLive" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="radioStopLive" hidden>AKHIRI RADIO</button></div>
-<div id="radioLiveStatus" class="status" role="status">Mulai RADIO LIVE, buka aplikasi musik pilihanmu, lalu RESUME lewat tombol melayang. Pakai musik yang memiliki izin siar.</div>
+<div id="radioLiveStatus" class="status" role="status"></div>
 </div>
 <div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
   <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
   <div class="status" id="camState">CAMERA / STANDBY</div>
   <div class="actions"><button class="btn secondary" id="preview">◉ ENABLE CAMERA</button><button class="btn ghost" id="stopCamera">STOP CAMERA</button></div>
-  <div class="show-label"><b>BROADCAST SETUP</b><small>02 / SETTINGS</small></div>
+  <div class="show-label"><b>LIVE</b></div>
   <div class="panel">
-    <label for="title">BROADCAST TITLE</label><input class="field" id="title" maxlength="60" placeholder="Midnight conversation #001">
-    <label for="category">CHANNEL TYPE</label><select id="category" class="field"><option>Social</option><option>DJ & Music</option><option>Podcast</option><option>Nightlife</option><option>Gaming</option></select>
+    <label for="title" class="creator-advanced-only">BROADCAST TITLE</label><input class="field" id="title" maxlength="60" placeholder="Midnight conversation #001">
+    <label for="category" class="creator-advanced-only">CHANNEL TYPE</label><select id="category" class="field"><option>Social</option><option>DJ & Music</option><option>Podcast</option><option>Nightlife</option><option>Gaming</option></select>
     <button class="btn" id="createRoom" style="width:100%">● TRANSMIT LIVE</button>
     <div class="status" id="liveState"></div>
   </div>
@@ -3351,7 +3372,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   nativeRadioSupported=d.radioMusicSupported===true;updateNativeGameClock(nativeGameState,d.startedAt);
   if(d.room)nativeGameRoom=d.room;
   if(nativeGameState==='stopped'||nativeGameState==='error')nativeGameRoom='';
-  $('gameCaptureStatus').textContent=d.message||'Pilih game untuk mulai.';
+  $('gameCaptureStatus').textContent=['error','reconnecting'].includes(d.state)?(d.message||'GAGAL TERHUBUNG'):'';
   const gameActive=['live','reconnecting'].includes(nativeGameState);
   $('gameDeckMic').textContent='MIC / '+(nativeGameState==='paused'?'JEDA':gameActive?'AKTIF':'MENUNGGU');
   $('gameDeckScreen').textContent='LAYAR / '+(nativeGameState==='paused'?'JEDA PRIVASI':nativeGameState==='live'?'AKTIF':nativeGameState==='reconnecting'?'MENYAMBUNG ULANG':nativeGameState==='starting'?'MENYIAPKAN':'BERHENTI');
@@ -3359,15 +3380,19 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   $('gameChatSettings').hidden=d.chatNotificationsEnabled===true;
   $('gameChatOverlaySettings').hidden=!nativeGame||d.chatOverlayEnabled===true;
   if(d.chatOverlayEnabled===true)$('gameDeckChat').textContent='CHAT / OVERLAY GAME AKTIF';
-  $('gameLaunchGame').hidden=!['live','paused'].includes(nativeGameState);
-  $('gameShareRoom').hidden=!['live','paused'].includes(nativeGameState)||!nativeGameRoom;
+  $('gameLaunchGame').hidden=false;
+  $('gameLaunchGame').disabled=!['live','paused'].includes(nativeGameState);
+  $('gameLaunchGame').textContent=['live','paused'].includes(nativeGameState)?'↗ BUKA GAME':'MENYAMBUNG...';
+  $('gameShareRoom').hidden=true;
   $('gameStopLive').hidden=!['live','paused','starting','reconnecting'].includes(nativeGameState);
   if(selectedLiveMode==='gaming')chooseMode('gaming');
   if(selectedLiveMode==='radio'){
-   $('radioLiveStatus').textContent=d.message||'Menunggu status RADIO...';
+   $('radioLiveStatus').textContent=['error','reconnecting'].includes(d.state)?(d.message||'GAGAL TERHUBUNG'):'';
    const running=nativeBroadcastKind==='radio'&&['live','paused'].includes(nativeGameState);
-   $('radioOpenMusic').hidden=!running;
-   $('radioShareLive').hidden=!running||!nativeGameRoom;
+   $('radioOpenMusic').hidden=false;
+   $('radioOpenMusic').disabled=!running;
+   $('radioOpenMusic').textContent=running?'↗ OPEN MUSIC':'MENYAMBUNG...';
+   $('radioShareLive').hidden=true;
    $('radioStopLive').hidden=nativeBroadcastKind!=='radio'||!['live','paused','starting','reconnecting'].includes(nativeGameState);
    chooseMode('radio');
   }
@@ -5762,6 +5787,13 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  }
  // Auto grid reserves slot zero for the host (mobile only).
  function mobileStageRect(index,total){
+  const voiceOnly=stageGuestsList.length>0&&stageGuestsList.every(g=>g.camera!==true);
+  if(voiceOnly){
+   if(index===0)return {x:0,y:0,w:100,h:100};
+   const count=total-1,cols=Math.min(3,count),rows=Math.ceil(count/cols),slot=index-1;
+   const w=(92-(cols-1)*2)/cols,h=Math.min(18,(53-(rows-1)*2)/rows);
+   return {x:4+(slot%cols)*(w+2),y:14+Math.floor(slot/cols)*(h+2),w,h};
+  }
   if(stagePreset==='focus'&&total>1){
    if(index===0)return {x:0,y:0,w:100,h:65};
    const guests=total-1,cols=Math.min(3,guests),rows=Math.ceil(guests/cols),slot=index-1,gap=.5;
@@ -5781,7 +5813,9 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  }
  function syncMobileStage(){
   const el=$('watch'),total=1+stageGuestsList.length;
-  el.classList.toggle('mobile-stage-split',total>1);
+  const voiceOnly=stageGuestsList.length>0&&stageGuestsList.every(g=>g.camera!==true);
+  el.classList.toggle('mobile-stage-voice',voiceOnly);
+  el.classList.toggle('mobile-stage-split',total>1&&!voiceOnly);
   el.dataset.stageParticipants=String(total);
   const r=mobileStageRect(0,total);
   for(const [key,val] of [['--mobile-host-x',r.x],['--mobile-host-y',r.y],['--mobile-host-w',r.w],['--mobile-host-h',r.h]])el.style.setProperty(key,val+'%');
@@ -6188,7 +6222,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
  }
  async function incoming(m){
   if(m.type==='pk-state'){pkApply(m.pk);return}
-  if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('● LIVE','liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
   if(m.type==='joined'){if(m.facecam)applyGameFaceLayout(m.facecam);stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle(m.title);$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false;checkViewerFrame(m.id)}
   if(m.type==='resumed'){stageLayout=normalizeLayout(m.layout);refreshGuestButtons();renderStageGuests();
     $('reportLive').hidden=true;$('hostModeration').hidden=false;
@@ -6401,7 +6435,7 @@ body.live-immersive.watch-radio #watch #radioLiveCanvas{display:flex!important}
   if(selectedLiveMode==='radio'){
    if(!nativeGame||!nativeRadioSupported){$('radioLiveStatus').textContent='Mode RADIO membutuhkan APK NADMO yang mendukung OPEN MUSIC.';return}
    if(!adult())return;
-   $('radioLiveStatus').textContent='Meminta izin Android. Layar aplikasi musik tetap privat.';
+   $('radioLiveStatus').textContent='';
    gameCommand('start',{broadcastKind:'radio',title:($('title').value.trim()||'NADMO RADIO LIVE').slice(0,60),quality:'low',face:false});
    return;
   }
