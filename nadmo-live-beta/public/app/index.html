@@ -5694,7 +5694,36 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   // GAME playback PCM over a WebRTC data channel. Regular host microphone
   // stays on its separate audio track. Never fabricate an audio-ready state.
   let gameAudioContext=null,gameAudioNext=0,gameAudioLastFrame=0;
-  const GAME_AUDIO_RATE=24000,GAME_AUDIO_FRAME_BYTES=960;
+  const GAME_AUDIO_RATE=24000,GAME_AUDIO_FRAME_BYTES=960,GAME_AUDIO_ADPCM_BYTES=248;
+  // Independent 20ms IMA-ADPCM packets preserve audio through unreliable GAME data channels.
+  // Legacy 960-byte PCM packets remain supported for old host APKs.
+  const GAME_AUDIO_ADPCM_STEPS=[7,8,9,10,11,12,13,14,16,17,19,21,23,25,28,31,34,37,41,45,50,55,60,66,73,80,88,97,107,118,130,143,157,173,190,209,230,253,279,307,337,371,408,449,494,544,598,658,724,796,876,963,1060,1166,1282,1411,1552,1707,1878,2066,2272,2499,2749,3024,3327,3660,4026,4428,4871,5358,5894,6484,7132,7845,8630,9493,10442,11487,12635,13899,15289,16818,18500,20350,22385,24623,27086,29794,32767];
+  const GAME_AUDIO_ADPCM_INDEX=[-1,-1,-1,-1,2,4,6,8];
+  function decodeGameAudioSamples(data,samples){
+   const pcm=new DataView(data);
+   if(data.byteLength===GAME_AUDIO_FRAME_BYTES){
+    for(let i=0;i<samples.length;i++)samples[i]=pcm.getInt16(i*2,true)/32768;
+    return true;
+   }
+   if(data.byteLength!==GAME_AUDIO_ADPCM_BYTES||pcm.getUint8(0)!==78||pcm.getUint8(1)!==65||pcm.getUint8(2)!==68||pcm.getUint8(3)!==49||pcm.getUint8(7)!==0)return false;
+   let predictor=pcm.getInt16(4,true),index=pcm.getUint8(6);
+   if(index>88||samples.length!==480)return false;
+   samples[0]=predictor/32768;
+   // Each frame carries a predictor and step index: dropped packets don't poison future frames.
+   for(let i=1;i<samples.length;i++){
+    const byte=pcm.getUint8(8+((i-1)>>1));
+    const nibble=(i&1)?byte&15:byte>>>4;
+    const step=GAME_AUDIO_ADPCM_STEPS[index];
+    let delta=step>>3;
+    if(nibble&4)delta+=step;
+    if(nibble&2)delta+=step>>1;
+    if(nibble&1)delta+=step>>2;
+    predictor=Math.max(-32768,Math.min(32767,predictor+(nibble&8?-delta:delta)));
+    index=Math.max(0,Math.min(88,index+GAME_AUDIO_ADPCM_INDEX[nibble&7]));
+    samples[i]=predictor/32768;
+   }
+   return true;
+  }
   function prepareGameAudio(){
    try{
     if(!gameAudioContext){
@@ -5711,12 +5740,13 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   }
   function onGameAudioPacket(data){
    if(host||!currentRoom||!gameAudioContext||gameAudioContext.state!=='running'||$('remote').muted)return;
-   if(!(data instanceof ArrayBuffer)||data.byteLength!==GAME_AUDIO_FRAME_BYTES)return;
+   if(!(data instanceof ArrayBuffer)||(data.byteLength!==GAME_AUDIO_FRAME_BYTES&&data.byteLength!==GAME_AUDIO_ADPCM_BYTES))return;
    try{
-    const ctx=gameAudioContext,pcm=new DataView(data),count=data.byteLength/2;
+    const ctx=gameAudioContext,count=GAME_AUDIO_FRAME_BYTES/2;
     const buffer=ctx.createBuffer(1,count,GAME_AUDIO_RATE),samples=buffer.getChannelData(0);
+    if(!decodeGameAudioSamples(data,samples))return;
     let peak=0;
-    for(let i=0;i<count;i++){const x=pcm.getInt16(i*2,true)/32768;samples[i]=x;peak=Math.max(peak,Math.abs(x))}
+    for(let i=0;i<count;i++)peak=Math.max(peak,Math.abs(samples[i]));
     const now=ctx.currentTime;
     // No backlog after a network stall.
     if(!gameAudioNext||gameAudioNext<now||gameAudioNext>now+.18)gameAudioNext=now+.035;
