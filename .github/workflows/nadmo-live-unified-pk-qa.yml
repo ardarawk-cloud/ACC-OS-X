@@ -1,0 +1,67 @@
+name: NADMO LIVE unified PK safety and syntax QC
+on:
+  push:
+    branches:
+      - feat/nadmo-live-unified-stage-pk-20261012
+    paths:
+      - 'nadmo-live-beta/worker.mjs'
+      - 'nadmo-live-beta/pk-battle.mjs'
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/qa/pk-battle-unit.mjs'
+      - 'nadmo-live-beta/qa/pk-room-websocket-e2e.mjs'
+      - 'nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs'
+      - '.github/workflows/nadmo-live-unified-pk-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pk-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Check Cloudflare worker and PK library syntax
+        run: |
+          node --check nadmo-live-beta/worker.mjs
+          node --check nadmo-live-beta/pk-battle.mjs
+      - name: Validate PK state and anti-fake-payment assertions
+        run: node nadmo-live-beta/qa/pk-battle-unit.mjs
+      - name: Verify live-room websocket PK, multi-guest, host-layout authorization
+        run: node nadmo-live-beta/qa/pk-room-websocket-e2e.mjs
+      - name: Parse embedded web client and check UI boundaries
+        run: |
+          node <<'NODE'
+          const fs=require('node:fs');
+          const assert=require('node:assert/strict');
+          const html=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8');
+          const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).filter(Boolean);
+          assert.ok(scripts.length>0,'Expected embedded frontend script');
+          const client=scripts.join('\n');
+          fs.writeFileSync('/tmp/nadmo-inline-client.js',client);
+          for(const id of ['pkBattleHud','pkSettings','pkGuestInvite','pkCheerA','pkCheerB','pkInvite','pkEnd','pkAccept']){
+            assert.ok(html.includes('id="'+id+'"'),id+' is missing');
+          }
+          assert.match(html,/function pkPaint\(/);
+          assert.match(client,/type:'pk-consent'/);
+          assert.match(client,/type:'pk-support'/);
+          assert.match(html,/Pembayaran belum aktif/);
+          const worker=fs.readFileSync('nadmo-live-beta/worker.mjs','utf8');
+          assert.match(worker,/validHostSession\(s,room\)/);
+          assert.match(worker,/getAccountBySessionFingerprint/);
+          assert.match(worker,/type==='pk-start'/);
+          assert.match(worker,/type==='pk-support'/);
+          console.log('UI event contract and payment gating PASS');
+          NODE
+          node --check /tmp/nadmo-inline-client.js
+      - name: Install browser visual QC
+        run: npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+      - name: Verify RADIO camera-sized stage at 320, 390 and 430 px
+        run: |
+          CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)"
+          test -n "$CHROME_BIN"
+          export CHROME_BIN
+          node nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs
+      - name: Preserve existing duration and privacy contracts
+        run: node nadmo-live-beta/qa/live-hourly-duration-contract.cjs
