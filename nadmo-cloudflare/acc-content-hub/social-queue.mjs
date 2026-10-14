@@ -1,3 +1,4 @@
+import {accessOwnerVerified} from './access-auth.mjs';
 // NADMO Social owner-operated TikTok shared queue; no direct posting API.
 export const TIKTOK_ACCOUNT = 'TIKTOK_SHARED_01';
 export const SLOTS_WITA = ['08:00','09:30','11:00','12:30','14:00','15:30','17:00','18:30','20:00','21:30'];
@@ -88,11 +89,6 @@ export function selectSchedule(jobs, slots=SLOTS_WITA, existing=[], maxDaily=10)
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const err=(code,message,status=400)=>json({ok:false,error:{code,message}},status);
-const matchesKey=(given,expected)=>{
-  const a=String(given||''),b=String(expected||'');
-  if(!b||a.length!==b.length)return false;
-  let x=0;for(let i=0;i<a.length;i++)x|=a.charCodeAt(i)^b.charCodeAt(i);return x===0;
-};
 const clean=(x,max)=>typeof x==='string'?x.trim().slice(0,max):'';
 const validDate=x=>/^\d{4}-\d{2}-\d{2}$/.test(x)&&!Number.isNaN(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
 const dateAfterDays=(d,n)=>new Date(Date.parse(d+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
@@ -200,10 +196,9 @@ async function schedule(db,requested){
   return json({ok:true,date,scheduled:accepted,conflicts:failed,remainingReady:allReady.length-accepted.length});
 }
 
-export async function handleSocial(request,env,url) {
-  const expected=env.NADMO_SOCIAL_OWNER_KEY;
-  if(!expected || String(expected).length<32)return err('NOT_CONFIGURED','Owner authentication is not configured',503);
-  if(!matchesKey(request.headers.get('X-NADMO-OWNER-KEY'),expected))return err('UNAUTHORIZED','Invalid owner authorization',401);
+export async function handleSocial(request,env,url,identityVerifier=accessOwnerVerified) {
+  if(!env.NADMO_SOCIAL_OWNER_EMAIL)return err('NOT_CONFIGURED','Owner identity is not configured',503);
+  if(!await identityVerifier(request,env))return err('UNAUTHORIZED','Valid Cloudflare Access owner login required',401);
   const db=env.SOCIAL_DB;
   if(!db)return err('DB_NOT_CONFIGURED','SOCIAL_DB binding is missing',503);
   const path=url.pathname,method=request.method;
