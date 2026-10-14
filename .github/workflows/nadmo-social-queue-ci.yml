@@ -24,6 +24,7 @@ jobs:
         run: |
           node --check nadmo-cloudflare/acc-content-hub/worker.js
           node --check nadmo-cloudflare/acc-content-hub/social-queue.mjs
+          node --check nadmo-cloudflare/acc-content-hub/access-auth.mjs
           node --check nadmo-cloudflare/acc-content-hub/source/public/social.js
       - name: Run queue invariants
         run: node --test nadmo-cloudflare/acc-content-hub/tests/*.test.mjs
@@ -31,3 +32,22 @@ jobs:
         run: |
           test -f nadmo-cloudflare/acc-content-hub/migrations/0001_social_queue.sql
           grep -q 'CREATE TABLE IF NOT EXISTS social_jobs' nadmo-cloudflare/acc-content-hub/migrations/0001_social_queue.sql
+      - name: Build production Content Hub assets
+        run: |
+          set -euo pipefail
+          cd nadmo-cloudflare/acc-content-hub/source
+          npm install --no-audit --no-fund
+          npm run build
+          test -s dist/index.html
+          test -s dist/social.html
+          test -s dist/social.js
+          test -s dist/social.css
+          test -s dist/app.js
+          grep -q 'NADMO SOCIAL' dist/social.html
+      - name: Dry-run Wrangler bundle without deployment
+        run: |
+          set -euo pipefail
+          cd nadmo-cloudflare/acc-content-hub
+          sed 's/2026-09-29/2026-09-28/g' wrangler.template.json > wrangler.deploy.json
+          npx wrangler@4.115.0 deploy --dry-run --outdir "$RUNNER_TEMP/nadmo-social-worker" --config wrangler.deploy.json
+          test -f "$RUNNER_TEMP/nadmo-social-worker/worker.js"
