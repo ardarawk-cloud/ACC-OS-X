@@ -16,16 +16,16 @@
 
 ## Current stage: blocked from LIVE
 
-Cloudflare inventory verified `nadmo-contenthub` existing script; its settings contained **only ASSETS binding** on 15 Oct 2026. No SOCiAL_DB was bound; existing D1 databases belong to other apps and must NOT be repurposed.
+Cloudflare verified **2026-10-15**: `nadmo-social-queue` (dedicated D1) exists in owner's account, migration `0001_social_queue.sql` was executed successfully (11 statements), and Worker `nadmo-contenthub` bindings now include **ASSETS + SOCIAL_DB**. D1 settings verified as target_daily=10, timezone=Asia/Makassar, paused=false. The Worker deployment was automatically versioned by binding update; source `social-queue.mjs` itself is still NOT deployed.
 
-Resource provisioning through the Cloudflare connector was blocked by the platform tooling; **no D1 database, owner secret, or new worker binding was created** in this task. Do not claim the route is live. All changes remain on a branch until Cloudflare staging and owner QC.
+Outstanding blockers: `NADMO_SOCIAL_OWNER_KEY` is NOT set, the new Worker source / dashboard assets are NOT deployed, ChatGPT integration and Android native share are NOT implemented. Do not claim queue is live. Deployment source remains on a separate branch until staging tests and owner-device QC.
 
 ## Staging + controlled production rollout checklist
 
 1. Confirm current production Worker deployment commit/source and preserve rollback version. Never overwrite ACC OS X unrelated source.
-2. Create a **dedicated** Cloudflare D1 database named `nadmo-social-queue` (APAC region if available), note generated `database_id`. Do not substitute a booking/customer database.
-3. Add D1 binding `SOCIAL_DB` to `nadmo-contenthub` Wrangler config along with the existing `ASSETS` binding; keep the same Worker name, domain, and production route. Do not add a new domain/VPS.
-4. Apply `migrations/0001_social_queue.sql` to this database. Confirm `social_jobs`, `social_events`, `social_settings` exist.
+2. VERIFIED: dedicated D1 `nadmo-social-queue`, UUID `e684674e-8e5b-4401-a771-cdd94d888b6a`, hosted APAC; never substitute booking/customer databases.
+3. VERIFIED: `SOCIAL_DB` binding added to `nadmo-contenthub` while preserving existing `ASSETS`. Also recorded in branch `wrangler.template.json`. Preserve Worker name, domain, route, and current deployment rollback version.
+4. VERIFIED: `migrations/0001_social_queue.sql` applied to dedicated D1: `social_jobs`, `social_events`, `social_settings` exist and settings have target_daily=10 and Asia/Makassar.
 5. Generate a random 32+ character owner credential. Store as Worker secret `NADMO_SOCIAL_OWNER_KEY`, **never in code, GitHub issue, chat, APK, asset or logs**. Protect HTTPS owner auth. Rotate after any suspected leak.
 6. From `source/`, build assets using the existing Vite build, verify `dist/social.html`, `dist/social.js`, `dist/social.css`. Run CI `NADMO Social Queue CI`.
 7. Deploy staged Worker + assets, verify `GET /api/_healthcheck`, unauthorized `GET /api/social/meta` -> 401, authorized meta -> 200, missing secret -> 503 and missing binding -> 503.
