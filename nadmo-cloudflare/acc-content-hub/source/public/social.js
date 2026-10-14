@@ -1,13 +1,13 @@
 (() => {
   'use strict';
-  // No client secret persistence; the owner key is held in this tab's JS memory only.
-  let ownerKey='',meta=null,jobs=[],pendingKey=null;
+  // Cloudflare Access handles interactive sign-in; no keys are entered into this dashboard.
+  let meta=null,jobs=[],pendingKey=null;
   const $=id=>document.getElementById(id);
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=String(text);return node;};
   function notice(message,error=false){const n=$('notice');n.textContent=message;n.className='show'+(error?' error':'');}
   async function api(path,method='GET',data) {
     const response=await fetch('/api/social'+path,{
-      method,credentials:'same-origin',headers:{'X-NADMO-OWNER-KEY':ownerKey,...(data?{'Content-Type':'application/json'}:{})},
+      method,credentials:'same-origin',headers:{...(data?{'Content-Type':'application/json'}:{})},
       body:data?JSON.stringify(data):undefined,cache:'no-store'
     });
     const result=await response.json().catch(()=>({error:{message:'Malformed API response'}}));
@@ -123,12 +123,8 @@
     if(!url)return;
     mutate(j.id,'self_report',{published_url:url.trim()});
   }
-  $('loginForm').addEventListener('submit',async e=>{
-    e.preventDefault();ownerKey=$('ownerKey').value;$('ownerKey').value='';
-    try{await refresh();$('loginPanel').hidden=true;$('appPanel').hidden=false;$('logout').hidden=false;notice('Dashboard terbuka. Tidak ada posting otomatis.')}
-    catch(err){ownerKey='';notice(err.message,true);}
-  });
-  $('logout').addEventListener('click',()=>{ownerKey='';meta=null;jobs=[];$('appPanel').hidden=true;$('loginPanel').hidden=false;$('logout').hidden=true;notice('Dashboard terkunci.')});
+  $('loginForm').addEventListener('submit',e=>{e.preventDefault();location.reload()});
+  $('logout').addEventListener('click',()=>{location.assign('/cdn-cgi/access/logout')});
   $('createForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const data={source:'owner_dashboard',platform:'tiktok',channel_key:$('channel').value,client_submission_key:pendingKey||(pendingKey=crypto.randomUUID()),title:$('title').value,caption:$('caption').value,media_url:$('mediaUrl').value,media_type:$('mediaType').value,priority:$('priority').value};
@@ -154,4 +150,5 @@
   });
   $('refreshBtn').addEventListener('click',()=>refresh().catch(e=>notice(e.message,true)));
   $('dateSelect').value=WITA();$('dateSelect').addEventListener('change',()=>{if(meta)render()});
+  refresh().then(()=>{$('loginPanel').hidden=true;$('appPanel').hidden=false;$('logout').hidden=false;}).catch(e=>{ $('loginPanel').hidden=false;$('appPanel').hidden=true;notice(e.message,true); });
 })();
