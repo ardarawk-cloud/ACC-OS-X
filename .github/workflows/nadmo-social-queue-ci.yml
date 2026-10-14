@@ -1,0 +1,33 @@
+name: NADMO Social Queue CI
+on:
+  pull_request:
+    paths:
+      - 'nadmo-cloudflare/acc-content-hub/**'
+      - '.github/workflows/nadmo-social-queue-ci.yml'
+  push:
+    branches:
+      - 'feat/nadmo-social-shared-queue-20261015'
+    paths:
+      - 'nadmo-cloudflare/acc-content-hub/**'
+      - '.github/workflows/nadmo-social-queue-ci.yml'
+jobs:
+  queue-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check Worker and browser code
+        run: |
+          node --check nadmo-cloudflare/acc-content-hub/worker.js
+          node --check nadmo-cloudflare/acc-content-hub/social-queue.mjs
+          node --check nadmo-cloudflare/acc-content-hub/source/public/social.js
+      - name: Run queue invariants
+        run: node --test nadmo-cloudflare/acc-content-hub/tests/social-queue.test.mjs
+      - name: Verify migration is isolated
+        run: |
+          test -f nadmo-cloudflare/acc-content-hub/migrations/0001_social_queue.sql
+          grep -q 'CREATE TABLE IF NOT EXISTS social_jobs' nadmo-cloudflare/acc-content-hub/migrations/0001_social_queue.sql
