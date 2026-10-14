@@ -26,7 +26,7 @@ jobs:
           node --check nadmo-cloudflare/acc-content-hub/social-queue.mjs
           node --check nadmo-cloudflare/acc-content-hub/source/public/social.js
       - name: Run queue invariants
-        run: node --test nadmo-cloudflare/acc-content-hub/tests/social-queue.test.mjs
+        run: node --test nadmo-cloudflare/acc-content-hub/tests/*.test.mjs
       - name: Verify migration is isolated
         run: |
           test -f nadmo-cloudflare/acc-content-hub/migrations/0001_social_queue.sql
