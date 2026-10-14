@@ -16,5 +16,13 @@
     "run_worker_first": [
       "/api/*"
     ]
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "SOCIAL_DB",
+      "database_name": "nadmo-social-queue",
+      "database_id": "e684674e-8e5b-4401-a771-cdd94d888b6a"
+    }
+  ],
+  "keep_vars": true
 }

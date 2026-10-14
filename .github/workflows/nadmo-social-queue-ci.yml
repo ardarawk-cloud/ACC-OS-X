@@ -1,0 +1,53 @@
+name: NADMO Social Queue CI
+on:
+  pull_request:
+    paths:
+      - 'nadmo-cloudflare/acc-content-hub/**'
+      - '.github/workflows/nadmo-social-queue-ci.yml'
+  push:
+    branches:
+      - 'feat/nadmo-social-shared-queue-20261015'
+    paths:
+      - 'nadmo-cloudflare/acc-content-hub/**'
+      - '.github/workflows/nadmo-social-queue-ci.yml'
+jobs:
+  queue-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check Worker and browser code
+        run: |
+          node --check nadmo-cloudflare/acc-content-hub/worker.js
+          node --check nadmo-cloudflare/acc-content-hub/social-queue.mjs
+          node --check nadmo-cloudflare/acc-content-hub/access-auth.mjs
+          node --check nadmo-cloudflare/acc-content-hub/source/public/social.js
+      - name: Run queue invariants
+        run: node --test nadmo-cloudflare/acc-content-hub/tests/*.test.mjs
+      - name: Verify migration is isolated
+        run: |
+          test -f nadmo-cloudflare/acc-content-hub/migrations/0001_social_queue.sql
+          grep -q 'CREATE TABLE IF NOT EXISTS social_jobs' nadmo-cloudflare/acc-content-hub/migrations/0001_social_queue.sql
+      - name: Build production Content Hub assets
+        run: |
+          set -euo pipefail
+          cd nadmo-cloudflare/acc-content-hub/source
+          npm install --no-audit --no-fund
+          npm run build
+          test -s dist/index.html
+          test -s dist/social.html
+          test -s dist/social.js
+          test -s dist/social.css
+          test -s dist/app.js
+          grep -q 'NADMO SOCIAL' dist/social.html
+      - name: Dry-run Wrangler bundle without deployment
+        run: |
+          set -euo pipefail
+          cd nadmo-cloudflare/acc-content-hub
+          sed 's/2026-09-29/2026-09-28/g' wrangler.template.json > wrangler.deploy.json
+          npx wrangler@4.115.0 deploy --dry-run --outdir "$RUNNER_TEMP/nadmo-social-worker" --config wrangler.deploy.json
+          test -f "$RUNNER_TEMP/nadmo-social-worker/worker.js"

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#10121a"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https:; img-src 'self' https: data:; media-src 'self' https:; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"/>
+  <title>NADMO SOCIAL · Private Queue</title>
+  <link rel="stylesheet" href="/social.css"/>
+  <script src="/social.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div><small>NADMO STUDIO · PRIVATE PUBLISHING</small><h1>SOCIAL / TIKTOK</h1><p>Semua channel → 1 akun TikTok · 10 slot per hari (WITA)</p></div>
+    <div class="headbuttons"><a href="/">← Content Hub</a><button id="logout" class="ghost" hidden>Lock</button></div>
+  </header>
+  <section class="panel" id="loginPanel" hidden>
+    <h2>Sesi Cloudflare Access belum siap</h2>
+    <p>Masuk memakai akun Cloudflare owner. Tidak memerlukan kunci 32 karakter.</p>
+    <form id="loginForm" class="line"><button type="submit">Coba lagi / login ulang</button></form>
+    <p class="subtle">Jika masih gagal, pengaturan login Access atau Worker belum selesai. Hubungi administrator; jangan memasukkan rahasia ke browser.</p>
+  </section>
+  <div id="appPanel" hidden>
+    <nav class="stats">
+      <div><strong id="readyCount">–</strong><span>READY</span></div>
+      <div><strong id="scheduleCount">–</strong><span>SCHEDULED</span></div>
+      <div><strong id="todayCount">–</strong><span>SLOT HARI INI</span></div>
+      <div><strong id="statusCount">–</strong><span>TERVERIFIKASI</span></div>
+    </nav>
+    <section class="panel">
+      <div class="heading"><div><h2>Shared account</h2><p id="accountInfo">TIKTOK_SHARED_01</p></div><span class="tag">OWNER HANDOFF ONLY</span></div>
+      <div class="line wrap"><button id="scheduleBtn">Isi slot hari ini</button><button id="refreshBtn" class="ghost">Refresh antrean</button><button id="pauseBtn" class="warn">PAUSE ALL</button></div>
+      <div class="slots" id="slots"></div>
+      <p class="subtle">Jadwal adalah slot operasional, bukan auto-publish TikTok. Posting diselesaikan melalui aplikasi TikTok oleh owner.</p>
+    </section>
+    <section class="panel">
+      <div class="heading"><h2>Masukkan konten</h2><span class="tag">Manual / QA</span></div>
+      <form id="createForm" class="formgrid">
+        <label>Channel<select id="channel"><option value="">UNASSIGNED — cek manual</option></select></label>
+        <label>Jenis konten<select id="mediaType"><option value="video">Video MP4</option><option value="image">Foto</option></select></label>
+        <label>Judul<input id="title" maxlength="160" placeholder="Judul konten" required/></label>
+        <label>Prioritas<select id="priority"><option value="NORMAL">Normal</option><option value="URGENT">Urgent (terverifikasi)</option><option value="OWNER_PINNED">Owner pinned</option></select></label>
+        <label class="wide">HTTPS media URL<input id="mediaUrl" type="url" placeholder="https://..." required/></label>
+        <label class="wide">Caption<textarea id="caption" rows="4" maxlength="2200" required></textarea></label>
+        <div class="wide line"><button type="submit">Tambah ke antrean (bukan publish)</button></div>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="heading"><div><h2>Antrean pusat</h2><p>QC → Jadwal → Bagikan → Bukti publikasi</p></div><label class="date">Tanggal WITA<input type="date" id="dateSelect"/></label></div>
+      <div id="jobList" class="joblist"></div>
+    </section>
+  </div>
+  <p role="status" id="notice" aria-live="polite"></p>
+  <footer>Private NADMO · Tidak menyimpan kata sandi TikTok · Tidak memakai TikTok Direct Post API</footer>
+</div>
+</body>
+</html>
