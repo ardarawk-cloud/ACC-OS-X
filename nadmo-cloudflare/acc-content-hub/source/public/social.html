@@ -16,11 +16,11 @@
     <div><small>NADMO STUDIO · PRIVATE PUBLISHING</small><h1>SOCIAL / TIKTOK</h1><p>Semua channel → 1 akun TikTok · 10 slot per hari (WITA)</p></div>
     <div class="headbuttons"><a href="/">← Content Hub</a><button id="logout" class="ghost" hidden>Lock</button></div>
   </header>
-  <section class="panel" id="loginPanel">
-    <h2>Owner unlock</h2>
-    <p>Kunci hanya tersimpan di memori tab saat ini. Tidak dimasukkan ke URL, localStorage, atau file APK.</p>
-    <form id="loginForm" class="line"><input id="ownerKey" type="password" autocomplete="off" minlength="32" placeholder="NADMO_SOCIAL_OWNER_KEY" required/><button type="submit">Unlock dashboard</button></form>
-    <p class="subtle">Jika belum terkonfigurasi, backend akan menolak akses. Jangan unggah kunci ke percakapan atau GitHub.</p>
+  <section class="panel" id="loginPanel" hidden>
+    <h2>Sesi Cloudflare Access belum siap</h2>
+    <p>Masuk memakai akun Cloudflare owner. Tidak memerlukan kunci 32 karakter.</p>
+    <form id="loginForm" class="line"><button type="submit">Coba lagi / login ulang</button></form>
+    <p class="subtle">Jika masih gagal, pengaturan login Access atau Worker belum selesai. Hubungi administrator; jangan memasukkan rahasia ke browser.</p>
   </section>
   <div id="appPanel" hidden>
     <nav class="stats">
