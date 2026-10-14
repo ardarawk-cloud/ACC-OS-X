@@ -185,7 +185,7 @@ async function schedule(db,requested){
   const today=dateWita(),date=requested||today.date;
   if(!validDate(date)||date<today.date||date>dateAfterDays(today.date,90))return err('INVALID_DATE','Choose today through 90 days ahead');
   const reserved=(await db.prepare("SELECT * FROM social_jobs WHERE scheduled_date=? AND status IN ('SCHEDULED','SHARE_OPENED','SELF_REPORTED','PUBLISHED_VERIFIED') ORDER BY scheduled_time").bind(date).all()).results;
-  const allReady=(await db.prepare("SELECT id,channel_key,category,priority,created_at,status FROM social_jobs WHERE status='READY' ORDER BY created_at ASC LIMIT 500").all()).results;
+  const allReady=(await db.prepare("SELECT id,channel_key,category,priority,created_at,status FROM social_jobs WHERE status='READY' ORDER BY created_at ASC LIMIT 500").bind().all()).results;
   const slots=date===today.date?SLOTS_WITA.filter(s=>s>today.time):SLOTS_WITA;
   const picks=selectSchedule(allReady,slots,reserved,10),accepted=[],failed=[];
   for (const p of picks) {
