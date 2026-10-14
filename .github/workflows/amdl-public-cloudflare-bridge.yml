@@ -1,11 +1,14 @@
 name: NADMO STUDIO Public Website Deploy
 
+# A release is explicitly requested with a reviewed, immutable source SHA.
+# Never deploy simply because this workflow YAML was edited.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/amdl-public-cloudflare-bridge.yml'
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: 'Reviewed 40-character SHA from ardarawk-cloud/am-digital-lab-crm'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,13 +20,45 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
-      - name: Checkout NADMO STUDIO monorepo
+      - name: Validate requested source commit
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'FAIL: require full reviewed commit SHA'; exit 1; }
+
+      - name: Checkout exact NADMO STUDIO source
         uses: actions/checkout@v6
         with:
           repository: ardarawk-cloud/am-digital-lab-crm
-          ref: main
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+
+      - name: Prove the checked-out commit matches the release request
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          CURRENT_SHA="$(git rev-parse HEAD)"
+          echo "NADMO STUDIO source SHA: $CURRENT_SHA"
+          [ "$CURRENT_SHA" = "$SOURCE_SHA" ] || { echo 'FAIL: source SHA mismatch'; exit 1; }
+
+      - name: Browser sales-funnel regression before deployment
+        run: |
+          set -euo pipefail
+          test -f scripts/qa-public.mjs || { echo 'FAIL: source is missing browser QA gate'; exit 1; }
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory site >/tmp/nadmo-qa-site.log 2>&1 &
+          QA_PID=$!
+          trap 'kill "$QA_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 1
+          done
+          QA_BASE_URL=http://127.0.0.1:8765/ node scripts/qa-public.mjs
 
       - name: Generate public personal-brand samples
         run: |
