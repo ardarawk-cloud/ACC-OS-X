@@ -9,16 +9,16 @@
 - D1 schema with deduplicated submissions, 10 unique time slots/day, status/event history and optimistic version updates.
 - Scheduler using **Asia/Makassar** with max 2 slots/channel/day and urgent/owner-pin priority.
 - Explicit owner QC + video/photo HTTPS media URI + caption; empty or unverified content cannot schedule.
-- Owner lock, pause all, per-job cancel/resume, share handoff, self-reported link, owner-verified receipt.
+- Cloudflare Access owner-only email login; server validates JWT signature + audience + issuer + allowed email. Pause all, per-job cancel/resume, share handoff, self-reported link and owner-verified receipt.
 - `/social.html` isolated mobile/desktop dashboard; no TikTok passwords, no API tokens in browser storage.
 - TikTok public posting itself is MANUAL, through the TikTok app. Browser Web Share or media link is a handoff, not publication.
 - A private owner utility is not eligible for TikTok Direct Post under its published intended-use guidelines. No hidden automation or scraping.
 
 ## Current stage: blocked from LIVE
 
-Cloudflare verified **2026-10-15**: `nadmo-social-queue` (dedicated D1) exists in owner's account, migration `0001_social_queue.sql` was executed successfully (11 statements), and Worker `nadmo-contenthub` bindings now include **ASSETS + SOCIAL_DB**. D1 settings verified as target_daily=10, timezone=Asia/Makassar, paused=false. The Worker deployment was automatically versioned by binding update; source `social-queue.mjs` itself is still NOT deployed.
+Cloudflare verified **2026-10-15**: `nadmo-social-queue` (dedicated D1) exists in owner's account; migration `0001_social_queue.sql` executed successfully (11 statements); Worker `nadmo-contenthub` now has bindings **ASSETS + SOCIAL_DB + NADMO_SOCIAL_OWNER_EMAIL**. An Access app `nadmo social` protects `contenthub.nadmo.id/social*` and `contenthub.nadmo.id/api/social*`, with one owner-only Allow email policy and a Cloudflare identity provider. D1 settings verified target_daily=10, timezone=Asia/Makassar, paused=false. The new Worker source and dashboard are NOT deployed.
 
-Outstanding blockers: `NADMO_SOCIAL_OWNER_KEY` is NOT set, the new Worker source / dashboard assets are NOT deployed, ChatGPT integration and Android native share are NOT implemented. Do not claim queue is live. Deployment source remains on a separate branch until staging tests and owner-device QC.
+Outstanding blockers: the new Worker source and dashboard assets are NOT deployed, ChatGPT integration and Android native sharing are NOT implemented. The obsolete 32-character owner key is no longer required. Do not claim queue is live. Source stays on a separate branch until staging tests and owner-device QC.
 
 ## Staging + controlled production rollout checklist
 
@@ -26,16 +26,16 @@ Outstanding blockers: `NADMO_SOCIAL_OWNER_KEY` is NOT set, the new Worker source
 2. VERIFIED: dedicated D1 `nadmo-social-queue`, UUID `e684674e-8e5b-4401-a771-cdd94d888b6a`, hosted APAC; never substitute booking/customer databases.
 3. VERIFIED: `SOCIAL_DB` binding added to `nadmo-contenthub` while preserving existing `ASSETS`. Also recorded in branch `wrangler.template.json`. Preserve Worker name, domain, route, and current deployment rollback version.
 4. VERIFIED: `migrations/0001_social_queue.sql` applied to dedicated D1: `social_jobs`, `social_events`, `social_settings` exist and settings have target_daily=10 and Asia/Makassar.
-5. Generate a random 32+ character owner credential. Store as Worker secret `NADMO_SOCIAL_OWNER_KEY`, **never in code, GitHub issue, chat, APK, asset or logs**. Protect HTTPS owner auth. Rotate after any suspected leak.
+5. VERIFIED: Access application `nadmo social` with allowed owner-only email and paths `contenthub.nadmo.id/social*` plus `contenthub.nadmo.id/api/social*` (NOT the whole website). Worker binding `NADMO_SOCIAL_OWNER_EMAIL` is set to the owner's Cloudflare account email; do not commit a real email to public source. Before production, validate Access JWT signature and audience via `access-auth.mjs`, and confirm no other hostname can bypass the owner session. DO NOT configure the obsolete owner API key.
 6. From `source/`, build assets using the existing Vite build, verify `dist/social.html`, `dist/social.js`, `dist/social.css`. Run CI `NADMO Social Queue CI`.
-7. Deploy staged Worker + assets, verify `GET /api/_healthcheck`, unauthorized `GET /api/social/meta` -> 401, authorized meta -> 200, missing secret -> 503 and missing binding -> 503.
+7. Deploy staged Worker + assets, verify `GET /api/_healthcheck`; unauthenticated `GET /api/social/meta` blocked by Access and origin JWT verification; signed owner session -> 200; missing owner identity binding -> 503; missing SOCIAL_DB -> 503. Preserve original asset handling. Test browser and API access from unrelated hostnames.
 8. Submit a **test job** to `/api/social/jobs` using a unique idempotency key; repeat request and verify only 1 record. Perform QC, schedule, share handoff, and manually verify link without accidental TikTok posting. Inspect D1 log, statuses and version.
 9. Regression-test original Content Hub desktop/mobile and all existing routes; test Android share on the actual device before marking that UX PASS.
 10. Only then merge, deploy production in existing route, record Worker version, deployment source commit, rollback version and owner QC. Do not label LIVE based on GitHub CI alone.
 
 ## Current API contract (owner-only)
 
-All requests to `/api/social/*` require header `X-NADMO-OWNER-KEY`. Same-origin requests only; no permissive CORS.
+All requests to `/api/social/*` are behind Cloudflare Access. Worker verifies Cloudflare's signed `Cf-Access-Jwt-Assertion` token using the Access JWKS, exact audience, issuer, expiration and configured owner email. No 32-character key is entered in browser. Same-origin UI only; no permissive CORS.
 
 | Route | Method | Purpose |
 |---|---|---|
