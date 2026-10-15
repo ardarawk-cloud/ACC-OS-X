@@ -35,17 +35,10 @@
       <div class="slots" id="slots"></div>
       <p class="subtle">Jadwal adalah slot operasional, bukan auto-publish TikTok. Posting diselesaikan melalui aplikasi TikTok oleh owner.</p>
     </section>
-    <section class="panel">
-      <div class="heading"><h2>Masukkan konten</h2><span class="tag">Manual / QA</span></div>
-      <form id="createForm" class="formgrid">
-        <label>Channel<select id="channel"><option value="">UNASSIGNED — cek manual</option></select></label>
-        <label>Jenis konten<select id="mediaType"><option value="video">Video MP4</option><option value="image">Foto</option></select></label>
-        <label>Judul<input id="title" maxlength="160" placeholder="Judul konten" required/></label>
-        <label>Prioritas<select id="priority"><option value="NORMAL">Normal</option><option value="URGENT">Urgent (terverifikasi)</option><option value="OWNER_PINNED">Owner pinned</option></select></label>
-        <label class="wide">HTTPS media URL<input id="mediaUrl" type="url" placeholder="https://..." required/></label>
-        <label class="wide">Caption<textarea id="caption" rows="4" maxlength="2200" required></textarea></label>
-        <div class="wide line"><button type="submit">Tambah ke antrean (bukan publish)</button></div>
-      </form>
+    <section class="panel" aria-label="Asal konten">
+      <div class="heading"><h2>Konten berasal dari percakapan</h2><span class="tag">CHAT-FIRST</span></div>
+      <p>Ini dashboard pemantauan, bukan tempat mengunggah atau mengetik ulang konten. Produksi dan pengiriman konten dilakukan dari percakapan channel masing-masing setelah integrasi ChatGPT–Publisher selesai dihubungkan.</p>
+      <p class="subtle">Status integrasi ChatGPT: BELUM TERSAMBUNG. Antrean 0/10 bukan berarti sepuluh konten sudah otomatis diproduksi.</p>
     </section>
     <section class="panel">
       <div class="heading"><div><h2>Antrean pusat</h2><p>QC → Jadwal → Bagikan → Bukti publikasi</p></div><label class="date">Tanggal WITA<input type="date" id="dateSelect"/></label></div>
