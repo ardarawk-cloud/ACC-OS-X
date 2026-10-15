@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   // Cloudflare Access handles interactive sign-in; no keys are entered into this dashboard.
-  let meta=null,jobs=[],pendingKey=null;
+  let meta=null,jobs=[];
   const $=id=>document.getElementById(id);
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=String(text);return node;};
   function notice(message,error=false){const n=$('notice');n.textContent=message;n.className='show'+(error?' error':'');}
@@ -23,13 +23,6 @@
     meta=a;jobs=b.jobs||[];
     $('accountInfo').textContent=meta.account+' · '+(meta.handle||'username belum ditetapkan')+' · '+(meta.paused?'PAUSED':'queue aktif');
     $('pauseBtn').textContent=meta.paused?'RESUME ALL':'PAUSE ALL';
-    const selected=$('channel').value;
-    $('channel').replaceChildren(el('option',null,'UNASSIGNED — perlu identifikasi'));
-    $('channel').firstChild.value='';
-    for(const c of meta.channels) {
-      const option=el('option',null,c.name);option.value=c.key;$('channel').append(option);
-    }
-    $('channel').value=selected;
     render();
   }
   function button(text,fn,cls='secondary') {
@@ -125,15 +118,6 @@
   }
   $('loginForm').addEventListener('submit',e=>{e.preventDefault();location.reload()});
   $('logout').addEventListener('click',()=>{location.assign('/cdn-cgi/access/logout')});
-  $('createForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const data={source:'owner_dashboard',platform:'tiktok',channel_key:$('channel').value,client_submission_key:pendingKey||(pendingKey=crypto.randomUUID()),title:$('title').value,caption:$('caption').value,media_url:$('mediaUrl').value,media_type:$('mediaType').value,priority:$('priority').value};
-    try{
-      const response=await api('/jobs','POST',data);
-      notice(response.duplicate?'Konten sudah ada; tidak dibuat ulang.':'Konten masuk antrean.');
-      pendingKey=null;$('createForm').reset();await refresh();
-    }catch(err){notice(err.message,true);}
-  });
   $('scheduleBtn').addEventListener('click',async()=>{
     try{
       const date=$('dateSelect').value||WITA();
