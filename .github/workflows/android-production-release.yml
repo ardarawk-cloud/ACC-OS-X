@@ -2,15 +2,6 @@ name: ACC OS X Android Production Release
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'android/**'
-      - 'assets/app-icons/my-maps-icons-sprite.jpg.b64'
-      - 'ACC-OS-X-AUTHORITY.md'
-      - 'scripts/verify-android-release-contract.sh'
-      - '.github/workflows/android-production-release.yml'
 
 permissions:
   contents: write

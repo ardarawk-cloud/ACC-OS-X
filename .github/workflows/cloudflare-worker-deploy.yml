@@ -84,6 +84,85 @@ jobs:
           grep -q 'worker-roblox-publish-probe-v1.js' wrangler.jsonc
           grep -q 'KAI_ONE_OS_X_CANONICAL_2026_10_16' wrangler.jsonc
 
+      - name: Build isolated ACC OS X static assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import re
+          import shutil
+          from pathlib import Path
+
+          root = Path(".")
+          out = root / ".acc-os-x-public"
+          if out.exists():
+              shutil.rmtree(out)
+          out.mkdir()
+
+          seeds = [
+              "index.html",
+              "service-worker.js",
+              "app.js",
+              "manifest.webmanifest",
+              "version.json",
+              "build-info.json",
+              "build.json",
+          ]
+          allowed_ext = {"js","css","json","webmanifest","png","jpg","jpeg","svg","ico"}
+          ref_re = re.compile(r'''["'\x60](?:\./)([A-Za-z0-9._/-]+\.(?:js|css|json|webmanifest|png|jpg|jpeg|svg|ico))(?:\?[^"'\x60]*)?["'\x60]''', re.I)
+
+          queue = list(seeds)
+          seen = set()
+          while queue:
+              rel = queue.pop(0)
+              if rel in seen:
+                  continue
+              src = root / rel
+              if not src.is_file():
+                  raise SystemExit(f"Required runtime asset missing: {rel}")
+              seen.add(rel)
+              if src.suffix.lower().lstrip(".") in {"js","html","css"}:
+                  text = src.read_text(encoding="utf-8", errors="ignore")
+                  for match in ref_re.finditer(text):
+                      child = match.group(1)
+                      candidate = root / child
+                      if candidate.is_file() and child not in seen:
+                          queue.append(child)
+
+          # Copy discovered runtime dependency closure.
+          for rel in sorted(seen):
+              src = root / rel
+              dst = out / rel
+              dst.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(src, dst)
+
+          # Runtime artwork is public by design; project/source directories are not.
+          if (root / "assets").is_dir():
+              shutil.copytree(root / "assets", out / "assets", dirs_exist_ok=True)
+
+          # Hard fail if internal project/infrastructure accidentally crosses the boundary.
+          forbidden = [".github","android","apps","deploy-status","handoffs","nadmo-cloudflare","nadmo-cloudflare-src","scripts"]
+          leaked = [name for name in forbidden if (out / name).exists()]
+          if leaked:
+              raise SystemExit("Forbidden directories in public asset staging: " + ", ".join(leaked))
+
+          cfg = json.loads((root / "wrangler.jsonc").read_text(encoding="utf-8"))
+          cfg["assets"]["directory"] = ".acc-os-x-public"
+          (root / "wrangler.deploy.json").write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+
+          print(f"Public runtime files: {len(seen)} + assets/")
+          print("Public runtime closure:")
+          for rel in sorted(seen):
+              print(" -", rel)
+          PY
+          test -f .acc-os-x-public/home-quick-access-v1.js
+          test -f .acc-os-x-public/my-projects-launcher-v1.js
+          test -f .acc-os-x-public/home-launchpad.js
+          test ! -e .acc-os-x-public/.github
+          test ! -e .acc-os-x-public/android
+          test ! -e .acc-os-x-public/nadmo-cloudflare
+
       - name: Deploy production Worker
         id: deploy
         uses: cloudflare/wrangler-action@v4
@@ -91,7 +170,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.115.0'
-          command: deploy
+          command: deploy --config wrangler.deploy.json
 
       - name: Verify canonical production runtime
         shell: bash
@@ -107,7 +186,7 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             BODY="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/health" || true)"
             printf '%s\n' "$BODY"
-            if printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V9_1_HERO_IMAGE_PROMPT_LIMIT'; then
+            if grep -Fq 'BRAIN_RUNTIME_RESCUE_V9_1_HERO_IMAGE_PROMPT_LIMIT' <<<"$BODY"; then
               ok=1
               break
             fi
@@ -116,7 +195,16 @@ jobs:
           done
           test "$ok" = 1
 
-          curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-quick-access-v1.js" | grep -q 'const DESKTOP_LIMIT = 8;'
-          curl --fail --silent --show-error --max-time 30 "$BASE_URL/my-projects-launcher-v1.js" | grep -q 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project'
-          curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-launchpad.js" | grep -q 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab'
-          echo "Canonical ACC OS X live runtime verified."
+          QUICK="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-quick-access-v1.js")"
+          PROJECTS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/my-projects-launcher-v1.js")"
+          HOME="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-launchpad.js")"
+          INTERNAL="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/.github/workflows/runtime-validation.yml" || true)"
+
+          grep -Fq 'const DESKTOP_LIMIT = 8;' <<<"$QUICK"
+          grep -Fq 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' <<<"$PROJECTS"
+          grep -Fq 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' <<<"$HOME"
+          if grep -Fq 'name: ACC OS X Runtime Validation' <<<"$INTERNAL"; then
+            echo "::error::Internal GitHub workflow is still exposed as a public Worker asset."
+            exit 1
+          fi
+          echo "Canonical ACC OS X live runtime verified; internal project files are outside the public asset boundary."

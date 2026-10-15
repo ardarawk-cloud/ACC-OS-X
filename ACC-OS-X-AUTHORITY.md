@@ -40,6 +40,7 @@ Any change to package identity or signing identity is a STOP condition unless Ar
 - DEBUG / RC / validation APKs are internal CI artifacts only.
 - Never hand a DEBUG / RC / candidate APK to Arda or a client as an update to an installed production app.
 - The only normal install/update artifact is the production-signed APK created by `android-production-release.yml`.
+- Android production release is deliberately manual (`workflow_dispatch`) after the milestone passes internal validation; ordinary web/docs/source commits must not mint or fail a duplicate production APK release.
 - Production APK must update over the existing installed ACC OS X without uninstall.
 - If production signing secrets are unavailable, status is `STOP — NO DISTRIBUTABLE APK`.
 - Never recommend uninstalling the installed production app to work around a signature mismatch.
