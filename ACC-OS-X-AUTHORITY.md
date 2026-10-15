@@ -13,6 +13,17 @@ This file is operational authority. It exists so release behavior does not depen
 - Paid infrastructure requires an explicit technical reason and owner approval.
 - Client/order projects may use paid infrastructure when cost is deliberately included in the client price/maintenance model.
 
+## Web / Cloudflare production authority
+
+- GitHub `ardarawk-cloud/ACC-OS-X` branch `main` is the source of truth for ACC OS X web runtime.
+- Canonical production Worker: `acc-os-x-baxkup`.
+- Canonical web deployment path: `.github/workflows/cloudflare-worker-deploy.yml`.
+- Direct/manual Wrangler or Cloudflare API deployment to `acc-os-x-baxkup` is not a normal production path and must not be used to bypass GitHub main + CI.
+- Every root ACC OS X runtime change must trigger the canonical Cloudflare deployment workflow.
+- A web change is not LIVE merely because it is committed. LIVE requires the canonical deploy workflow to pass and verify the deployed runtime/assets.
+- `nadmo-contenthub` and all other NADMO Workers are separate deploy targets and must never be treated as ACC OS X production.
+- Public Worker assets must exclude internal/project directories such as `.github/`, `android/`, `apps/`, `nadmo-cloudflare/`, `handoffs/`, `scripts/`, and `deploy-status/`.
+
 ## Android identity — immutable
 
 - applicationId / package: `com.ardacore.accosx`
@@ -68,13 +79,15 @@ Work pattern:
 - A failed sub-gate is patched narrowly; already-passed unrelated sections stay closed.
 - CI success is not device PASS. Device PASS requires owner evidence/confirmation.
 
-## Current Android baseline
+## Current Android production baseline
 
-At creation of this authority file:
+Latest verified production release:
 
-- versionName: `1.2.2`
-- versionCode: `11`
+- versionName: `1.2.5`
+- versionCode: `14`
+- release tag: `acc-os-x-android-v1.2.5-build14`
 - package: `com.ardacore.accosx`
 - production certificate: canonical SHA-256 above
+- production workflow: `android-production-release.yml`
 
 Future releases must preserve identity and move versionCode forward.

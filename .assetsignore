@@ -8,6 +8,25 @@ node_modules/**
 .git/
 .git/**
 
+
+# Non-ACC-OS-X project/infrastructure directories must never be published as OS X static assets.
+.github/
+.github/**
+android/
+android/**
+apps/
+apps/**
+deploy-status/
+deploy-status/**
+handoffs/
+handoffs/**
+nadmo-cloudflare-src/
+nadmo-cloudflare-src/**
+nadmo-cloudflare/
+nadmo-cloudflare/**
+scripts/
+scripts/**
+
 # Backend Worker source is bundled through wrangler main/imports, not served as public assets.
 worker.js
 worker-*.js

@@ -12,6 +12,11 @@ on:
       - 'index.html'
       - 'home-launchpad.js'
       - 'home-launcher-chain-v1.js'
+      - 'home-quick-access-v1.js'
+      - 'my-projects-launcher-v1.js'
+      - 'my-admin-launcher-v1.js'
+      - 'owner-app-launcher-v2.js'
+      - 'launcher-layout-stability-v1.js'
       - 'owner-phone-launcher-v1.js'
       - 'desktop-mode-v1.js'
       - 'manifest.webmanifest'
@@ -76,6 +81,11 @@ jobs:
           node --check app.js
           node --check home-launchpad.js
           node --check home-launcher-chain-v1.js
+          node --check home-quick-access-v1.js
+          node --check my-projects-launcher-v1.js
+          node --check my-admin-launcher-v1.js
+          node --check owner-app-launcher-v2.js
+          node --check launcher-layout-stability-v1.js
           node --check owner-phone-launcher-v1.js
           node --check desktop-mode-v1.js
           node --check produce-copilot-v2576.js
@@ -119,6 +129,13 @@ jobs:
             exit 1
           fi
           echo 'HOME launcher chain OK: APPS -> MAPS -> PROJECTS -> ADMIN -> native phone categories.'
+
+          # Canonical HOME state invariants.
+          grep -q 'const MOBILE_LIMIT = 4;' home-quick-access-v1.js
+          grep -q 'const DESKTOP_LIMIT = 8;' home-quick-access-v1.js
+          grep -q 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' my-projects-launcher-v1.js
+          grep -q 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' home-launchpad.js
+          echo 'Canonical HOME state invariants OK.'
 
       - name: Validate desktop mode contract
         shell: bash

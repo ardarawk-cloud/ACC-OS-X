@@ -5,25 +5,14 @@ on:
     branches:
       - main
     paths:
-      - 'worker-*.js'
-      - 'produce-copilot-publish-queue-v1.js'
-      - 'production-contracts-v1.js'
-      - 'division-passports-v1.js'
-      - 'owner-*.js'
-      - 'my-*.js'
-      - 'service-worker.js'
-      - 'legacy-launcher-accordion-v1.js'
-      - 'bali-wedding-dj-launcher-v1.js'
-      - 'sync-cctv-launcher-v1.js'
-      - 'publishing-page-aliases-v1.js'
-      - 'publishing-mobile-page-picker-v1.js'
-      - 'publishing-instagram-bridge-v1.js'
-      - 'publishing-instagram-observer-guard-v1.js'
-      - 'assets/app-icons/**'
-      - 'assets/app-launcher/**'
+      - '*.js'
+      - '*.html'
+      - '*.json'
+      - '*.webmanifest'
+      - '.assetsignore'
+      - 'assets/**'
       - 'wrangler.jsonc'
-      - 'package.json'
-      - 'package-lock.json'
+      - 'ACC-OS-X-AUTHORITY.md'
       - '.github/workflows/cloudflare-worker-deploy.yml'
   workflow_dispatch:
 
@@ -42,10 +31,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Materialize required launcher images
+      - name: Validate canonical ACC OS X web runtime
         shell: bash
         run: |
           set -euo pipefail
+
           python - <<'PY'
           import base64
           import pathlib
@@ -63,15 +53,36 @@ jobs:
           print(f"Materialized {dst}: {len(data)} bytes")
           PY
           test -s assets/app-launcher/bali-wedding-dj.jpg
-          grep -q 'KAI_ONE_MY_MAPS_V17_ROBLOX_ICON_PROXY' my-maps-launcher-v1.js
-          grep -q 'KAI_ONE_ROBLOX_MAP_ICON_PROXY_V1' worker-map-icon-proxy-v1.js
-          grep -q 'KAI_ONE_ROBLOX_PUBLISH_PROBE_V1' worker-roblox-publish-probe-v1.js
-          grep -q 'worker-map-icon-proxy-v1.js' worker-roblox-publish-probe-v1.js
-          grep -q 'acc-os-x-maps-v17-roblox-icon-proxy' service-worker.js
+
+          for f in \
+            app.js \
+            desktop-mode-v1.js \
+            home-launchpad.js \
+            home-launcher-chain-v1.js \
+            home-quick-access-v1.js \
+            my-projects-launcher-v1.js \
+            my-admin-launcher-v1.js \
+            owner-app-launcher-v2.js \
+            launcher-layout-stability-v1.js \
+            service-worker.js \
+            release-version-v257.js \
+            produce-copilot-v2578.js \
+            worker-brain-runtime-rescue-v9.js \
+            worker-map-icon-proxy-v1.js \
+            worker-roblox-publish-probe-v1.js; do
+            node --check "$f"
+          done
+
+          grep -q 'const MOBILE_LIMIT = 4;' home-quick-access-v1.js
+          grep -q 'const DESKTOP_LIMIT = 8;' home-quick-access-v1.js
+          grep -q 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' my-projects-launcher-v1.js
+          grep -q 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' home-launchpad.js
+          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE' produce-copilot-v2578.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE' release-version-v257.js
+          grep -q 'BRAIN_RUNTIME_RESCUE_V9_1_HERO_IMAGE_PROMPT_LIMIT' worker-brain-runtime-rescue-v9.js
+          grep -q 'KAI_ONE_ROBLOX_MAP_ICON_PROXY_V3_MOUNT_BBYA_CORRECT_PLACE' worker-map-icon-proxy-v1.js
           grep -q 'worker-roblox-publish-probe-v1.js' wrangler.jsonc
-          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-instagram-bridge-v1.js
-          grep -q 'KAI_ONE_INSTAGRAM_BRIDGE_V2_SAFE_FALLBACK' publishing-page-aliases-v1.js
-          grep -q 'KAI_ONE_INSTAGRAM_DIRECT_TOUCH_V3' publishing-instagram-observer-guard-v1.js
+          grep -q 'KAI_ONE_OS_X_CANONICAL_2026_10_16' wrangler.jsonc
 
       - name: Deploy production Worker
         id: deploy
@@ -82,28 +93,30 @@ jobs:
           wranglerVersion: '4.115.0'
           command: deploy
 
-      - name: Verify V8 health marker
+      - name: Verify canonical production runtime
         shell: bash
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
           set -euo pipefail
-          echo "Deployment URL: ${DEPLOYMENT_URL:-<empty>}"
-          if [ -z "${DEPLOYMENT_URL:-}" ]; then
-            echo "::warning::Wrangler did not expose a deployment URL; deploy itself succeeded."
-            exit 0
-          fi
-          HEALTH_URL="${DEPLOYMENT_URL%/}/health"
-          echo "Checking $HEALTH_URL"
+          BASE_URL="${DEPLOYMENT_URL:-https://acc-os-x-baxkup.ardarawk.workers.dev}"
+          BASE_URL="${BASE_URL%/}"
+          echo "Verifying: $BASE_URL"
+
+          ok=0
           for attempt in 1 2 3 4 5 6; do
-            BODY="$(curl --fail --silent --show-error --max-time 30 "$HEALTH_URL" || true)"
+            BODY="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/health" || true)"
             printf '%s\n' "$BODY"
-            if printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V8_CAPTION_NULL_SERIES_GUARD'; then
-              echo "V8 health marker confirmed on attempt $attempt"
-              exit 0
+            if printf '%s' "$BODY" | grep -q 'BRAIN_RUNTIME_RESCUE_V9_1_HERO_IMAGE_PROMPT_LIMIT'; then
+              ok=1
+              break
             fi
-            echo "V8 marker not visible yet; waiting for edge propagation ($attempt/6)"
+            echo "V9 health marker not visible yet; waiting for edge propagation ($attempt/6)"
             sleep 5
           done
-          echo "::error::V8 health marker not visible after propagation wait"
-          exit 1
+          test "$ok" = 1
+
+          curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-quick-access-v1.js" | grep -q 'const DESKTOP_LIMIT = 8;'
+          curl --fail --silent --show-error --max-time 30 "$BASE_URL/my-projects-launcher-v1.js" | grep -q 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project'
+          curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-launchpad.js" | grep -q 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab'
+          echo "Canonical ACC OS X live runtime verified."
