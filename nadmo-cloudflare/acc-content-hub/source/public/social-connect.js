@@ -43,7 +43,14 @@
      node.append(button);
    }
  }
- const render=()=>{renderPlatform('facebook_page','facebook');renderPlatform('instagram','instagram')};
+ function refreshReturnLink(){
+   const targets=selected.map(t=>{
+     const a=accounts.find(x=>x.platform===t.platform&&x.id===t.id);
+     return a?{platform:a.platform,id:a.id,label:a.label}:null;
+   }).filter(Boolean);
+   $('backApp').href='acccontenthub://post?channel='+encodeURIComponent(channel)+'&targets='+encodeURIComponent(JSON.stringify(targets));
+ }
+ const render=()=>{renderPlatform('facebook_page','facebook');renderPlatform('instagram','instagram');refreshReturnLink()};
  async function refresh(){
    if(!/^[a-z0-9-]{3,90}$/.test(channel)){status('Channel dari percakapan tidak dikenali. Buka melalui tautan channel yang tepat.');return}
    try{
@@ -58,7 +65,7 @@
    }catch(e){status('Koneksi Meta belum siap: '+e.message)}
  }
  $('channel').replaceChildren(new Option(channel||'Tidak diketahui',channel));
- $('backApp').href='acccontenthub://post?channel='+encodeURIComponent(channel);
+ refreshReturnLink();
  $('refreshFb').onclick=refresh;
  $('refreshIg').onclick=refresh;
  refresh();
