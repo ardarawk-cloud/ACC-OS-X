@@ -1,3 +1,4 @@
+import {isOwnedMediaUrl,mediaExists} from './social-media.mjs';
 import {accessOwnerVerified} from './access-auth.mjs';
 // NADMO Social owner-operated TikTok shared queue; no direct posting API.
 export const TIKTOK_ACCOUNT = 'TIKTOK_SHARED_01';
@@ -117,7 +118,7 @@ async function event(db,jobId,type,oldStatus,newStatus,details={}) {
 }
 const setting=async(db,key)=>await db.prepare('SELECT value FROM social_settings WHERE key=?').bind(key).first('value');
 
-async function submit(db,data){
+async function submit(db,data,env,origin){
   if(!data || typeof data!=='object' || Array.isArray(data))return err('INVALID_BODY','Object required');
   const key=clean(data.client_submission_key,128);
   if(!/^[A-Za-z0-9:_-]{10,128}$/.test(key))return err('INVALID_IDEMPOTENCY_KEY','Provide stable unique client_submission_key');
@@ -127,6 +128,7 @@ async function submit(db,data){
   const title=clean(data.title,160),caption=clean(data.caption,2200),media=clean(data.media_url,2000);
   if(!title||!caption)return err('INVALID_CONTENT','Title and caption required');
   if(media && !validMediaUrl(media))return err('INVALID_MEDIA','Valid HTTPS media URL required');
+  if(media && isOwnedMediaUrl(media,origin) && !await mediaExists(env,media,origin))return err('MEDIA_NOT_FOUND','Private file not uploaded to R2',400);
   const mediaType=data.media_type;
   if(!['image','video'].includes(mediaType))return err('INVALID_MEDIA_TYPE','Use image or video');
   const awaitingMedia = !media;
@@ -150,7 +152,7 @@ async function submit(db,data){
   return json({ok:true,job},201);
 }
 
-async function action(db,id,data){
+async function action(db,id,data,env,origin){
   const current=await db.prepare('SELECT * FROM social_jobs WHERE id=?').bind(id).first();
   if(!current)return err('NOT_FOUND','Job not found',404);
   if(!data||!Number.isInteger(data.expected_version)||data.expected_version!==current.version)
@@ -169,6 +171,7 @@ async function action(db,id,data){
   if(name==='attach_media') {
     const candidate=clean(data.media_url,2000);
     if(!validMediaUrl(candidate))return err('INVALID_MEDIA','Valid HTTPS media URL required');
+    if(isOwnedMediaUrl(candidate,origin) && !await mediaExists(env,candidate,origin))return err('MEDIA_NOT_FOUND','Private file not uploaded to R2',400);
     const now=new Date().toISOString();
     const r=await db.prepare("UPDATE social_jobs SET media_url=?,status='QC_PENDING',notes='',version=version+1,updated_at=? WHERE id=? AND version=? AND status='QC_BLOCKED'")
       .bind(candidate,now,id,current.version).run();
@@ -188,6 +191,7 @@ async function action(db,id,data){
   }
   if(name==='qc_pass') {
     if(!validMediaUrl(current.media_url))return err('MEDIA_REQUIRED','Attach a valid media file before QC approval');
+    if(isOwnedMediaUrl(current.media_url,origin) && !await mediaExists(env,current.media_url,origin))return err('MEDIA_NOT_FOUND','Uploaded media no longer exists',400);
     if(data.rights_confirmed!==true)return err('QC_REQUIRED','Confirm media rights and fact-check before approval');
   }
   if(['qc_block','pause','not_posted','cancel','resume'].includes(name)){scheduledDate=null;scheduledTime=null;}
@@ -244,7 +248,7 @@ export async function handleSocial(request,env,url,identityVerifier=accessOwnerV
       const rows=(await db.prepare(sql).bind(...args).all()).results;
       return json({ok:true,jobs:rows,clock:dateWita()});
     }
-    if(method==='POST'&&path==='/api/social/jobs')return submit(db,await request.json());
+    if(method==='POST'&&path==='/api/social/jobs')return submit(db,await request.json(),env,url.origin);
     if(method==='POST'&&path==='/api/social/schedule') {
       const body=await request.json();
       return schedule(db,clean(body.date,10)||null);
@@ -256,7 +260,7 @@ export async function handleSocial(request,env,url,identityVerifier=accessOwnerV
       return json({ok:true,paused:body.paused});
     }
     const m=path.match(/^\/api\/social\/jobs\/([0-9a-f-]{36})\/action$/);
-    if(method==='POST'&&m)return action(db,m[1],await request.json());
+    if(method==='POST'&&m)return action(db,m[1],await request.json(),env,url.origin);
     return err('NOT_FOUND','Unknown Social API route',404);
   }catch(e){
     if(e instanceof SyntaxError)return err('INVALID_JSON','Malformed request body');
