@@ -59,14 +59,18 @@
       head.append(info,status);card.append(head);
       card.append(el('p','caption',j.caption));
       const foot=el('div','jobfoot'),actions=el('div','actions');
-      const link=el('a',null,'Lihat media ↗');link.href=j.media_url;link.target='_blank';link.rel='noopener noreferrer';foot.append(link);
+      if (j.media_url) {
+        const link=el('a',null,'Lihat media ↗');link.href=j.media_url;link.target='_blank';link.rel='noopener noreferrer';foot.append(link);
+      } else {
+        foot.append(el('span','meta','MENUNGGU MEDIA DARI PERCAKAPAN — belum boleh dijadwalkan'));
+      }
       actions.append(button('Salin caption',async()=>{try{await navigator.clipboard.writeText(j.caption);notice('Caption disalin')}catch{notice('Clipboard gagal; salin manual dari caption',true)}}));
       if(j.status==='UNASSIGNED'){
         const sel=el('select');sel.style.maxWidth='220px';
         for(const c of meta.channels){const o=el('option',null,c.name);o.value=c.key;sel.append(o);}
         actions.append(sel,button('Tentukan channel',()=>mutate(j.id,'resolve_channel',{channel_key:sel.value})));
       }
-      if(j.status==='QC_PENDING'||j.status==='QC_BLOCKED'){
+      if(j.status==='QC_PENDING'||(j.status==='QC_BLOCKED' && Boolean(j.media_url))){
         actions.append(button('QC lulus',()=>{if(confirm('Sudah periksa fakta, izin pakai media, privasi, dan hak cipta?'))mutate(j.id,'qc_pass',{rights_confirmed:true});}));
       }
       if(['QC_PENDING','READY','SCHEDULED','PAUSED'].includes(j.status)){
