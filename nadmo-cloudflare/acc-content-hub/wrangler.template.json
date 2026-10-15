@@ -24,5 +24,11 @@
       "database_id": "e684674e-8e5b-4401-a771-cdd94d888b6a"
     }
   ],
-  "keep_vars": true
+  "keep_vars": true,
+  "r2_buckets": [
+    {
+      "binding": "SOCIAL_MEDIA",
+      "bucket_name": "nadmo-social-private-media"
+    }
+  ]
 }
