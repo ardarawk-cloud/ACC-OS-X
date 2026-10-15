@@ -67,3 +67,40 @@ test('scheduler never overbooks 10 slots with 20 approved channels',async()=>{
  const count=db.raw.prepare("select count(*) as n from social_jobs where scheduled_date=?").get(day).n;
  assert.equal(count,10);
 });
+
+test('chat submissions without media are kept private and blocked until asset arrives',async()=>{
+ const db=makeDB(),env={SOCIAL_DB:db,NADMO_SOCIAL_OWNER_EMAIL:ownerEmail};
+ const draft={...content('chat-draft-no-media-1','arda-comics'),media_url:'',source:'chatgpt_channel'};
+ const saved=await call(env,'/jobs',draft);
+ assert.equal(saved.status,201);
+ assert.equal(saved.body.job.status,'QC_BLOCKED');
+ assert.equal(saved.body.job.media_url,'');
+ const id=saved.body.job.id;
+ const replay=await call(env,'/jobs',draft);
+ assert.equal(replay.body.duplicate,true);
+ assert.equal(replay.body.job.id,id);
+ const cannotApprove=await call(env,'/jobs/'+id+'/action',{action:'qc_pass',expected_version:1,rights_confirmed:true});
+ assert.equal(cannotApprove.status,400);
+ assert.equal(cannotApprove.body.error.code,'MEDIA_REQUIRED');
+ const noSchedule=await call(env,'/schedule',{date:new Date(Date.parse(dateWita().date+'T00:00:00Z')+86400000).toISOString().slice(0,10)});
+ assert.equal(noSchedule.body.scheduled.length,0);
+ const badAttach=await call(env,'/jobs/'+id+'/action',{action:'attach_media',expected_version:1,media_url:'http://localhost/secret'});
+ assert.equal(badAttach.status,400);
+ const attached=await call(env,'/jobs/'+id+'/action',{action:'attach_media',expected_version:1,media_url:'https://cdn.example.test/creative.mp4',source:'chatgpt_channel'});
+ assert.equal(attached.status,200);
+ assert.equal(attached.body.job.status,'QC_PENDING');
+ assert.equal(attached.body.job.version,2);
+ const approved=await call(env,'/jobs/'+id+'/action',{action:'qc_pass',expected_version:2,rights_confirmed:true});
+ assert.equal(approved.status,200);
+ assert.equal(approved.body.job.status,'READY');
+ assert.equal(db.raw.prepare('SELECT COUNT(*) AS n FROM social_jobs').get().n,1);
+});
+test('resolving unknown chat channel without media remains QC_BLOCKED',async()=>{
+ const db=makeDB(),env={SOCIAL_DB:db,NADMO_SOCIAL_OWNER_EMAIL:ownerEmail};
+ const result=await call(env,'/jobs',{...content('unknown-channel-media-1','new-internal-project'),media_url:''});
+ assert.equal(result.body.job.status,'UNASSIGNED');
+ const resolved=await call(env,'/jobs/'+result.body.job.id+'/action',{action:'resolve_channel',expected_version:1,channel_key:'nadmo-studio'});
+ assert.equal(resolved.body.job.status,'QC_BLOCKED');
+ const blocked=await call(env,'/jobs/'+result.body.job.id+'/action',{action:'qc_pass',expected_version:2,rights_confirmed:true});
+ assert.equal(blocked.body.error.code,'MEDIA_REQUIRED');
+});
