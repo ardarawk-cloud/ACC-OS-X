@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#08111f">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+  <title>ACC Content Hub — Pilih Tujuan</title>
+  <link rel="stylesheet" href="/social-connect.css">
+  <script src="/social-connect.js" defer></script>
+</head>
+<body>
+<main class="shell">
+  <header><small>NADMO SOCIAL / ACC CONTENT HUB</small><h1>Pilih tujuan posting</h1>
+  <p>Hubungkan akun satu kali untuk channel ini. Setiap pilihan langsung tersimpan. Tidak ada tombol LOCK.</p></header>
+  <section class="box">
+    <label for="channel">Channel percakapan</label>
+    <select id="channel" disabled><option value="">Memuat channel...</option></select>
+    <div id="state" role="status" aria-live="polite">Memeriksa akun yang sudah terhubung...</div>
+  </section>
+  <section class="box">
+    <div class="head"><h2><span class="fb">f</span> Facebook</h2><button id="refreshFb" type="button">Muat ulang</button></div>
+    <div id="facebook"></div>
+  </section>
+  <section class="box">
+    <div class="head"><h2>Instagram</h2><button id="refreshIg" type="button">Muat ulang</button></div>
+    <div id="instagram"></div>
+  </section>
+  <section class="box">
+    <h2>Channel lain, tujuan lain</h2>
+    <p>Setiap channel menyimpan pilihannya sendiri. Kamu bisa mengubah pilihan kapan saja tanpa menghapus akun yang sudah tersambung.</p>
+    <p class="note">Daftar saat ini berasal dari izin Meta pada konektor yang sudah ada. Facebook profil pribadi bukan Facebook Page: identitas login dapat dikenali melalui OAuth, tetapi posting otomatis ke profil pribadi tidak tersedia lewat Graph API.</p>
+    <a class="return" id="backApp" href="/">Kembali ke ACC Content Hub APK</a>
+  </section>
+</main>
+</body>
+</html>
