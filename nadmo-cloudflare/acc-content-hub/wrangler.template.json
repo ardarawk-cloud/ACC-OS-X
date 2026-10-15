@@ -30,5 +30,11 @@
       "binding": "SOCIAL_MEDIA",
       "bucket_name": "nadmo-social-private-media"
     }
+  ],
+  "services": [
+    {
+      "binding": "META_CONNECTOR",
+      "service": "acc-publish-connectorv2"
+    }
   ]
 }
