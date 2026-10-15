@@ -92,6 +92,15 @@ const err=(code,message,status=400)=>json({ok:false,error:{code,message}},status
 const clean=(x,max)=>typeof x==='string'?x.trim().slice(0,max):'';
 const validDate=x=>/^\d{4}-\d{2}-\d{2}$/.test(x)&&!Number.isNaN(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
 const dateAfterDays=(d,n)=>new Date(Date.parse(d+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
+const validMediaUrl = media => {
+  try {
+    const u = new URL(media);
+    return u.protocol === 'https:' && !u.username && !u.password &&
+      u.hostname !== 'localhost' && !u.hostname.endsWith('.local') &&
+      !/^(127|10|192\.168)\./.test(u.hostname);
+  } catch { return false; }
+};
+
 const isTikTokLink=value=>{
   try{const u=new URL(value);return u.protocol==='https:'&&
     ['tiktok.com','www.tiktok.com','m.tiktok.com','vm.tiktok.com','vt.tiktok.com'].includes(u.hostname)&&
@@ -116,20 +125,21 @@ async function submit(db,data){
   const channelKey=clean(data.channel_key,100);
   const c=channelMap.get(channelKey);
   const title=clean(data.title,160),caption=clean(data.caption,2200),media=clean(data.media_url,2000);
-  if(!title||!caption||!media)return err('INVALID_CONTENT','Title, caption and https media_url required');
-  let u;try{u=new URL(media)}catch{return err('INVALID_MEDIA','Media URL must be HTTPS')}
-  if(u.protocol!=='https:' || u.username || u.password || u.hostname==='localhost' || u.hostname.endsWith('.local'))return err('INVALID_MEDIA','Public HTTPS media URL required');
+  if(!title||!caption)return err('INVALID_CONTENT','Title and caption required');
+  if(media && !validMediaUrl(media))return err('INVALID_MEDIA','Valid HTTPS media URL required');
   const mediaType=data.media_type;
   if(!['image','video'].includes(mediaType))return err('INVALID_MEDIA_TYPE','Use image or video');
+  const awaitingMedia = !media;
   const priority=['OWNER_PINNED','URGENT'].includes(data.priority)?data.priority:'NORMAL';
   const snapshot={channel_key:channelKey,title,caption,media,mediaType,priority};
   const hash=await payloadHash(snapshot);
   const old=await db.prepare('SELECT * FROM social_jobs WHERE submission_key=?').bind(key).first();
   if(old)return old.payload_hash===hash?json({ok:true,duplicate:true,job:old},200):err('IDEMPOTENCY_CONFLICT','Submission key belongs to another content revision',409);
-  const id=crypto.randomUUID(),now=new Date().toISOString(),status=c?'QC_PENDING':'UNASSIGNED';
+  const id=crypto.randomUUID(),now=new Date().toISOString(),status=c?(awaitingMedia?'QC_BLOCKED':'QC_PENDING'):'UNASSIGNED';
+  const notes=awaitingMedia?'WAITING_MEDIA_FROM_CHAT':'';
   try{
-    await db.prepare('INSERT INTO social_jobs(id,submission_key,payload_hash,channel_key,channel_name,category,target_account,title,caption,media_url,media_type,priority,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .bind(id,key,hash,channelKey||'unassigned',c?.name||'UNASSIGNED',c?.category||'other',TIKTOK_ACCOUNT,title,caption,media,mediaType,priority,status,now,now).run();
+    await db.prepare('INSERT INTO social_jobs(id,submission_key,payload_hash,channel_key,channel_name,category,target_account,title,caption,media_url,media_type,priority,status,notes,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .bind(id,key,hash,channelKey||'unassigned',c?.name||'UNASSIGNED',c?.category||'other',TIKTOK_ACCOUNT,title,caption,media,mediaType,priority,status,notes,now,now).run();
   }catch(e){
     const existing=await db.prepare('SELECT * FROM social_jobs WHERE submission_key=?').bind(key).first();
     if(existing)return existing.payload_hash===hash?json({ok:true,duplicate:true,job:existing}):err('IDEMPOTENCY_CONFLICT','Collision',409);
@@ -146,13 +156,25 @@ async function action(db,id,data){
   if(!data||!Number.isInteger(data.expected_version)||data.expected_version!==current.version)
     return err('VERSION_CONFLICT','Refresh and retry; job has changed',409);
   const name=clean(data.action,50),tx=transitions[name];
-  if(!tx||!tx.from.includes(current.status))return err('INVALID_TRANSITION','Action not permitted in current status',409);
+  if((!tx || !tx.from.includes(current.status)) && !(name==='attach_media' && current.status==='QC_BLOCKED'))return err('INVALID_TRANSITION','Action not permitted in current status',409);
   let channel=current.channel_key,channelName=current.channel_name,category=current.category;
   let url=current.published_url,scheduledDate=current.scheduled_date,scheduledTime=current.scheduled_time,notes=current.notes,verifiedAt=current.verified_at;
   if(name==='resolve_channel'){
     const c=channelMap.get(clean(data.channel_key,100));
     if(!c)return err('UNKNOWN_CHANNEL','Register a known channel first');
     channel=c.key;channelName=c.name;category=c.category;
+  }
+  // Media arrives from the producing conversation; not an owner re-entry form.
+  // The attachment always returns to QC, never directly to READY or SCHEDULED.
+  if(name==='attach_media') {
+    const candidate=clean(data.media_url,2000);
+    if(!validMediaUrl(candidate))return err('INVALID_MEDIA','Valid HTTPS media URL required');
+    const now=new Date().toISOString();
+    const r=await db.prepare("UPDATE social_jobs SET media_url=?,status='QC_PENDING',notes='',version=version+1,updated_at=? WHERE id=? AND version=? AND status='QC_BLOCKED'")
+      .bind(candidate,now,id,current.version).run();
+    if(r.meta?.changes!==1)return err('VERSION_CONFLICT','Concurrent update detected',409);
+    await event(db,id,'MEDIA_ATTACHED','QC_BLOCKED','QC_PENDING',{source:clean(data.source,80)||'chatgpt_channel'});
+    return json({ok:true,job:await db.prepare('SELECT * FROM social_jobs WHERE id=?').bind(id).first()});
   }
   if(name==='self_report') {
     const proposed=clean(data.published_url,2000);
@@ -164,7 +186,10 @@ async function action(db,id,data){
     if(data.owner_verified!==true)return err('OWNER_VERIFICATION_REQUIRED','Manual verification of the TikTok post required');
     verifiedAt=new Date().toISOString();
   }
-  if(name==='qc_pass' && data.rights_confirmed!==true)return err('QC_REQUIRED','Confirm media rights and fact-check before approval');
+  if(name==='qc_pass') {
+    if(!validMediaUrl(current.media_url))return err('MEDIA_REQUIRED','Attach a valid media file before QC approval');
+    if(data.rights_confirmed!==true)return err('QC_REQUIRED','Confirm media rights and fact-check before approval');
+  }
   if(['qc_block','pause','not_posted','cancel','resume'].includes(name)){scheduledDate=null;scheduledTime=null;}
   if(name==='not_posted'){url=null;verifiedAt=null;}
   if(typeof data.notes==='string')notes=clean(data.notes,600);
