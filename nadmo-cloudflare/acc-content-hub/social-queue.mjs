@@ -194,10 +194,12 @@ async function action(db,id,data){
   if(name==='not_posted'){url=null;verifiedAt=null;}
   if(typeof data.notes==='string')notes=clean(data.notes,600);
   const now=new Date().toISOString();
+  const nextStatus=name==='resolve_channel'&&!validMediaUrl(current.media_url)?'QC_BLOCKED':tx.to;
+  if(name==='resolve_channel'&&nextStatus==='QC_BLOCKED')notes='WAITING_MEDIA_FROM_CHAT';
   const changed=await db.prepare('UPDATE social_jobs SET status=?,channel_key=?,channel_name=?,category=?,published_url=?,scheduled_date=?,scheduled_time=?,notes=?,verified_at=?,version=version+1,updated_at=? WHERE id=? AND version=? AND status=?')
-   .bind(tx.to,channel,channelName,category,url,scheduledDate,scheduledTime,notes,verifiedAt,now,id,current.version,current.status).run();
+   .bind(nextStatus,channel,channelName,category,url,scheduledDate,scheduledTime,notes,verifiedAt,now,id,current.version,current.status).run();
   if(changed.meta?.changes!==1)return err('VERSION_CONFLICT','Concurrent update detected',409);
-  await event(db,id,name,current.status,tx.to,{notes,verification:name==='verify'});
+  await event(db,id,name,current.status,nextStatus,{notes,verification:name==='verify'});
   return json({ok:true,job:await db.prepare('SELECT * FROM social_jobs WHERE id=?').bind(id).first()});
 }
 
