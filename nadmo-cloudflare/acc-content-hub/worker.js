@@ -1,6 +1,7 @@
 import {handleSocial} from './social-queue.mjs';
 import {accessOwnerVerified} from './access-auth.mjs';
 import {handleMedia} from './social-media.mjs';
+import {handleMetaDestinations} from './meta-destinations.mjs';
 
 export default {
   async fetch(request, env) {
@@ -12,6 +13,11 @@ export default {
       if (!env.NADMO_SOCIAL_OWNER_EMAIL) return Response.json({ok:false,error:{code:'NOT_CONFIGURED'}},{status:503});
       if (!await accessOwnerVerified(request,env)) return Response.json({ok:false,error:{code:'UNAUTHORIZED'}},{status:401});
       return handleMedia(request,env,url);
+    }
+    if (url.pathname === '/api/social/accounts/meta' || url.pathname === '/api/social/channel-destinations') {
+      if(!env.NADMO_SOCIAL_OWNER_EMAIL)return Response.json({ok:false,error:{code:'NOT_CONFIGURED'}},{status:503});
+      if(!await accessOwnerVerified(request,env))return Response.json({ok:false,error:{code:'UNAUTHORIZED'}},{status:401});
+      return handleMetaDestinations(request,env,url);
     }
     if (url.pathname.startsWith('/api/social/')) {
       if (request.method === 'OPTIONS') return new Response(null, { status: 405 });
