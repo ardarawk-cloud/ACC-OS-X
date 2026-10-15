@@ -18,3 +18,19 @@ Status: **CLOUDFLARE DEPLOYED / OWNER MOBILE QC PENDING**. Do not label end-to-e
 - Not implemented: direct posting automatically from all ChatGPT conversations; media file upload to R2; native Android APK/Share Kit; autonomous public TikTok Direct Post (private/internal API use excluded by TikTok intended-use policy).
 
 This receipt documents deployed source and Cloudflare state at the time of inspection. A passing healthcheck alone is not equivalent to authenticated owner QC.
+
+
+## 2026-10-15 — Chat media transport milestone
+
+**Cloudflare media bridge deployed; entire ChatGPT-to-public-social workflow NOT finished.**
+- PR: https://github.com/ardarawk-cloud/ACC-OS-X/pull/220 (merged).
+- Source commit: `f158748630b0696b88c90758b12520d6734f0aa3`.
+- Deployment workflow: https://github.com/ardarawk-cloud/ACC-OS-X/actions/runs/38723552918 — SUCCESS and healthcheck PASS.
+- Cloudflare Worker active version: `16dae35c-c030-4ad6-93ad-92f52dbdf824`; previous rollback version `f3a47cfd-404b-4066-b03a-12cd82e54697`.
+- R2 bucket: `nadmo-social-private-media` (APAC, private, not public). Existing Worker has `SOCIAL_MEDIA` R2 binding, as well as unchanged ASSETS, SOCIAL_DB and NADMO_SOCIAL_OWNER_EMAIL.
+- Endpoint `POST /api/social/media` handles streamed JPEG/PNG/WebP/MP4 with a 95 MiB cap and owner Access JWT; `GET /api/social/media/media/{uuid}.{ext}` retrieves bytes only through owner-authenticated API. All URLs stay under existing `contenthub.nadmo.id`.
+- Queue submit, attach and QC guard require the corresponding private R2 object to exist when a private media URL is referenced.
+- Cloudflare connector binary smoke test: real 68-byte PNG transferred to private R2 via Cloudflare R2 API; test draft created in D1 in QC_PENDING (not scheduled and not published), R2 object GET returned 200. Test job, event and test object deleted. Database reverified: **31 channels; 0 production jobs; 0 test events**.
+- CI: SQLite regression, Cloudflare Access JWT, media binary tests, build + Wrangler dry run PASS on PR; OS X runtime regression PASS.
+- Remaining restrictions: a tiny PNG fixture does not establish that arbitrary ChatGPT-generated image/video attachments automatically transfer from all conversations. The Cloudflare connector supports binary R2 objects when their bytes are supplied, but a generalized ChatGPT attachment-to-byte bridge and large video end-to-end test remain unverified. Cross-conversation global `POST` routing isn't installed as a ChatGPT-native custom action. A user-content media test is still required, without pasting media/caption manually.
+- TikTok public auto-post remains unsupported for an internal-only utility under TikTok's official Direct Post API intended-use rules; private R2 and queue success MUST NOT be described as public-post success. Owner handoff and real published post URL/ID are separate milestones.
