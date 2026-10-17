@@ -206,14 +206,23 @@ jobs:
           QUICK="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-quick-access-v1.js")"
           PROJECTS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/my-projects-launcher-v1.js")"
           HOME="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-launchpad.js")"
-          PRODUCE_JS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY")"
           INTERNAL="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/.github/workflows/runtime-validation.yml" || true)"
 
           grep -Fq 'const DESKTOP_LIMIT = 8;' <<<"$QUICK"
           grep -Fq 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' <<<"$PROJECTS"
           grep -Fq 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' <<<"$HOME"
-          grep -Fq 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' <<<"$PRODUCE_JS"
-          grep -Fq 'AI ACCESS lama ditolak dan sudah direset' <<<"$PRODUCE_JS"
+
+          produce_ok=0
+          for attempt in 1 2 3 4 5 6; do
+            PRODUCE_JS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY&t=$attempt" || true)"
+            if grep -Fq 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' <<<"$PRODUCE_JS" && grep -Fq 'AI ACCESS lama ditolak dan sudah direset' <<<"$PRODUCE_JS"; then
+              produce_ok=1
+              break
+            fi
+            echo "Fresh Produce asset not visible yet; waiting for edge propagation ($attempt/6)"
+            sleep 5
+          done
+          test "$produce_ok" = 1
           if grep -Fq 'name: ACC OS X Runtime Validation' <<<"$INTERNAL"; then
             echo "::error::Internal GitHub workflow is still exposed as a public Worker asset."
             exit 1
