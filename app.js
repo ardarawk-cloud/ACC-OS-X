@@ -2559,6 +2559,7 @@ Operational rules:
     ui.aiAccessDraft="";
     ui.aiError="";
     ui.aiStatus=code?"ONLINE_READY":"LOCAL_SAFE";
+    window.dispatchEvent(new CustomEvent("acc-ai-access-changed",{detail:{connected:Boolean(code)}}));
   };
   const aiHistory=(channelId=activeChannel().id)=>{
     if(!state.aiConsole.histories[channelId])state.aiConsole.histories[channelId]=[];
@@ -2861,6 +2862,13 @@ ${localSafeReply(text)}`,createdAt:now(),model:"ACC Local Fallback"});
     }catch(error){console.warn("[PWA]",error);}
   };
 
+  window.addEventListener("acc-ai-access-requested",()=>{
+    ui.aiConsoleOpen=true;
+    ui.aiAccessOpen=true;
+    ui.aiAccessDraft=getAiAccessCode();
+    ui.aiStatus=getAiAccessCode()?"ONLINE_READY":"LOCAL_SAFE";
+    render();
+  });
   window.addEventListener("online",render);
   window.addEventListener("offline",render);
 

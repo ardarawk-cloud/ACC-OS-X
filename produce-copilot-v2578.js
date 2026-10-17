@@ -26,6 +26,44 @@
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   let runtimeBusy=false;
   const mediaMemory=new Map();
+  let backendHealth={checked:false,online:false,aiBinding:false,accessSecretConfigured:false,error:"",checkedAt:0};
+  let backendHealthPromise=null;
+
+  const hasAiAccess=()=>Boolean(txt(localStorage.getItem(AI_ACCESS_KEY)));
+  function requestAiAccess(){
+    window.dispatchEvent(new CustomEvent("acc-ai-access-requested",{detail:{source:"PRODUCE_COPILOT",revision:REVISION}}));
+  }
+  function backendHealthLabel(){
+    if(!backendHealth.checked)return "AI SERVER CHECKING";
+    if(backendHealth.online&&backendHealth.aiBinding)return "AI SERVER ONLINE";
+    return "AI SERVER OFFLINE";
+  }
+  async function ensureBackendHealth(force=false){
+    const fresh=Date.now()-Number(backendHealth.checkedAt||0)<120000;
+    if(!force&&backendHealth.checked&&fresh)return backendHealth;
+    if(backendHealthPromise)return backendHealthPromise;
+    backendHealthPromise=(async()=>{
+      try{
+        const response=await fetch("/api/produce-health",{method:"GET",headers:{"Accept":"application/json"},cache:"no-store"});
+        const data=await response.json().catch(()=>({}));
+        backendHealth={
+          checked:true,
+          online:Boolean(response.ok&&data?.ok),
+          aiBinding:Boolean(data?.aiBinding),
+          accessSecretConfigured:Boolean(data?.accessSecretConfigured),
+          error:response.ok?"":txt(data?.error)||`HTTP ${response.status}`,
+          checkedAt:Date.now()
+        };
+      }catch(error){
+        backendHealth={checked:true,online:false,aiBinding:false,accessSecretConfigured:false,error:String(error?.message||error),checkedAt:Date.now()};
+      }finally{
+        backendHealthPromise=null;
+        refresh();
+      }
+      return backendHealth;
+    })();
+    return backendHealthPromise;
+  }
 
   function readMain(){try{return JSON.parse(localStorage.getItem(MAIN_STATE_KEY)||"{}");}catch{return {};}}
   function emptyPackage(){return {
@@ -243,9 +281,9 @@
   function shellHtml(profile,row){
     const spec=effectiveSpec(profile,row),published=txt(row.package?.publishedPostId);
     return `<div class="card acc-copilot-card mono">
-      <div class="acc-copilot-head"><div><div class="eyebrow">KAI PRODUCE COPILOT // PRODUCTION STABLE</div><div class="acc-copilot-channel" id="acc-copilot-channel-name">${esc(profile.name)}</div><div class="meta" id="acc-copilot-channel-meta">${esc(profile.code||profile.id)} • ${esc(profile.platform)}</div><div class="acc-copilot-badges"><span class="acc-copilot-badge ok">CHANNEL AUTO-READ</span><span class="acc-copilot-badge ${profile.contexts.length?"ok":""}" id="acc-copilot-context-count">${profile.contexts.length} MASTER CONTEXT</span><span class="acc-copilot-badge">${spec.count>1?`${spec.count} ITEM BATCH`:"K • P • C • N"}</span></div></div><span class="badge">MANUAL CONTROL</span></div>
+      <div class="acc-copilot-head"><div><div class="eyebrow">KAI PRODUCE COPILOT // PRODUCTION STABLE</div><div class="acc-copilot-channel" id="acc-copilot-channel-name">${esc(profile.name)}</div><div class="meta" id="acc-copilot-channel-meta">${esc(profile.code||profile.id)} • ${esc(profile.platform)}</div><div class="acc-copilot-badges"><span class="acc-copilot-badge ok">CHANNEL AUTO-READ</span><span class="acc-copilot-badge ${profile.contexts.length?"ok":""}" id="acc-copilot-context-count">${profile.contexts.length} MASTER CONTEXT</span><span class="acc-copilot-badge">${spec.count>1?`${spec.count} ITEM BATCH`:"K • P • C • N"}</span><span class="acc-copilot-badge ${backendHealth.online&&backendHealth.aiBinding?"ok":""}" id="acc-copilot-backend-state">${esc(backendHealthLabel())}</span><span class="acc-copilot-badge ${hasAiAccess()?"ok":""}" id="acc-copilot-ai-access">${hasAiAccess()?"AI ACCESS READY":"AI ACCESS REQUIRED"}</span></div></div><span class="badge">MANUAL CONTROL</span></div>
       <div class="acc-copilot-chat" id="acc-copilot-chat"></div>
-      <div class="acc-copilot-tools"><button class="acc-copilot-quick" data-copilot-command="K">K • KONTEN</button><button class="acc-copilot-quick" data-copilot-command="P">P • POSTER</button><button class="acc-copilot-quick" data-copilot-command="C">C • CAPTION</button><button class="acc-copilot-quick" data-copilot-command="N">N • NEXT</button></div>
+      <div class="acc-copilot-tools"><button class="acc-copilot-quick" data-copilot-command="K">K • KONTEN</button><button class="acc-copilot-quick" data-copilot-command="P">P • POSTER</button><button class="acc-copilot-quick" data-copilot-command="C">C • CAPTION</button><button class="acc-copilot-quick" data-copilot-command="N">N • NEXT</button>${hasAiAccess()?"":'<button class="acc-copilot-quick" data-copilot-connect-ai="1">CONNECT AI</button>'}</div>
       <form class="acc-copilot-compose" id="acc-copilot-form"><input class="acc-copilot-input" id="acc-copilot-input" autocomplete="off" placeholder="Ketik K, P, C, N atau chat seperti biasa…"><button class="acc-copilot-send" type="submit">SEND</button></form>
       <div class="acc-copilot-status" id="acc-copilot-status"></div>
       <div class="acc-copilot-batch" id="acc-copilot-batch">${batchHtml(profile,row)}</div>
@@ -282,11 +320,17 @@
   function syncMeta(profile,row){
     const name=document.getElementById("acc-copilot-channel-name"),meta=document.getElementById("acc-copilot-channel-meta"),count=document.getElementById("acc-copilot-context-count"),batch=document.getElementById("acc-copilot-batch");
     if(name)name.textContent=profile.name;if(meta)meta.textContent=`${profile.code||profile.id} • ${profile.platform}`;if(count){count.textContent=`${profile.contexts.length} MASTER CONTEXT`;count.classList.toggle("ok",Boolean(profile.contexts.length));}
-    if(batch)batch.innerHTML=batchHtml(profile,row);syncControls(profile,row);
+    if(batch)batch.innerHTML=batchHtml(profile,row);
+    const access=document.getElementById("acc-copilot-ai-access");
+    if(access){access.textContent=hasAiAccess()?"AI ACCESS READY":"AI ACCESS REQUIRED";access.classList.toggle("ok",hasAiAccess());}
+    const backend=document.getElementById("acc-copilot-backend-state");
+    if(backend){backend.textContent=backendHealthLabel();backend.classList.toggle("ok",Boolean(backendHealth.online&&backendHealth.aiBinding));}
+    syncControls(profile,row);
   }
   function bindPanel(){
     const section=document.getElementById(PANEL_ID);if(!section||section.dataset.bound==="1")return;section.dataset.bound="1";
     section.querySelectorAll("[data-copilot-command]").forEach(btn=>btn.addEventListener("click",()=>execute(btn.dataset.copilotCommand)));
+    section.querySelector("[data-copilot-connect-ai]")?.addEventListener("click",requestAiAccess);
     section.querySelector("#acc-copilot-form")?.addEventListener("submit",e=>{e.preventDefault();const input=section.querySelector("#acc-copilot-input"),value=txt(input?.value);if(input)input.value="";execute(value);});
     section.querySelector("#acc-copilot-publish")?.addEventListener("click",publishApproved);
     section.addEventListener("click",async e=>{
@@ -296,7 +340,7 @@
     });
   }
   async function mount(){
-    ensureStyle();const mission=document.querySelector(".mission-live-card");if(!mission)return;
+    ensureStyle();ensureBackendHealth();const mission=document.querySelector(".mission-live-card");if(!mission)return;
     const missionSection=mission.closest("section.section")||mission.parentElement;if(!missionSection?.parentElement)return;
     const profile=currentProfile();if(!profile.id)return;const row=lane(profile.id);await migrateLegacyMedia(profile.id,row);
     let section=document.getElementById(PANEL_ID);
@@ -321,6 +365,10 @@
   async function callCopilot(profile,row,command){
     const body={messages:[{role:"user",content:command}],context:requestContext(profile,row,command)},access=localStorage.getItem(AI_ACCESS_KEY)||"",headers={"Content-Type":"application/json","Accept":"application/json"};if(access)headers["X-ACC-Access-Code"]=access;
     const response=await fetch("/api/acc-ai",{method:"POST",headers,body:JSON.stringify(body)}),data=await response.json().catch(()=>({}));
+    if(response.status===401||response.status===403){
+      requestAiAccess();
+      throw new Error("AI ACCESS perlu disambungkan ulang.");
+    }
     if(!response.ok||!data.ok)throw new Error(data?.error||data?.errorDetail?.message||data?.detail?.message||`HTTP ${response.status}`);return data;
   }
   function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error("POSTER_IMAGE_DECODE_FAILED"));img.src=src;});}
@@ -350,6 +398,20 @@
   async function execute(command){
     const profile=currentProfile();if(!profile.id)return;const row=lane(profile.id),clean=txt(command);if(!clean)return;addMessage(profile.id,"user",clean);refresh();
     const op=/^(k|konten|content)\b/i.test(clean)?"K":/^(p|poster)\b/i.test(clean)?"P":/^(c|caption)\b/i.test(clean)?"C":/^(n|next|lanjut)\b/i.test(clean)?"N":"CHAT";
+    if(!hasAiAccess()){
+      addMessage(profile.id,"kai","AI ACCESS belum terhubung. Tekan CONNECT AI sekali untuk mengaktifkan K / P / C / N.");
+      setStatus("AI ACCESS REQUIRED // CONNECT AI",true);
+      requestAiAccess();
+      refresh();
+      return;
+    }
+    const health=await ensureBackendHealth();
+    if(!health.online||!health.aiBinding){
+      addMessage(profile.id,"kai",`AI SERVER belum siap // ${health.error||"binding offline"}`);
+      setStatus("AI SERVER OFFLINE",true);
+      refresh();
+      return;
+    }
     if((op==="P"||op==="C")&&!txt(row.package.material)){addMessage(profile.id,"kai","K belum ada. Buat/approve konten dulu dengan K.");refresh();return;}
     setBusy(true,op==="P"?"KAI sedang membuat poster…":op==="C"?"KAI sedang membuat caption…":"KAI sedang menyusun output…");
     try{
@@ -394,6 +456,7 @@
   window.addEventListener("acc-core-rendered",onCoreRendered);
   window.addEventListener("storage",e=>{if(e.key===MAIN_STATE_KEY||e.key===COPILOT_KEY){store=readStore();refresh();}});
   window.addEventListener("acc-production-contract-updated",refresh);
-  ensureStyle();refresh();
-  window.ACCProduceCopilot=Object.freeze({revision:REVISION,refresh,publishMode:"SINGLE_OR_PER_ITEM",mediaStore:"INDEXEDDB"});
+  window.addEventListener("acc-ai-access-changed",()=>{ensureBackendHealth(true);refresh();});
+  ensureStyle();ensureBackendHealth(true);refresh();
+  window.ACCProduceCopilot=Object.freeze({revision:REVISION,refresh,publishMode:"SINGLE_OR_PER_ITEM",mediaStore:"INDEXEDDB",health:()=>({...backendHealth})});
 })();

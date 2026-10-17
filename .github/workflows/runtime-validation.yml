@@ -46,6 +46,8 @@ on:
       - 'worker-brain-runtime-rescue-v7.js'
       - 'worker-brain-runtime-rescue-v8.js'
       - 'worker-brain-runtime-rescue-v9.js'
+      - 'worker-produce-access-guard-v1.js'
+      - 'scripts/produce-e2e-smoke.mjs'
       - 'worker-channel-master-authority-v1.js'
       - 'worker-contract-router-v258.js'
       - 'worker-contract-router-v259.js'
@@ -226,6 +228,13 @@ jobs:
           grep -q 'IMAGE_PROMPT_LIMIT=1900' worker-brain-runtime-rescue-v9.js
           grep -q 'boundImagePrompt' worker-brain-runtime-rescue-v9.js
 
+          # Outermost access guard: P/C rescue paths cannot bypass owner auth.
+          grep -q 'PRODUCE_OWNER_ACCESS_GUARD_V1' worker-produce-access-guard-v1.js
+          grep -q 'worker-produce-access-guard-v1.js' worker-roblox-publish-probe-v1.js
+          grep -q 'AI ACCESS REQUIRED' produce-copilot-v2578.js
+          grep -q 'acc-ai-access-requested' produce-copilot-v2578.js
+          grep -q 'acc-ai-access-requested' app.js
+
           # Produce cannot own viewport position or poll/remount the page.
           if grep -Eq 'MutationObserver|setInterval\s*\(|scrollTop\s*=|scrollIntoView\s*\(|window\.scroll(To|By)\s*\(' produce-copilot-v2578.js; then
             echo 'FAIL: consolidated Produce runtime contains polling or viewport control.' >&2
@@ -259,6 +268,7 @@ jobs:
             worker-brain-runtime-rescue-v7.js \
             worker-brain-runtime-rescue-v8.js \
             worker-brain-runtime-rescue-v9.js \
+            worker-produce-access-guard-v1.js \
             worker-channel-master-authority-v1.js \
             worker-contract-router-v258.js \
             worker-contract-router-v259.js \
@@ -291,6 +301,7 @@ jobs:
               'worker-brain-runtime-rescue-v7.js',
               'worker-brain-runtime-rescue-v8.js',
               'worker-brain-runtime-rescue-v9.js',
+              'worker-produce-access-guard-v1.js',
               'worker-channel-master-authority-v1.js',
               'worker-contract-router-v258.js',
               'worker-contract-router-v259.js',
@@ -308,3 +319,21 @@ jobs:
           if missing:
               raise SystemExit('Missing imports:\n'+'\n'.join(missing))
           print('Runtime chain OK; wrangler main =', entry)
+
+
+  produce_e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Produce K/P/C end-to-end smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/produce-e2e-smoke.mjs

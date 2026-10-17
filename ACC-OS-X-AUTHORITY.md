@@ -92,3 +92,14 @@ Latest verified production release:
 - production workflow: `android-production-release.yml`
 
 Future releases must preserve identity and move versionCode forward.
+
+## Produce / content production authority
+
+- Active browser authority: `produce-copilot-v2578.js`; legacy v2576/v2577 clients must not compete.
+- Owner production commands are `K` (material), `P` (poster), `C` (caption), and `N` (next).
+- Single and batch production use the same runtime. Batch publishing is per item.
+- Poster media is durable in IndexedDB and must not be stored as Base64 in localStorage.
+- Generative POST endpoints are protected by the outer `PRODUCE_OWNER_ACCESS_GUARD_V1`; rescue layers must never bypass owner authentication.
+- Produce must expose AI/server readiness in the Production UI and route missing/stale owner AI access into the existing ACC AI connection flow instead of failing silently.
+- CI must pass `scripts/produce-e2e-smoke.mjs`, covering owner-auth rejection plus single K/P/C and 5-item batch K/P/C.
+- A content package is not considered published until the external connector returns a real post ID. No synthetic success state is allowed.

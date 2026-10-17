@@ -69,6 +69,7 @@ jobs:
             produce-copilot-v2578.js \
             worker-brain-runtime-rescue-v9.js \
             worker-map-icon-proxy-v1.js \
+            worker-produce-access-guard-v1.js \
             worker-roblox-publish-probe-v1.js; do
             node --check "$f"
           done
@@ -80,6 +81,8 @@ jobs:
           grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE' produce-copilot-v2578.js
           grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE' release-version-v257.js
           grep -q 'BRAIN_RUNTIME_RESCUE_V9_1_HERO_IMAGE_PROMPT_LIMIT' worker-brain-runtime-rescue-v9.js
+          grep -q 'PRODUCE_OWNER_ACCESS_GUARD_V1' worker-produce-access-guard-v1.js
+          grep -q 'worker-produce-access-guard-v1.js' worker-roblox-publish-probe-v1.js
           grep -q 'KAI_ONE_ROBLOX_MAP_ICON_PROXY_V3_MOUNT_BBYA_CORRECT_PLACE' worker-map-icon-proxy-v1.js
           grep -q 'worker-roblox-publish-probe-v1.js' wrangler.jsonc
           grep -q 'KAI_ONE_OS_X_CANONICAL_2026_10_16' wrangler.jsonc
@@ -194,6 +197,11 @@ jobs:
             sleep 5
           done
           test "$ok" = 1
+
+          PRODUCE_HEALTH="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/api/produce-health")"
+          grep -Fq '"produceAccessGuard":"ACTIVE"' <<<"$PRODUCE_HEALTH"
+          grep -Fq '"aiBinding":true' <<<"$PRODUCE_HEALTH"
+          grep -Fq '"accessSecretConfigured":true' <<<"$PRODUCE_HEALTH"
 
           QUICK="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-quick-access-v1.js")"
           PROJECTS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/my-projects-launcher-v1.js")"

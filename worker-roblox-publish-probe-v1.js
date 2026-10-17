@@ -1,6 +1,6 @@
 // KAI ONE — ACC OS X ROBLOX PUBLISH PROBE v1
 // Safe capability probe only. No Roblox publish mutation is performed by this revision.
-import baseWorker from "./worker-map-icon-proxy-v1.js";
+import baseWorker from "./worker-produce-access-guard-v1.js";
 
 const REVISION = "KAI_ONE_ROBLOX_PUBLISH_PROBE_V1";
 const TARGET = Object.freeze({ universeId: "10745364913", placeId: "76001567401911" });
