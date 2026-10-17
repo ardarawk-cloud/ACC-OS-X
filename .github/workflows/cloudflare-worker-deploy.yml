@@ -78,8 +78,8 @@ jobs:
           grep -q 'const DESKTOP_LIMIT = 8;' home-quick-access-v1.js
           grep -q 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' my-projects-launcher-v1.js
           grep -q 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' home-launchpad.js
-          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE' produce-copilot-v2578.js
-          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE' release-version-v257.js
+          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' produce-copilot-v2578.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' release-version-v257.js
           grep -q 'BRAIN_RUNTIME_RESCUE_V9_1_HERO_IMAGE_PROMPT_LIMIT' worker-brain-runtime-rescue-v9.js
           grep -q 'PRODUCE_OWNER_ACCESS_GUARD_V1' worker-produce-access-guard-v1.js
           grep -q 'worker-produce-access-guard-v1.js' worker-roblox-publish-probe-v1.js
@@ -206,11 +206,14 @@ jobs:
           QUICK="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-quick-access-v1.js")"
           PROJECTS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/my-projects-launcher-v1.js")"
           HOME="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-launchpad.js")"
+          PRODUCE_JS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY")"
           INTERNAL="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/.github/workflows/runtime-validation.yml" || true)"
 
           grep -Fq 'const DESKTOP_LIMIT = 8;' <<<"$QUICK"
           grep -Fq 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' <<<"$PROJECTS"
           grep -Fq 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' <<<"$HOME"
+          grep -Fq 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' <<<"$PRODUCE_JS"
+          grep -Fq 'AI ACCESS lama ditolak dan sudah direset' <<<"$PRODUCE_JS"
           if grep -Fq 'name: ACC OS X Runtime Validation' <<<"$INTERNAL"; then
             echo "::error::Internal GitHub workflow is still exposed as a public Worker asset."
             exit 1

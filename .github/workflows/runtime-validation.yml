@@ -180,9 +180,9 @@ jobs:
           set -euo pipefail
 
           # Active client authority must be v2578 only.
-          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE' produce-copilot-v2578.js
-          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE' release-version-v257.js
-          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE' service-worker.js
+          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' produce-copilot-v2578.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' release-version-v257.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' service-worker.js
           if grep -Eq 'produce-copilot-v257[67]\.js\?rev=' release-version-v257.js release-version-v258.js service-worker.js; then
             echo 'FAIL: legacy Produce v2576/v2577 is still active.' >&2
             exit 1

@@ -5,7 +5,7 @@
   if (window.__ACC_PRODUCE_COPILOT_V2578__) return;
   window.__ACC_PRODUCE_COPILOT_V2578__ = true;
 
-  const REVISION = "BUILD257_8_PRODUCTION_PUBLISHING_STABLE";
+  const REVISION = "BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY";
   const MAIN_STATE_KEY = "acc_os_x_ecosystem_v214";
   const COPILOT_KEY = "acc_os_x_produce_copilot_v1";
   const AI_ACCESS_KEY = "acc_os_x_ai_access_v1";
@@ -366,8 +366,10 @@
     const body={messages:[{role:"user",content:command}],context:requestContext(profile,row,command)},access=localStorage.getItem(AI_ACCESS_KEY)||"",headers={"Content-Type":"application/json","Accept":"application/json"};if(access)headers["X-ACC-Access-Code"]=access;
     const response=await fetch("/api/acc-ai",{method:"POST",headers,body:JSON.stringify(body)}),data=await response.json().catch(()=>({}));
     if(response.status===401||response.status===403){
+      localStorage.removeItem(AI_ACCESS_KEY);
+      window.dispatchEvent(new CustomEvent("acc-ai-access-changed",{detail:{connected:false,reason:"ACCESS_REJECTED"}}));
       requestAiAccess();
-      throw new Error("AI ACCESS perlu disambungkan ulang.");
+      throw new Error("AI ACCESS lama ditolak dan sudah direset. Masukkan kode owner yang baru.");
     }
     if(!response.ok||!data.ok)throw new Error(data?.error||data?.errorDetail?.message||data?.detail?.message||`HTTP ${response.status}`);return data;
   }

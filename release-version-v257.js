@@ -84,7 +84,7 @@
   if (document.querySelector('script[data-acc-produce-copilot="v2578"]')) return;
   document.querySelectorAll('script[data-acc-produce-copilot]').forEach(node => node.remove());
   const script = document.createElement("script");
-  script.src = "./produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE";
+  script.src = "./produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY";
   script.dataset.accProduceCopilot = "v2578";
   script.async = false;
   document.head.appendChild(script);

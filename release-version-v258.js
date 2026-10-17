@@ -112,6 +112,6 @@
 // Never load a second Produce implementation from this bridge.
 window.ACCRelease258RuntimePolicy=Object.freeze({
   revision:"BUILD258_IDENTITY_ONLY_PRODUCE_V2578_AUTHORITY",
-  produceAuthority:"BUILD257_8_PRODUCTION_PUBLISHING_STABLE",
+  produceAuthority:"BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY",
   legacyProduceLoader:false
 });
