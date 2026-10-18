@@ -176,6 +176,8 @@ export class RoomHub{
    const resumeToken=crypto.randomUUID()+crypto.randomUUID();
    const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',
     hostName:current?.name||txt(msg.hostName,60)||'Host',hostHandle:current?.handle||null,hostAvatarVersion:current?.avatarVersion||0,
+    hostCoverVersion:current?.coverVersion||0,
+    radioVisual:msg.broadcastKind==='radio'&&['signal','vinyl','night','cover'].includes(msg.radioVisual)?msg.radioVisual:'signal',
      hostThemeId:['nadmo','cyberbw','noir','retro','electric'].includes(msg.themeId)?msg.themeId:
      (['nadmo','cyberbw','noir','retro','electric'].includes(current?.themeId)?current.themeId:'nadmo'),
     hostVerified:current?.kycStatus==='verified'&&current?.verifiedAdult===true,hostAccountId:current?.id||null,
@@ -183,7 +185,7 @@ export class RoomHub{
     mode,facecam,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now,stagePreset:'auto',stageRandomSeed:0};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
-   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',createdAt:room.createdAt,broadcastKind:room.broadcastKind,category:room.category,layout:[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0});
+   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',hostCoverVersion:room.hostCoverVersion||0,radioVisual:room.radioVisual||'signal',createdAt:room.createdAt,broadcastKind:room.broadcastKind,category:room.category,layout:[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0});
    return;
   }
   if(type==='resume'){
@@ -215,7 +217,7 @@ export class RoomHub{
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
    const viewers=peers.filter(x=>state(x).roomId===id&&['viewer','guest'].includes(state(x).role)).map(x=>state(x).id);
-   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',createdAt:room.createdAt,broadcastKind:room.broadcastKind||'camera',category:room.category,layout:room.stageLayout||[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0,pk:publicPK(room.pk)});
+   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',hostCoverVersion:room.hostCoverVersion||0,radioVisual:room.radioVisual||'signal',createdAt:room.createdAt,broadcastKind:room.broadcastKind||'camera',category:room.category,layout:room.stageLayout||[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0,pk:publicPK(room.pk)});
    for(const other of peers){if(state(other).roomId===id&&state(other).role!=='host')reply(other,{type:'host-reconnected'})}
     for(const other of peers){const meta=state(other);if(meta.roomId===id&&meta.pendingGuestMode)reply(ws,{type:'guest-requested',id:meta.id,name:meta.displayName||meta.handle||'Penonton',mode:meta.pendingGuestMode})}
     stageBroadcast(peers,id,room.stageLayout||[]);
@@ -233,7 +235,7 @@ export class RoomHub{
    if(s.accountId&&Array.isArray(room.blockedAccounts)&&room.blockedAccounts.includes(s.accountId))
     return failure(ws,'Akses akun ke room ini telah diblokir oleh host.');
    s.roomId=id;s.role='viewer';save(ws,s);
-   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',selfId:s.id,hostId:room.hostId,facecam:room.facecam||null,mirrorBroadcast:room.mirrorBroadcast===true,createdAt:room.createdAt,maxGuests:GUEST_LIMIT,broadcastKind:room.broadcastKind||'camera',category:room.category,guests:stagePublic(peers,id),layout:room.stageLayout||[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0,pk:publicPK(room.pk)});
+   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',hostCoverVersion:room.hostCoverVersion||0,radioVisual:room.radioVisual||'signal',selfId:s.id,hostId:room.hostId,facecam:room.facecam||null,mirrorBroadcast:room.mirrorBroadcast===true,createdAt:room.createdAt,maxGuests:GUEST_LIMIT,broadcastKind:room.broadcastKind||'camera',category:room.category,guests:stagePublic(peers,id),layout:room.stageLayout||[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0,pk:publicPK(room.pk)});
    // Name comes from authenticated WebSocket session only, never the JOIN payload.
    // Anonymous guests get a distinguishable label, not a fabricated real name.
    // Compact room notifications use exactly one identifier: profile name,
