@@ -2806,6 +2806,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
 #radioLiveCanvas[data-radio-visual="night"] .radio-live-cover,
 #radioLiveCanvas[data-radio-visual="cover"] .radio-live-cover{text-shadow:0 2px 12px #000}
 #radioLiveCanvas:before{border-color:color-mix(in srgb,var(--neon) 55%,transparent)!important}
+#radioLiveCanvas .radio-live-host-photo{width:min(43vw,180px);height:min(43vw,180px);min-width:118px;min-height:118px;object-fit:cover;border-radius:50%;border:3px solid var(--neon);box-shadow:0 0 0 11px color-mix(in srgb,var(--neon) 14%,transparent),0 0 25px #0008}
 </style></head>
 <body>
 <div class="app">
@@ -2965,7 +2966,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
-  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video><div id="radioLiveCanvas" data-radio-visual="vinyl" aria-hidden="true"><img id="radioLiveWallpaper" alt="" hidden><div class="radio-live-cover"><span class="radio-live-logo">N/</span><span class="radio-live-eyebrow" id="radioLiveHostLabel">LIVE RADIO</span><strong id="radioLiveTitle">ON AIR</strong><div class="radio-live-waves"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="radio-live-sub">MUSIC & TALK · AUDIO ONLY</span></div></div>
+  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video><div id="radioLiveCanvas" data-radio-visual="vinyl" aria-hidden="true"><img id="radioLiveWallpaper" alt="" hidden><div class="radio-live-cover"><img id="radioLiveHostPhoto" class="radio-live-host-photo" alt="" hidden><span class="radio-live-logo" id="radioLiveMark">♫</span><span class="radio-live-eyebrow" id="radioLiveHostLabel">LIVE RADIO</span><strong id="radioLiveTitle">ON AIR</strong><div class="radio-live-waves"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="radio-live-sub">MUSIC & TALK · AUDIO ONLY</span></div></div>
 <div id="pkBattleHud" hidden><div class="pk-score"><span><small id="pkNameA">TIM A</small><b id="pkPointsA">0</b></span><span><b>PK</b><small id="pkClock">00:00</small></span><span><small id="pkNameB">TIM B</small><b id="pkPointsB">0</b></span></div><div class="pk-cheers"><button type="button" id="pkCheerA">DUKUNG A GRATIS</button><button type="button" id="pkCheerB">DUKUNG B GRATIS</button></div><small id="pkNotice">Dukungan gratis, bukan saweran uang.</small></div>
 <div id="pkGuestInvite" hidden><strong>UNDANGAN PK</strong><p>Ikut PK bersama host? Kamu bebas menolak.</p><button class="btn" id="pkAccept" type="button">TERIMA</button><button class="btn secondary" id="pkDecline" type="button">TOLAK</button></div></div>
 <div id="watchState" class="status">CONNECTING SIGNAL...</div><div id="liveRestReminder" role="status" aria-live="polite" hidden><span><strong>WAKTUNYA ISTIRAHAT</strong> — Kamu sudah LIVE <span id="liveRestHour">1 jam</span>. Istirahat sebentar bila perlu. Siaran tetap berjalan.</span><button type="button" id="liveRestDismiss">LANJUT</button></div><div id="watchStreamQuality" class="status" aria-live="off" style="font-size:10px;opacity:.85" hidden></div>
@@ -6408,6 +6409,11 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   const canvas=$('radioLiveCanvas');
   const choice=radioVisuals.includes(room?.radioVisual)?room.radioVisual:'vinyl';
   const handle=String(room?.hostHandle||'').slice(0,24);
+  const photo=avatarURL(handle,room?.hostAvatarVersion||0),face=$('radioLiveHostPhoto');
+  face.hidden=!photo;
+  $('radioLiveMark').hidden=!!photo;
+  if(photo){if(face.getAttribute('src')!==photo)face.src=photo}
+  else face.removeAttribute('src');
   const src=choice==='cover'?coverImageURL(handle,room?.hostCoverVersion||0):'';
   const visual=choice==='cover'&&!src?'vinyl':choice;
   canvas.dataset.radioVisual=visual;
