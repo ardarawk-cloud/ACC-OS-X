@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261012-live-hourly-break-v7">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261019-host-cyberdeck-theme-v8">
 <title>NADMO LIVE — Beta</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
@@ -1269,7 +1269,7 @@ body.live-immersive.watch-viewer #watch .deck-live-metric{max-width:205px}
 
 /* NADMO CYBERDECK REFERENCE-MATCH v5 — single cohesive desktop composition.
    This is the actual functional player/chat DOM, not a raster screenshot. */
-@media(min-width:1000px){
+@media(min-width:800px){
  body.live-immersive.watch-viewer #watch{
   --pc-rail:0px;--pc-gap:12px;
   --pc-chat:clamp(310px,28vw,475px);
@@ -2662,6 +2662,114 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tile{
  overflow:hidden!important;background:#08150ede!important}
 body.live-immersive #watch.mobile-stage-voice .stage-guest-tile .stage-fallback{background:transparent!important}
 body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:auto!important}
+
+/* Owner FIX 2026-10-19 — viewer PC inherits the LIVE HOST palette, not the
+   viewer's account skin. Preserve the exact CYBERDECK structure/geometry on
+   every host theme. No filters are placed on the stream, images or parents. */
+@media(min-width:800px){
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]){
+  background-color:#090a0b!important;
+  background-image:linear-gradient(color-mix(in srgb,var(--neon) 10%,transparent) 1px,transparent 1px),
+   linear-gradient(90deg,color-mix(in srgb,var(--neon) 10%,transparent) 1px,transparent 1px),
+   radial-gradient(ellipse at 42% 32%,color-mix(in srgb,var(--neon) 9%,transparent),transparent 67%)!important;
+  background-size:42px 42px,42px 42px,auto!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .live-stage{
+  border:2px solid var(--neon)!important;border-radius:1px!important;
+  background:linear-gradient(color-mix(in srgb,var(--neon) 12%,transparent) 1px,transparent 1px),
+   linear-gradient(90deg,color-mix(in srgb,var(--neon) 12%,transparent) 1px,transparent 1px),
+   radial-gradient(ellipse at 50% 48%,color-mix(in srgb,var(--neon) 9%,#0c0c0d),#050607 78%)!important;
+  background-size:35px 35px,35px 35px,auto!important;
+  box-shadow:0 0 0 3px #040506,0 0 0 5px color-mix(in srgb,var(--neon) 65%,transparent),
+   inset 0 0 0 7px #0b0c0ee9,0 0 27px color-mix(in srgb,var(--neon) 24%,transparent)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .live-stage::before{
+  background:linear-gradient(90deg,var(--neon) 0 12%,transparent 12% 84%,var(--neon) 84% 88%,transparent 88%) left top/100% 4px no-repeat,
+   linear-gradient(90deg,var(--neon) 0 6%,transparent 6% 96%,var(--neon) 96%) left bottom/100% 2px no-repeat,
+   linear-gradient(var(--neon) 0 22%,transparent 22% 80%,var(--neon) 80%) left top/2px 100% no-repeat,
+   linear-gradient(var(--neon) 0 18%,transparent 18% 92%,var(--neon) 92%) right top/2px 100% no-repeat!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .live-stage>.viewfinder{
+  border-color:var(--neon)!important;
+  box-shadow:0 0 0 4px #030405,0 0 0 6px color-mix(in srgb,var(--neon) 62%,transparent),0 10px 30px #000b!important;
+  background:#060607!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-shell-art{
+  background:linear-gradient(90deg,color-mix(in srgb,var(--neon) 25%,transparent) 0 3px,transparent 3px) 0 30px/100% 1px no-repeat!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-shell-svg [stroke]{stroke:var(--neon)!important}
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-shell-svg [fill]:not([fill="none"]){fill:var(--neon)!important}
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-shell-bottom i{
+  background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--neon) 65%,transparent) 0 3px,transparent 3px 7px,color-mix(in srgb,var(--neon) 34%,transparent) 7px 9px,transparent 9px 15px)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #hostProfileCard{
+  border-color:var(--neon)!important;
+  background:linear-gradient(115deg,color-mix(in srgb,var(--neon) 10%,#0a0a0b),#060607ee)!important;
+  box-shadow:inset 0 2px color-mix(in srgb,var(--neon) 45%,transparent)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-live-metric{
+  border:1px solid var(--neon)!important;
+  background:linear-gradient(110deg,color-mix(in srgb,var(--neon) 12%,#0a0a0b),#090a0ceb)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-live-metric>span,
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-live-metric strong,
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-live-metric:last-child>span{
+  color:var(--neon)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-player-controls,
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #desktopSawerBar{
+  border:1px solid var(--neon)!important;background:linear-gradient(100deg,#121315f5,#090a0beb)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-player-controls button,
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #desktopSawerBar button,
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #pcWatchRail button{
+  border-color:var(--neon)!important;background:#121315ea!important;color:var(--theme-watch-text,#fafafa)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .deck-player-live,
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #desktopSawerBar .pc-gift-label{
+  color:var(--neon)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .live-chat{
+  border:2px solid var(--neon)!important;border-radius:1px!important;
+  background:linear-gradient(color-mix(in srgb,var(--neon) 7%,transparent) 1px,transparent 1px),
+   linear-gradient(90deg,color-mix(in srgb,var(--neon) 7%,transparent) 1px,transparent 1px),
+   linear-gradient(180deg,#151618,#08090b 83%)!important;
+  background-size:35px 35px,35px 35px,auto!important;
+  box-shadow:inset 0 0 0 7px #090a0cf7,0 0 0 3px #030405,
+   0 0 0 5px color-mix(in srgb,var(--neon) 51%,transparent),
+   0 0 24px color-mix(in srgb,var(--neon) 20%,transparent)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .live-chat::before{
+  background:linear-gradient(90deg,var(--neon) 0 29%,transparent 29% 78%,var(--neon) 78% 100%)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .live-chat .show-label{
+  border-bottom-color:var(--neon)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #chat div{
+  border-left-color:var(--neon)!important;background:#191a1de8!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) .live-chat .row{
+  border-top-color:var(--neon)!important
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #message{
+  border-color:var(--neon)!important;background:#101113!important;color:#f8f8f8
+ }
+ body.live-immersive.watch-viewer #watch[data-host-theme]:not([data-host-theme="nadmo"]) #send{
+  border-color:var(--neon)!important;background:var(--neon)!important;color:#070809!important
+ }
+}
+/* Fit the reference CYBERDECK below 1000px without showing the legacy shell. */
+@media(min-width:800px) and (max-width:999px){
+ body.live-immersive.watch-viewer #watch{
+  --pc-chat:clamp(265px,34vw,310px);--pc-stage-left:16px;
+  --pc-stage-right:calc(var(--pc-chat) + 25px)
+ }
+ body.live-immersive.watch-viewer #watch .page-top{width:250px!important;max-width:250px!important}
+ body.live-immersive.watch-viewer #watch .deck-live-telemetry{display:none!important}
+ body.live-immersive.watch-viewer #watch #desktopSawerBar{bottom:83px!important;gap:4px!important;padding:5px!important}
+ body.live-immersive.watch-viewer #watch #desktopSawerBar button{min-width:55px!important;padding:5px!important}
+ body.live-immersive.watch-viewer #watch .live-chat .show-label b{font-size:20px!important}
+}
 </style></head>
 <body>
 <div class="app">
