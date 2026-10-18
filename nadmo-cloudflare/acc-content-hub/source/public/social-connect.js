@@ -2,7 +2,7 @@
  'use strict';
  const $=id=>document.getElementById(id);
  const channel=new URL(location.href).searchParams.get('channel')||'';
- let accounts=[], selected=[],saving=false;
+ let accounts=[], selected=[],saving=false,igLoginReady=false;
  const accountId=a=>a.platform+':'+a.id;
  const status=s=>{$('state').textContent=s};
  const api=async(path,body)=>{
@@ -59,8 +59,13 @@
        api('/api/social/channel-destinations?channel_key='+encodeURIComponent(channel))
      ]);
      accounts=list.accounts||[];
+     igLoginReady=Boolean(list.interactive_oauth_configured);
+     $('connectInstagram').disabled=!igLoginReady;
+     $('instagramInfo').textContent=igLoginReady
+       ? 'Login langsung melalui Instagram; Facebook Page tidak diperlukan.'
+       : 'Login Instagram belum aktif: perlu Instagram App ID, App Secret, dan kunci enkripsi pada Cloudflare. Akun Meta lama tetap tersedia.';
      selected=(current.selected||[]).map(s=>({platform:s.platform,id:s.target_id}));
-     status(accounts.length?'Pilih akun. Perubahan langsung tersimpan ('+selected.length+' terpilih).':'Belum ada akun Meta yang dapat ditemukan dari konektor.');
+     status(outcome==='connected'?'Instagram sudah dihubungkan. Pilih akun di bawah agar tersimpan untuk channel ini.':(accounts.length?'Pilih akun. Perubahan langsung tersimpan ('+selected.length+' terpilih).':'Belum ada akun Meta yang dapat ditemukan dari konektor.'));
      render();
    }catch(e){status('Koneksi Meta belum siap: '+e.message)}
  }
@@ -68,5 +73,14 @@
  refreshReturnLink();
  $('refreshFb').onclick=refresh;
  $('refreshIg').onclick=refresh;
+ $('connectInstagram').onclick=()=>{
+   if(!igLoginReady)return;
+   if(!/^[a-z0-9-]{3,90}$/.test(channel))return;
+   location.assign('/api/social/instagram/start?channel_key='+encodeURIComponent(channel));
+ };
+ const outcome=new URL(location.href).searchParams.get('instagram_result');
+ if(outcome==='connected')status('Instagram berhasil terhubung. Pilih akun yang muncul untuk menyimpan tujuan channel.');
+ else if(outcome==='failed')status('Login Instagram belum berhasil. Pastikan izin aplikasi Meta sudah benar.');
+ else if(outcome==='cancelled')status('Login Instagram dibatalkan.');
  refresh();
 })();

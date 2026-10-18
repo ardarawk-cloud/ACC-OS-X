@@ -5,8 +5,9 @@ import {readFileSync} from 'node:fs';
 import {discoverMeta,handleMetaDestinations} from '../meta-destinations.mjs';
 const sqlA=readFileSync(new URL('../migrations/0002_social_chat_channels.sql',import.meta.url),'utf8');
 const sqlB=readFileSync(new URL('../migrations/0003_social_destinations.sql',import.meta.url),'utf8');
+const sqlC=readFileSync(new URL('../migrations/0004_instagram_oauth.sql',import.meta.url),'utf8');
 function makeDB(){
- const raw=new DatabaseSync(':memory:');raw.exec(sqlA);raw.exec(sqlB);
+ const raw=new DatabaseSync(':memory:');raw.exec(sqlA);raw.exec(sqlB);raw.exec(sqlC);
  const prepare=sql=>({bind(...args){return {async first(){return raw.prepare(sql).get(...args)},async all(){return {results:raw.prepare(sql).all(...args)}},async run(){return {meta:{changes:raw.prepare(sql).run(...args).changes}}}}}});
  return {prepare,async batch(stmts){return Promise.all(stmts.map(s=>s.run()))},raw};
 }
@@ -54,4 +55,17 @@ test('unconnected IDs, invalid channels, and arbitrary fake handles are rejected
   assert.ok(r.status>=400);
  }
  assert.equal(e.SOCIAL_DB.raw.prepare('SELECT count(*) AS c FROM social_channel_destinations').get().c,0);
+});
+
+test('standalone Instagram Login accounts appear without Facebook Page and tokens stay hidden',async()=>{
+ const e=env();
+ e.SOCIAL_DB.raw.prepare('INSERT INTO social_instagram_accounts(account_id,username,account_type,token_cipher,token_iv,token_expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+  .run('1760000012345','distorsirakyat','BUSINESS','VERY_PRIVATE_ENCRYPTED_CIPHER','nonce',Math.floor(Date.now()/1000)+10000,'now','now');
+ const res=await discoverMeta(e);
+ assert.ok(res.accounts.some(a=>a.platform==='instagram'&&a.label==='distorsirakyat'&&a.source==='instagram_direct_login'));
+ assert.ok(!JSON.stringify(res).includes('VERY_PRIVATE_ENCRYPTED_CIPHER'));
+ const p=req('/api/social/channel-destinations',{channel_key:'distorsi-rakyat',targets:[{platform:'instagram',id:'1760000012345'}]});
+ const saved=await handleMetaDestinations(p.request,e,p.url);
+ assert.equal(saved.status,200);
+ assert.equal((await saved.json()).selected[0].label,'distorsirakyat');
 });

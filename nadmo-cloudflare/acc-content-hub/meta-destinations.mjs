@@ -1,3 +1,4 @@
+import {instagramConfigured} from './instagram-oauth.mjs';
 // Owner-only destination account discovery and per-channel selection.
 // Meta tokens stay inside the existing ACC-PUBLISH-CONNECTOR Worker.
 // No account is selected from content brand names or implicit global defaults.
@@ -29,8 +30,14 @@ export async function discoverMeta(env){
       results.push({platform:'instagram',id:String(row.id),label:norm(row.username||row.name||row.id),connected:true,page_id:String(row.pageId||'')});
     }
   }
+  if(env.SOCIAL_DB){
+    const saved=await env.SOCIAL_DB.prepare('SELECT account_id,username,account_type FROM social_instagram_accounts WHERE token_expires_at>? ORDER BY username')
+      .bind(Math.floor(Date.now()/1000)).all();
+    for(const item of saved.results||[])
+      results.push({platform:'instagram',id:String(item.account_id),label:String(item.username),connected:true,source:'instagram_direct_login',account_type:item.account_type});
+  }
   const dedup=[...new Map(results.map(x=>[x.platform+':'+x.id,x])).values()];
-  return {accounts:dedup,facebook_ok:pages.ok,instagram_ok:ig.ok,errors:[!pages.ok?pages.error:'',!ig.ok?ig.error:''].filter(Boolean)};
+  return {accounts:dedup,facebook_ok:pages.ok,instagram_ok:ig.ok||dedup.some(x=>x.source==='instagram_direct_login'),errors:[!pages.ok?pages.error:'',!ig.ok?ig.error:''].filter(Boolean)};
 }
 const available=(x,acc)=>acc.some(a=>a.platform===x.platform && a.id===x.id);
 async function getSelections(db,channel){
@@ -46,7 +53,7 @@ export async function handleMetaDestinations(request,env,url){
   const db=env.SOCIAL_DB,route=url.pathname;
   if(route==='/api/social/accounts/meta' && request.method==='GET'){
     const found=await discoverMeta(env);
-    return send({ok:true,...found,interactive_oauth_configured:false});
+    return send({ok:true,...found,interactive_oauth_configured:instagramConfigured(env)});
   }
   if(route==='/api/social/channel-destinations' && request.method==='GET'){
     const key=norm(url.searchParams.get('channel_key'),90);
