@@ -176,7 +176,8 @@ export class RoomHub{
    const resumeToken=crypto.randomUUID()+crypto.randomUUID();
    const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',
     hostName:current?.name||txt(msg.hostName,60)||'Host',hostHandle:current?.handle||null,hostAvatarVersion:current?.avatarVersion||0,
-     hostThemeId:['nadmo','cyberbw','noir','retro','electric'].includes(current?.themeId||msg.themeId)?(current?.themeId||msg.themeId):'nadmo',
+     hostThemeId:['nadmo','cyberbw','noir','retro','electric'].includes(msg.themeId)?msg.themeId:
+     (['nadmo','cyberbw','noir','retro','electric'].includes(current?.themeId)?current.themeId:'nadmo'),
     hostVerified:current?.kycStatus==='verified'&&current?.verifiedAdult===true,hostAccountId:current?.id||null,
     broadcastKind:['radio','gaming','talk'].includes(msg.broadcastKind)?msg.broadcastKind:'camera',
     mode,facecam,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now,stagePreset:'auto',stageRandomSeed:0};
