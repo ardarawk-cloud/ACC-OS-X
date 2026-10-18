@@ -63,3 +63,21 @@ Official TikTok references: https://developers.tiktok.com/docs/en/content-sharin
 ## Rollback
 
 Existing production is unaffected while this PR is unmerged. After deployment, rollback to the recorded previous Worker version/commit and unbind the new isolated D1 if necessary; retain D1 data safely for troubleshooting. Never delete legacy Content Hub or OS X data.
+
+
+## Instagram Business/Creator Login — setup and QC (2026-10-18)
+
+Owner confirmed DISTORSI RAKYAT is now a Professional Instagram account. The old Facebook System User token does not automatically grant access to a separately authorized Instagram account.
+
+New files: instagram-oauth.mjs, migration 0004_instagram_oauth.sql, dedicated Instagram OAuth endpoints under /api/social/instagram/* and a guarded Instagram Connect button in social-connect.html. Tokens are AES-256-GCM encrypted in private D1; no code, token or secret is delivered to the browser or APK.
+
+External Meta setup required for activation:
+1. In https://developers.facebook.com/apps/ configure Instagram > API setup with Instagram Login on an appropriate Meta app. The Instagram App ID can differ from Facebook App ID.
+2. Add EXACT Valid OAuth Redirect URI: https://contenthub.nadmo.id/api/social/instagram/callback
+3. Set Worker env SOCIAL_IG_APP_ID; add Worker secrets SOCIAL_IG_APP_SECRET and SOCIAL_IG_TOKEN_KEY (32 random bytes encoded base64url). Keep secrets off GitHub, APK, and chat.
+4. Meta permissions: instagram_business_basic and instagram_business_content_publish. App test mode may need owner/tester app roles; broader use may need Meta approval.
+5. Owner signs in and consents through Instagram; then selects an authorized account for channel distorsi-rakyat. This must never silently map to @nadmostudio.
+
+Cloudflare Access owner verification remains enforced at the origin for start, status, callback routes. Tokens are stored encrypted and OAuth state is consumed exactly once. If app credentials are missing, the login button stays disabled. The user should not need to supply an Instagram password to NADMO or to ChatGPT.
+
+IMPORTANT: Connecting Instagram is NOT publishing. The existing Facebook-page token connector does not accept Instagram Login credentials. A separate verified publisher path and real returned Instagram post ID are still needed before claiming auto-posting DONE.
