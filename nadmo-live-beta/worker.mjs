@@ -643,9 +643,31 @@ async function radioStatus(env){
     streamUrl:online?streamUrl:null,source:'azuracast',paymentEnabled:false};
  }catch(error){return {...standby,configured:true,state:'UNAVAILABLE'}}
 }
+// Keep the owner's existing Coda sandbox callback URLs safe during LIVE UI deployments.
+// NOT a payment integration: no webhook is acknowledged or wallet credited.
+function nadmoCodapayGate(request){
+ const url=new URL(request.url);
+ const path=url.pathname;
+ const notify=path==='/api/payments/codapay/notify';
+ const success=path==='/api/payments/codapay/success';
+ if(!notify&&!success)return null;
+ const baseHeaders={'Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
+ if(notify){
+  const headers={...baseHeaders,'Content-Type':'application/json; charset=utf-8'};
+  if(request.method==='GET'&&url.searchParams.get('health')==='1'&&url.searchParams.size===1)
+   return new Response(JSON.stringify({ok:true,endpoint:'codapay-notification',paymentEnabled:false,mode:'pending-provider-activation'}),{status:200,headers});
+  if(!['GET','POST'].includes(request.method))return new Response(JSON.stringify({ok:false,error:'METHOD_NOT_ALLOWED'}),{status:405,headers});
+  return new Response(JSON.stringify({ok:false,error:'CODAPAY_PAYMENT_GATE_DISABLED'}),{status:503,headers:{...headers,'Retry-After':'300'}});
+ }
+ if(request.method!=='GET')return new Response('Method Not Allowed',{status:405,headers:baseHeaders});
+ const html='<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="7;url=/app/"><title>NADMO LIVE - Verifikasi pembayaran</title></head><body style="font:16px system-ui,sans-serif;background:#10131a;color:#fff;min-height:100vh;display:grid;place-items:center"><main style="max-width:420px;padding:24px;text-align:center"><h1>NADMO LIVE</h1><p>Pembayaran masih menunggu verifikasi. Saldo belum berubah.</p><p><a href="/app/" style="color:#73c1ff">Kembali ke aplikasi</a></p></main></body></html>';
+ return new Response(html,{status:200,headers:{...baseHeaders,'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; navigate-to 'self'; base-uri 'none'; frame-ancestors 'none'"}});
+}
 export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
+  const codapayGate=nadmoCodapayGate(request);
+  if(codapayGate)return codapayGate;
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
   if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT'))
     return new Response('Method Not Allowed',{status:405});
