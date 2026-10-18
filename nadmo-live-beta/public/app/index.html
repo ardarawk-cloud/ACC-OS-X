@@ -2770,6 +2770,42 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  body.live-immersive.watch-viewer #watch #desktopSawerBar button{min-width:55px!important;padding:5px!important}
  body.live-immersive.watch-viewer #watch .live-chat .show-label b{font-size:20px!important}
 }
+
+/* Per-host RADIO visual (not a fake audio visualizer). Wallpapers are owner-uploaded
+   public profile covers served from the same origin, never device-screen capture. */
+#radioVisualChoice{min-height:46px}
+.radio-wallpaper-actions{display:flex;gap:8px;margin:10px 0 3px}
+.radio-wallpaper-actions button{width:100%;min-height:42px}
+#radioWallpaperStatus{margin:4px 0 10px;min-height:18px}
+#radioLiveCanvas{isolation:isolate}
+#radioLiveCanvas>.radio-live-cover{position:relative;z-index:2}
+#radioLiveWallpaper{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;filter:none}
+#radioLiveCanvas[data-radio-visual="cover"]{background:#060708!important}
+#radioLiveCanvas[data-radio-visual="cover"]::after{
+ content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:linear-gradient(180deg,#000a 0%,#0003 35%,#0009 100%)
+}
+#radioLiveCanvas[data-radio-visual="vinyl"]{
+ background:radial-gradient(circle at 48% 45%,#42535b55 0%,transparent 38%),
+ repeating-linear-gradient(135deg,#171d24 0 3px,#0d121a 3px 6px)!important
+}
+#radioLiveCanvas[data-radio-visual="vinyl"] .radio-live-logo{
+ border:5px double var(--neon);background:
+ repeating-radial-gradient(circle at 50% 50%,#111920 0 3px,#28323b 4px 5px);
+ box-shadow:0 0 0 15px #c9d9e610,0 0 65px #859fac45;
+ font-size:42px
+}
+#radioLiveCanvas[data-radio-visual="night"]{
+ background:radial-gradient(ellipse at 30% 34%,#41315d80 0%,transparent 54%),
+ linear-gradient(150deg,#050715,#121829 65%,#090411)!important
+}
+#radioLiveCanvas[data-radio-visual="night"] .radio-live-logo{
+ border-color:var(--neon);box-shadow:0 0 28px color-mix(in srgb,var(--neon) 34%,transparent)
+}
+#radioLiveCanvas[data-radio-visual="vinyl"] .radio-live-cover,
+#radioLiveCanvas[data-radio-visual="night"] .radio-live-cover,
+#radioLiveCanvas[data-radio-visual="cover"] .radio-live-cover{text-shadow:0 2px 12px #000}
+#radioLiveCanvas:before{border-color:color-mix(in srgb,var(--neon) 55%,transparent)!important}
 </style></head>
 <body>
 <div class="app">
@@ -2838,8 +2874,19 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  <button type="button" class="btn ghost" id="gameChatSettings" hidden>AKTIFKAN NOTIFIKASI CHAT</button><button type="button" class="btn secondary" id="gameChatOverlaySettings" hidden>IZINKAN CHAT MELAYANG DI ATAS GAME</button>
  <div class="game-live-actions"><button type="button" class="btn secondary" id="gameLaunchGame" hidden>↗ BUKA GAME</button><button type="button" class="btn ghost" id="gameShareRoom" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="gameStopLive" hidden>■ AKHIRI LIVE</button></div></div>
 <div id="radioLiveSetup" class="panel hide" aria-label="RADIO LIVE dengan pemutar musik host">
-<div class="show-label"><b>RADIO LIVE</b><small>OPEN MUSIC</small></div>
-
+<div class="show-label"><b>RADIO LIVE</b><small>PERSONAL RADIO STAGE</small></div>
+<label for="radioVisualChoice">TEMA SIARAN RADIO</label>
+<select id="radioVisualChoice" class="field" aria-label="Pilih tampilan panggung radio">
+ <option value="vinyl">VINYL / NIGHT RADIO</option>
+ <option value="night">MIDNIGHT / CYBER</option>
+ <option value="signal">SIGNAL / NADMO CLASSIC</option>
+ <option value="cover">WALLPAPER SAYA</option>
+</select>
+<div class="radio-wallpaper-actions">
+ <button type="button" class="btn secondary" id="radioPickWallpaper">+ PASANG WALLPAPER</button>
+ <input type="file" id="radioWallpaperFile" accept="image/jpeg,image/png,image/webp" hidden aria-label="Unggah wallpaper radio dari galeri">
+</div>
+<div id="radioWallpaperStatus" class="profile-note" role="status" aria-live="polite"></div>
 <div class="actions"><button type="button" class="btn secondary" id="radioOpenMusic" hidden>↗ OPEN MUSIC</button><button type="button" class="btn ghost" id="radioShareLive" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="radioStopLive" hidden>AKHIRI RADIO</button></div>
 <div id="radioLiveStatus" class="status" role="status"></div>
 </div>
@@ -2918,7 +2965,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
   <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
  </div>
-  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video><div id="radioLiveCanvas" aria-hidden="true"><div class="radio-live-cover"><span class="radio-live-logo">N/</span><span class="radio-live-eyebrow">NADMO RADIO LIVE</span><strong id="radioLiveTitle">ON AIR</strong><div class="radio-live-waves"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="radio-live-sub">MUSIC & TALK · AUDIO ONLY</span></div></div>
+  <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video><div id="radioLiveCanvas" data-radio-visual="vinyl" aria-hidden="true"><img id="radioLiveWallpaper" alt="" hidden><div class="radio-live-cover"><span class="radio-live-logo">N/</span><span class="radio-live-eyebrow" id="radioLiveHostLabel">LIVE RADIO</span><strong id="radioLiveTitle">ON AIR</strong><div class="radio-live-waves"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="radio-live-sub">MUSIC & TALK · AUDIO ONLY</span></div></div>
 <div id="pkBattleHud" hidden><div class="pk-score"><span><small id="pkNameA">TIM A</small><b id="pkPointsA">0</b></span><span><b>PK</b><small id="pkClock">00:00</small></span><span><small id="pkNameB">TIM B</small><b id="pkPointsB">0</b></span></div><div class="pk-cheers"><button type="button" id="pkCheerA">DUKUNG A GRATIS</button><button type="button" id="pkCheerB">DUKUNG B GRATIS</button></div><small id="pkNotice">Dukungan gratis, bukan saweran uang.</small></div>
 <div id="pkGuestInvite" hidden><strong>UNDANGAN PK</strong><p>Ikut PK bersama host? Kamu bebas menolak.</p><button class="btn" id="pkAccept" type="button">TERIMA</button><button class="btn secondary" id="pkDecline" type="button">TOLAK</button></div></div>
 <div id="watchState" class="status">CONNECTING SIGNAL...</div><div id="liveRestReminder" role="status" aria-live="polite" hidden><span><strong>WAKTUNYA ISTIRAHAT</strong> — Kamu sudah LIVE <span id="liveRestHour">1 jam</span>. Istirahat sebentar bila perlu. Siaran tetap berjalan.</span><button type="button" id="liveRestDismiss">LANJUT</button></div><div id="watchStreamQuality" class="status" aria-live="off" style="font-size:10px;opacity:.85" hidden></div>
@@ -6356,7 +6403,59 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  $('pkCheerB').onclick=()=>transmit({type:'pk-support',side:'B'});
  setInterval(()=>{if(pkBattle?.status==='active'||pkBattle?.status==='pending')pkPaint()},1000);
 
- function paintBroadcastKind(kind,heading){
+ const radioVisuals=['signal','vinyl','night','cover'];
+ function renderRadioScene(room){
+  const canvas=$('radioLiveCanvas');
+  const choice=radioVisuals.includes(room?.radioVisual)?room.radioVisual:'vinyl';
+  const handle=String(room?.hostHandle||'').slice(0,24);
+  const src=choice==='cover'?coverImageURL(handle,room?.hostCoverVersion||0):'';
+  const visual=choice==='cover'&&!src?'vinyl':choice;
+  canvas.dataset.radioVisual=visual;
+  const img=$('radioLiveWallpaper');
+  img.hidden=!src;
+  if(src){if(img.getAttribute('src')!==src)img.src=src}
+  else img.removeAttribute('src');
+  $('radioLiveHostLabel').textContent=handle?'@'+handle.toUpperCase()+' · RADIO LIVE':'LIVE RADIO · NADMO';
+ }
+ 
+ // RADIO wallpaper reuses the already secure, account-owned public profile cover.
+ // Upload once and display the exact same image to every viewer; no device-local blob
+ // is ever put into room messages or other people's browsers.
+ $('radioVisualChoice').value=radioVisuals.includes(localStorage.getItem('nadmo.radioVisual'))
+  ?localStorage.getItem('nadmo.radioVisual'):'vinyl';
+ $('radioVisualChoice').addEventListener('change',()=>{
+  localStorage.setItem('nadmo.radioVisual',$('radioVisualChoice').value);
+  if($('radioVisualChoice').value==='cover'&&!activeAccount?.coverVersion){
+   $('radioWallpaperStatus').textContent='Pilih wallpaper dari galeri dulu.';
+  }else $('radioWallpaperStatus').textContent='';
+ });
+ $('radioPickWallpaper').onclick=()=>{
+  if(!activeAccount){$('radioWallpaperStatus').textContent='Masuk akun NADMO terlebih dahulu.';return}
+  $('radioWallpaperFile').click();
+ };
+ $('radioWallpaperFile').onchange=async()=>{
+  const input=$('radioWallpaperFile'),file=input.files?.[0];input.value='';
+  if(!file||!activeAccount)return;
+  const owner=activeAccount.id;
+  $('radioPickWallpaper').disabled=true;
+  $('radioWallpaperStatus').textContent='Menyimpan wallpaper...';
+  try{
+   const blob=await createCoverBlob(file);
+   if(activeAccount?.id!==owner)throw Error('Sesi akun berubah');
+   const response=await fetch(api('/api/account/cover'),{method:'PUT',credentials:'include',cache:'no-store',
+    headers:{'Content-Type':'image/jpeg'},body:blob});
+   const data=await response.json().catch(()=>({error:'Respons tidak terbaca'}));
+   if(!response.ok||!data.coverVersion)throw Error(data.error||'Gagal menyimpan wallpaper');
+   if(activeAccount?.id!==owner)throw Error('Sesi akun berubah');
+   activeAccount.coverVersion=data.coverVersion;
+   renderCoverEditor();renderProfileDraft();
+   $('radioVisualChoice').value='cover';
+   localStorage.setItem('nadmo.radioVisual','cover');
+   $('radioWallpaperStatus').textContent='Wallpaper siap untuk LIVE RADIO berikutnya.';
+  }catch(error){$('radioWallpaperStatus').textContent=error.message}
+  finally{$('radioPickWallpaper').disabled=false}
+ };
+function paintBroadcastKind(kind,heading){
   roomBroadcastKind=kind==='radio'?'radio':kind==='gaming'?'gaming':kind==='talk'?'talk':'camera';
   if(roomBroadcastKind==='talk')document.body.classList.remove('watch-game','watch-landscape');
   const radio=roomBroadcastKind==='radio';
@@ -6387,6 +6486,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
    }
   if(['created','joined','resumed'].includes(m.type)){
    paintBroadcastKind(m.broadcastKind||(m.category==='Podcast'?'talk':'camera'),m.title||m.hostName||'RADIO LIVE');
+   if(m.broadcastKind==='radio')renderRadioScene(m);
    stagePreset=['auto','focus','random'].includes(m.stagePreset)?m.stagePreset:'auto';
    stageRandomSeed=Number.isInteger(m.stageRandomSeed)?m.stageRandomSeed:0;
    $('stagePresetChoice').value=stagePreset;
@@ -6584,7 +6684,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
    if(!nativeGame||!nativeRadioSupported){$('radioLiveStatus').textContent='Mode RADIO membutuhkan APK NADMO yang mendukung OPEN MUSIC.';return}
    if(!adult())return;
    $('radioLiveStatus').textContent='';
-   gameCommand('start',{broadcastKind:'radio',title:($('title').value.trim()||'NADMO RADIO LIVE').slice(0,60),quality:'low',face:false});
+   gameCommand('start',{broadcastKind:'radio',title:($('title').value.trim()||'NADMO RADIO LIVE').slice(0,60),quality:'low',face:false,radioVisual:$('radioVisualChoice').value==='cover'&&!activeAccount?.coverVersion?'vinyl':$('radioVisualChoice').value});
    return;
   }
   if(selectedLiveMode==='gaming'){
