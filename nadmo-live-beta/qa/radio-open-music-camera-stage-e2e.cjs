@@ -79,5 +79,35 @@ const puppeteer=require('puppeteer-core');
    console.log('PASS RADIO portrait '+size.width+'x'+size.height+': '+Math.round(geometry.stage.width)+'x'+Math.round(geometry.stage.height));
    await page.close();
   }
+  // Owner QC: LIVE PC must preserve full CYBERDECK framing and inherit HOST theme.
+  assert(html.includes('CYBERDECK REFERENCE-MATCH v5'));
+  assert(worker.includes('CODAPAY_PAYMENT_GATE_DISABLED'),'Live UI deployment must preserve Coda fail-closed callbacks');
+  for(const width of [900,1366]){
+   const page=await browser.newPage();
+   await page.setViewport({width,height:768,deviceScaleFactor:1});
+   await page.goto('file://'+path.resolve(__dirname,'../public/app/index.html'),{waitUntil:'domcontentloaded'});
+   const state=await page.evaluate(()=>{
+    document.body.classList.add('live-immersive','watch-viewer');
+    const watch=document.getElementById('watch');
+    watch.classList.remove('hide');
+    watch.dataset.hostTheme='cyberbw';
+    const stage=watch.querySelector('.live-stage');
+    const chat=watch.querySelector('.live-chat');
+    const video=document.getElementById('remote');
+    const rect=stage.getBoundingClientRect();
+    return {theme:watch.dataset.hostTheme,accent:getComputedStyle(watch).getPropertyValue('--neon').trim(),
+     stageBorder:getComputedStyle(stage).borderTopColor,chatBorder:getComputedStyle(chat).borderTopColor,
+     width:rect.width,videoFilter:getComputedStyle(video).filter,watchFilter:getComputedStyle(watch).filter};
+   });
+   assert.equal(state.theme,'cyberbw');
+   assert.match(state.accent,/#f4f4f4/i,'Host BW accent must apply to the viewer room');
+   assert.match(state.stageBorder,/rgb\(24[0-9], 24[0-9], 24[0-9]\)/,'BW frame must be vivid white not muted green: '+JSON.stringify(state));
+   assert.match(state.chatBorder,/rgb\(24[0-9], 24[0-9], 24[0-9]\)/,'BW chat frame must follow host: '+JSON.stringify(state));
+   assert(state.width>220,'Full CYBERDECK desktop stage must be visible '+JSON.stringify(state));
+   assert.equal(state.videoFilter,'none','Live video must NOT be desaturated by BW UI theme');
+   assert.equal(state.watchFilter,'none','UI theme must not recolor nested video');
+   console.log('PASS viewer CYBERDECK follows host BLACK/WHITE at '+width+'px');
+   await page.close();
+  }
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
