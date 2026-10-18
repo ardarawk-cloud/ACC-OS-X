@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261019-host-cyberdeck-theme-v8">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261019-pc-back-control-v9">
 <title>NADMO LIVE — Beta</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
@@ -2807,6 +2807,33 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
 #radioLiveCanvas[data-radio-visual="cover"] .radio-live-cover{text-shadow:0 2px 12px #000}
 #radioLiveCanvas:before{border-color:color-mix(in srgb,var(--neon) 55%,transparent)!important}
 #radioLiveCanvas .radio-live-host-photo{width:min(43vw,180px);height:min(43vw,180px);min-width:118px;min-height:118px;object-fit:cover;border-radius:50%;border:3px solid var(--neon);box-shadow:0 0 0 11px color-mix(in srgb,var(--neon) 14%,transparent),0 0 25px #0008}
+
+/* VIEWER PC: return control belongs to chat chrome, NOT across host subtitle or stream. */
+@media(min-width:800px){
+ body.live-immersive.watch-viewer #watch #pcWatchRail{
+  display:flex!important;position:absolute!important;z-index:30!important;
+  inset:14px 18px auto auto!important;top:14px!important;left:auto!important;
+  right:18px!important;bottom:auto!important;
+  width:42px!important;height:42px!important;min-width:42px!important;
+  padding:0!important;margin:0!important;
+  align-items:center!important;justify-content:center!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+  pointer-events:auto!important
+ }
+ body.live-immersive.watch-viewer #watch #pcWatchRail button{
+  width:42px!important;height:42px!important;min-width:42px!important;
+  border:1px solid var(--neon)!important;border-radius:9px!important;
+  background:#080c0df2!important;color:var(--neon)!important;font-size:24px!important;
+  font-weight:800!important;line-height:1!important;box-shadow:0 0 0 2px #0009!important;
+  cursor:pointer
+ }
+ body.live-immersive.watch-viewer #watch #pcWatchRail button:focus-visible{
+  outline:2px solid var(--neon)!important;outline-offset:3px!important
+ }
+ body.live-immersive.watch-viewer #watch .live-chat>.show-label:first-child{
+  padding-right:55px!important
+ }
+}
 </style></head>
 <body>
 <div class="app">
