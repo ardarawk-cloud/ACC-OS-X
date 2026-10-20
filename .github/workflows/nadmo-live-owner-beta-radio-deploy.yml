@@ -1,4 +1,4 @@
-name: NADMO LIVE owner BETA RADIO live.nadmo.id deployment
+name: NADMO LIVE v0.10.24 Studio and RADIO release
 on:
   push:
     branches: ['feat/nadmo-live-unified-stage-pk-20261012']
@@ -45,7 +45,9 @@ jobs:
         run: |
           npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
           CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs
-      - name: Deploy existing NADMO LIVE beta Worker and app
+      - name: Verify Studio source lifecycle and real host-to-viewer media
+        run: CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/studio-release-e2e.cjs
+      - name: Deploy existing NADMO LIVE Worker and app
         id: first_deploy
         continue-on-error: true
         uses: cloudflare/wrangler-action@v4
@@ -72,7 +74,7 @@ jobs:
           for i in 1 2 3 4 5;do
             if curl -fLsS --max-time 20 https://live.nadmo.id/app/ -o /tmp/nadmo-live-radio-beta.html && \
                grep -Fq 'id="radioOpenMusic"' /tmp/nadmo-live-radio-beta.html && \
-               grep -Fq 'id="radioLiveCanvas"' /tmp/nadmo-live-radio-beta.html && \
+               grep -Fq 'name="nadmo-release" content="0.10.24"' /tmp/nadmo-live-radio-beta.html && \
                curl -fLsS --max-time 20 https://live.nadmo.id/health | grep -Fq '"service":"nadmo-live-beta"';then
               echo "RADIO OPEN MUSIC WEB BETA DEPLOYED"
               exit 0

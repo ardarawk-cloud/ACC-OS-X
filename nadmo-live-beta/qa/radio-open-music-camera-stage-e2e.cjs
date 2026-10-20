@@ -38,7 +38,7 @@ const puppeteer=require('puppeteer-core');
    });
    assert.match(html,/\.profile-hero>div:nth-of-type\(2\)/,'Profile metadata must NOT flex/stretch the avatar');
    assert.doesNotMatch(html,/\.profile-hero>div:nth-child\(2\)\{display:flex/,'Mis-targeted metadata selector stretches public avatars');
-   assert.match(html,/\$\('localCameraSetup'\)\.classList\.toggle\('hide',!\['camera','talk'\]\.includes\(mode\)\)/,
+   assert.match(html,/\$\('localCameraSetup'\)\.classList\.toggle\('hide',!\['camera','talk','studio'\]\.includes\(mode\)\)/,
      'RADIO/GAME cannot show local CAMERA preview and controls');
    const profile=await page.evaluate(()=>{
      const publicPage=document.getElementById('publicProfilePage');

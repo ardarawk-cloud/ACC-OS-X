@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="id">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="nadmo-ui-revision" content="20261019-pc-back-control-v9">
-<title>NADMO LIVE — Beta</title>
+<title>NADMO LIVE</title>
+<meta name="nadmo-release" content="0.10.24">
 <style>
 :root{color-scheme:dark;--bg:#090a0a;--paper:#eceee2;--ink:#adb0a5;--line:#343932;--neon:#dcff38;--onair:#f5644a;--dim:#60645c;--panel:#111412;--cyan:#d5f37b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--paper);font-family:Arial,"Helvetica Neue",system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
@@ -2839,7 +2840,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
 <div class="app">
 <header class="mast">
   <div class="logo"><span class="logo-mark">N/</span><div><div class="logo-name">NADMO <em>LIVE</em></div><div class="logo-sub">INDEPENDENT BROADCAST SYSTEM</div></div></div>
-  <div class="mast-right"><div class="micro"><span class="dot"></span><strong id="net">OFFLINE BETA</strong></div><div class="micro">BALI / IDN · 18+</div><div class="mast-quick-actions"><button type="button" id="offgridEntry" class="offgrid-entry" aria-haspopup="dialog" aria-controls="offgridModal">OFFGRID</button><button type="button" id="mastLogin" class="mast-login">MASUK</button></div></div>
+  <div class="mast-right"><div class="micro"><span class="dot"></span><strong id="net">OFFLINE</strong></div><div class="micro">BALI / IDN · 18+</div><div class="mast-quick-actions"><button type="button" id="offgridEntry" class="offgrid-entry" aria-haspopup="dialog" aria-controls="offgridModal">OFFGRID</button><button type="button" id="mastLogin" class="mast-login">MASUK</button></div></div>
 </header>
 <div class="deck-system-bar" aria-hidden="true"><span>◈ CYBERDECK</span><span>LIVE • CREATE • PLAY</span><span class="deck-system-led">● LIVE NETWORK</span></div>
 <section id="home">
@@ -2858,7 +2859,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
     <button data-tab="tv"><span class="num">CH.03</span><span class="symbol">▤</span><b>LIVE<br>TV</b></button>
     <button data-tab="radio"><span class="num">CH.04</span><span class="symbol">≋</span><b>RADIO</b></button>
   </div>
-  <div class="section"><div class="notice">PRIVATE BETA / Tampilan dan preview kamera tersedia secara lokal. Live publik, saweran, dan tiket belum aktif sampai server serta pembayaran terhubung.</div></div>
+  <div class="section"><div class="notice">NADMO LIVE / Siaran publik tersedia. Top-up, tiket berbayar, dan withdraw belum diaktifkan.</div></div>
 </section>
 <section id="explore" class="hide">
   <div class="explore-head"><div><h2>LIVE SEKARANG<span style="color:var(--neon)">.</span></h2></div><small class="explore-count" id="liveCount">0 ROOMS</small></div>
@@ -2871,7 +2872,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   <!-- Gaming capability limitations are shown only when Gaming mode is selected. -->
 </section>
 <section id="following" class="hide">
-  <div class="page-top"><div><span class="eyebrow">SAVED / DEVICE</span><h1>FOLLOWING<span style="color:var(--neon)">.</span></h1></div><span class="edition">BETA</span></div>
+  <div class="page-top"><div><span class="eyebrow">SAVED / DEVICE</span><h1>FOLLOWING<span style="color:var(--neon)">.</span></h1></div><span class="edition">SAVED</span></div>
   <p class="deck">Simpan siaran yang ingin kamu pantau. Saat ini favorit tersimpan di HP ini saja; mengikuti akun kreator dan notifikasi lintas perangkat belum tersedia.</p>
   <div id="savedRooms" class="no-signal"><strong>NOT YET</strong><small>NO SAVED LIVE SESSIONS</small></div>
   <button class="btn secondary" data-tab="explore">FIND LIVE SESSIONS →</button>
@@ -2915,10 +2916,16 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  <input type="file" id="radioWallpaperFile" accept="image/jpeg,image/png,image/webp" hidden aria-label="Unggah wallpaper radio dari galeri">
 </div>
 <div id="radioWallpaperStatus" class="profile-note" role="status" aria-live="polite"></div>
-<div class="actions"><button type="button" class="btn secondary" id="radioOpenMusic" hidden>↗ OPEN MUSIC</button><button type="button" class="btn ghost" id="radioShareLive" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="radioStopLive" hidden>AKHIRI RADIO</button></div>
+<div class="actions"><button type="button" class="btn secondary" id="radioOpenMusic" hidden>↗ OPEN MUSIC</button><button type="button" class="btn secondary" id="radioPauseLive" hidden>Ⅱ JEDA RADIO</button><button type="button" class="btn ghost" id="radioShareLive" hidden>BAGIKAN</button><button type="button" class="btn ghost" id="radioStopLive" hidden>AKHIRI RADIO</button></div>
 <div id="radioLiveStatus" class="status" role="status"></div>
 </div>
-<div id="studioPcSetup" class="panel hide"><b>STUDIO KHUSUS PC</b><p>Sumber siaran dari PC/OBS melalui RTMP belum terhubung. Tidak menggunakan kamera HP sebagai pengganti Studio.</p></div>
+<div id="studioPcSetup" class="panel hide">
+ <b>STUDIO PC</b>
+ <p>Pilih layar, tab browser, atau jendela Fullscreen/Windowed Projector OBS untuk disiarkan.</p>
+ <label><input type="checkbox" id="studioMic" checked> SERTAKAN MIKROFON</label>
+ <p class="profile-note">Untuk musik, pilih tab browser dan aktifkan Bagikan audio. Audio layar/jendela mengikuti dukungan browser. Gunakan headphone saat mikrofon aktif.</p>
+ <div id="studioSourceStatus" class="status" role="status">Pilih sumber untuk melihat preview sebelum LIVE.</div>
+</div>
   <div id="localCameraSetup">
    <div class="viewfinder"><video id="camera" class="local" playsinline autoplay muted></video></div>
    <div class="status" id="camState">CAMERA / STANDBY</div>
@@ -3005,7 +3012,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
     <div class="show-label"><b>AKSES SIARAN</b><small id="hostAccessLabel">PUBLIC / GRATIS</small></div>
     <button class="btn secondary" id="openPrivateControls" style="width:100%">ATUR SESI PRIVAT</button>
     <div id="privateControls" class="hide">
-      <p class="deck">Tarif ini hanya rencana paket. Beta belum memproses pembayaran atau memberikan akses otomatis berdasarkan waktu.</p>
+      <p class="deck">Tarif ini hanya rencana paket. Pembayaran belum diproses atau memberikan akses otomatis berdasarkan waktu.</p>
       <label for="privatePrice">TARIF SESI / RUPIAH (BEBAS)</label>
       <div class="filterstrip" id="privatePresets"><button type="button" data-rupiah="5000">Rp5.000</button><button type="button" data-rupiah="10000">Rp10.000</button><button type="button" data-rupiah="20000">Rp20.000</button><button type="button" data-rupiah="50000">Rp50.000</button></div>
       <input class="field" id="privatePrice" type="number" inputmode="numeric" min="1000" max="10000000" step="1000" value="5000" aria-label="Tarif privat custom dalam rupiah">
@@ -3571,16 +3578,18 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   $('gameLaunchGame').hidden=!['live','paused','starting','reconnecting'].includes(nativeGameState);
   $('gameLaunchGame').disabled=!['live','paused'].includes(nativeGameState);
   $('gameLaunchGame').textContent=['live','paused'].includes(nativeGameState)?'↗ BUKA GAME':'MENYAMBUNG...';
-  $('gameShareRoom').hidden=true;
+  $('gameShareRoom').hidden=nativeBroadcastKind!=='gaming'||!nativeGameRoom;
   $('gameStopLive').hidden=!['live','paused','starting','reconnecting'].includes(nativeGameState);
   if(selectedLiveMode==='gaming')chooseMode('gaming');
   if(selectedLiveMode==='radio'){
-   $('radioLiveStatus').textContent=['error','reconnecting'].includes(d.state)?(d.message||'GAGAL TERHUBUNG'):(d.state==='stopped'&&/TIMEOUT|FAILED|ERROR|PROJECTION|WS_|CAPTURE_|DITOLAK|TERPUTUS|GAGAL/i.test(d.message||'')?(d.message||'GAGAL TERHUBUNG'):'');
+   $('radioLiveStatus').textContent=d.message||({starting:'Menyiapkan RADIO...',live:'RADIO LIVE · mikrofon aktif',paused:'RADIO dijeda',reconnecting:'Menyambungkan RADIO kembali...'}[nativeGameState]||'');
    const running=nativeBroadcastKind==='radio'&&['live','paused'].includes(nativeGameState);
    $('radioOpenMusic').hidden=!running&&!['starting','reconnecting'].includes(nativeGameState);
    $('radioOpenMusic').disabled=!running;
    $('radioOpenMusic').textContent=running?'↗ OPEN MUSIC':'MENYAMBUNG...';
-   $('radioShareLive').hidden=true;
+   $('radioShareLive').hidden=!running||!nativeGameRoom;
+   $('radioPauseLive').hidden=!running||d.radioControlsSupported!==true;
+   $('radioPauseLive').textContent=nativeGameState==='paused'?'▶ LANJUTKAN RADIO':'Ⅱ JEDA RADIO';
    $('radioStopLive').hidden=nativeBroadcastKind!=='radio'||!['live','paused','starting','reconnecting'].includes(nativeGameState);
    chooseMode('radio');
   }
@@ -5360,7 +5369,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  const api=p=>server.replace(/\/$/,'')+p;
  function validURL(x){try{const u=new URL(x);return u.protocol==='https:' && !u.username && !u.password && !u.hash}catch(e){return false}}
  async function health(){
-  if(!server){$('net').textContent='OFFLINE BETA';return}
+  if(!server){$('net').textContent='OFFLINE';return}
   try{const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);const r=await fetch(api('/health'),{signal:c.signal});clearTimeout(t);if(!r.ok)throw Error();$('net').textContent='SERVER ONLINE';$('signalStatus').textContent='ONLINE';notice('Backend terhubung.')}catch(e){$('net').textContent='BELUM TERHUBUNG';$('signalStatus').textContent='OFFLINE';notice('Server belum merespons. Kamera lokal tetap bisa dipakai.')}
  }
  $('saveServer').onclick=()=>health();$('signalRefresh').onclick=()=>health();
@@ -5489,33 +5498,87 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  document.querySelectorAll('#tipPresets button').forEach(b=>b.onclick=()=>{$('tipCustom').value=b.dataset.tip;updateTipPreview()});
  $('tipCustom').addEventListener('input',updateTipPreview);updateTipPreview();
  let selectedLiveMode='camera',talkVisualTimer=null,roomBroadcastKind='camera';
+
+ let studioCapture=null,studioMicStream=null,studioMix=null,studioPreviewPending=false;
+ function studioSupported(){
+  return !nativeGame&&!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)&&typeof navigator.mediaDevices?.getDisplayMedia==='function';
+ }
+ function stopStudioCapture(){
+  const captured=studioCapture;studioCapture=null;
+  if(captured)for(const t of captured.getTracks()){t.onended=null;t.stop()}
+  if(studioMicStream)studioMicStream.getTracks().forEach(t=>t.stop());
+  studioMicStream=null;
+  if(studioMix){studioMix.close().catch(()=>{});studioMix=null}
+ }
+ async function openStudioCapture(){
+  if(!studioSupported())throw Error('Studio memerlukan browser PC dengan dukungan berbagi layar.');
+  let display=null,mic=null,context=null;
+  try{
+   display=await navigator.mediaDevices.getDisplayMedia({
+    video:{width:{ideal:1280,max:1920},height:{ideal:720,max:1080},frameRate:{ideal:24,max:30}},
+    audio:true
+   });
+   if(selectedLiveMode!=='studio'){display.getTracks().forEach(t=>t.stop());return null}
+   if($('studioMic').checked)mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true},video:false});
+   if(selectedLiveMode!=='studio'){display.getTracks().forEach(t=>t.stop());mic?.getTracks().forEach(t=>t.stop());return null}
+   const audioTracks=[...display.getAudioTracks(),...(mic?.getAudioTracks()||[])];
+   let mixed=[];
+   if(audioTracks.length>1){
+    context=new AudioContext();await context.resume();
+    const output=context.createMediaStreamDestination();
+    for(const track of audioTracks)context.createMediaStreamSource(new MediaStream([track])).connect(output);
+    mixed=output.stream.getAudioTracks();
+   }else mixed=audioTracks;
+   const video=display.getVideoTracks()[0];
+   if(!video||video.readyState!=='live')throw Error('Sumber layar sudah berhenti. Pilih ulang sumber PC.');
+   studioCapture=display;studioMicStream=mic;studioMix=context;
+   video.contentHint='detail';
+   video.onended=()=>{
+    if(studioCapture!==display)return;
+    if(host&&currentRoom)leave();
+    else{stopStudioCapture();if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;$('camera').srcObject=null}
+    show('studio');$('studioSourceStatus').textContent='Berbagi layar dihentikan. Pilih ulang sumber untuk mulai lagi.';
+   };
+   $('studioSourceStatus').textContent='SUMBER SIAP · '+(display.getAudioTracks().length?'AUDIO SUMBER ON':'TANPA AUDIO SUMBER')+(mic?' · MIC ON':' · MIC OFF');
+   return new MediaStream([video,...mixed]);
+  }catch(error){
+   display?.getTracks().forEach(t=>t.stop());mic?.getTracks().forEach(t=>t.stop());
+   if(context)context.close().catch(()=>{});
+   throw error;
+  }
+ }
+
  function stopTalkVisual(){if(talkVisualTimer)clearInterval(talkVisualTimer);talkVisualTimer=null}
  function chooseMode(mode){
+  if(host&&currentRoom&&mode!==selectedLiveMode){show('watch');return}
+  const nativeBusy=['live','paused','starting','reconnecting'].includes(nativeGameState);
+  if(nativeBusy)mode=nativeBroadcastKind;
   selectedLiveMode=mode;
   for(const b of document.querySelectorAll('#liveModeGrid button')){
-   const selected=b.dataset.liveMode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))
+   const selected=b.dataset.liveMode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));b.disabled=nativeBusy&&!selected;
   }
   if(mode!=='gaming'&&gameFaceStream){gameFaceStop();$('gameFaceToggle').textContent='KAMERA ON'}
   $('gameSetup').classList.toggle('hide',mode!=='gaming');
   $('radioLiveSetup').classList.toggle('hide',mode!=='radio');
   $('studioPcSetup').classList.toggle('hide',mode!=='studio');
-  $('localCameraSetup').classList.toggle('hide',!['camera','talk'].includes(mode));
-  $('liveState').hidden=!['camera','talk'].includes(mode);
+  $('localCameraSetup').classList.toggle('hide',!['camera','talk','studio'].includes(mode));
+  $('liveState').hidden=!['camera','talk','studio'].includes(mode);
   // Keep the screen quiet; show status only for unavailable modes.
-  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',radio:nativeRadioSupported?'':'RADIO OPEN MUSIC memerlukan update APK yang mendukung RADIO.',studio:'Koneksi OBS belum tersedia.'};
+  const copy={camera:'',talk:'',gaming:nativeGame?'':'GAME LIVE memerlukan APK Android NADMO.',radio:nativeRadioSupported?'':'RADIO OPEN MUSIC memerlukan update APK yang mendukung RADIO.',studio:studioSupported()?'':'Buka Studio dari browser PC yang mendukung berbagi layar.'};
   $('modeDetails').textContent=copy[mode];
   $('modeDetails').hidden=!copy[mode];
-  $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':'SOURCE VIA ANDROID';
-  const ready=mode==='camera'||mode==='talk'||(mode==='gaming'&&nativeGame)||(mode==='radio'&&nativeGame&&nativeRadioSupported);
-  $('preview').disabled=!(mode==='camera'||mode==='talk');
+  $('preview').textContent=mode==='camera'?'◉ ENABLE CAMERA':mode==='talk'?'◉ ENABLE MICROPHONE':mode==='studio'?'▣ PILIH SUMBER PC':'SOURCE VIA ANDROID';
+  const ready=mode==='camera'||mode==='talk'||(mode==='studio'&&studioSupported())||(mode==='gaming'&&nativeGame)||(mode==='radio'&&nativeGame&&nativeRadioSupported);
+  $('preview').disabled=!(mode==='camera'||mode==='talk'||(mode==='studio'&&studioSupported()));
   $('createRoom').disabled=!ready||(['gaming','radio'].includes(mode)&&['live','paused','starting','reconnecting'].includes(nativeGameState));
-  $('createRoom').textContent=host&&currentRoom?'↗ KEMBALI KE LIVE':mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):mode==='radio'?(nativeRadioSupported?'● MULAI RADIO LIVE':'PERLU UPDATE APK'):ready?'● TRANSMIT LIVE':'PC INGEST COMING SOON';
+  $('createRoom').textContent=host&&currentRoom?'↗ KEMBALI KE LIVE':mode==='gaming'?(nativeGame?'● MULAI GAME LIVE':'KHUSUS APK ANDROID'):mode==='radio'?(nativeRadioSupported?'● MULAI RADIO LIVE':'PERLU UPDATE APK'):ready?'● TRANSMIT LIVE':'BUKA DI PC';
+  if(nativeBusy)$('createRoom').textContent=['starting','reconnecting'].includes(nativeGameState)?'MENYAMBUNG...':'● SIARAN AKTIF';
   if(host&&currentRoom)$('createRoom').disabled=false;
   if(mode==='gaming')$('category').value='Gaming';
   if(mode==='radio')$('category').value='DJ & Music';
   if(mode==='talk')$('category').value='Podcast';
   if(mode==='studio')$('category').value='DJ & Music';
-  if(localStream&&!host){localStream.getTracks().forEach(t=>t.stop());stopPortraitCameraCapture();localStream=null;stopTalkVisual();$('camera').srcObject=null}
+  if(localStream&&!host){stopStudioCapture();localStream.getTracks().forEach(t=>t.stop());stopPortraitCameraCapture();localStream=null;stopTalkVisual();$('camera').srcObject=null}
  }
  document.querySelectorAll('#liveModeGrid button').forEach(b=>b.onclick=()=>{chooseMode(b.dataset.liveMode);if(['gaming','radio'].includes(b.dataset.liveMode))gameCommand('status')});
 
@@ -5597,11 +5660,16 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
    : {facingMode:{ideal:'user'},width:{ideal:960},height:{ideal:1280},aspectRatio:{ideal:3/4},resizeMode:{ideal:'none'},frameRate:{ideal:30,max:30}};
  }
  async function preview(){
+  if(studioPreviewPending)return;
+  studioPreviewPending=true;
   try{
    if(!navigator.mediaDevices?.getUserMedia)throw Error('Browser tidak mendukung media capture');
-   if(!['camera','talk'].includes(selectedLiveMode))throw Error('Sumber video mode ini belum didukung');
-   if(localStream)localStream.getTracks().forEach(t=>t.stop());stopPortraitCameraCapture();stopTalkVisual();
-    if(selectedLiveMode==='camera'){
+   if(!['camera','talk','studio'].includes(selectedLiveMode))throw Error('Sumber video mode ini belum didukung');
+   stopStudioCapture();if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;stopPortraitCameraCapture();stopTalkVisual();
+   if(selectedLiveMode==='studio'){
+    localStream=await openStudioCapture();if(!localStream)return;
+    notice('Sumber PC siap. Ketuk TRANSMIT LIVE untuk mulai.','camState');
+   }else if(selectedLiveMode==='camera'){
     localStream=useLiveCamera(await openLiveCamera(true));
     notice('Kamera dan mikrofon siap.','camState');
    }else{
@@ -5622,10 +5690,11 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
     }catch(e){mic.getTracks().forEach(t=>t.stop());throw e}
    }
    $('camera').srcObject=localStream;applyMirroring();
-  }catch(e){stopTalkVisual();notice('Gagal menyiapkan siaran: '+e.message,'camState')}
+  }catch(e){stopTalkVisual();notice('Gagal menyiapkan siaran: '+e.message,'camState');if(selectedLiveMode==='studio')$('studioSourceStatus').textContent=e.name==='NotAllowedError'?'Pemilihan sumber dibatalkan atau izin ditolak. Pilih sumber lagi.':e.message}
+  finally{studioPreviewPending=false}
  }
  $('preview').onclick=preview;
- $('stopCamera').onclick=()=>{if(host&&currentRoom){notice('Sedang LIVE. Gunakan KAMERA OFF untuk menyembunyikan gambar sementara tanpa mengakhiri siaran.','camState');return}if(localStream)localStream.getTracks().forEach(t=>t.stop());stopPortraitCameraCapture();localStream=null;stopTalkVisual();$('camera').srcObject=null;notice('Sumber siaran dimatikan.','camState')};
+ $('stopCamera').onclick=()=>{if(!host)stopStudioCapture();if(host&&currentRoom){notice('Sedang LIVE. Gunakan KAMERA OFF untuk menyembunyikan gambar sementara tanpa mengakhiri siaran.','camState');return}if(localStream)localStream.getTracks().forEach(t=>t.stop());stopPortraitCameraCapture();localStream=null;stopTalkVisual();$('camera').srcObject=null;notice('Sumber siaran dimatikan.','camState')};
  function emptyMessage(message){const box=document.createElement('div');box.className='no-signal';const h=document.createElement('strong');h.textContent='NO SIGNAL';const d=document.createElement('small');d.textContent=message;box.append(h,d);return box}
  function setStreamerName(node,name){
   const label=String(name||'Host').trim()||'Host';
@@ -5741,6 +5810,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  }
  async function toggleAfk(){
   if(!host||!currentRoom)return;
+  if(selectedLiveMode==='studio'){notice('Atur tampilan melalui OBS/sumber PC. Stop sharing akan mengakhiri siaran.','watchState');return}
   $('afkToggle').disabled=true;
   try{
    if(!afkMode){
@@ -5782,6 +5852,11 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  $('restartRoom').onclick=()=>{leave();show('studio');notice('Mulai siaran baru dari Studio. ID room lama tidak dipulihkan.','liveState')};
  async function recoverHostCapture(){
   if(!host||!currentRoom||afkMode)return;
+  if(selectedLiveMode==='studio'){
+   if(!localStream?.getVideoTracks().some(t=>t.readyState==='live')){notice('Sumber PC berhenti. Akhiri LIVE lalu pilih sumber kembali.','watchState');return}
+   for(const id of [...peers.keys()])await attachViewer(id);
+   notice('Sumber Studio tetap aktif.','watchState');return;
+  }
   const previous=localStream;
   // WebView/Android may leave a live-but-paused camera after app backgrounding.
   // A fresh getUserMedia request reopens the camera without changing the room.
@@ -6215,7 +6290,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  function renderGuestRequests(){
   const panel=$('guestRequestPanel');panel.replaceChildren();
   const info=document.createElement('small');
-  info.textContent='Persetujuan wajib. Hingga 9 kursi tamu beta; kestabilan 9 kamera tergantung jaringan dan belum memakai SFU.';
+  info.textContent='Persetujuan wajib. Hingga 9 kursi tamu; kestabilan 9 kamera tergantung jaringan dan belum memakai SFU.';
   panel.append(info);
   if(!guestRequests.size){const line=document.createElement('p');line.textContent='Belum ada permintaan tampil.';panel.append(line)}
   for(const [id,guest] of guestRequests){
@@ -6704,6 +6779,7 @@ function paintBroadcastKind(kind,heading){
   if(m.type==='error'){if(!$('reportPanel').classList.contains('hide'))$('reportStatus').textContent=m.message||'Gagal mengirim laporan';notice(m.message||'Kesalahan server','liveState');if(currentRoom){notice(m.message||'Kesalahan server','watchState');if(host&&/pemulihan|akses tidak valid|telah berakhir|habis/i.test(m.message||'')){stopRetry();$('restartRoom').classList.remove('hide')}}else alert(m.message||'Kesalahan server')}
  }
  $('radioOpenMusic').onclick=()=>gameCommand('launch-music');
+ $('radioPauseLive').onclick=()=>gameCommand(nativeGameState==='paused'?'radio-resume':'radio-pause');
  $('radioStopLive').onclick=()=>{if(confirm('Akhiri RADIO LIVE?'))gameCommand('stop')};
  $('radioShareLive').onclick=async()=>{
   if(!nativeGameRoom)return;
@@ -6735,7 +6811,7 @@ function paintBroadcastKind(kind,heading){
    gameCommand('start',{broadcastKind:'gaming',title:($('title').value.trim()||$('gameName').value+' LIVE').slice(0,60),game:$('gameName').value,quality:$('gameStreamQuality').value,face,facecam});
    return;
   }
-  if(!['camera','talk'].includes(selectedLiveMode)){notice('Mode '+selectedLiveMode+' belum memiliki source live resmi.','liveState');return}
+  if(!['camera','talk','studio'].includes(selectedLiveMode)){notice('Mode '+selectedLiveMode+' belum memiliki source live resmi.','liveState');return}
   if(!adult())return;if(!server){notice('Server NADMO sedang tidak tersedia, coba lagi nanti.','liveState');return}
   if(!localStream)await preview();if(!localStream)return;
   const title=$('title').value.trim()||'Siaran langsung';
@@ -6747,6 +6823,7 @@ function paintBroadcastKind(kind,heading){
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
+  stopStudioCapture();
   clearLiveClock();
   $('watch').classList.remove('camera-frame-letterbox','camera-stage-softfill','camera-source-landscape','camera-source-portrait');
   $('watch').style.removeProperty('--camera-source-aspect');
