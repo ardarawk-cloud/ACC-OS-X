@@ -16,6 +16,12 @@ const origin='https://live.nadmo.id';
   host.on('request',r=>r.isNavigationRequest()&&r.url().startsWith(origin+'/app/')?r.respond({status:200,contentType:'text/html',body:html}):r.continue());
   const faults=[];host.on('pageerror',e=>faults.push(String(e)));
   await host.evaluateOnNewDocument(()=>{
+   const NativeWS=window.WebSocket;
+   window.WebSocket=class extends NativeWS {
+    constructor(...args){super(...args);this.addEventListener('message',event=>{
+     try{const m=JSON.parse(event.data);if(m.type==='created')window.__roomId=m.id}catch(_){}
+    })}
+   };
    window.__displayCalls=0;window.__cameraCalls=0;
    const gum=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
    navigator.mediaDevices.getUserMedia=c=>{if(c.video)window.__cameraCalls++;return gum(c)};
@@ -49,8 +55,8 @@ const origin='https://live.nadmo.id';
   assert.equal(await host.evaluate(()=>window.__cameraCalls),0,'Studio must never open a camera');
   await host.$eval('#title',e=>e.value='NADMO STUDIO QA '+Date.now());
   await host.$eval('#createRoom',e=>e.click());
-  await host.waitForFunction(()=>/Bagikan kode room/.test(document.querySelector('#liveState').textContent),{timeout:30000});
-  const room=await host.$eval('#liveState',e=>e.textContent.match(/[a-f0-9]{12}/i)?.[0]);assert(room);
+  await host.waitForFunction(()=>Boolean(window.__roomId),{timeout:30000});
+  const room=await host.evaluate(()=>window.__roomId);assert.match(room,/^[a-f0-9]{12}$/i);
   const viewer=await (await browser.createBrowserContext()).newPage();
   await viewer.setViewport({width:390,height:844,isMobile:true,hasTouch:true});
   await viewer.setRequestInterception(true);

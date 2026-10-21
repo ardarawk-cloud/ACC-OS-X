@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/nadmo-live-owner-beta-radio-deploy.yml'
       - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/qa/studio-release-e2e.cjs'
+      - 'nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs'
   workflow_dispatch:
 permissions:
   contents: read
