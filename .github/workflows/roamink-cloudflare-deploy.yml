@@ -205,6 +205,35 @@ jobs:
           exit 1
 
 
+      - name: Verify one production checkout session
+        shell: bash
+        run: |
+          set -euo pipefail
+          CATALOG="$(curl --silent --show-error --fail --max-time 45 https://roamink.nadmo.id/api/catalog)"
+          PRODUCT_ID="$(jq -r '[.products[] | select(.supplier == "digiflazz" and (.supplier_sku|length) > 0)][0].id // empty' <<<"$CATALOG")"
+          test -n "$PRODUCT_ID"
+
+          BODY="$(jq -cn --arg product_id "$PRODUCT_ID" '{
+            name:"ROAMINK Verification",
+            phone:"081234567890",
+            email:"verification@roamink.nadmo.id",
+            product_id:$product_id
+          }')"
+
+          CHECKOUT="$(curl --silent --show-error --fail --max-time 60             -H 'Content-Type: application/json'             --data "$BODY"             https://roamink.nadmo.id/api/checkout)"
+
+          echo "$CHECKOUT" | jq -c '{ok,order_status:.order.status,payment_provider:.payment.provider,payment_environment:.payment.environment}'
+          jq -e '.ok == true and .order.status == "PENDING_PAYMENT" and .payment.provider == "ipaymu" and .payment.environment == "production"' <<<"$CHECKOUT" >/dev/null
+
+          REDIRECT="$(jq -r '.payment.redirect_url // empty' <<<"$CHECKOUT")"
+          test -n "$REDIRECT"
+          case "$REDIRECT" in
+            https://*.ipaymu.com/*) ;;
+            *) echo "::error::Unexpected iPaymu redirect URL"; exit 1 ;;
+          esac
+
+          echo "ROAMINK production checkout session verified without completing payment."
+
       - name: Verify Digiflazz supplier configuration
         shell: bash
         run: |
