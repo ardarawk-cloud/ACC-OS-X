@@ -59,3 +59,16 @@ NADMO has two independent pipelines:
 - Stage rollout: (1) self-hosted single station with real uploaded tracks; (2) listening in NADMO and stable background audio playback (Android may need foreground media service); (3) user stations and DJ takeover; (4) payments, scale, audits.
 
 DO NOT claim this feature is operational until a radio engine is actually deployed, loaded with cleared audio, and uptime-tested.
+
+## 2026-10-12 — OWNER CHANGE: OPEN MUSIC RADIO LIVE (separate from unattended AutoDJ)
+The owner requests RADIO LIVE where a host starts a native live session and taps **OPEN MUSIC** to open an Android music app of their choosing, analogous to opening Roblox after a GAME session. **This is NOT the same as 24/7 unattended server AutoDJ.**
+
+- Host: Studio → RADIO → MULAI RADIO LIVE → Android MediaProjection/audio consent → OPEN MUSIC → choose supported media app or return to phone Home to open any installed app → resume broadcasting via the existing privacy overlay; no auto-resume.
+- Viewer: live room `broadcastKind=radio` shows a full **CAMERA-sized portrait** stage, never the compact GAME layout. Only the NADMO branded artwork/waveform is visible; app screen is never public.
+- Native service ALWAYS replaces captured phone pixels with opaque frame *before* WebRTC encoding. Even after RESUME it cannot publish private app screens; client overlays rendered radio artwork.
+- Audio: host microphone plus Android 10+ AudioPlaybackCapture when both OS and player explicitly permit. Protected content/players may be silent. Android full-display capture permission is still shown, even though private video is masked.
+- No fixed Spotify/YT Music requirement. App opening alone does **not** grant rights to broadcast. Never claim Spotify/YT Music subscriptions are valid public radio broadcasting licenses.
+- This feature is **phone-dependent**: closing the device/app, OS stopping foreground service, network disruption or withdrawal of permission will stop it. This is not a 24/7 station guarantee.
+- Existing RADIO ONE AutoDJ client and its configured public station remain a different listener feature; only a verified deployed AutoDJ server can offer unattended 24-hour music.
+- Native/Worker compatibility: Old APKs without `radioMusicSupported:true` cannot enable the new radio mode. Never repurpose old GAME capture silently.
+- Companion source: ACC-OS-X PR #215 and ACC-Builder-Apk PR #57. Both remain unreleased development candidates pending two-phone music audio/visual/privacy QC and one coordinated signed APK update.

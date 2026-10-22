@@ -1,6 +1,7 @@
 import {scrypt} from 'node:crypto';
 import {SUPPORTER_THRESHOLDS,SUPPORTER_TIERS,getSupporterProfile,getPublicSupporterBadge} from './supporter-levels.mjs';
 import {walletSnapshot,payoutCapability} from './wallet.mjs';
+import {PAYMENT_POLICY_VERSION} from './payment-policy.mjs';
 // NADMO LIVE authenticated profiles — PRIVATE beta, NOT government identity verification.
 // All persistent account state is in RoomHub Durable Object storage, isolated by prefix.
 // Never store KTP, NIK, passports, selfies, government ID or raw payment credentials here.
@@ -176,7 +177,7 @@ export async function accountEndpoint(storage,request){
 
  if(p==='/api/payments/status'&&method==='GET')return json({
   enabled:false,providerConfigured:false,transfersAllowed:false,privateTicketsEnabled:false,
-  recipientPayoutsEnabled:false,state:'WAITING_LICENSED_PROVIDER'
+   recipientPayoutsEnabled:false,state:'WAITING_LICENSED_PROVIDER',feePolicyVersion:PAYMENT_POLICY_VERSION
  });
  if(p==='/api/wallet/me'&&method==='GET'){
   const owner=await getAccount(storage,request);

@@ -1,0 +1,98 @@
+name: NADMO LIVE release and payment policy
+on:
+  push:
+    branches: ['feat/nadmo-live-unified-stage-pk-20261012']
+    paths:
+      - '.github/workflows/nadmo-live-owner-beta-radio-deploy.yml'
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/qa/studio-release-e2e.cjs'
+      - 'nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs'
+      - 'nadmo-live-beta/payment-policy.mjs'
+      - 'nadmo-live-beta/worker.mjs'
+      - 'nadmo-live-beta/account.mjs'
+      - 'nadmo-live-beta/qa/payment-policy-unit.mjs'
+      - 'nadmo-live-beta/qa/payment-policy-ui.cjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nadmo-live-beta-owner-radio-rollout
+  cancel-in-progress: false
+jobs:
+  owner-beta-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Static server and front-end syntax
+        run: |
+          node --check nadmo-live-beta/worker.mjs
+          node --check nadmo-live-beta/pk-battle.mjs
+          node nadmo-live-beta/qa/pk-battle-unit.mjs
+          node nadmo-live-beta/qa/pk-room-websocket-e2e.mjs
+          node nadmo-live-beta/qa/live-hourly-duration-contract.cjs
+          node nadmo-live-beta/qa/payment-policy-unit.mjs
+          node nadmo-live-beta/qa/wallet-unit.mjs
+      - name: Validate intended OPEN MUSIC version, privacy and old-APK gate
+        run: |
+          node <<'NODE'
+          const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+          const html=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8');
+          const worker=fs.readFileSync('nadmo-live-beta/worker.mjs','utf8');
+          assert.match(html,/id="radioOpenMusic"/);
+          assert.match(html,/radioMusicSupported===true/);
+          assert.match(html,/watch-radio #watch \.live-stage/);
+          assert.match(html,/id="radioLiveCanvas"/);
+          assert.match(worker,/broadcastKind:room\.broadcastKind/);
+          for(const [,js] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))
+            if(js.trim())new vm.Script(js);
+          console.log('Radio CAMERA stage, capability gate, Worker kind, JS syntax PASS');
+          NODE
+      - name: Validate full-camera VOICE and RADIO mobile layout
+        run: |
+          npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+          CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs
+      - name: Verify fee and tax previews on mobile and desktop
+        run: CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/payment-policy-ui.cjs
+      - name: Verify Studio source lifecycle and real host-to-viewer media
+        run: CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/studio-release-e2e.cjs
+      - name: Deploy existing NADMO LIVE Worker and app
+        id: first_deploy
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          workingDirectory: nadmo-live-beta
+          command: deploy --config wrangler.json
+      # CF's Workers script API occasionally returns a transient 504 HTML page.
+      # Retry once; a failed rollout must not be called successful.
+      - name: Retry deploy after transient Cloudflare 504
+        if: steps.first_deploy.outcome == 'failure'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          workingDirectory: nadmo-live-beta
+          command: deploy --config wrangler.json
+      - name: Check real live.nadmo.id beta UI and API
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5;do
+            if curl -fLsS --max-time 20 https://live.nadmo.id/app/ -o /tmp/nadmo-live-radio-beta.html && \
+               grep -Fq 'id="radioOpenMusic"' /tmp/nadmo-live-radio-beta.html && \
+               grep -Fq 'name="nadmo-release" content="0.10.24"' /tmp/nadmo-live-radio-beta.html && \
+               grep -Fq 'id="walletFeePolicy"' /tmp/nadmo-live-radio-beta.html && \
+               curl -fLsS --max-time 20 'https://live.nadmo.id/api/payments/quote?kind=gift&amountIDR=100000' | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const q=JSON.parse(s).quote;if(q.policyVersion!=="2026-10-22.1"||q.platformFeeIDR!==7000||q.canTransact!==false)process.exit(1)})' && \
+               curl -fLsS --max-time 20 https://live.nadmo.id/health | grep -Fq '"service":"nadmo-live-beta"';then
+              echo "RADIO OPEN MUSIC WEB BETA DEPLOYED"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "RADIO beta UI not verified on live.nadmo.id"
+          exit 1
