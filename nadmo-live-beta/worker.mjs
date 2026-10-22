@@ -1,6 +1,7 @@
 import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFingerprint} from './account.mjs';
 import {getPublicSupporterBadge} from './supporter-levels.mjs';
 import {proposePK,publicPK,consentPK,supportPK,checkPKDeadline,finishPK} from './pk-battle.mjs';
+import {paymentPolicyEndpoint} from './payment-policy.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
@@ -671,6 +672,8 @@ export default {
   const codapayGate=nadmoCodapayGate(request);
   if(codapayGate)return codapayGate;
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
+  const paymentPolicy=paymentPolicyEndpoint(request);
+  if(paymentPolicy)return cors(request,paymentPolicy);
   if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT'))
     return new Response('Method Not Allowed',{status:405});
   // Official native GAME update: a safe 302 to the immutable owner-signed

@@ -574,6 +574,12 @@ body.live-immersive.watch-host #watch .stage-guest-tip{display:none}
 .wallet-payout-form .field:disabled{opacity:.65;cursor:not-allowed}
 .wallet-panel .wallet-history{margin-top:15px}
 .wallet-panel #walletInfo{margin:10px 0 0}
+.wallet-fees{padding:14px;margin-top:14px}
+.wallet-fees label{display:block;margin:12px 0 6px;font-size:11px;font-weight:800}
+.wallet-fees .field{width:100%;box-sizing:border-box}
+.wallet-fees .fee-row{align-items:start}
+.wallet-fees .fee-row b{max-width:48%;white-space:normal;text-align:right;overflow-wrap:anywhere}
+.wallet-fees .fee-note{font-size:11px;line-height:1.6;color:var(--cbw-b0c0a9,#b0c0a9)}
 
 /* Real circular profile photos with a harmless N/ fallback. */
 #settings .profile-avatar{position:relative;overflow:hidden;flex:0 0 48px;width:48px;height:48px}
@@ -3030,15 +3036,15 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
     <button type="button" class="sheet-close" id="closeTipSheet" title="Tutup saweran" aria-label="Tutup saweran">✕</button>
     <div class="show-label"><b>SAWERAN UNTUK</b><small id="tipRecipientName">HOST</small></div>
     <div id="tipRecipientOptions" class="filterstrip" aria-label="Penerima saweran"></div>
-    <p>Kirim dukungan sesuai kemampuanmu. Tidak ada koin, berlian atau hadiah virtual.</p>
+    <p>Gift / saweran memakai kredit viewer. Penghasilan host dicatat terpisah untuk penarikan.</p>
     <div class="filterstrip" id="tipPresets">
       <button data-tip="5000">Rp5.000</button><button data-tip="10000" class="active">Rp10.000</button>
       <button data-tip="20000">Rp20.000</button><button data-tip="50000">Rp50.000</button>
     </div>
     <label for="tipCustom">NOMINAL CUSTOM (RUPIAH)</label>
     <input class="field" type="number" inputmode="numeric" id="tipCustom" min="1000" max="10000000" step="1000" value="10000">
-    <div class="setting-line"><span>Usulan bagian kreator (93%)*</span><strong id="tipEstimate">Rp9.300</strong></div>
-    <p class="deck">*Sebelum biaya gateway, pajak, dan biaya lain yang wajib diperlihatkan. Pembayaran belum aktif — tidak ada dana yang diproses.</p>
+    <div class="setting-line"><span>Bagian host sebelum pajak dan biaya lain</span><strong id="tipEstimate">—</strong></div>
+    <p class="deck" id="tipFeeNote">Rincian potongan dihitung dari pengaturan NADMO. Pembayaran belum aktif.</p>
     <button class="btn ghost" type="button" disabled style="width:100%">SAWERAN TERSEDIA SETELAH GATEWAY AKTIF</button>
   </div>
   <div class="actions live-exit-actions"><button class="btn ghost" id="leave" title="Akhiri / keluar siaran" aria-label="Keluar dari siaran">✕</button><button class="btn secondary hide" id="restartRoom">RESTART BROADCAST</button></div></div>
@@ -3374,6 +3380,16 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
     <div class="wallet-history"><b>RIWAYAT SAWERAN & PENARIKAN</b><div id="walletHistory">Belum ada transaksi.</div></div>
    </details>
   </section>
+  <section class="wallet-panel wallet-fees" id="walletFeePolicy" aria-label="Potongan platform dan pajak">
+   <div class="show-label"><b>POTONGAN PLATFORM & PAJAK</b><small>SIMULASI</small></div>
+   <p class="fee-note">Lihat potongan dan bagian host sebelum bertransaksi. Simulasi tidak mengubah saldo.</p>
+   <label for="feeType">JENIS TRANSAKSI</label>
+   <select class="field" id="feeType"><option value="gift">GIFT / SAWERAN</option><option value="ticket">TIKET PRIVAT</option><option value="topup">BIAYA TOP-UP QRIS</option></select>
+   <label for="feeAmount">NOMINAL (RUPIAH)</label>
+   <input class="field" id="feeAmount" type="number" inputmode="numeric" min="1000" max="10000000" step="1" value="100000">
+   <div class="fee-table" id="feeBreakdown" aria-live="polite">Rincian belum dimuat.</div>
+   <p class="fee-note" id="feePolicyNote">Pembayaran dan pencairan belum aktif.</p>
+  </section>
 
 </section>
 <section id="supporterPage" class="hide">
@@ -3410,15 +3426,12 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  <div class="subpage-top"><button type="button" class="subBack">‹</button><h2>Keamanan & izin</h2></div>
    <div class="show-label"><b>PRIVASI & KEAMANAN</b></div>
   <div class="setting-line"><label for="adult">Saya berusia 18 tahun ke atas</label><input id="adult" type="checkbox"></div>
-  <!-- Developer-only hooks retained for connection diagnostics and fee calculations.
+  <!-- Developer-only hooks retained for connection diagnostics.
        They must never be presented as public profile settings. -->
   <div class="hide" id="developerOnlySettings" aria-hidden="true">
     <input id="server" type="hidden">
     <div class="status" id="serverState"></div>
     <button type="button" id="saveServer">Periksa koneksi</button>
-    <select id="feeType"><option value="tip">SAWERAN</option><option value="ticket">TIKET</option></select>
-    <input id="feeAmount" type="number" value="100000">
-    <div id="feeBreakdown"></div>
   </div>
 
 </section>
@@ -5219,7 +5232,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   const subpages=['authPage','preferencesPage','accountPage','walletPage','supporterPage','draftsPage','privacyPage','socialConnectionsPage','publicProfilePage'];
   document.body.classList.toggle('page-subview',subpages.includes(name));
   if(name==='accountPage')$('profileEditBox').classList.remove('hide');if(['walletPage','accountPage','supporterPage','draftsPage','preferencesPage'].includes(name)&&!activeAccount)name='authPage';document.body.classList.toggle('live-immersive',name==='watch');document.body.classList.toggle('watch-viewer',name==='watch'&&!host);document.body.classList.toggle('watch-host',name==='watch'&&host);syncLiveChatComposer();for(const n of screens)$(n).classList.toggle('hide',n!==name);document.querySelectorAll('nav [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(name==='draftsPage'?'socialPage':subpages.includes(name)?'settings':name)));if(name==='explore')loadRooms();if(name==='following'){loadRooms();renderSaved();}if(name==='signal')health();
-  if(name==='walletPage'){$('walletDetails').open=true;loadWallet()}
+  if(name==='walletPage'){$('walletDetails').open=true;loadWallet();updateFairFee()}
   if(name==='socialPage'){loadSocialFeed();if(activeAccount)refreshSocialRelations().catch(()=>{});}
   if(name==='settings'&&activeAccount){refreshSocialRelations().catch(()=>{});loadMyReposts();}
   document.body.classList.toggle('messages-screen',name==='messagesPage');
@@ -5375,17 +5388,39 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  $('saveServer').onclick=()=>health();$('signalRefresh').onclick=()=>health();
 
  const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
- function updateFairFee(){
-   const value=Number($('feeAmount').value),mode=$('feeType').value;
-   const output=$('feeBreakdown');output.replaceChildren();
-   if(!Number.isFinite(value)||value<1000||value>10000000){output.textContent='Masukkan nominal simulasi Rp1.000–Rp10.000.000.';return}
-   const amount=Math.round(value),rate=mode==='tip'?0.07:0.10,fee=Math.round(amount*rate);
-   const rows=[['Dukungan penonton',rupiah(amount)],['Usulan biaya NADMO ('+Math.round(rate*100)+'%)','− '+rupiah(fee)],['Perkiraan bagian kreator*',rupiah(amount-fee)]];
-   for(const [name,val] of rows){const row=document.createElement('div');row.className='fee-row';const label=document.createElement('span');label.textContent=name;const number=document.createElement('b');number.textContent=val;row.append(label,number);output.append(row)}
+ function feePreviewLoader(render,status){
+  let controller=null,timer=null,revision=0;
+  return(kind,amount)=>{
+   const current=++revision;clearTimeout(timer);controller?.abort();
+   if(!Number.isSafeInteger(amount)||amount<1000||amount>10000000){status('Masukkan nominal bulat Rp1.000–Rp10.000.000.');return}
+   status('Menghitung rincian...');
+   controller=new AbortController();const signal=controller.signal;
+   timer=setTimeout(async()=>{
+    const timeout=setTimeout(()=>controller?.signal===signal&&controller.abort(),8000);
+    try{
+     const response=await fetch(api('/api/payments/quote?kind='+encodeURIComponent(kind)+'&amountIDR='+amount),{signal,cache:'no-store'});
+     const data=await response.json();
+     if(!response.ok||!data.ok||data.quote?.previewOnly!==true||data.quote?.kind!==kind||data.quote?.grossIDR!==amount||!Array.isArray(data.quote?.lines))throw Error('Quote unavailable');
+     if(current===revision)render(data.quote);
+    }catch(error){if(current===revision)status('Rincian belum dapat dimuat. Coba lagi saat terhubung.')}
+    finally{clearTimeout(timeout)}
+   },180);
+  };
  }
+ const loadFeePreview=feePreviewLoader(quote=>{
+  const output=$('feeBreakdown');output.replaceChildren();
+  for(const item of quote.lines){
+   const row=document.createElement('div');row.className='fee-row';
+   const label=document.createElement('span');label.textContent=item.label;
+   const value=document.createElement('b');value.textContent=item.amountIDR===null?item.note:(item.amountIDR<0?'− ':'')+rupiah(Math.abs(item.amountIDR));
+   row.append(label,value);output.append(row);
+  }
+  output.dataset.policyVersion=quote.policyVersion;
+  $('feePolicyNote').textContent=quote.note;
+ },message=>{$('feeBreakdown').textContent=message;delete $('feeBreakdown').dataset.policyVersion;$('feePolicyNote').textContent='Pembayaran dan pencairan belum aktif.'});
+ function updateFairFee(){loadFeePreview($('feeType').value,Number($('feeAmount').value))}
  $('feeType').addEventListener('change',updateFairFee);
  $('feeAmount').addEventListener('input',updateFairFee);
- updateFairFee();
  $('openPrivateControls').onclick=()=>$('privateControls').classList.toggle('hide');
  function closeLiveSheets(){
   $('hostAccessPanel').classList.remove('sheet-open');$('viewerTipPanel').classList.remove('sheet-open');$('liveSettingsPanel').classList.remove('sheet-open');$('hostProfilePanel').classList.remove('sheet-open');
@@ -5455,6 +5490,7 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   closeLiveSheets();
   panel.classList.add('sheet-open');
   $('liveSheetBackdrop').classList.remove('hide');
+  if(panel===$('viewerTipPanel'))updateTipPreview();
  }
  $('accessQuick').onclick=()=>{if(!host)return;openLiveSheet($('hostAccessPanel'));$('privateControls').classList.remove('hide')};
  $('tipQuick').onclick=()=>{if(host)return;setTipRecipient('host',hostPublicIdentity.name);openLiveSheet($('viewerTipPanel'))};
@@ -5489,14 +5525,17 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
  }
  $('applyPrivate').onclick=()=>setAccess('password');
  $('restorePublic').onclick=()=>setAccess('public');
+ const loadTipFeePreview=feePreviewLoader(quote=>{
+  $('tipEstimate').textContent=rupiah(quote.amountAfterPlatformIDR);
+  $('tipFeeNote').textContent='Potongan NADMO '+(quote.rateBps/100)+'%. Pajak host dan biaya lain dirinci terpisah. Pembayaran belum aktif.';
+ },message=>{$('tipEstimate').textContent='—';$('tipFeeNote').textContent=message});
  function updateTipPreview(){
   const amount=Number($('tipCustom').value);
   document.querySelectorAll('#tipPresets button').forEach(b=>b.classList.toggle('active',Number(b.dataset.tip)===amount));
-  const valid=Number.isSafeInteger(amount)&&amount>=1000&&amount<=10000000;
-  $('tipEstimate').textContent=valid?new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(amount-Math.round(amount*.07)):'Nominal Rp1.000–Rp10.000.000';
+  loadTipFeePreview('gift',amount);
  }
  document.querySelectorAll('#tipPresets button').forEach(b=>b.onclick=()=>{$('tipCustom').value=b.dataset.tip;updateTipPreview()});
- $('tipCustom').addEventListener('input',updateTipPreview);updateTipPreview();
+ $('tipCustom').addEventListener('input',updateTipPreview);
  let selectedLiveMode='camera',talkVisualTimer=null,roomBroadcastKind='camera';
 
  let studioCapture=null,studioMicStream=null,studioMix=null,studioPreviewPending=false;

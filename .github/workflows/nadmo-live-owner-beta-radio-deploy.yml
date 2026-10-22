@@ -1,4 +1,4 @@
-name: NADMO LIVE v0.10.24 Studio and RADIO release
+name: NADMO LIVE release and payment policy
 on:
   push:
     branches: ['feat/nadmo-live-unified-stage-pk-20261012']
@@ -7,6 +7,11 @@ on:
       - 'nadmo-live-beta/public/app/index.html'
       - 'nadmo-live-beta/qa/studio-release-e2e.cjs'
       - 'nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs'
+      - 'nadmo-live-beta/payment-policy.mjs'
+      - 'nadmo-live-beta/worker.mjs'
+      - 'nadmo-live-beta/account.mjs'
+      - 'nadmo-live-beta/qa/payment-policy-unit.mjs'
+      - 'nadmo-live-beta/qa/payment-policy-ui.cjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,6 +33,8 @@ jobs:
           node nadmo-live-beta/qa/pk-battle-unit.mjs
           node nadmo-live-beta/qa/pk-room-websocket-e2e.mjs
           node nadmo-live-beta/qa/live-hourly-duration-contract.cjs
+          node nadmo-live-beta/qa/payment-policy-unit.mjs
+          node nadmo-live-beta/qa/wallet-unit.mjs
       - name: Validate intended OPEN MUSIC version, privacy and old-APK gate
         run: |
           node <<'NODE'
@@ -47,6 +54,8 @@ jobs:
         run: |
           npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
           CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/radio-open-music-camera-stage-e2e.cjs
+      - name: Verify fee and tax previews on mobile and desktop
+        run: CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/payment-policy-ui.cjs
       - name: Verify Studio source lifecycle and real host-to-viewer media
         run: CHROME_BIN="$(command -v google-chrome || command -v chromium)" node nadmo-live-beta/qa/studio-release-e2e.cjs
       - name: Deploy existing NADMO LIVE Worker and app
@@ -77,6 +86,8 @@ jobs:
             if curl -fLsS --max-time 20 https://live.nadmo.id/app/ -o /tmp/nadmo-live-radio-beta.html && \
                grep -Fq 'id="radioOpenMusic"' /tmp/nadmo-live-radio-beta.html && \
                grep -Fq 'name="nadmo-release" content="0.10.24"' /tmp/nadmo-live-radio-beta.html && \
+               grep -Fq 'id="walletFeePolicy"' /tmp/nadmo-live-radio-beta.html && \
+               curl -fLsS --max-time 20 'https://live.nadmo.id/api/payments/quote?kind=gift&amountIDR=100000' | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const q=JSON.parse(s).quote;if(q.policyVersion!=="2026-10-22.1"||q.platformFeeIDR!==7000||q.canTransact!==false)process.exit(1)})' && \
                curl -fLsS --max-time 20 https://live.nadmo.id/health | grep -Fq '"service":"nadmo-live-beta"';then
               echo "RADIO OPEN MUSIC WEB BETA DEPLOYED"
               exit 0
