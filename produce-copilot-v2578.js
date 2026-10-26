@@ -5,7 +5,7 @@
   if (window.__ACC_PRODUCE_COPILOT_V2578__) return;
   window.__ACC_PRODUCE_COPILOT_V2578__ = true;
 
-  const REVISION = "BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY";
+  const REVISION = "BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY";
   const MAIN_STATE_KEY = "acc_os_x_ecosystem_v214";
   const COPILOT_KEY = "acc_os_x_produce_copilot_v1";
   const AI_ACCESS_KEY = "acc_os_x_ai_access_v1";
@@ -24,6 +24,11 @@
   const esc = v => String(v ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
   const now = () => new Date().toISOString();
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  function within(promise,ms,label){
+    let timer;
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`${label}_TIMEOUT`)),ms);});
+    return Promise.race([promise,timeout]).finally(()=>clearTimeout(timer));
+  }
   let runtimeBusy=false;
   const mediaMemory=new Map();
   let backendHealth={checked:false,online:false,aiBinding:false,accessSecretConfigured:false,error:"",checkedAt:0};
@@ -128,20 +133,27 @@
   }
 
   function openMediaDb(){
-    return new Promise((resolve,reject)=>{
+    return within(new Promise((resolve,reject)=>{
       if(!("indexedDB" in window)) return reject(new Error("INDEXEDDB_UNAVAILABLE"));
       const request=indexedDB.open(MEDIA_DB_NAME,1);
       request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(MEDIA_DB_STORE))db.createObjectStore(MEDIA_DB_STORE,{keyPath:"key"});};
       request.onsuccess=()=>resolve(request.result);
       request.onerror=()=>reject(request.error||new Error("MEDIA_DB_OPEN_FAILED"));
-    });
+      request.onblocked=()=>reject(new Error("MEDIA_DB_BLOCKED"));
+    }),5000,"MEDIA_DB_OPEN");
   }
   async function mediaPut(key,base64,mimeType="image/jpeg"){
     if(!key||!txt(base64))throw new Error("POSTER_MEDIA_EMPTY");
     mediaMemory.set(key,{base64,mimeType});
     try{
       const db=await openMediaDb();
-      await new Promise((resolve,reject)=>{const tx=db.transaction(MEDIA_DB_STORE,"readwrite");tx.objectStore(MEDIA_DB_STORE).put({key,base64,mimeType,updatedAt:now()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+      await within(new Promise((resolve,reject)=>{
+        const tx=db.transaction(MEDIA_DB_STORE,"readwrite");
+        tx.objectStore(MEDIA_DB_STORE).put({key,base64,mimeType,updatedAt:now()});
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error||new Error("MEDIA_DB_PUT_FAILED"));
+        tx.onabort=()=>reject(tx.error||new Error("MEDIA_DB_PUT_ABORTED"));
+      }),6000,"MEDIA_DB_PUT");
       db.close();
     }catch(error){console.warn("[POSTER MEDIA PUT]",error);}
     return key;
@@ -159,11 +171,21 @@
   }
   async function mediaDelete(key){
     if(!key)return;mediaMemory.delete(key);
-    try{const db=await openMediaDb();await new Promise((resolve,reject)=>{const tx=db.transaction(MEDIA_DB_STORE,"readwrite");tx.objectStore(MEDIA_DB_STORE).delete(key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});db.close();}catch{}
+    try{
+      const db=await openMediaDb();
+      await within(new Promise((resolve,reject)=>{
+        const tx=db.transaction(MEDIA_DB_STORE,"readwrite");
+        tx.objectStore(MEDIA_DB_STORE).delete(key);
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error||new Error("MEDIA_DB_DELETE_FAILED"));
+        tx.onabort=()=>reject(tx.error||new Error("MEDIA_DB_DELETE_ABORTED"));
+      }),4000,"MEDIA_DB_DELETE");
+      db.close();
+    }catch(error){console.warn("[POSTER MEDIA DELETE]",error);}
   }
   async function clearPackageMedia(pkg){
     const keys=[txt(pkg?.posterMediaKey),...(Array.isArray(pkg?.batchPosters)?pkg.batchPosters.map(x=>txt(x?.mediaKey)):[])].filter(Boolean);
-    await Promise.all(keys.map(mediaDelete));
+    await within(Promise.allSettled(keys.map(mediaDelete)),7000,"MEDIA_CLEAR");
   }
   async function migrateLegacyMedia(channelId,row){
     const original=row.package||{},p=row.package=normalizePackage(original);let changed=false;
@@ -373,7 +395,30 @@
     }
     if(!response.ok||!data.ok)throw new Error(data?.error||data?.errorDetail?.message||data?.detail?.message||`HTTP ${response.status}`);return data;
   }
-  function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error("POSTER_IMAGE_DECODE_FAILED"));img.src=src;});}
+  function loadImage(src){
+    return within(new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=()=>reject(new Error("POSTER_IMAGE_DECODE_FAILED"));
+      img.src=src;
+    }),18000,"POSTER_IMAGE_DECODE");
+  }
+  function canvasBase64(canvas){
+    if(typeof canvas.toBlob!=="function"){
+      const data=canvas.toDataURL("image/jpeg",.86).split(",")[1]||"";
+      if(!data)throw new Error("POSTER_CANVAS_ENCODE_EMPTY");
+      return Promise.resolve(data);
+    }
+    return within(new Promise((resolve,reject)=>{
+      canvas.toBlob(blob=>{
+        if(!blob)return reject(new Error("POSTER_CANVAS_BLOB_EMPTY"));
+        const reader=new FileReader();
+        reader.onload=()=>{const data=String(reader.result||"").split(",")[1]||"";data?resolve(data):reject(new Error("POSTER_CANVAS_ENCODE_EMPTY"));};
+        reader.onerror=()=>reject(reader.error||new Error("POSTER_CANVAS_READ_FAILED"));
+        reader.readAsDataURL(blob);
+      },"image/jpeg",.86);
+    }),20000,"POSTER_CANVAS_ENCODE");
+  }
   function wrapLines(ctx,value,maxWidth,maxLines){const words=txt(value).split(/\s+/).filter(Boolean),lines=[];let line="";for(const word of words){const test=line?`${line} ${word}`:word;if(line&&ctx.measureText(test).width>maxWidth){lines.push(line);line=word;if(lines.length>=maxLines-1)break;}else line=test;}if(line&&lines.length<maxLines)lines.push(line);return lines;}
   async function composePoster(profile,data,index=0,count=1,label=""){
     if(!txt(data?.imageBase64))throw new Error("POSTER_IMAGE_EMPTY");const hero=`data:image/jpeg;base64,${data.imageBase64}`,img=await loadImage(hero),canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1920;
@@ -382,19 +427,19 @@
     ctx.fillStyle="#62efba";ctx.fillRect(54,70,8,132);ctx.fillStyle="#fff";ctx.font="900 46px Arial,sans-serif";ctx.fillText(profile.name.toUpperCase(),84,84);ctx.fillStyle="#9cb0c8";ctx.font="800 22px Arial,sans-serif";ctx.fillText(`${profile.code||profile.id} • ${profile.platform}`.toUpperCase(),86,146);
     const badge=txt(data.plan?.badge)||txt(label)||"ACC STUDIO";ctx.font="900 22px Arial,sans-serif";const bw=Math.min(460,ctx.measureText(badge).width+40);ctx.fillStyle="#62efba";ctx.fillRect(58,1080,bw,50);ctx.fillStyle="#04100d";ctx.fillText(badge.toUpperCase(),78,1093);if(count>1){ctx.fillStyle="#9cb0c8";ctx.font="800 18px Arial,sans-serif";ctx.fillText(`ITEM ${index+1}/${count}`,58,1160);}
     const headline=txt(data.plan?.headline)||txt(label)||profile.name;ctx.fillStyle="#fff";ctx.font="900 68px Arial,sans-serif";wrapLines(ctx,headline,950,4).forEach((line,i)=>ctx.fillText(line,58,1245+i*80));const sub=txt(data.plan?.subhead);if(sub){ctx.fillStyle="#b8c4d3";ctx.font="600 30px Arial,sans-serif";wrapLines(ctx,sub,950,3).forEach((line,i)=>ctx.fillText(line,58,1590+i*42));}
-    ctx.fillStyle="#62efba";ctx.fillRect(58,1810,250,4);ctx.fillStyle="#8ea0b8";ctx.font="800 19px Arial,sans-serif";ctx.fillText("ACC OS X • KAI PRODUCE COPILOT",58,1840);ctx.fillStyle="#fff";ctx.font="800 18px Arial,sans-serif";ctx.textAlign="right";ctx.fillText("AM STUDIO",1022,1840);ctx.textAlign="left";return canvas.toDataURL("image/jpeg",.88).split(",")[1]||"";
+    ctx.fillStyle="#62efba";ctx.fillRect(58,1810,250,4);ctx.fillStyle="#8ea0b8";ctx.font="800 19px Arial,sans-serif";ctx.fillText("ACC OS X • KAI PRODUCE COPILOT",58,1840);ctx.fillStyle="#fff";ctx.font="800 18px Arial,sans-serif";ctx.textAlign="right";ctx.fillText("AM STUDIO",1022,1840);ctx.textAlign="left";return await canvasBase64(canvas);
   }
   async function resetForMaterial(row,data){
     await clearPackageMedia(row.package);const count=Math.max(1,Math.min(8,Number(data?.masterRuntime?.batchCount)||1)),labels=Array.isArray(data?.masterRuntime?.series)?data.masterRuntime.series.map(txt).filter(Boolean).slice(0,count):[];
     row.package=emptyPackage();row.package.generationId=id("pkg");row.package.material=txt(data.reply);row.package.batchCount=count;row.package.batchLabels=labels.length===count?labels:Array.from({length:count},(_,i)=>`Item ${i+1}`);
   }
   async function storeSinglePoster(profile,row,data){
-    await clearPackageMedia(row.package);const generation=row.package.generationId||id("pkg"),key=`${profile.id}:${generation}:single`,base64=await composePoster(profile,data);await mediaPut(key,base64);
+    await within(clearPackageMedia(row.package),8000,"POSTER_CLEAR_OLD_MEDIA");const generation=row.package.generationId||id("pkg"),key=`${profile.id}:${generation}:single`,base64=await within(composePoster(profile,data),45000,"POSTER_LOCAL_COMPOSE");await within(mediaPut(key,base64),8000,"POSTER_LOCAL_STORE");
     row.package.posterMediaKey=key;row.package.posterHeadline=txt(data.plan?.headline);row.package.posterSubhead=txt(data.plan?.subhead);row.package.batchCount=1;row.package.batchLabels=[];row.package.batchPosters=[];row.package.batchCaptions=[];row.package.batchPublished=[];row.package.publishedPostId="";row.package.publishedAt="";row.package.publishState="READY";row.package.lastPublishError="";addMessage(profile.id,"kai",data.reply||"Poster siap.","poster",{mediaKey:key,channelName:profile.name});
   }
   async function storePosterBatch(profile,row,data){
     const posters=Array.isArray(data.posters)?data.posters:[];if(!posters.length)throw new Error("BATCH_POSTER_EMPTY");await clearPackageMedia(row.package);const generation=row.package.generationId||id("pkg"),built=[];
-    for(let i=0;i<posters.length;i++){const p=posters[i],label=txt(p.label)||txt(data?.masterRuntime?.series?.[i])||`Item ${i+1}`,key=`${profile.id}:${generation}:batch:${i+1}`,base64=await composePoster(profile,p,i,posters.length,label);await mediaPut(key,base64);built.push({index:i+1,label,mediaKey:key,headline:txt(p.plan?.headline),subhead:txt(p.plan?.subhead),subjectAnchor:txt(p.plan?.subjectAnchor)});}
+    for(let i=0;i<posters.length;i++){const p=posters[i],label=txt(p.label)||txt(data?.masterRuntime?.series?.[i])||`Item ${i+1}`,key=`${profile.id}:${generation}:batch:${i+1}`,base64=await within(composePoster(profile,p,i,posters.length,label),45000,`POSTER_LOCAL_COMPOSE_${i+1}`);await within(mediaPut(key,base64),8000,`POSTER_LOCAL_STORE_${i+1}`);built.push({index:i+1,label,mediaKey:key,headline:txt(p.plan?.headline),subhead:txt(p.plan?.subhead),subjectAnchor:txt(p.plan?.subjectAnchor)});}
     row.package.batchCount=built.length;row.package.batchLabels=built.map(x=>x.label);row.package.batchPosters=built;row.package.batchPublished=Array.from({length:built.length},()=>null);row.package.posterMediaKey="";row.package.publishedPostId="";row.package.publishedAt="";row.package.publishState="READY";row.package.lastPublishError="";addMessage(profile.id,"kai",`${built.length} POSTER BATCH SIAP ✅`);
   }
   async function execute(command){
@@ -460,5 +505,5 @@
   window.addEventListener("acc-production-contract-updated",refresh);
   window.addEventListener("acc-ai-access-changed",()=>{ensureBackendHealth(true);refresh();});
   ensureStyle();ensureBackendHealth(true);refresh();
-  window.ACCProduceCopilot=Object.freeze({revision:REVISION,refresh,publishMode:"SINGLE_OR_PER_ITEM",mediaStore:"INDEXEDDB",health:()=>({...backendHealth})});
+  window.ACCProduceCopilot=Object.freeze({revision:REVISION,refresh,publishMode:"SINGLE_OR_PER_ITEM",mediaStore:"INDEXEDDB",health:()=>({...backendHealth}),recoverBusy:(message="Proses di-reset.")=>{runtimeBusy=false;setStatus(message,true);refresh();}});
 })();

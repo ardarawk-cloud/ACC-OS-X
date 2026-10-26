@@ -5,7 +5,7 @@
   if (window.__ACC_PRODUCE_BUSY_WATCHDOG_V1__) return;
   window.__ACC_PRODUCE_BUSY_WATCHDOG_V1__ = true;
 
-  const REVISION = "PRODUCE_COPILOT_BUSY_WATCHDOG_V1_R1";
+  const REVISION = "PRODUCE_COPILOT_BUSY_WATCHDOG_V1_R2_POSTPROCESS_RECOVERY";
   const PANEL_ID = "acc-produce-copilot-panel";
   const CONTRACT_KEY = "acc_os_x_production_contract_runtime_v1";
   const originalFetch = window.fetch.bind(window);
@@ -20,8 +20,8 @@
     return "CHAT";
   }
 
-  function timeoutFor(op) {
-    if (op === "P") return 240000; // poster batches can legitimately take longer
+  function timeoutFor(op, batchCount = 1) {
+    if (op === "P") return Math.min(650000, Math.max(150000, Number(batchCount || 1) * 115000));
     if (op === "C") return 120000;
     if (op === "K" || op === "N") return 120000;
     return 120000;
@@ -90,7 +90,8 @@
       else upstreamSignal.addEventListener("abort", () => controller.abort(upstreamSignal.reason), {once:true});
     }
 
-    const timeoutMs = timeoutFor(op);
+    const batchCount = Math.max(1, Number(body?.context?.masterRuntime?.batchCount) || 1);
+    const timeoutMs = timeoutFor(op, batchCount);
     const timer = setTimeout(() => controller.abort(new DOMException("ACC_COPILOT_TIMEOUT", "AbortError")), timeoutMs);
     try {
       return await originalFetch(input, {...init, signal:controller.signal});
@@ -118,6 +119,7 @@
     const channelId = activeChannelId();
     const op = gate.includes("P RUNNING") ? "P" : gate.includes("C RUNNING") ? "C" : gate.includes("N RUNNING") ? "N" : "K";
     clearRunningGuard(channelId, op, "STALE_BUSY_WATCHDOG");
+    window.ACCProduceCopilot?.recoverBusy?.("Proses terlalu lama dan sudah di-reset. Silakan ulang perintah.");
     unlockUi("Proses terlalu lama dan sudah di-reset. Tombol aktif kembali.", true);
     busySince = 0;
   }, 1500);

@@ -180,9 +180,9 @@ jobs:
           set -euo pipefail
 
           # Active client authority must be v2578 only.
-          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' produce-copilot-v2578.js
-          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' release-version-v257.js
-          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R2_ACCESS_RECOVERY' service-worker.js
+          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY' produce-copilot-v2578.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY' release-version-v257.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY' service-worker.js
           if grep -Eq 'produce-copilot-v257[67]\.js\?rev=' release-version-v257.js release-version-v258.js service-worker.js; then
             echo 'FAIL: legacy Produce v2576/v2577 is still active.' >&2
             exit 1
@@ -204,6 +204,11 @@ jobs:
           grep -q 'delete row.package.posterDataUrl' produce-copilot-v2578.js
           grep -q 'mediaPut' produce-copilot-v2578.js
           grep -q 'mediaGet' produce-copilot-v2578.js
+          grep -q 'POSTER_LOCAL_COMPOSE' produce-copilot-v2578.js
+          grep -q 'POSTER_CANVAS_ENCODE' produce-copilot-v2578.js
+          grep -q 'MEDIA_DB_OPEN' produce-copilot-v2578.js
+          grep -q 'recoverBusy' produce-copilot-v2578.js
+          grep -q 'PRODUCE_COPILOT_BUSY_WATCHDOG_V1_R2_POSTPROCESS_RECOVERY' produce-copilot-busy-watchdog-v1.js
 
           # No competing batch/queue authority from the Worker bootstrap.
           grep -q 'BUILD257_7_ENTRY_WRAPPER_R7_CONSOLIDATED_PUBLISH' worker-build2577-entry.js
