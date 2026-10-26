@@ -35,8 +35,8 @@ const base='https://live.nadmo.id';
   }));
   assert.equal(opened.visible,true);
   assert.equal(opened.focus,'offgridClose');
-  assert.match(opened.status,/OFFGRID ALPHA TERSEDIA.*aplikasi OFFGRID/);
-  assert.match(opened.text,/Chat, grup, dan perangkat sekitar via Bluetooth/);
+  assert.match(opened.status,/OFFGRID TERINTEGRASI.*native di dalam APK NADMO LIVE/);
+  assert.match(opened.text,/Chat langsung terenkripsi, grup mesh/);
   assert.equal(opened.hasInputs,false);
   assert.ok(opened.boxWidth<=370);
   assert.equal(opened.launchVisible,true);
@@ -46,6 +46,6 @@ const base='https://live.nadmo.id';
   await page.$eval('#offgridClose',el=>el.click());
   assert.equal(await page.$eval('#offgridModal',el=>el.classList.contains('hide')),true);
   assert.deepEqual(errors,[],'no JavaScript errors when opening OFFGRID offline');
-  console.log('PASS OFFGRID alpha BLE groups ready with pre-login local panel and PT footer');
+  console.log('PASS embedded OFFGRID native entry ready pre-login with mobile-safe panel and PT footer');
  }finally{await browser.close()}
 })().catch(error=>{console.error('OFFGRID_GUEST_MOBILE_QA_FAIL',error.stack||error);process.exitCode=1});

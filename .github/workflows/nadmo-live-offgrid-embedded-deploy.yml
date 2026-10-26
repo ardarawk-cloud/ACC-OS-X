@@ -1,0 +1,75 @@
+name: NADMO LIVE OFFGRID embedded production deploy
+on:
+  push:
+    branches: ['feat/nadmo-live-offgrid-native-embedded-v2-20261026']
+    paths: ['.github/workflows/nadmo-live-offgrid-embedded-deploy.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nadmo-live-offgrid-embedded-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify OFFGRID integrated source and Worker syntax
+        run: |
+          node --check nadmo-live-beta/worker.mjs
+          node nadmo-live-beta/qa/offgrid-integrated-source-contract.mjs
+          node -e "const fs=require('fs'),vm=require('vm');let s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8');let a=s.indexOf('<script>'),b=s.indexOf('</script>',a);if(a<0||b<a)process.exit(1);new vm.Script(s.slice(a+8,b));console.log('APP_JS_PASS')"
+          grep -Fq "NADMO-LIVE-v0.10.25-offgrid-embedded.apk" nadmo-live-beta/worker.mjs
+          grep -Fq "nadmo-live-v0.10.25-offgrid-embedded-beta" nadmo-live-beta/worker.mjs
+
+      - name: Deploy existing NADMO LIVE Worker with integrated OFFGRID UI
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.115.0'
+          workingDirectory: nadmo-live-beta
+          command: deploy --config wrangler.json
+
+      - name: Verify live.nadmo.id OFFGRID integration and APK alias
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error --max-time 25 https://live.nadmo.id/app/ -o /tmp/nadmo-live-offgrid.html \
+              && grep -Fq 'OFFGRID TERINTEGRASI' /tmp/nadmo-live-offgrid.html \
+              && grep -Fq 'DIRECT E2EE' /tmp/nadmo-live-offgrid.html \
+              && grep -Fq 'GROUP MESH' /tmp/nadmo-live-offgrid.html; then
+              break
+            fi
+            if [ "$attempt" = 6 ]; then
+              echo "::error::Integrated OFFGRID UI not visible on live.nadmo.id"
+              exit 1
+            fi
+            sleep 5
+          done
+          STATUS=$(curl --silent --show-error --output /dev/null --dump-header /tmp/nadmo-offgrid-apk.txt --write-out '%{http_code}' --max-time 20 https://live.nadmo.id/download.apk)
+          echo "DOWNLOAD_ALIAS_HTTP=$STATUS"
+          test "$STATUS" = "302"
+          grep -Fqi 'location: https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.25-offgrid-embedded-beta/NADMO-LIVE-v0.10.25-offgrid-embedded.apk' /tmp/nadmo-offgrid-apk.txt
+          echo 'LIVE_OFFGRID_UI_AND_APK_ALIAS_PASS'
+
+      - name: Verify exact released APK checksum through public alias
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 2 --max-time 180 \
+            https://live.nadmo.id/download.apk -o /tmp/NADMO-LIVE-v0.10.25-offgrid-embedded.apk
+          echo 'e6645eb9da5f01b9ee2a6a56d0310ab829a1dae908ab19695815d98e67ecdf7a  /tmp/NADMO-LIVE-v0.10.25-offgrid-embedded.apk' | sha256sum --check
+
+      - name: Real mobile guest OFFGRID panel regression
+        run: |
+          npm install --prefix nadmo-live-beta/qa --no-save --no-audit --no-fund puppeteer-core@24
+          export CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)"
+          test -n "$CHROME_BIN"
+          node nadmo-live-beta/qa/offgrid-guest-mobile-e2e.cjs

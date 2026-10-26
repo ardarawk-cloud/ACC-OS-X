@@ -896,6 +896,8 @@ nav [data-tab="messagesPage"]{position:relative}
 .offgrid-panel-top button{border:1px solid #b75a52;border-radius:7px;background:#481a18;color:#ffe5e0;min-width:34px;min-height:34px;font:900 21px Arial}
 .offgrid-panel p{font:12px/1.5 Arial,sans-serif;color:#ffe9e5;margin:10px 0 0}
 .offgrid-panel .offgrid-status{color:#ffbd9b;font-weight:800;border-top:1px solid #a34b45;padding-top:9px}
+.offgrid-capabilities{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:11px}
+.offgrid-capabilities span{border:1px solid #8f3d37;border-radius:7px;background:#1d0c0b;color:#ffc4bd;padding:7px 8px;text-align:center;font:900 9px Arial,sans-serif;letter-spacing:.45px}
 .offgrid-launch{width:100%;margin-top:11px;min-height:37px;border:1px solid #ffb4a3;border-radius:7px;background:#652622;color:#ffe5de;font:900 12px Arial,sans-serif;letter-spacing:.3px}
 .nadmo-pt-footer{padding:17px 0 5px;border-top:1px solid #262d28;margin-top:27px;color:var(--cbw-707d73,#707d73);text-align:center;font:700 10px/1.6 Arial,sans-serif;letter-spacing:.3px}
 .mast-login{border:1px solid var(--cbw-8fad63,#8fad63);border-radius:17px;background:var(--cbw-192519,#192519);color:var(--cbw-e7faaf,#e7faaf);padding:7px 11px;font:900 10px Arial;cursor:pointer}.mast-login[hidden]{display:none!important}
@@ -3448,9 +3450,10 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
 <div id="offgridModal" class="offgrid-modal hide" role="dialog" aria-modal="true" aria-labelledby="offgridTitle" aria-describedby="offgridDescription">
   <div class="offgrid-panel">
     <div class="offgrid-panel-top"><span id="offgridTitle">OFFGRID / SIAGA</span><button type="button" id="offgridClose" aria-label="Tutup OFFGRID">×</button></div>
-    <p id="offgridDescription">Chat, grup, dan perangkat sekitar via Bluetooth. Pesan bisa diteruskan antarnode tanpa internet.</p>
-    <p class="offgrid-status">OFFGRID ALPHA TERSEDIA • buka aplikasi OFFGRID yang sudah terpasang.</p>
-    <button type="button" id="offgridLaunch" class="offgrid-launch">BUKA OFFGRID ↗</button>
+    <p id="offgridDescription">Chat langsung terenkripsi, grup mesh, perangkat sekitar, dan auto relay via Bluetooth tanpa internet.</p>
+    <div class="offgrid-capabilities" aria-label="Kemampuan OFFGRID"><span>DIRECT E2EE</span><span>GROUP MESH</span><span>AUTO RELAY</span><span>OFFLINE READY</span></div>
+    <p class="offgrid-status">OFFGRID TERINTEGRASI • native di dalam APK NADMO LIVE, tanpa APK tambahan.</p>
+    <button type="button" id="offgridLaunch" class="offgrid-launch">BUKA OFFGRID NATIVE ↗</button>
   </div>
 </div>
 <div id="socialShareSheet" class="social-share-sheet hide" role="dialog" aria-modal="true" aria-labelledby="socialShareTitle">
@@ -5329,14 +5332,14 @@ body.live-immersive #watch.mobile-stage-voice .stage-guest-tip{pointer-events:au
   offgridModal.classList.add('hide');offgridEntry.focus({preventScroll:true});
  }
  offgridEntry.onclick=()=>{
-  // OFFGRID Alpha already exists as a separate native mesh app. No remote login.
+  // OFFGRID is a native module inside the NADMO LIVE Android APK. No remote login.
   offgridModal.classList.remove('hide');offgridClose.focus({preventScroll:true});
  };
  $('offgridLaunch').onclick=()=>{
-  // The NADMO LIVE Android shell routes this local scheme to installed OFFGRID.
-  // Browser clients do not have direct access to BLE.
+  // The NADMO LIVE Android shell routes this local scheme to the embedded OFFGRID Activity.
+  // Browser clients do not have direct access to the native BLE mesh.
   if(!/Android.+\bwv\b/i.test(navigator.userAgent)){
-   $('offgridDescription').textContent='Buka OFFGRID lewat APK NADMO LIVE terbaru atau langsung dari ikon OFFGRID di HP.';
+   $('offgridDescription').textContent='OFFGRID native tersedia di APK NADMO LIVE Android. Browser tidak menjalankan mesh Bluetooth.';
    return;
   }
   location.href='nadmolive://offgrid';
