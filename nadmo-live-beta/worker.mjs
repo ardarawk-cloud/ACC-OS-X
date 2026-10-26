@@ -676,12 +676,12 @@ export default {
   if(paymentPolicy)return cors(request,paymentPolicy);
   if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT'))
     return new Response('Method Not Allowed',{status:405});
-  // Official native GAME update: a safe 302 to the immutable owner-signed
-  // release. Cloudflare Worker subrequests cannot reliably proxy this 50MB
-  // GitHub asset (503), whereas browser download follows this URL directly.
+  // Official native NADMO LIVE update with embedded OFFGRID mesh.
+  // Redirect to the immutable owner-signed GitHub release so the 50MB APK
+  // is downloaded directly without proxying it through the Worker.
   if(url.pathname==='/download.apk'){
-    const filename='NADMO-LIVE-v0.10.10-beta.apk';
-    return Response.redirect('https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.10-beta/'+filename,302);
+    const filename='NADMO-LIVE-v0.10.25-offgrid-embedded.apk';
+    return Response.redirect('https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.25-offgrid-embedded-beta/'+filename,302);
   }
   // Serve the verified signed Android package from our own Cloudflare static assets.
   // Unlike a GitHub Actions artifact, this is a direct APK (no ZIP or GitHub webview).
