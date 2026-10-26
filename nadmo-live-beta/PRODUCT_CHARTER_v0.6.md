@@ -92,7 +92,7 @@ Gaming is a first-class category; TV and Radio live under discovery categories, 
 - P0 AFK scene is camera-off canvas + existing mic audio only. Music file mix/upload, external DSP, native background service and OBS input are separate future features, not working today.
 
 ### Creator revenue
-- Target transparent platform share: suggested 7% for tips and 10% for private tickets, subject to disclosed gateway fees, tax and actual operation costs. Not activated in beta.
+- Platform share configured 22 October 2026: 7% for gifts/saweran, 10% for private tickets. The versioned server policy and tax/cost treatment are documented in PAYMENT_POLICY.md. These are previews until payment integration is active; unknown taxes are not zero.
 - Use a licensed payment partner for rupiah transfers/splits/payouts. Never represent a placeholder as a paid ticket, wallet or completed transfer.
 - Show payouts, fees and reversals unambiguously; avoid exploitative virtual currency exchange rates.
 - Eligibility, age and abuse checks are required before public tipping / paid access.

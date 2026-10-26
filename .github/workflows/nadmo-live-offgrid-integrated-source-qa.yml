@@ -1,0 +1,15 @@
+name: NADMO LIVE OFFGRID integrated source QA
+# retry-2: current modal markup aligned
+on:
+  push:
+    branches: ['feat/nadmo-live-offgrid-native-embedded-v2-20261026']
+    paths: ['.github/workflows/nadmo-live-offgrid-integrated-source-qa.yml']
+  workflow_dispatch:
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node nadmo-live-beta/qa/offgrid-integrated-source-contract.mjs

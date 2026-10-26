@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const html=readFileSync(new URL('../public/app/index.html',import.meta.url),'utf8');
+assert.ok(html.includes('id="offgridEntry"'));
+assert.ok(html.includes('id="offgridModal"'));
+assert.ok(html.includes('OFFGRID TERINTEGRASI'));
+assert.ok(html.includes('native di dalam APK NADMO LIVE, tanpa APK tambahan'));
+assert.ok(html.includes('DIRECT E2EE'));
+assert.ok(html.includes('GROUP MESH'));
+assert.ok(html.includes('AUTO RELAY'));
+assert.ok(html.includes('OFFLINE READY'));
+assert.ok(html.includes("location.href='nadmolive://offgrid'"));
+assert.ok(html.includes('Browser tidak menjalankan mesh Bluetooth.'));
+assert.ok(!html.includes('buka aplikasi OFFGRID yang sudah terpasang'));
+for(const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(block[1]);
+console.log('PASS OFFGRID integrated source contract');

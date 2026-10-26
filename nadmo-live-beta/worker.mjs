@@ -1,5 +1,7 @@
 import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFingerprint} from './account.mjs';
 import {getPublicSupporterBadge} from './supporter-levels.mjs';
+import {proposePK,publicPK,consentPK,supportPK,checkPKDeadline,finishPK} from './pk-battle.mjs';
+import {paymentPolicyEndpoint} from './payment-policy.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
@@ -19,6 +21,10 @@ function stagePublic(clients,id){return stageGuests(clients,id).map(x=>{
 function stageBroadcast(clients,id,layout=[]){
  const packet={type:'stage-updated',guests:stagePublic(clients,id),layout,maxGuests:GUEST_LIMIT};
  for(const ws of clients)if(state(ws).roomId===id)reply(ws,packet);
+}
+function broadcastPK(peers,roomId,pk){
+ const packet={type:'pk-state',pk:publicPK(pk)};
+ for(const peer of peers)if(state(peer).roomId===roomId)reply(peer,packet);
 }
 async function sha(value){
  const bytes=new TextEncoder().encode(value);
@@ -74,7 +80,7 @@ export class RoomHub{
    for(const [key,room] of rooms){
     if(room.mode!=='public')continue;
     if(room.hostOfflineAt||!getHost(peers,room.hostId))continue;
-    list.push({id:room.id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostAvatarVersion:room.hostAvatarVersion||0,hostVerified:room.hostVerified===true,category:room.category,createdAt:room.createdAt,viewers:roomCount(peers,room.id)});
+    list.push({id:room.id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostAvatarVersion:room.hostAvatarVersion||0,hostVerified:room.hostVerified===true,category:room.category,broadcastKind:room.broadcastKind||"camera",createdAt:room.createdAt,viewers:roomCount(peers,room.id)});
    }
    return Response.json({rooms:list});
   }
@@ -105,6 +111,10 @@ export class RoomHub{
   const sockets=this.sockets(),rooms=await this.findRooms();
   const now=Date.now();
   for(const [key,room] of rooms){
+   if(room.pk){
+    const checked=checkPKDeadline(room.pk,now);
+    if(checked!==room.pk){room.pk=checked;await this.ctx.storage.put(key,room);broadcastPK(sockets,room.id,checked)}
+   }
    if(room.hostOfflineAt&&now-room.hostOfflineAt>HOST_GRACE_MS){
     await this.ctx.storage.delete(key);
     for(const socket of sockets){
@@ -167,12 +177,16 @@ export class RoomHub{
    const resumeToken=crypto.randomUUID()+crypto.randomUUID();
    const room={id,title:txt(msg.title,60)||'NADMO LIVE',category:txt(msg.category,28)||'Social',
     hostName:current?.name||txt(msg.hostName,60)||'Host',hostHandle:current?.handle||null,hostAvatarVersion:current?.avatarVersion||0,
-     hostThemeId:['nadmo','cyberbw','noir','retro','electric'].includes(current?.themeId||msg.themeId)?(current?.themeId||msg.themeId):'nadmo',
+    hostCoverVersion:current?.coverVersion||0,
+    radioVisual:msg.broadcastKind==='radio'&&['signal','vinyl','night','cover'].includes(msg.radioVisual)?msg.radioVisual:'signal',
+     hostThemeId:['nadmo','cyberbw','noir','retro','electric'].includes(msg.themeId)?msg.themeId:
+     (['nadmo','cyberbw','noir','retro','electric'].includes(current?.themeId)?current.themeId:'nadmo'),
     hostVerified:current?.kycStatus==='verified'&&current?.verifiedAdult===true,hostAccountId:current?.id||null,
-    mode,facecam,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now};
+    broadcastKind:['radio','gaming','talk'].includes(msg.broadcastKind)?msg.broadcastKind:'camera',
+    mode,facecam,hostId:s.id,hostResumeHash:await sha(resumeToken),hostOfflineAt:null,passwordHash:mode==='password'?await sha(password):null,mirrorBroadcast:false,stageLayout:[],createdAt:now,stagePreset:'auto',stageRandomSeed:0};
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
-   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',createdAt:room.createdAt,layout:[]});
+   reply(ws,{type:'created',id,selfId:s.id,resumeToken,mirrorBroadcast:false,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',hostCoverVersion:room.hostCoverVersion||0,radioVisual:room.radioVisual||'signal',createdAt:room.createdAt,broadcastKind:room.broadcastKind,category:room.category,layout:[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0});
    return;
   }
   if(type==='resume'){
@@ -204,7 +218,7 @@ export class RoomHub{
    await this.ctx.storage.put('room:'+id,room);
    s.roomId=id;s.role='host';save(ws,s);
    const viewers=peers.filter(x=>state(x).roomId===id&&['viewer','guest'].includes(state(x).role)).map(x=>state(x).id);
-   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',createdAt:room.createdAt,layout:room.stageLayout||[]});
+   reply(ws,{type:'resumed',id,selfId:s.id,viewers,mirrorBroadcast:room.mirrorBroadcast===true,hostName:room.hostName,hostHandle:room.hostHandle,hostVerified:room.hostVerified,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',hostCoverVersion:room.hostCoverVersion||0,radioVisual:room.radioVisual||'signal',createdAt:room.createdAt,broadcastKind:room.broadcastKind||'camera',category:room.category,layout:room.stageLayout||[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0,pk:publicPK(room.pk)});
    for(const other of peers){if(state(other).roomId===id&&state(other).role!=='host')reply(other,{type:'host-reconnected'})}
     for(const other of peers){const meta=state(other);if(meta.roomId===id&&meta.pendingGuestMode)reply(ws,{type:'guest-requested',id:meta.id,name:meta.displayName||meta.handle||'Penonton',mode:meta.pendingGuestMode})}
     stageBroadcast(peers,id,room.stageLayout||[]);
@@ -222,7 +236,7 @@ export class RoomHub{
    if(s.accountId&&Array.isArray(room.blockedAccounts)&&room.blockedAccounts.includes(s.accountId))
     return failure(ws,'Akses akun ke room ini telah diblokir oleh host.');
    s.roomId=id;s.role='viewer';save(ws,s);
-   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',selfId:s.id,hostId:room.hostId,facecam:room.facecam||null,mirrorBroadcast:room.mirrorBroadcast===true,createdAt:room.createdAt,maxGuests:GUEST_LIMIT,guests:stagePublic(peers,id),layout:room.stageLayout||[]});
+   reply(ws,{type:'joined',id,title:room.title,hostName:room.hostName||'Host',hostHandle:room.hostHandle||null,hostVerified:room.hostVerified===true,hostAvatarVersion:room.hostAvatarVersion||0,hostThemeId:room.hostThemeId||'nadmo',hostCoverVersion:room.hostCoverVersion||0,radioVisual:room.radioVisual||'signal',selfId:s.id,hostId:room.hostId,facecam:room.facecam||null,mirrorBroadcast:room.mirrorBroadcast===true,createdAt:room.createdAt,maxGuests:GUEST_LIMIT,broadcastKind:room.broadcastKind||'camera',category:room.category,guests:stagePublic(peers,id),layout:room.stageLayout||[],stagePreset:room.stagePreset||'auto',stageRandomSeed:room.stageRandomSeed||0,pk:publicPK(room.pk)});
    // Name comes from authenticated WebSocket session only, never the JOIN payload.
    // Anonymous guests get a distinguishable label, not a fabricated real name.
    // Compact room notifications use exactly one identifier: profile name,
@@ -295,9 +309,69 @@ export class RoomHub{
   if(type==='guest-exit'){
    if(s.role!=='guest')return failure(ws,'Tidak berada di panggung.');
    if(roomCount(this.sockets(),room.id)>=VIEWER_LIMIT)return failure(ws,'Penonton penuh. Keluar dari room untuk turun panggung.');
+   if(room.pk&&room.pk.status!=='finished'&&room.pk.invited.includes(s.id)){
+    room.pk=finishPK(room.pk,'participant-left',now);await this.ctx.storage.put('room:'+room.id,room);broadcastPK(this.sockets(),room.id,room.pk);
+   }
    s.role='viewer';s.guestReady=false;s.guestMode=null;s.guestCamera=false;s.guestMic=false;s.guestStreamId=null;save(ws,s);
    const host=getHost(this.sockets(),room.hostId);if(host)reply(host,{type:'guest-left',id:s.id});
    reply(ws,{type:'guest-exited'});stageBroadcast(this.sockets(),room.id,room.stageLayout||[]);return;
+  }
+  // Friendly challenge among consenting guests of this SAME live room.
+  if(type==='pk-start'){
+   if(!await this.validHostSession(s,room))return failure(ws,'Hanya host dapat mengundang PK.');
+   const prior=checkPKDeadline(room.pk,now);
+   if(prior&&prior.status!=='finished')return failure(ws,'Selesaikan PK saat ini terlebih dahulu.');
+   try{
+    const eligible=stagePublic(this.sockets(),room.id).filter(g=>g.ready);
+    let selection=eligible;
+    if(Array.isArray(msg.participants)&&!msg.random){
+     const requested=msg.participants.map(id=>txt(id,32));
+     if(requested.length!==new Set(requested).size)return failure(ws,'Pilihan peserta ganda.');
+     selection=requested.map(id=>eligible.find(g=>g.id===id));
+     if(selection.some(item=>!item))return failure(ws,'Peserta belum aktif di panggung.');
+    }
+    const pk=proposePK({id:crypto.randomUUID(),hostId:room.hostId,guests:selection,mode:msg.mode,minutes:msg.minutes,random:msg.random===true,now});
+    room.pk=pk;await this.ctx.storage.put('room:'+room.id,room);broadcastPK(this.sockets(),room.id,pk);
+   }catch(error){failure(ws,String(error?.message||'Gagal memulai PK').slice(0,120))}
+   return;
+  }
+  if(type==='pk-consent'){
+   if(s.role!=='guest')return failure(ws,'Hanya tamu panggung yang diundang boleh menjawab PK.');
+   try{
+    room.pk=consentPK(checkPKDeadline(room.pk,now),s.id,msg.accept,now);
+    await this.ctx.storage.put('room:'+room.id,room);
+    broadcastPK(this.sockets(),room.id,room.pk);
+   }catch(error){failure(ws,String(error?.message||'Undangan tidak berlaku').slice(0,120))}
+   return;
+  }
+  if(type==='pk-support'){
+   if(s.role!=='viewer'||!s.accountId||!s.sessionFingerprint)return failure(ws,'Masuk akun sebagai penonton untuk mendukung PK.');
+   const principal=await getAccountBySessionFingerprint(this.ctx.storage,s.sessionFingerprint);
+   if(!principal||principal.id!==s.accountId)return failure(ws,'Sesi pendukung sudah berakhir.');
+   try{
+    room.pk=supportPK(checkPKDeadline(room.pk,now),principal.id,msg.side,now);
+    await this.ctx.storage.put('room:'+room.id,room);
+    broadcastPK(this.sockets(),room.id,room.pk);
+   }catch(error){failure(ws,String(error?.message||'Dukungan tidak diproses').slice(0,120))}
+   return;
+  }
+  if(type==='pk-end'){
+   if(!await this.validHostSession(s,room))return failure(ws,'Hanya host dapat mengakhiri PK.');
+   if(room.pk&&room.pk.status!=='finished'){
+    room.pk=finishPK(room.pk,'host-ended',now);
+    await this.ctx.storage.put('room:'+room.id,room);
+    broadcastPK(this.sockets(),room.id,room.pk);
+   }
+   return;
+  }
+  if(type==='stage-preset'){
+   if(!await this.validHostSession(s,room))return failure(ws,'Hanya host dapat mengatur tata letak.');
+   if(!['auto','focus','random'].includes(msg.preset))return failure(ws,'Tata letak belum didukung.');
+   room.stagePreset=msg.preset;
+   if(msg.preset==='random')room.stageRandomSeed=Math.floor(Math.random()*999999)+1;
+   await this.ctx.storage.put('room:'+room.id,room);
+   for(const viewer of this.sockets())if(state(viewer).roomId===room.id)reply(viewer,{type:'stage-preset-updated',preset:room.stagePreset,seed:room.stageRandomSeed||0});
+   return;
   }
   if(type==='stage-layout'){
    // Host owns the shared layout. Only existing on-stage guests may be positioned.
@@ -395,7 +469,12 @@ export class RoomHub{
     room.mutedSessions=room.mutedSessions.filter(id=>id!==targetId);
     const wasGuest=targetState.role==='guest';
     targetState.role=null;targetState.roomId=null;save(target,targetState);
-    if(wasGuest)reply(ws,{type:'guest-left',id:targetId});
+    if(wasGuest){
+     if(room.pk&&room.pk.status!=='finished'&&room.pk.invited.includes(targetId)){
+      room.pk=finishPK(room.pk,'participant-removed',now);broadcastPK(this.sockets(),room.id,room.pk);
+     }
+     reply(ws,{type:'guest-left',id:targetId});
+    }
     stageBroadcast(this.sockets(),room.id,room.stageLayout||[]);
     reply(target,{type:'moderated',action,reason:action==='block'?'Akun diblokir dari room ini.':'Host mengeluarkan Anda dari room ini.'});
     reply(ws,{type:'viewer-left',id:targetId});
@@ -481,6 +560,9 @@ export class RoomHub{
   }else{
    const room=await this.ctx.storage.get('room:'+roomId);
    if(room){
+    if(role==='guest'&&room.pk&&room.pk.status!=='finished'&&room.pk.invited.includes(s.id)){
+     room.pk=finishPK(room.pk,'participant-left',Date.now());await this.ctx.storage.put('room:'+roomId,room);broadcastPK(peers,roomId,room.pk);
+    }
     const host=getHost(peers,room.hostId);
     if(host){reply(host,{type:'viewer-left',id:s.id});if(role==='guest')reply(host,{type:'guest-left',id:s.id})}
     stageBroadcast(peers,roomId,room.stageLayout||[]);
@@ -564,18 +646,42 @@ async function radioStatus(env){
     streamUrl:online?streamUrl:null,source:'azuracast',paymentEnabled:false};
  }catch(error){return {...standby,configured:true,state:'UNAVAILABLE'}}
 }
+// Keep the owner's existing Coda sandbox callback URLs safe during LIVE UI deployments.
+// NOT a payment integration: no webhook is acknowledged or wallet credited.
+function nadmoCodapayGate(request){
+ const url=new URL(request.url);
+ const path=url.pathname;
+ const notify=path==='/api/payments/codapay/notify';
+ const success=path==='/api/payments/codapay/success';
+ if(!notify&&!success)return null;
+ const baseHeaders={'Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
+ if(notify){
+  const headers={...baseHeaders,'Content-Type':'application/json; charset=utf-8'};
+  if(request.method==='GET'&&url.searchParams.get('health')==='1'&&url.searchParams.size===1)
+   return new Response(JSON.stringify({ok:true,endpoint:'codapay-notification',paymentEnabled:false,mode:'pending-provider-activation'}),{status:200,headers});
+  if(!['GET','POST'].includes(request.method))return new Response(JSON.stringify({ok:false,error:'METHOD_NOT_ALLOWED'}),{status:405,headers});
+  return new Response(JSON.stringify({ok:false,error:'CODAPAY_PAYMENT_GATE_DISABLED'}),{status:503,headers:{...headers,'Retry-After':'300'}});
+ }
+ if(request.method!=='GET')return new Response('Method Not Allowed',{status:405,headers:baseHeaders});
+ const html='<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="7;url=/app/"><title>NADMO LIVE - Verifikasi pembayaran</title></head><body style="font:16px system-ui,sans-serif;background:#10131a;color:#fff;min-height:100vh;display:grid;place-items:center"><main style="max-width:420px;padding:24px;text-align:center"><h1>NADMO LIVE</h1><p>Pembayaran masih menunggu verifikasi. Saldo belum berubah.</p><p><a href="/app/" style="color:#73c1ff">Kembali ke aplikasi</a></p></main></body></html>';
+ return new Response(html,{status:200,headers:{...baseHeaders,'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; navigate-to 'self'; base-uri 'none'; frame-ancestors 'none'"}});
+}
 export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
+  const codapayGate=nadmoCodapayGate(request);
+  if(codapayGate)return codapayGate;
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
+  const paymentPolicy=paymentPolicyEndpoint(request);
+  if(paymentPolicy)return cors(request,paymentPolicy);
   if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT'))
     return new Response('Method Not Allowed',{status:405});
-  // Official native GAME update: a safe 302 to the immutable owner-signed
-  // release. Cloudflare Worker subrequests cannot reliably proxy this 50MB
-  // GitHub asset (503), whereas browser download follows this URL directly.
+  // Official native NADMO LIVE update with embedded OFFGRID mesh.
+  // Redirect to the immutable owner-signed GitHub release so the 50MB APK
+  // is downloaded directly without proxying it through the Worker.
   if(url.pathname==='/download.apk'){
-    const filename='NADMO-LIVE-v0.10.10-beta.apk';
-    return Response.redirect('https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.10-beta/'+filename,302);
+    const filename='NADMO-LIVE-v0.10.25-offgrid-embedded.apk';
+    return Response.redirect('https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.25-offgrid-embedded-beta/'+filename,302);
   }
   // Serve the verified signed Android package from our own Cloudflare static assets.
   // Unlike a GitHub Actions artifact, this is a direct APK (no ZIP or GitHub webview).
