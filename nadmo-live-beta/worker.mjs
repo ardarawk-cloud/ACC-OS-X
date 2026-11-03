@@ -31,8 +31,8 @@ function cors(request,response){
  const headers=new Headers(response.headers);
  if(origin===ALLOWED_ORIGIN||origin===new URL(request.url).origin){
    headers.set('Access-Control-Allow-Origin',origin);
-   headers.set('Access-Control-Allow-Methods','GET,OPTIONS');
-   headers.set('Access-Control-Allow-Headers','Content-Type');
+   headers.set('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS');
+   headers.set('Access-Control-Allow-Headers','Content-Type,X-NADMO-Admin-Key');
    headers.set('Vary','Origin');
  }
  headers.set('Cache-Control','no-store');
