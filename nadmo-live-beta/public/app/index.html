@@ -397,6 +397,16 @@ body.live-immersive #watch .sheet-close:focus-visible{
 .profile-post-content{margin:12px 0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.65;color:#e9ede5}
 .post-external-link{color:var(--neon);text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 .profile-composer button{margin-top:9px}
+.support-beta-box{border:1px solid var(--cbw-405442,#405442);background:var(--cbw-111812,#111812);border-radius:12px;padding:12px;margin:9px 0 14px}
+.support-beta-box .support-actions{display:flex;gap:8px;flex-wrap:wrap}
+.support-beta-box .support-actions .btn{flex:1;min-width:120px}
+.support-qris-preview{min-height:116px;border:1px dashed var(--cbw-53634f,#53634f);background:#0d130e;display:grid;place-items:center;margin:8px 0 10px;padding:10px}
+.support-qris-preview img{display:block;max-width:min(240px,80vw);max-height:240px;background:#fff;padding:8px}
+.support-qris-preview span{color:#94a08f;font-size:11px;text-align:center}
+.support-open{display:block;text-decoration:none;text-align:center;margin:8px 0}
+#tipQrisBox{text-align:center;border:1px solid var(--cbw-405442,#405442);padding:12px;margin-top:9px}
+#tipQrisImage{display:block;width:min(260px,76vw);height:auto;margin:0 auto 10px;background:#fff;padding:8px}
+#tipSupportEmpty{margin:10px 0;color:#aab5a5;font-size:12px}
 
 
 /* Private beta account/profile UI and restrained host identity overlay. */
@@ -2719,13 +2729,13 @@ body.live-immersive #watch #liveRestReminder{
  <div id="hostProfilePanel" class="panel" role="dialog" aria-label="Profil host" aria-modal="true">
   <button type="button" class="sheet-close" id="closeHostProfile" aria-label="Tutup profil host">✕</button>
   <div class="host-public-header"><span class="host-public-photo"><span>N/</span><img id="hostPublicAvatarImage" alt="" hidden></span><h3 id="hostPublicName">Host</h3></div><p id="hostPublicBio"></p><div class="host-public-links" id="hostPublicLinks"></div>
-  <button type="button" class="btn secondary" id="hostProfileTip">Rp SAWER HOST</button>
+   <button type="button" class="btn secondary" id="hostProfileTip">DUKUNG HOST</button>
  </div>
   <div class="panel live-stage"><div class="viewfinder"><div class="deck-video-idle" aria-hidden="true"><span class="deck-idle-target">N/</span><strong>MENUNGGU SINYAL LIVE</strong><small>STREAM BELUM MENGIRIM FRAME VIDEO</small></div><video id="remote" playsinline autoplay controls></video><video id="gameRemoteFace" autoplay muted playsinline hidden aria-label="Kamera host game"></video></div>
 <div id="watchState" class="status">CONNECTING SIGNAL...</div><div id="liveRestReminder" role="status" aria-live="polite" hidden><span><strong>WAKTUNYA ISTIRAHAT</strong> — Kamu sudah LIVE <span id="liveRestHour">1 jam</span>. Istirahat sebentar bila perlu. Siaran tetap berjalan.</span><button type="button" id="liveRestDismiss">LANJUT</button></div><div id="watchStreamQuality" class="status" aria-live="off" style="font-size:10px;opacity:.85" hidden></div>
   <button class="btn secondary" id="refreshVideo" type="button" aria-label="Pulihkan video" title="Pulihkan video">↻</button>
   <div class="actions" id="hostControls" hidden><button class="btn secondary" id="afkToggle">▤ KAMERA OFF</button><button class="btn secondary" id="accessQuick">◈ PRIVAT</button><button class="btn ghost" id="shareRoom" aria-label="Bagikan room" title="Bagikan room">↗</button></div>
-  <div id="viewerTools" hidden><button class="btn secondary" id="tipQuick">Rp SAWER</button></div>
+   <div id="viewerTools" hidden><button class="btn secondary" id="tipQuick">DUKUNG</button></div>
   <div class="panel" id="hostAccessPanel" hidden>
     <button type="button" class="sheet-close" id="closeAccessSheet" title="Tutup pengaturan akses" aria-label="Tutup pengaturan akses">✕</button>
     <div class="show-label"><b>AKSES SIARAN</b><small id="hostAccessLabel">PUBLIC / GRATIS</small></div>
@@ -2745,21 +2755,16 @@ body.live-immersive #watch #liveRestReminder{
     </div>
   </div>
   <p class="deck" id="afkHint" hidden>KAMERA OFF hanya menyembunyikan gambar, mikrofon masih aktif. Ini BUKAN Radio 24/7. Untuk musik otomatis saat HP ditinggal, NADMO sedang menyiapkan sistem Radio AutoDJ di server.</p>
-  <div class="panel" id="viewerTipPanel" hidden>
-    <button type="button" class="sheet-close" id="closeTipSheet" title="Tutup saweran" aria-label="Tutup saweran">✕</button>
-    <div class="show-label"><b>SAWERAN UNTUK</b><small id="tipRecipientName">HOST</small></div>
-    <div id="tipRecipientOptions" class="filterstrip" aria-label="Penerima saweran"></div>
-    <p>Kirim dukungan sesuai kemampuanmu. Tidak ada koin, berlian atau hadiah virtual.</p>
-    <div class="filterstrip" id="tipPresets">
-      <button data-tip="5000">Rp5.000</button><button data-tip="10000" class="active">Rp10.000</button>
-      <button data-tip="20000">Rp20.000</button><button data-tip="50000">Rp50.000</button>
-    </div>
-    <label for="tipCustom">NOMINAL CUSTOM (RUPIAH)</label>
-    <input class="field" type="number" inputmode="numeric" id="tipCustom" min="1000" max="10000000" step="1000" value="10000">
-    <div class="setting-line"><span>Usulan bagian kreator (93%)*</span><strong id="tipEstimate">Rp9.300</strong></div>
-    <p class="deck">*Sebelum biaya gateway, pajak, dan biaya lain yang wajib diperlihatkan. Pembayaran belum aktif — tidak ada dana yang diproses.</p>
-    <button class="btn ghost" type="button" disabled style="width:100%">SAWERAN TERSEDIA SETELAH GATEWAY AKTIF</button>
-  </div>
+   <div class="panel" id="viewerTipPanel" hidden>
+     <button type="button" class="sheet-close" id="closeTipSheet" title="Tutup dukungan" aria-label="Tutup dukungan">✕</button>
+     <div class="show-label"><b>DUKUNG HOST</b><small id="tipRecipientName">HOST</small></div>
+     <div id="tipRecipientOptions" class="filterstrip" aria-label="Penerima dukungan"></div>
+     <p>Dukungan pada mode Beta dikirim langsung ke metode pembayaran milik kreator.</p>
+     <a id="tipSupportLink" class="btn support-open" href="#" rel="nofollow ugc noreferrer" hidden>BUKA SAWERIA / LINK DUKUNGAN ↗</a>
+     <div id="tipQrisBox" hidden><b>QRIS HOST</b><img id="tipQrisImage" alt="QRIS milik host"><a id="tipQrisOpen" class="btn secondary support-open" href="#" rel="nofollow ugc noreferrer">BUKA QRIS ↗</a></div>
+     <p id="tipSupportEmpty">Memeriksa metode dukungan host...</p>
+     <p class="deck">Pembayaran terjadi langsung antara penonton dan kreator. NADMO LIVE tidak memproses, menahan, atau memotong dana pada mode Beta ini.</p>
+   </div>
   <div class="actions live-exit-actions"><button class="btn ghost" id="leave" title="Akhiri / keluar siaran" aria-label="Keluar dari siaran">✕</button><button class="btn secondary hide" id="restartRoom">RESTART BROADCAST</button></div></div>
   <div id="liveSheetBackdrop" class="live-sheet-backdrop hide"></div>
   <div id="liveSettingsPanel" class="panel live-settings-panel" role="dialog" aria-label="Pengaturan siaran" aria-modal="true">
@@ -2786,15 +2791,11 @@ body.live-immersive #watch #liveRestReminder{
       <div class="actions"><button class="btn secondary" type="button" id="cancelEndLive">BATAL</button><button class="btn" type="button" id="confirmEndLive">YA, AKHIRI LIVE</button></div>
     </div>
   </div>
-  <div id="desktopSawerBar" class="desktop-watch-only" aria-label="Nominal saweran rupiah pratinjau">
-    <span class="pc-gift-label">🎁 SAWER</span>
-    <button type="button" data-pc-sawer="1000">Rp1rb</button>
-    <button type="button" data-pc-sawer="2000">Rp2rb</button>
-    <button type="button" data-pc-sawer="5000">Rp5rb</button>
-    <button type="button" data-pc-sawer="10000">Rp10rb</button>
-    <button type="button" data-pc-sawer="custom">CUSTOM</button>
-    <small>PREVIEW · BELUM AKTIF</small>
-  </div>
+   <div id="desktopSawerBar" class="desktop-watch-only" aria-label="Dukungan langsung untuk host">
+     <span class="pc-gift-label">🎁 SUPPORT</span>
+     <button type="button" data-pc-support>DUKUNG HOST</button>
+     <small>LANGSUNG KE HOST · BETA</small>
+   </div>
   <div class="panel live-chat"><div class="show-label"><b>LIVE CHAT</b><small>BACKCHANNEL</small></div>
    <div class="deck-player-controls desktop-watch-only" aria-label="Kontrol pemutar video">
     <span class="deck-player-live">● LIVE</span>
@@ -3040,6 +3041,16 @@ body.live-immersive #watch #liveRestReminder{
       </div><div class="theme-choices profile-font-row">
       </div>
       <p class="profile-note">Pilihan tema mengganti warna aplikasi dan profil. Default NADMO ORIGINAL tetap hijau stabilo. Cover foto tampil di ME dan halaman profil publik.</p>
+       <div class="show-label"><b>DUKUNGAN HOST / BETA</b><small>LANGSUNG KE HOST</small></div>
+       <div class="support-beta-box">
+        <label for="profileSupportUrl">LINK SAWERIA / DUKUNGAN</label>
+        <input class="field" id="profileSupportUrl" type="url" inputmode="url" maxlength="500" placeholder="https://saweria.co/username">
+        <label>QRIS HOST (OPSIONAL)</label>
+        <div class="support-qris-preview"><img id="profileQrisPreview" alt="QRIS host" hidden><span id="profileQrisEmpty">Belum ada QRIS. Upload gambar QRIS milik host.</span></div>
+        <input id="profileQrisFile" type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Pilih gambar QRIS host">
+        <div class="support-actions"><button class="btn secondary" type="button" id="profileQrisChoose">UPLOAD QRIS</button><button class="btn ghost" type="button" id="profileQrisRemove" hidden>HAPUS QRIS</button></div>
+        <p class="profile-note" id="profileSupportStatus" role="status">Saweria/QRIS dibayar langsung ke host. NADMO LIVE tidak menahan saldo pada mode Beta ini.</p>
+       </div>
       <div class="show-label"><b>LINK PIHAK KETIGA</b><small>MAKS. 12 LINK</small></div>
       <div class="profile-edit-row"><input class="field" id="profileLinkLabel" maxlength="40" placeholder="Nama link: Website, WhatsApp, Booking">
       <input class="field" id="profileLinkUrl" type="url" inputmode="url" maxlength="500" placeholder="https://..."></div>
@@ -3184,7 +3195,7 @@ body.live-immersive #watch #liveRestReminder{
  let followedHandles=new Set(),socialConnectionsKind='following';
  let activeAccount=null, syncedPosts=[], mutedViewerIds=new Set(), pendingInvite=null, supporterData=null, supporterLevelsData=null;
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
- let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},tipRecipient={id:'host',name:'Host'};
+  let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},hostPublicSupport={link:'',qris:''},tipRecipient={id:'host',name:'Host',handle:''},tipSupportRequest=0;
  let gameFaceStream=null,gameFaceDiameter=76;
 
  // Worker-supplied createdAt is stable across reconnects and viewer joins.
@@ -4568,6 +4579,40 @@ body.live-immersive #watch #liveRestReminder{
   a.rel='nofollow ugc noreferrer';a.textContent=label||safe;
   return a;
  }
+  const SUPPORT_LINK_LABEL='Support Host',SUPPORT_QRIS_LABEL='QRIS Host';
+  function supportInfoFromLinks(links){
+   const info={link:'',qris:''};
+   for(const item of Array.isArray(links)?links:[]){
+    const safe=validExternalLink(item?.url),label=String(item?.label||'').trim();
+    if(!safe)continue;
+    let parsed;try{parsed=new URL(safe)}catch(e){continue}
+    const managedQris=label===SUPPORT_QRIS_LABEL&&/^\/api\/social\/media\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.(?:jpg|png|webp)$/.test(parsed.pathname);
+    if(!info.qris&&managedQris)info.qris=safe;
+    if(!info.link&&(label===SUPPORT_LINK_LABEL||/(?:saweria|support|dukung|sawer)/i.test(label)||/(?:^|\.)saweria\.co$/i.test(parsed.hostname))&&!managedQris)info.link=safe;
+   }
+   return info;
+  }
+  function renderSupportSetup(){
+   const info=supportInfoFromLinks(draftProfile.links);
+   if($('profileSupportUrl')&&document.activeElement!==$('profileSupportUrl'))$('profileSupportUrl').value=info.link||'';
+   const image=$('profileQrisPreview'),empty=$('profileQrisEmpty'),remove=$('profileQrisRemove');
+   if(image){image.hidden=!info.qris;if(info.qris)image.src=info.qris;else image.removeAttribute('src')}
+   if(empty)empty.hidden=!!info.qris;if(remove)remove.hidden=!info.qris;
+  }
+  function renderTipSupport(info){
+   const support=info||{link:'',qris:''},link=$('tipSupportLink'),box=$('tipQrisBox'),image=$('tipQrisImage'),open=$('tipQrisOpen'),empty=$('tipSupportEmpty');
+   link.hidden=!support.link;if(support.link)link.href=support.link;else link.removeAttribute('href');
+   box.hidden=!support.qris;if(support.qris){image.src=support.qris;open.href=support.qris}else{image.removeAttribute('src');open.removeAttribute('href')}
+   empty.hidden=!!(support.link||support.qris);if(!empty.hidden)empty.textContent='Kreator ini belum memasang Saweria atau QRIS.';
+  }
+  async function loadTipRecipientSupport(handle){
+   const token=++tipSupportRequest;renderTipSupport({link:'',qris:''});
+   const empty=$('tipSupportEmpty');empty.hidden=false;empty.textContent='Memeriksa metode dukungan kreator...';
+   if(!handle){if(token===tipSupportRequest)empty.textContent='Kreator ini belum memasang metode dukungan.';return}
+   if(handle===hostPublicIdentity.handle&&(hostPublicSupport.link||hostPublicSupport.qris)){if(token===tipSupportRequest)renderTipSupport(hostPublicSupport);return}
+   try{const result=await accountRequest('/api/profile/'+encodeURIComponent(handle));if(token!==tipSupportRequest)return;renderTipSupport(supportInfoFromLinks(result.profile?.links||[]));}
+   catch(e){if(token===tipSupportRequest){renderTipSupport({link:'',qris:''});empty.hidden=false;empty.textContent='Metode dukungan belum tersedia.'}}
+  }
  function linkifyCaption(element,value){
   const regex=/https:\/\/[^\s<>"']+/gi;
   let previous=0,match;
@@ -4644,6 +4689,7 @@ body.live-immersive #watch #liveRestReminder{
   $('profileBusinessLinks').replaceChildren();
   $('profileEditLinks').replaceChildren();
   for(const [index,item] of draftProfile.links.entries()){
+    if(item.label===SUPPORT_QRIS_LABEL)continue;
    const link=directLink(item.url,item.label+' ↗','profile-business-link');
    if(link)$('profileBusinessLinks').appendChild(link);
    const line=document.createElement('div');
@@ -4663,6 +4709,7 @@ body.live-immersive #watch #liveRestReminder{
   if(!draftProfile.links.length){
    const n=document.createElement('p');n.className='profile-note';n.textContent='Tambahkan Instagram, TikTok, YouTube, WhatsApp, website, booking, atau link lainnya lewat EDIT.';$('profileBusinessLinks').appendChild(n);
   }
+   renderSupportSetup();
  }
  function applyProfileVisual(element,profile){
   element.dataset.theme=['nadmo','cyberbw','noir','retro','electric'].includes(profile.themeId)?profile.themeId:'nadmo';
@@ -4809,6 +4856,28 @@ body.live-immersive #watch #liveRestReminder{
    $('profileLinkLabel').value='';$('profileLinkUrl').value='';
   }
  };
+  $('profileQrisChoose').onclick=()=>{
+   if(!activeAccount){$('profileSupportStatus').textContent='Masuk akun dulu untuk memasang QRIS.';return}
+   $('profileQrisFile').click();
+  };
+  $('profileQrisFile').onchange=async()=>{
+   const file=$('profileQrisFile').files?.[0];$('profileQrisFile').value='';if(!file)return;
+   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size<100||file.size>8*1024*1024){$('profileSupportStatus').textContent='QRIS harus JPG, PNG, atau WebP maksimal 8 MB.';return}
+   $('profileQrisChoose').disabled=true;$('profileSupportStatus').textContent='Mengunggah QRIS host...';
+   try{
+    const capability=await accountRequest('/api/social/media/status');if(!capability.enabled)throw Error('Penyimpanan gambar belum aktif.');
+    const response=await fetch(api('/api/social/media/upload'),{method:'PUT',credentials:'include',headers:{'Content-Type':file.type},body:file,cache:'no-store'});
+    const result=await response.json();if(!response.ok||!result.ok||result.type!=='image')throw Error(result.error||'Upload QRIS gagal');
+    const keep=draftProfile.links.filter(item=>item.label!==SUPPORT_QRIS_LABEL&&item.url!==result.url);if(keep.length>=12)throw Error('Hapus satu link profil dulu karena batas 12 link.');
+    const saved=await commitProfileLinks([...keep,{label:SUPPORT_QRIS_LABEL,url:result.url}]);if(!saved)throw Error('QRIS terunggah tetapi belum tersimpan ke profil.');
+    $('profileSupportStatus').textContent='QRIS tersimpan. Penonton bisa melihatnya lewat DUKUNG HOST.';
+   }catch(e){$('profileSupportStatus').textContent=e.message}
+   finally{$('profileQrisChoose').disabled=false;renderSupportSetup()}
+  };
+  $('profileQrisRemove').onclick=async()=>{
+   if(profileLinkBusy)return;const next=draftProfile.links.filter(item=>item.label!==SUPPORT_QRIS_LABEL);
+   if(await commitProfileLinks(next))$('profileSupportStatus').textContent='QRIS dihapus dari profil.';
+  };
  $('profileSave').onclick=async()=>{
   if(profileLinkBusy){$('profileEditStatus').textContent='Tunggu penyimpanan link selesai.';return}
   const handle=$('profileHandle').value.trim().toLowerCase().replace(/^@/,'');
@@ -4823,6 +4892,14 @@ body.live-immersive #watch #liveRestReminder{
    if(draftProfile.links.length>=12&&!draftProfile.links.some(l=>l.url===url)){$('profileEditStatus').textContent='Maksimal 12 link.';return}
    if(!draftProfile.links.some(l=>l.url===url))draftProfile.links=[...draftProfile.links,{label,url}];
   }
+   const supportRaw=$('profileSupportUrl').value.trim();let supportUrl='';
+   if(supportRaw){
+    const candidate=/^[a-z][a-z0-9+.-]*:/i.test(supportRaw)?supportRaw:'https://'+supportRaw.replace(/^\/\//,'');
+    supportUrl=validExternalLink(candidate)||'';if(!supportUrl){$('profileEditStatus').textContent='Link Saweria/dukungan harus URL HTTPS yang valid.';return}
+   }
+   let supportLinks=draftProfile.links.filter(item=>item.label!==SUPPORT_LINK_LABEL);
+   if(supportUrl&&!supportLinks.some(item=>item.url===supportUrl)){if(supportLinks.length>=12){$('profileEditStatus').textContent='Hapus satu link profil dulu karena batas 12 link.';return}supportLinks.push({label:SUPPORT_LINK_LABEL,url:supportUrl})}
+   draftProfile.links=supportLinks;
   draftProfile.name=$('profileName').value.trim().slice(0,60);
   draftProfile.handle=handle;
   draftProfile.bio=$('profileBio').value.trim().slice(0,300);
@@ -5096,7 +5173,7 @@ body.live-immersive #watch #liveRestReminder{
   transmit({type:'set-mirror',mirrored:enabled});
   $('mirrorStatus').textContent='Mengirim pengaturan mirror ke penonton...';
  };
- $('giftQuick').onclick=()=>{if(!host){setTipRecipient('host',hostPublicIdentity.name);openLiveSheet($('viewerTipPanel'))}};
+  $('giftQuick').onclick=()=>{if(!host){setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);openLiveSheet($('viewerTipPanel'))}};
  // Keep room controls inside ⚙ for host AND viewer; Rp sawer stays on the
  // live video toolbar. Move nodes, don't clone them, to preserve listeners.
  const liveRoomSafety=$('watch').querySelector('.live-chat .room-safety');
@@ -5140,20 +5217,11 @@ body.live-immersive #watch #liveRestReminder{
   $('liveSheetBackdrop').classList.remove('hide');
  }
  $('accessQuick').onclick=()=>{if(!host)return;openLiveSheet($('hostAccessPanel'));$('privateControls').classList.remove('hide')};
- $('tipQuick').onclick=()=>{if(host)return;setTipRecipient('host',hostPublicIdentity.name);openLiveSheet($('viewerTipPanel'))};
+  $('tipQuick').onclick=()=>{if(host)return;setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);openLiveSheet($('viewerTipPanel'))};
  $('pcBack').onclick=()=>{$('leave').click()};
- document.querySelectorAll('#desktopSawerBar [data-pc-sawer]').forEach(button=>{
-  button.onclick=()=>{
-   if(host)return;
-   const amount=button.dataset.pcSawer;
-   if(amount!=='custom'){
-    $('tipCustom').value=amount;
-    $('tipCustom').dispatchEvent(new Event('input',{bubbles:true}));
-   }
-   openLiveSheet($('viewerTipPanel'));
-   if(amount==='custom')$('tipCustom').focus();
-  };
- });
+  document.querySelectorAll('#desktopSawerBar [data-pc-support]').forEach(button=>{
+   button.onclick=()=>{if(host)return;setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);openLiveSheet($('viewerTipPanel'))};
+  });
  $('closeAccessSheet').onclick=closeLiveSheets;
  $('closeTipSheet').onclick=closeLiveSheets;
  $('liveSheetBackdrop').onclick=closeLiveSheets;
@@ -5172,14 +5240,7 @@ body.live-immersive #watch #liveRestReminder{
  }
  $('applyPrivate').onclick=()=>setAccess('password');
  $('restorePublic').onclick=()=>setAccess('public');
- function updateTipPreview(){
-  const amount=Number($('tipCustom').value);
-  document.querySelectorAll('#tipPresets button').forEach(b=>b.classList.toggle('active',Number(b.dataset.tip)===amount));
-  const valid=Number.isSafeInteger(amount)&&amount>=1000&&amount<=10000000;
-  $('tipEstimate').textContent=valid?new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(amount-Math.round(amount*.07)):'Nominal Rp1.000–Rp10.000.000';
- }
- document.querySelectorAll('#tipPresets button').forEach(b=>b.onclick=()=>{$('tipCustom').value=b.dataset.tip;updateTipPreview()});
- $('tipCustom').addEventListener('input',updateTipPreview);updateTipPreview();
+  renderTipSupport({link:'',qris:''});
  let selectedLiveMode='camera',talkVisualTimer=null;
  function stopTalkVisual(){if(talkVisualTimer)clearInterval(talkVisualTimer);talkVisualTimer=null}
  function chooseMode(mode){
@@ -5775,8 +5836,8 @@ body.live-immersive #watch #liveRestReminder{
     tile.append(grip);
    }else if(guest.id!==selfId){
     const tip=document.createElement('button');tip.type='button';tip.className='stage-guest-tip';
-    tip.textContent='Rp';tip.setAttribute('aria-label','Sawer '+(guest.name||'tamu'));
-    tip.onclick=()=>{setTipRecipient(guest.id,guest.name||'Tamu');openLiveSheet($('viewerTipPanel'))};
+     tip.textContent='♡';tip.setAttribute('aria-label','Dukung '+(guest.name||'tamu'));
+     tip.onclick=()=>{setTipRecipient(guest.id,guest.name||'Tamu',guest.handle||'');openLiveSheet($('viewerTipPanel'))};
     tile.append(tip);
    }
    panel.append(tile);
@@ -5784,19 +5845,17 @@ body.live-immersive #watch #liveRestReminder{
   $('stageLayoutReset').hidden=!host||stageGuestsList.length===0;
  }
 
- function setTipRecipient(id,name){
-  tipRecipient={id,name:String(name||'Host').slice(0,60)};
-  $('tipRecipientName').textContent=tipRecipient.name.toUpperCase();
-  const target=$('tipRecipientOptions');target.replaceChildren();
-  const options=[{id:'host',name:hostPublicIdentity.name||'Host'}].concat(
-   stageGuestsList.map(g=>({id:g.id,name:g.name||'Tamu'})));
-  for(const option of options){
-   const button=document.createElement('button');button.type='button';
-   button.className=option.id===id?'active':'';button.textContent=option.name.slice(0,18);
-   button.onclick=()=>setTipRecipient(option.id,option.name);
-   target.append(button);
+  function setTipRecipient(id,name,handle=''){
+   tipRecipient={id,name:String(name||'Host').slice(0,60),handle:String(handle||'').slice(0,24)};
+   $('tipRecipientName').textContent=tipRecipient.name.toUpperCase();
+   const target=$('tipRecipientOptions');target.replaceChildren();
+   const options=[{id:'host',name:hostPublicIdentity.name||'Host',handle:hostPublicIdentity.handle||''}].concat(stageGuestsList.map(g=>({id:g.id,name:g.name||'Tamu',handle:g.handle||''})));
+   for(const option of options){
+    const button=document.createElement('button');button.type='button';button.className=option.id===id?'active':'';button.textContent=option.name.slice(0,18);
+    button.onclick=()=>setTipRecipient(option.id,option.name,option.handle);target.append(button);
+   }
+   void loadTipRecipientSupport(tipRecipient.handle);
   }
- }
  const liveThemes=['nadmo','cyberbw','noir','retro','electric'];
  function setWatchTheme(theme){
    const selected=liveThemes.includes(theme)?theme:'nadmo';
@@ -5816,14 +5875,14 @@ body.live-immersive #watch #liveRestReminder{
  function updateHostCard(room){
   setWatchTheme(room.hostThemeId||(host?draftProfile.themeId:'nadmo'));
   const name=String(room.hostName||'Host').slice(0,60),handle=room.hostHandle||'';
-  hostPublicIdentity={name,handle};
+   hostPublicIdentity={name,handle};hostPublicSupport={link:'',qris:''};
   $('hostIdentityHandle').hidden=true; // Host shown once in #watchTitle.
   setAvatarImage('hostAvatarImage',handle,room.hostAvatarVersion);
   setAvatarImage('hostPublicAvatarImage',handle,room.hostAvatarVersion);
   $('hostPublicName').textContent=name;
   $('hostPublicBio').textContent='';
   $('hostPublicLinks').replaceChildren();
-  setTipRecipient('host',name);
+   setTipRecipient('host',name,handle);
   if(!handle)return;
   accountRequest('/api/profile/'+encodeURIComponent(handle)).then(result=>{
    if(hostPublicIdentity.handle!==handle||!currentRoom)return;
@@ -5831,7 +5890,10 @@ body.live-immersive #watch #liveRestReminder{
    if(!profile)return;
    if(!room.hostThemeId)setWatchTheme(profile.themeId);
    $('hostPublicBio').textContent=profile.bio||'';
+    hostPublicSupport=supportInfoFromLinks(profile.links||[]);
+    if(tipRecipient.id==='host')renderTipSupport(hostPublicSupport);
    for(const item of profile.links||[]){
+     if(item.label===SUPPORT_QRIS_LABEL)continue;
     const link=directLink(item.url,item.label,'profile-business-link');
     if(link)$('hostPublicLinks').append(link);
    }
@@ -5841,7 +5903,7 @@ body.live-immersive #watch #liveRestReminder{
  $('closeHostProfile').onclick=closeLiveSheets;
  $('hostProfileTip').onclick=()=>{
   if(host)return;
-  setTipRecipient('host',hostPublicIdentity.name);
+   setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);
   openLiveSheet($('viewerTipPanel'));
  };
  $('stageLayoutReset').onclick=()=>{
@@ -6266,7 +6328,7 @@ body.live-immersive #watch #liveRestReminder{
   currentRoom='';selfId='';host=false;resumeToken='';roomPassword='';recoveringForeground=false;lastForegroundRecovery=0;lastBackgroundAt=0;
   document.body.style.removeProperty('--deck-video-aspect');
   document.body.style.removeProperty('--game-stage-height-live');
-  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game','watch-landscape');$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};setTipRecipient('host','Host');
+  $('remote').srcObject=null;$('remote').muted=false;$('gameRemoteFace').srcObject=null;$('gameRemoteFace').hidden=true;document.body.classList.remove('watch-game','watch-landscape');$('chat').replaceChildren();$('hostPublicLinks').replaceChildren();hostPublicIdentity={name:'Host',handle:''};hostPublicSupport={link:'',qris:''};setTipRecipient('host','Host','');
   $('hostControls').hidden=true;$('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;$('privateControls').classList.add('hide');$('afkHint').hidden=true;$('restartRoom').classList.add('hide');activeAccessMode='public';mirrorBroadcast=false;$('giftQuick').hidden=false;$('endLiveConfirm').classList.add('hide');applyMirroring();
   $('afkToggle').textContent='▤ KAMERA OFF';
   $('stopCamera').click();show('explore');manuallyLeaving=false;
