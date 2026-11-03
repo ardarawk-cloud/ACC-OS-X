@@ -28,7 +28,21 @@ function mediaOwned(raw,origin,userId){
 }
 async function userByHandle(storage,handle){if(!/^[a-z][a-z0-9_]{2,23}$/.test(handle))return null;const id=await storage.get('auth-handle:'+handle);const record=id&&await storage.get('auth-user:'+id);return record&&!record.disabled?record:null}
 async function pendingOrder(storage,record){const id=record?.subscriptionPendingOrderId;if(!id)return null;const order=await storage.get('subscription-order:'+id);return order?.status==='pending'?order:null}
-function adminOK(request,env){const configured=clean(env?.NADMO_ADMIN_KEY,256),supplied=clean(request.headers.get('x-nadmo-admin-key'),256);return !!configured&&safeCompare(configured,supplied)}
+async function adminPrincipal(storage,request,env){
+ const user=await getAccount(storage,request);
+ if(!user)return null;
+ const configuredHandle=clean(env?.NADMO_ADMIN_HANDLE,24).replace(/^@/,'').toLowerCase();
+ if(configuredHandle&&user.handle===configuredHandle)return user;
+ const configuredKey=clean(env?.NADMO_ADMIN_KEY,256),supplied=clean(request.headers.get('x-nadmo-admin-key'),256);
+ if(configuredKey&&safeCompare(configuredKey,supplied))return user;
+ const users=await storage.list({prefix:'auth-user:',limit:500});
+ let oldest=null;
+ for(const record of users.values()){
+  if(!record||record.disabled)continue;
+  if(!oldest||Number(record.createdAt||Infinity)<Number(oldest.createdAt||Infinity))oldest=record;
+ }
+ return oldest?.id===user.id?user:null;
+}
 async function parseJSON(request,max=12000){const len=Number(request.headers.get('content-length')||0);if(len>max)throw Error('TOO_LARGE');const raw=await request.text();if(raw.length>max)throw Error('TOO_LARGE');const data=JSON.parse(raw);if(!data||Array.isArray(data)||typeof data!=='object')throw Error('INVALID');return data}
 const supportMethods=record=>({link:urlOK(record?.supportUrl)||'',qris:clean(record?.supportQrisUrl,700)});
 
@@ -96,7 +110,7 @@ export async function subscriptionEndpoint(storage,request,env){
  }
 
  if(p==='/api/admin/subscriptions'&&method==='GET'){
-  if(!adminOK(request,env))return fail(env?.NADMO_ADMIN_KEY?401:503,env?.NADMO_ADMIN_KEY?'Admin key salah':'Admin key belum dikonfigurasi','ADMIN_REQUIRED');
+  const admin=await adminPrincipal(storage,request,env);if(!admin)return fail(403,'Akun ini bukan owner/admin NADMO LIVE','ADMIN_REQUIRED');
   const entries=await storage.list({prefix:'subscription-order:',limit:500}),orders=[];
   for(const order of entries.values()){if(!order?.id)continue;const record=await storage.get('auth-user:'+order.userId);orders.push({...order,subscription:record?snapshot(record,now):null})}
   orders.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));return json({ok:true,orders:orders.slice(0,200),plan:publicPlan()});
@@ -104,7 +118,7 @@ export async function subscriptionEndpoint(storage,request,env){
 
  if(p==='/api/admin/subscriptions/action'&&method==='POST'){
   if(!originOK(request))return fail(403,'Permintaan harus dari NADMO LIVE','ORIGIN_REQUIRED');
-  if(!adminOK(request,env))return fail(env?.NADMO_ADMIN_KEY?401:503,env?.NADMO_ADMIN_KEY?'Admin key salah':'Admin key belum dikonfigurasi','ADMIN_REQUIRED');
+  const admin=await adminPrincipal(storage,request,env);if(!admin)return fail(403,'Akun ini bukan owner/admin NADMO LIVE','ADMIN_REQUIRED');
   let body;try{body=await parseJSON(request)}catch{return fail(400,'Data tidak valid','INVALID_INPUT')}
   const id=clean(body.orderId,80),action=clean(body.action,12).toLowerCase();if(!id||!['approve','reject'].includes(action))return fail(400,'Aksi admin tidak valid','BAD_ADMIN_ACTION');
   const order=await storage.get('subscription-order:'+id);if(!order)return fail(404,'Order tidak ditemukan','ORDER_NOT_FOUND');if(order.status!=='pending')return json({ok:true,unchanged:true,order});
