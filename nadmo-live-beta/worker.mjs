@@ -554,7 +554,7 @@ async function danaSandboxCreateOrderUat(env,origin){
  if(apiOrigin!=='https://api.sandbox.dana.id'||!partnerId||!merchantId||!env.DANA_PRIVATE_KEY)
   return Response.json({ok:false,error:'DANA sandbox credentials are incomplete'},{status:503});
  const now=Date.now(),timestamp=danaJakartaTimestamp(now);
- const path='/rest/redirection/v1.0/debit/payment-host-to-host';
+ const path='/payment-gateway/v1.0/debit/payment-host-to-host.htm';
  const ref='NADMO-UAT-'+String(now);
  const body=JSON.stringify({
   partnerReferenceNo:ref,
