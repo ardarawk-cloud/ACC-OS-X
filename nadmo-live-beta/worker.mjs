@@ -518,6 +518,96 @@ export class RoomHub{
  }
 }
 
+
+function danaJakartaTimestamp(ms=Date.now()){
+ const d=new Date(ms+7*3600000);
+ return d.toISOString().replace(/\.\d{3}Z$/,'+07:00');
+}
+function danaPrivateKeyBytes(raw){
+ let value=String(raw||'').trim().replace(/\\n/g,'\n');
+ if(!value)throw new Error('DANA_PRIVATE_KEY_MISSING');
+ const b64=value.replace(/-----BEGIN [^-]+-----/g,'').replace(/-----END [^-]+-----/g,'').replace(/\s+/g,'');
+ const binary=atob(b64),bytes=new Uint8Array(binary.length);
+ for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+ return bytes;
+}
+async function danaSha256Hex(value){
+ const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));
+ return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+async function danaSign(env,method,path,body,timestamp){
+ const raw=String(env.DANA_PRIVATE_KEY||'');
+ if(/BEGIN RSA PRIVATE KEY/.test(raw))throw new Error('DANA_PRIVATE_KEY_PKCS1_UNSUPPORTED');
+ const key=await crypto.subtle.importKey('pkcs8',danaPrivateKeyBytes(raw),{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
+ const digest=await danaSha256Hex(body);
+ const stringToSign=method+':'+path+':'+digest+':'+timestamp;
+ const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,new TextEncoder().encode(stringToSign));
+ let binary='';for(const b of new Uint8Array(sig))binary+=String.fromCharCode(b);
+ return btoa(binary);
+}
+async function danaSandboxCreateOrderUat(env,origin){
+ if(String(env.DANA_ENV||'').toLowerCase()!=='sandbox')
+  return Response.json({ok:false,error:'DANA sandbox mode is not enabled'},{status:403});
+ const partnerId=String(env.DANA_X_PARTNER_ID||'').trim();
+ const merchantId=String(env.DANA_MERCHANT_ID||'').trim();
+ const apiOrigin=String(env.DANA_API_ORIGIN||'').replace(/\/$/,'');
+ if(apiOrigin!=='https://api.sandbox.dana.id'||!partnerId||!merchantId||!env.DANA_PRIVATE_KEY)
+  return Response.json({ok:false,error:'DANA sandbox credentials are incomplete'},{status:503});
+ const now=Date.now(),timestamp=danaJakartaTimestamp(now);
+ const path='/rest/redirection/v1.0/debit/payment-host-to-host';
+ const ref='NADMO-UAT-'+String(now);
+ const body=JSON.stringify({
+  partnerReferenceNo:ref,
+  merchantId,
+  amount:{value:'10000.00',currency:'IDR'},
+  validUpTo:danaJakartaTimestamp(now+10*60*1000),
+  urlParams:[
+   {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'N'},
+   {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'N'}
+  ],
+  additionalInfo:{
+   supportDeepLinkCheckoutUrl:'true',
+   productCode:'51051000100000000001',
+   order:{orderTitle:'NADMO LIVE UAT'},
+   mcc:'',
+   envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM'}
+  }
+ });
+ try{
+  const signature=await danaSign(env,'POST',path,body,timestamp);
+  const response=await fetch(apiOrigin+path,{
+   method:'POST',
+   headers:{
+    'Content-Type':'application/json',
+    'X-TIMESTAMP':timestamp,
+    'X-SIGNATURE':signature,
+    'X-PARTNER-ID':partnerId,
+    'X-EXTERNAL-ID':String(now)+'01',
+    'CHANNEL-ID':'95221',
+    'ORIGIN':origin,
+    'Accept':'application/json'
+   },
+   body,
+   redirect:'manual',
+   signal:AbortSignal.timeout(12000)
+  });
+  const text=await response.text();
+  let dana;try{dana=JSON.parse(text)}catch{dana={raw:text.slice(0,1000)}}
+  return Response.json({
+   ok:response.ok&&dana?.responseCode==='2005400',
+   httpStatus:response.status,
+   responseCode:dana?.responseCode||null,
+   responseMessage:dana?.responseMessage||null,
+   partnerReferenceNo:dana?.partnerReferenceNo||ref,
+   referenceNo:dana?.referenceNo||null,
+   hasCheckoutUrl:typeof dana?.webRedirectUrl==='string'&&dana.webRedirectUrl.length>0,
+   detail:response.ok?undefined:dana
+  },{status:response.ok?200:502,headers:{'Cache-Control':'no-store'}});
+ }catch(error){
+  return Response.json({ok:false,error:String(error?.message||error).slice(0,160)},{status:502,headers:{'Cache-Control':'no-store'}});
+ }
+}
+
 function azuraStation(value){return typeof value==='string'&&/^[a-z0-9_-]{1,64}$/i.test(value)?value:'nadmo_radio'}
 function secureOrigin(value){
  if(typeof value!=='string'||!value.trim())return null;
@@ -644,6 +734,10 @@ export default {
     const danaTs=new Date(Date.now()+7*3600000).toISOString().replace('Z','+07:00');
     const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-TIMESTAMP':danaTs});
     return new Response(JSON.stringify({responseCode:'2004300',responseMessage:'Successful'}),{status:200,headers});
+  }
+
+  if(url.pathname==='/api/dana/sandbox/uat/create-order-success'&&request.method==='GET'){
+    return danaSandboxCreateOrderUat(env,url.origin);
   }
   if(url.pathname==='/api/radio/status')return cors(request,Response.json(await radioStatus(env)));
   if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,maxGuestSeats:GUEST_LIMIT,guestMediaArchitecture:'BETA_HOST_RELAY_P2P',payments:false,creatorVerificationRequired:env.VERIFY_CREATOR_REQUIRED==='true'||env.BETA_TEST_HOSTS_ENABLED!=='true',anonymousBetaHostsEnabled:env.BETA_TEST_HOSTS_ENABLED==='true'&&env.VERIFY_CREATOR_REQUIRED!=='true'}));
