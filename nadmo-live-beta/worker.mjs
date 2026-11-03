@@ -576,7 +576,8 @@ export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
-  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!url.pathname.startsWith('/api/subscription/')&&!url.pathname.startsWith('/api/admin/subscriptions')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT'))
+  const danaCallback=(url.pathname==='/v1.0/debit/notify'||url.pathname==='/v1.0/debit/emoney/transfer-bank/notify.htm');
+  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!url.pathname.startsWith('/api/subscription/')&&!url.pathname.startsWith('/api/admin/subscriptions')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT')&&!(danaCallback&&request.method==='POST'))
     return new Response('Method Not Allowed',{status:405});
   // Official native GAME update: a safe 302 to the immutable owner-signed
   // release. Cloudflare Worker subrequests cannot reliably proxy this 50MB
@@ -630,6 +631,17 @@ export default {
     headers.set('Referrer-Policy','no-referrer');
     headers.set('Permissions-Policy','camera=(self), microphone=(self)');
     return new Response(asset.body,{status:asset.status,headers});
+  }
+  // DANA Enterprise endpoint initialization callbacks. These endpoints deliberately
+  // acknowledge sandbox/bootstrap notifications without changing subscription state.
+  // Production activation remains gated until DANA webhook signature credentials are configured.
+  if(url.pathname==='/v1.0/debit/notify'&&request.method==='POST'){
+    const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-TIMESTAMP':new Date().toISOString()});
+    return new Response(JSON.stringify({responseCode:'2005600',responseMessage:'Successful'}),{status:200,headers});
+  }
+  if(url.pathname==='/v1.0/debit/emoney/transfer-bank/notify.htm'&&request.method==='POST'){
+    const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-TIMESTAMP':new Date().toISOString()});
+    return new Response(JSON.stringify({responseCode:'2004300',responseMessage:'Successful'}),{status:200,headers});
   }
   if(url.pathname==='/api/radio/status')return cors(request,Response.json(await radioStatus(env)));
   if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,maxGuestSeats:GUEST_LIMIT,guestMediaArchitecture:'BETA_HOST_RELAY_P2P',payments:false,creatorVerificationRequired:env.VERIFY_CREATOR_REQUIRED==='true'||env.BETA_TEST_HOSTS_ENABLED!=='true',anonymousBetaHostsEnabled:env.BETA_TEST_HOSTS_ENABLED==='true'&&env.VERIFY_CREATOR_REQUIRED!=='true'}));
