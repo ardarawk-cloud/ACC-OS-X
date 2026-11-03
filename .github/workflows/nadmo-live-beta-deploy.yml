@@ -24,6 +24,7 @@ jobs:
       - name: Syntax check
         run: |
           node --check nadmo-live-beta/worker.mjs
+          node --check nadmo-live-beta/subscription.mjs
           node --check nadmo-live-beta/account.mjs
           node --check nadmo-live-beta/wallet.mjs
           node --check nadmo-live-beta/qa/wallet-unit.mjs
