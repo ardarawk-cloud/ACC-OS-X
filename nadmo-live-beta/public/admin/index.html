@@ -12,15 +12,13 @@ button,a.btn{border:1px solid var(--neon);background:var(--neon);color:#111;padd
 </style></head>
 <body><main class="app">
 <div class="top"><div><small>NADMO LIVE / OWNER</small><h1>SUBSCRIPTION ADMIN</h1></div><a class="btn secondary" href="/app/">APP</a></div>
-<div class="card"><label>ADMIN KEY</label><div class="row"><input id="key" class="field" type="password" autocomplete="current-password" placeholder="Admin key" style="flex:1"><button id="load">BUKA PANEL</button></div><p id="status"></p></div>
+<div class="card"><div class="row"><button id="load">MUAT PANEL</button><a class="btn secondary" href="/app/">LOGIN / GANTI AKUN</a></div><p id="status">Panel hanya terbuka untuk akun owner/admin NADMO LIVE.</p></div>
 <div id="summary" class="card" hidden></div><section id="orders"></section>
 </main>
 <script>
 const $=id=>document.getElementById(id),money=n=>'Rp'+new Intl.NumberFormat('id-ID').format(Number(n)||0),date=n=>n?new Date(n).toLocaleString('id-ID'):'—';
-$('key').value=sessionStorage.getItem('nadmo.admin.key')||'';
-let adminKey='';
 async function api(path,options={}){
- const headers=new Headers(options.headers||{});headers.set('X-NADMO-Admin-Key',adminKey);
+ const headers=new Headers(options.headers||{});
  if(options.body&&!headers.has('Content-Type'))headers.set('Content-Type','application/json');
  const r=await fetch(path,{...options,headers,credentials:'include',cache:'no-store'});let d={};try{d=await r.json()}catch{}
  if(!r.ok||d.ok===false)throw Error(d.error||('HTTP '+r.status));return d;
@@ -47,15 +45,13 @@ function render(data){
  }
 }
 async function load(){
- adminKey=$('key').value.trim();if(!adminKey){$('status').textContent='Masukkan admin key.';return}
- sessionStorage.setItem('nadmo.admin.key',adminKey);$('status').textContent='Memuat...';
- try{const d=await api('/api/admin/subscriptions');render(d);$('status').textContent='Panel aktif.'}catch(e){$('status').textContent=e.message;$('summary').hidden=true;$('orders').replaceChildren()}
+ $('status').textContent='Memuat...';
+ try{const d=await api('/api/admin/subscriptions');render(d);$('status').textContent='Panel owner aktif.'}catch(e){$('status').textContent=e.message;$('summary').hidden=true;$('orders').replaceChildren()}
 }
 async function review(orderId,action){
  if(!confirm((action==='approve'?'Approve':'Reject')+' order ini?'))return;
  $('status').textContent='Memproses...';
  try{await api('/api/admin/subscriptions/action',{method:'POST',body:JSON.stringify({orderId,action})});await load()}catch(e){$('status').textContent=e.message}
 }
-$('load').onclick=load;$('key').addEventListener('keydown',e=>{if(e.key==='Enter')load()});
-if($('key').value)load();
+$('load').onclick=load;load();
 </script></body></html>
