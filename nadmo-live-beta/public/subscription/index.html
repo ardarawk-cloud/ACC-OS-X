@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NADMO LIVE — Subscription</title>
+<style>
+:root{color-scheme:dark;--bg:#090b0a;--panel:#131814;--line:#364038;--neon:#dcff38;--text:#edf2e9;--dim:#9aa69a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}.app{max-width:760px;margin:auto;padding:22px 16px 80px}
+h1,h2{margin:0}h1{font:900 35px Impact,Arial,sans-serif}.top{display:flex;justify-content:space-between;gap:12px;align-items:end;border-bottom:1px solid var(--line);padding-bottom:15px}
+.card{border:1px solid var(--line);background:var(--panel);padding:14px;margin:12px 0}.field{width:100%;background:#0f1310;border:1px solid var(--line);color:var(--text);padding:12px;margin:8px 0 12px}
+button,a.btn{display:inline-block;border:1px solid var(--neon);background:var(--neon);color:#111;padding:11px 14px;font-weight:800;text-decoration:none;cursor:pointer}.secondary{background:transparent!important;color:var(--text)!important;border-color:#657166!important}.row{display:flex;gap:8px;flex-wrap:wrap}.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.plan{border:1px solid var(--line);padding:12px}.plan strong{display:block;font-size:22px}.plan.active{border-color:var(--neon)}.muted{color:var(--dim);line-height:1.5}.metric{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #2c332d}.metric:last-child{border:0}.qris{display:block;width:min(320px,100%);max-height:420px;object-fit:contain;background:#fff;padding:8px;margin:12px auto}.notice{border-left:3px solid var(--neon);padding:9px 11px;background:#111713}.hidden{display:none!important}@media(max-width:620px){.plans{grid-template-columns:1fr}}
+</style></head><body><main class="app">
+<div class="top"><div><small>NADMO LIVE / HOST</small><h1>SUBSCRIPTION</h1></div><a class="btn secondary" href="/app/">KEMBALI</a></div>
+<div id="loginRequired" class="card hidden"><b>Login diperlukan.</b><p class="muted">Buka NADMO LIVE dan login ke akun host terlebih dahulu.</p></div>
+<section id="content" class="hidden">
+<div class="card"><div class="metric"><span>Tier aktif</span><b id="tier">FREE</b></div><div class="metric"><span>Support Actions</span><b id="usage">0 / 50</b></div><div class="metric"><span>Masa aktif</span><b id="expiry">—</b></div><div class="metric"><span>Grace</span><b id="grace">Tidak aktif</b></div><div id="pending" class="notice hidden"></div></div>
+
+<div class="card"><h2>Metode dukungan host</h2><p class="muted">Saweran viewer tetap langsung ke host. NADMO hanya menghitung Support Action, bukan nominal.</p>
+<label>LINK SAWERIA / DUKUNGAN</label><input id="supportUrl" class="field" type="url" placeholder="https://saweria.co/username">
+<label>QRIS HOST</label><input id="hostQrisFile" class="field" type="file" accept="image/jpeg,image/png,image/webp">
+<img id="hostQrisPreview" class="qris hidden" alt="QRIS host">
+<div class="row"><button id="saveSupport">SIMPAN METODE SUPPORT</button><button id="removeQris" class="secondary">HAPUS QRIS</button></div><p id="supportStatus" class="muted"></p></div>
+
+<div class="card"><h2>Paket host</h2><div class="plans">
+<div class="plan" data-tier="free"><b>FREE</b><strong>Rp0</strong><p>50 Support Actions</p></div>
+<div class="plan" data-tier="pro"><b>PRO</b><strong>Rp19.900</strong><p>Total 200 Support Actions / 30 hari</p><button data-buy="pro">PILIH PRO</button></div>
+<div class="plan" data-tier="plus"><b>PLUS</b><strong>Rp99.900</strong><p>Unlimited / 30 hari</p><button data-buy="plus">PILIH PLUS</button></div>
+</div></div>
+
+<div id="checkout" class="card hidden"><h2 id="checkoutTitle">UPGRADE</h2><p id="checkoutPrice"></p><div id="qrisMissing" class="notice hidden">QRIS ACM Store belum dikonfigurasi di server.</div><img id="storeQris" class="qris hidden" alt="QRIS ACM Store">
+<p class="muted">Bayar ke QRIS ACM Store sesuai paket, lalu upload bukti. Setelah bukti dikirim, status menjadi PENDING. Jika limit sedang penuh, grace 24 jam + 20 Support Actions aktif otomatis satu kali untuk siklus upgrade tersebut.</p>
+<label>BUKTI PEMBAYARAN</label><input id="proofFile" class="field" type="file" accept="image/jpeg,image/png,image/webp">
+<button id="submitOrder">KIRIM BUKTI & AKTIFKAN GRACE</button><p id="orderStatus" class="muted"></p></div>
+</section>
+</main><script>
+const $=id=>document.getElementById(id),money=n=>'Rp'+new Intl.NumberFormat('id-ID').format(Number(n)||0),date=n=>n?new Date(n).toLocaleString('id-ID'):'—';
+let state=null,selectedTier='',hostQrisUrl='';
+async function request(path,options={}){
+ const r=await fetch(path,{credentials:'include',cache:'no-store',...options,headers:{...(options.headers||{}),...(options.body&&!options.headers?.['Content-Type']?{'Content-Type':'application/json'}:{})}});
+ let d={};try{d=await r.json()}catch{}
+ if(!r.ok||d.ok===false)throw Error(d.error||('HTTP '+r.status));return d;
+}
+async function uploadImage(file,statusEl){
+ if(!file)throw Error('Pilih gambar terlebih dahulu.');
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size<100||file.size>8*1024*1024)throw Error('Gunakan JPG, PNG, atau WebP maksimal 8 MB.');
+ statusEl.textContent='Mengunggah gambar...';
+ const r=await fetch('/api/social/media/upload',{method:'PUT',credentials:'include',headers:{'Content-Type':file.type},body:file,cache:'no-store'});
+ let d={};try{d=await r.json()}catch{}
+ if(!r.ok||!d.ok)throw Error(d.error||'Upload gagal');return d.url;
+}
+function draw(){
+ const s=state.subscription;
+ $('tier').textContent=s.tier.toUpperCase();
+ $('usage').textContent=s.count+' / '+(s.effectiveLimit===null?'∞':s.effectiveLimit);
+ $('expiry').textContent=s.expiresAt?date(s.expiresAt):'—';
+ $('grace').textContent=s.grace.active?('Aktif sampai '+date(s.grace.until)+' · +'+s.grace.extra):'Tidak aktif';
+ document.querySelectorAll('.plan').forEach(x=>x.classList.toggle('active',x.dataset.tier===s.tier));
+ $('supportUrl').value=state.support.link||'';hostQrisUrl=state.support.qris||'';
+ $('hostQrisPreview').classList.toggle('hidden',!hostQrisUrl);if(hostQrisUrl)$('hostQrisPreview').src=hostQrisUrl;
+ $('removeQris').disabled=!hostQrisUrl;
+ if(state.pending){$('pending').classList.remove('hidden');$('pending').textContent='PENDING: '+state.pending.targetTier.toUpperCase()+' · '+money(state.pending.price)+(state.pending.graceGranted?' · Grace aktif':'');}
+ else $('pending').classList.add('hidden');
+ document.querySelector('[data-buy="pro"]').disabled=s.tier==='plus'||!!state.pending;
+ document.querySelector('[data-buy="plus"]').disabled=!!state.pending;
+}
+async function load(){
+ try{state=await request('/api/subscription/me');$('content').classList.remove('hidden');$('loginRequired').classList.add('hidden');draw()}
+ catch(e){$('loginRequired').classList.remove('hidden');$('content').classList.add('hidden')}
+}
+$('saveSupport').onclick=async()=>{
+ const st=$('supportStatus');st.textContent='Menyimpan...';
+ try{
+  const file=$('hostQrisFile').files?.[0];let qris=hostQrisUrl;if(file)qris=await uploadImage(file,st);
+  const supportUrl=$('supportUrl').value.trim();
+  const d=await request('/api/subscription/support-methods',{method:'POST',body:JSON.stringify({supportUrl,qrisUrl:qris})});
+  state.support=d.support;hostQrisUrl=d.support.qris;$('hostQrisFile').value='';draw();st.textContent='Metode Support tersimpan.';
+ }catch(e){st.textContent=e.message}
+};
+$('removeQris').onclick=async()=>{
+ try{const d=await request('/api/subscription/support-methods',{method:'POST',body:JSON.stringify({supportUrl:$('supportUrl').value.trim(),qrisUrl:''})});state.support=d.support;hostQrisUrl='';draw();$('supportStatus').textContent='QRIS host dihapus.'}catch(e){$('supportStatus').textContent=e.message}
+};
+document.querySelectorAll('[data-buy]').forEach(btn=>btn.onclick=()=>{
+ selectedTier=btn.dataset.buy;const plan=state.plan[selectedTier];
+ $('checkout').classList.remove('hidden');$('checkoutTitle').textContent=(state.subscription.tier===selectedTier?'PERPANJANG ':'UPGRADE KE ')+selectedTier.toUpperCase();
+ $('checkoutPrice').textContent=money(plan.price)+' / 30 hari';
+ const configured=!!state.qrisUrl;$('qrisMissing').classList.toggle('hidden',configured);$('storeQris').classList.toggle('hidden',!configured);if(configured)$('storeQris').src=state.qrisUrl;
+ $('submitOrder').disabled=!configured;location.hash='checkout';
+});
+$('submitOrder').onclick=async()=>{
+ const st=$('orderStatus');st.textContent='Memproses...';
+ try{
+  if(!selectedTier)throw Error('Pilih paket terlebih dahulu.');
+  const proof=await uploadImage($('proofFile').files?.[0],st);
+  const d=await request('/api/subscription/order',{method:'POST',body:JSON.stringify({targetTier:selectedTier,proofUrl:proof})});
+  st.textContent=d.order?.graceGranted?'Bukti terkirim. PENDING VERIFICATION · Grace 24 jam +20 aktif.':'Bukti terkirim. PENDING VERIFICATION.';
+  await load();
+ }catch(e){st.textContent=e.message}
+};
+load();
+</script></body></html>
