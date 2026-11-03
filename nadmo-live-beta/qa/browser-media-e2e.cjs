@@ -182,7 +182,7 @@ async function main(){
     };
   });
   console.log('PC_STAGE_DIAGNOSTIC '+JSON.stringify(pcStage));
-  assert.ok(pcStage.viewerMode&&pcStage.navHidden&&pcStage.railVisible&&pcStage.quickVisible,'PC must show navigation, video theater, live chat and rupiah bar');
+  assert.ok(pcStage.viewerMode&&pcStage.navHidden&&pcStage.railVisible&&pcStage.quickVisible,'PC must show navigation, video theater, live chat and host Support bar');
   // Cyberdeck V5 intentionally embeds a small back control inside the HUD
   // rather than reserving an entire left navigation rail as in legacy V1.
   assert.ok(pcStage.rail[0]>=12&&pcStage.rail[0]+pcStage.rail[2]<100&&
@@ -198,12 +198,11 @@ async function main(){
     pcStage.video[0]+pcStage.video[2]<=pcStage.theater[0]+pcStage.theater[2]+2,
     'Video must remain contained in its HUD theater');
   assert.ok(pcStage.chatInput[0]>=pcStage.chat[0],'Comment entry must sit in chat sidebar');
-  assert.ok(pcStage.quickBar[0]>=pcStage.theater[0]&&pcStage.quickBar[0]+pcStage.quickBar[2]<=pcStage.chat[0],'Rupiah presets must sit under theater, not chat');
-  await viewer.locator('#desktopSawerBar [data-pc-sawer="2000"]').click();
-  assert.equal(await viewer.$eval('#tipCustom',el=>el.value),'2000');
+  assert.ok(pcStage.quickBar[0]>=pcStage.theater[0]&&pcStage.quickBar[0]+pcStage.quickBar[2]<=pcStage.chat[0],'Support bar must sit under theater, not chat');
+  await viewer.locator('#desktopSawerBar [data-pc-support]').click();
   assert.equal(await viewer.$eval('#viewerTipPanel',el=>el.classList.contains('sheet-open')),true);
   await viewer.locator('#closeTipSheet').click();
-  console.log('PASS PC viewer: adaptive cyberdeck theater, right chat, HUD back control and rupiah support preview',JSON.stringify(pcStage));
+  console.log('PASS PC viewer: adaptive cyberdeck theater, right chat, HUD back control and direct host Support panel',JSON.stringify(pcStage));
   await viewer.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   await viewer.waitForFunction(()=>document.querySelector('#watch .live-stage').getBoundingClientRect().width>=innerWidth-2,{timeout:6000});
   console.log('PASS mobile view returns to full-bleed video after desktop resizing');
