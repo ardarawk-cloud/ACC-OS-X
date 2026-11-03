@@ -2791,6 +2791,13 @@ body.live-immersive #watch #liveRestReminder{
       <div class="actions"><button class="btn secondary" type="button" id="cancelEndLive">BATAL</button><button class="btn" type="button" id="confirmEndLive">YA, AKHIRI LIVE</button></div>
     </div>
   </div>
+  <div id="subscriptionGate" class="end-live-dialog hide" role="dialog" aria-modal="true" aria-labelledby="subscriptionGateTitle">
+    <div class="end-live-card">
+      <h3 id="subscriptionGateTitle">LIMIT SUPPORT TERCAPAI</h3>
+      <p id="subscriptionGateText">Upgrade paket untuk membuka Support kembali. LIVE tetap berjalan.</p>
+      <div class="actions"><button class="btn secondary" type="button" id="subscriptionGateLater">LANJUT LIVE</button><button class="btn" type="button" id="subscriptionGateUpgrade">UPGRADE</button></div>
+    </div>
+  </div>
    <div id="desktopSawerBar" class="desktop-watch-only" aria-label="Dukungan langsung untuk host">
      <span class="pc-gift-label">🎁 SUPPORT</span>
      <button type="button" data-pc-support>DUKUNG HOST</button>
@@ -3000,7 +3007,7 @@ body.live-immersive #watch #liveRestReminder{
  <div class="me-menu-label">AKUN</div>
  <div class="me-menu">
   <button type="button" data-open-page="accountPage">◉ <span>Akun & edit profil</span><b>›</b></button>
-  <button type="button" data-open-page="walletPage">▣ <span>Dompet & penarikan</span><b>›</b></button>
+  <button type="button" id="openHostSubscription">▣ <span>Langganan Host · PRO / PLUS</span><b>›</b></button>
   <button type="button" data-open-page="supporterPage">✦ <span>Level pendukung</span><b>›</b></button>
  </div>
  <div class="me-menu-label">LIVE</div>
@@ -3197,6 +3204,7 @@ body.live-immersive #watch #liveRestReminder{
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
   let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},hostPublicSupport={link:'',qris:''},tipRecipient={id:'host',name:'Host',handle:''},tipSupportRequest=0;
  let gameFaceStream=null,gameFaceDiameter=76;
+ let subscriptionPollTimer=null,subscriptionGateSeen='';
 
  // Worker-supplied createdAt is stable across reconnects and viewer joins.
  let liveStartedAt=0,liveClockRoom='',liveClockTimer=null,lastReminderHour=0,restDismissTimer=null;
@@ -4608,11 +4616,54 @@ body.live-immersive #watch #liveRestReminder{
   async function loadTipRecipientSupport(handle){
    const token=++tipSupportRequest;renderTipSupport({link:'',qris:''});
    const empty=$('tipSupportEmpty');empty.hidden=false;empty.textContent='Memeriksa metode dukungan kreator...';
-   if(!handle){if(token===tipSupportRequest)empty.textContent='Kreator ini belum memasang metode dukungan.';return}
-   if(handle===hostPublicIdentity.handle&&(hostPublicSupport.link||hostPublicSupport.qris)){if(token===tipSupportRequest)renderTipSupport(hostPublicSupport);return}
-   try{const result=await accountRequest('/api/profile/'+encodeURIComponent(handle));if(token!==tipSupportRequest)return;renderTipSupport(supportInfoFromLinks(result.profile?.links||[]));}
-   catch(e){if(token===tipSupportRequest){renderTipSupport({link:'',qris:''});empty.hidden=false;empty.textContent='Metode dukungan belum tersedia.'}}
+   if(!handle){if(token===tipSupportRequest)empty.textContent='Kreator ini belum login sebagai host NADMO.';return}
+   try{
+    const result=await accountRequest('/api/subscription/host?handle='+encodeURIComponent(handle));
+    if(token!==tipSupportRequest)return;
+    if(handle===hostPublicIdentity.handle)hostPublicSupport=result.support||{link:'',qris:''};
+    renderTipSupport(result.support||{link:'',qris:''});
+   }catch(e){if(token===tipSupportRequest){renderTipSupport({link:'',qris:''});empty.hidden=false;empty.textContent=e.message||'Metode dukungan belum tersedia.'}}
   }
+  async function openSupportFor(id,name,handle){
+   setTipRecipient(id,name,handle);
+   openLiveSheet($('viewerTipPanel'));
+   const token=++tipSupportRequest;renderTipSupport({link:'',qris:''});
+   const empty=$('tipSupportEmpty');empty.hidden=false;empty.textContent='Membuka Support...';
+   if(!handle){empty.textContent='Host belum menggunakan akun NADMO, Support belum tersedia.';return}
+   try{
+    const result=await accountRequest('/api/subscription/support-action','POST',{handle});
+    if(token!==tipSupportRequest)return;
+    renderTipSupport(result.support||{link:'',qris:''});
+    if(result.lockedAfter)flash('Support ini mencapai limit host. Klik berikutnya menunggu host upgrade.');
+   }catch(e){
+    if(token!==tipSupportRequest)return;
+    renderTipSupport({link:'',qris:''});empty.hidden=false;empty.textContent=e.message||'Support belum tersedia.';
+   }
+  }
+ async function checkHostSubscriptionGate(){
+  if(!host||!currentRoom||!activeAccount)return;
+  try{
+   const result=await accountRequest('/api/subscription/me'),sub=result.subscription;
+   if(!sub?.locked)return;
+   const key=sub.tier+':'+sub.count+':'+(sub.pendingOrderId||'');
+   if(subscriptionGateSeen===key)return;
+   subscriptionGateSeen=key;
+   const target=sub.upgradeTarget==='plus'?'PLUS Rp99.900 / 30 hari':'PRO Rp19.900 / 30 hari';
+   $('subscriptionGateText').textContent='Support '+sub.count+' / '+(sub.effectiveLimit===null?'∞':sub.effectiveLimit)+' sudah penuh. Upgrade ke '+target+'. LIVE tetap berjalan.';
+   $('subscriptionGate').classList.remove('hide');
+  }catch(e){}
+ }
+ function startHostSubscriptionWatch(){
+  if(subscriptionPollTimer)clearInterval(subscriptionPollTimer);
+  subscriptionPollTimer=null;subscriptionGateSeen='';
+  if(!activeAccount)return;
+  checkHostSubscriptionGate();
+  subscriptionPollTimer=setInterval(checkHostSubscriptionGate,15000);
+ }
+ function stopHostSubscriptionWatch(){
+  if(subscriptionPollTimer)clearInterval(subscriptionPollTimer);
+  subscriptionPollTimer=null;subscriptionGateSeen='';$('subscriptionGate').classList.add('hide');
+ }
  function linkifyCaption(element,value){
   const regex=/https:\/\/[^\s<>"']+/gi;
   let previous=0,match;
@@ -5100,6 +5151,7 @@ body.live-immersive #watch #liveRestReminder{
  $('mastLogin').onclick=()=>show('authPage');
  $('meMore').onclick=()=>show('preferencesPage');
  $('meLogin').onclick=()=>show('authPage');
+ $('openHostSubscription').onclick=()=>{window.location.href=DEFAULT_BACKEND+'/subscription/'};
  
  $('socialManageDrafts').onclick=()=>activeAccount?show('draftsPage'):show('authPage');
  $('messagesLogin').onclick=()=>show('authPage');
@@ -5173,7 +5225,7 @@ body.live-immersive #watch #liveRestReminder{
   transmit({type:'set-mirror',mirrored:enabled});
   $('mirrorStatus').textContent='Mengirim pengaturan mirror ke penonton...';
  };
-  $('giftQuick').onclick=()=>{if(!host){setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);openLiveSheet($('viewerTipPanel'))}};
+  $('giftQuick').onclick=()=>{if(!host)openSupportFor('host',hostPublicIdentity.name,hostPublicIdentity.handle)};
  // Keep room controls inside ⚙ for host AND viewer; Rp sawer stays on the
  // live video toolbar. Move nodes, don't clone them, to preserve listeners.
  const liveRoomSafety=$('watch').querySelector('.live-chat .room-safety');
@@ -5210,6 +5262,8 @@ body.live-immersive #watch #liveRestReminder{
  function showEndConfirm(){closeLiveSheets();$('endLiveConfirm').classList.remove('hide');$('cancelEndLive').focus()}
  $('cancelEndLive').onclick=()=>$('endLiveConfirm').classList.add('hide');
  $('confirmEndLive').onclick=()=>{$('endLiveConfirm').classList.add('hide');leave()};
+ $('subscriptionGateLater').onclick=()=>$('subscriptionGate').classList.add('hide');
+ $('subscriptionGateUpgrade').onclick=()=>{window.open(DEFAULT_BACKEND+'/subscription/','_blank','noopener')};
 
  function openLiveSheet(panel){
   closeLiveSheets();
@@ -5217,10 +5271,10 @@ body.live-immersive #watch #liveRestReminder{
   $('liveSheetBackdrop').classList.remove('hide');
  }
  $('accessQuick').onclick=()=>{if(!host)return;openLiveSheet($('hostAccessPanel'));$('privateControls').classList.remove('hide')};
-  $('tipQuick').onclick=()=>{if(host)return;setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);openLiveSheet($('viewerTipPanel'))};
+  $('tipQuick').onclick=()=>{if(!host)openSupportFor('host',hostPublicIdentity.name,hostPublicIdentity.handle)};
  $('pcBack').onclick=()=>{$('leave').click()};
   document.querySelectorAll('#desktopSawerBar [data-pc-support]').forEach(button=>{
-   button.onclick=()=>{if(host)return;setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);openLiveSheet($('viewerTipPanel'))};
+   button.onclick=()=>{if(!host)openSupportFor('host',hostPublicIdentity.name,hostPublicIdentity.handle)};
   });
  $('closeAccessSheet').onclick=closeLiveSheets;
  $('closeTipSheet').onclick=closeLiveSheets;
@@ -5837,7 +5891,7 @@ body.live-immersive #watch #liveRestReminder{
    }else if(guest.id!==selfId){
     const tip=document.createElement('button');tip.type='button';tip.className='stage-guest-tip';
      tip.textContent='♡';tip.setAttribute('aria-label','Dukung '+(guest.name||'tamu'));
-     tip.onclick=()=>{setTipRecipient(guest.id,guest.name||'Tamu',guest.handle||'');openLiveSheet($('viewerTipPanel'))};
+     tip.onclick=()=>openSupportFor(guest.id,guest.name||'Tamu',guest.handle||'');
     tile.append(tip);
    }
    panel.append(tile);
@@ -5854,7 +5908,6 @@ body.live-immersive #watch #liveRestReminder{
     const button=document.createElement('button');button.type='button';button.className=option.id===id?'active':'';button.textContent=option.name.slice(0,18);
     button.onclick=()=>setTipRecipient(option.id,option.name,option.handle);target.append(button);
    }
-   void loadTipRecipientSupport(tipRecipient.handle);
   }
  const liveThemes=['nadmo','cyberbw','noir','retro','electric'];
  function setWatchTheme(theme){
@@ -5890,8 +5943,9 @@ body.live-immersive #watch #liveRestReminder{
    if(!profile)return;
    if(!room.hostThemeId)setWatchTheme(profile.themeId);
    $('hostPublicBio').textContent=profile.bio||'';
-    hostPublicSupport=supportInfoFromLinks(profile.links||[]);
-    if(tipRecipient.id==='host')renderTipSupport(hostPublicSupport);
+    accountRequest('/api/subscription/host?handle='+encodeURIComponent(handle)).then(s=>{
+     if(hostPublicIdentity.handle===handle){hostPublicSupport=s.support||{link:'',qris:''};}
+    }).catch(()=>{});
    for(const item of profile.links||[]){
      if(item.label===SUPPORT_QRIS_LABEL)continue;
     const link=directLink(item.url,item.label,'profile-business-link');
@@ -5902,9 +5956,7 @@ body.live-immersive #watch #liveRestReminder{
  $('hostProfileCard').onclick=()=>openLiveSheet($('hostProfilePanel'));
  $('closeHostProfile').onclick=closeLiveSheets;
  $('hostProfileTip').onclick=()=>{
-  if(host)return;
-   setTipRecipient('host',hostPublicIdentity.name,hostPublicIdentity.handle);
-  openLiveSheet($('viewerTipPanel'));
+  if(!host)openSupportFor('host',hostPublicIdentity.name,hostPublicIdentity.handle);
  };
  $('stageLayoutReset').onclick=()=>{
   if(!host)return;
@@ -6076,7 +6128,7 @@ body.live-immersive #watch #liveRestReminder{
   },attempt===0?9000:12000);
  }
  async function incoming(m){
-  if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;}
+  if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;startHostSubscriptionWatch();}
   if(m.type==='joined'){if(m.facecam)applyGameFaceLayout(m.facecam);stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle(m.title);$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false;checkViewerFrame(m.id)}
   if(m.type==='resumed'){stageLayout=normalizeLayout(m.layout);refreshGuestButtons();renderStageGuests();
     $('reportLive').hidden=true;$('hostModeration').hidden=false;
@@ -6091,6 +6143,7 @@ body.live-immersive #watch #liveRestReminder{
       try{await recoverHostCapture()}catch(error){console.warn('Camera resume after reconnect',error)}
     }
     for(const viewerId of activeViewers)await attachViewer(viewerId);
+    startHostSubscriptionWatch();
    }
   if(m.type==='host-reconnecting'){
    $('watchState').textContent='Host sementara kehilangan jaringan. Menunggu sampai 90 detik tanpa mengakhiri room...';markWatchWarning($('watchState').textContent);
@@ -6288,7 +6341,7 @@ body.live-immersive #watch #liveRestReminder{
  $('send').onclick=()=>{let msg=$('message').value.trim();if(!msg)return;transmit({type:'chat',text:msg});$('message').value=''};
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
  function leave(){
-  clearLiveClock();
+  clearLiveClock();stopHostSubscriptionWatch();
   $('watch').classList.remove('camera-frame-letterbox','camera-stage-softfill','camera-source-landscape','camera-source-portrait');
   $('watch').style.removeProperty('--camera-source-aspect');
   $('watch').style.removeProperty('--camera-source-ratio');
