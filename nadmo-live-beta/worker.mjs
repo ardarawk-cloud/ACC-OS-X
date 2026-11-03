@@ -611,6 +611,11 @@ export default {
     const headers=new Headers(asset.headers);headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store, max-age=0');headers.set('Referrer-Policy','no-referrer');
     return new Response(asset.body,{status:asset.status,headers});
   }
+  if(url.pathname==='/subscription/nadmo-dana-qris.png'){
+    const asset=await env.ASSETS.fetch(new Request(url.origin+'/subscription/nadmo-dana-qris.png'));
+    const headers=new Headers(asset.headers);headers.set('Content-Type','image/png');headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','public, max-age=86400, immutable');headers.set('Referrer-Policy','no-referrer');
+    return new Response(asset.body,{status:asset.status,headers});
+  }
   if(url.pathname==='/admin/'||url.pathname==='/admin/index.html'){
     const asset=await env.ASSETS.fetch(new Request(url.origin+'/admin/index.html'));
     const headers=new Headers(asset.headers);headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store, max-age=0');headers.set('Referrer-Policy','no-referrer');

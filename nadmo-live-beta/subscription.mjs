@@ -22,7 +22,7 @@ function snapshot(record,now=Date.now()){
   grace:{active:graceActive,until:graceActive?Number(record.subscriptionGraceUntil):null,extra:graceActive?GRACE_EXTRA:0},pendingOrderId:record?.subscriptionPendingOrderId||null};
 }
 const publicPlan=()=>({free:{price:0,limit:50},pro:{price:19900,limit:200,days:30},plus:{price:99900,limit:null,days:30}});
-function qrisConfig(env){const raw=clean(env?.ACM_STORE_QRIS_URL,500);if(!raw)return '';try{const u=new URL(raw);return u.protocol==='https:'?u.href:''}catch{return ''}}
+function qrisConfig(env,origin){const raw=clean(env?.DANA_BUSINESS_QRIS_URL||env?.ACM_STORE_QRIS_URL,500);if(raw){try{const u=new URL(raw);if(u.protocol==='https:')return u.href}catch{}}return origin+'/subscription/nadmo-dana-qris.png'}
 function mediaOwned(raw,origin,userId){
  if(typeof raw!=='string'||raw.length>700)return false;
  try{const u=new URL(raw);if(u.origin!==origin||u.search||u.hash)return false;return new RegExp('^/api/social/media/'+userId+'/[a-f0-9-]{36}\\.(?:jpg|png|webp)$').test(u.pathname)}catch{return false}
@@ -64,7 +64,7 @@ export async function subscriptionEndpoint(storage,request,env){
  if(p==='/api/subscription/me'&&method==='GET'){
   const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
   const record=await storage.get('auth-user:'+user.id),pending=await pendingOrder(storage,record);
-  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env),subscription:snapshot(record,now),support:supportMethods(record),
+  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env,u.origin),subscription:snapshot(record,now),support:supportMethods(record),
    pending:pending?{id:pending.id,targetTier:pending.targetTier,price:pending.price,status:pending.status,createdAt:pending.createdAt,graceGranted:pending.graceGranted===true}:null});
  }
 
