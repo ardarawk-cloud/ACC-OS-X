@@ -6,7 +6,8 @@ const enc=new TextEncoder();
 const clean=(v,max=120)=>typeof v==='string'?v.trim().slice(0,max):'';
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const fail=(status,error,code)=>json({ok:false,error,code:code||'SUBSCRIPTION_ERROR'},status);
-const originOK=req=>req.headers.get('Origin')===new URL(req.url).origin;
+const APP_ORIGIN='https://appassets.androidplatform.net';
+const originOK=req=>{const origin=req.headers.get('Origin');return origin===new URL(req.url).origin||origin===APP_ORIGIN};
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 const digest=async value=>hex(await crypto.subtle.digest('SHA-256',enc.encode(value)));
 function safeCompare(a,b){if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
