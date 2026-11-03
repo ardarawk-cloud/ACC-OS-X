@@ -3204,7 +3204,7 @@ body.live-immersive #watch #liveRestReminder{
   let guestStream=null,guestOnStage=false,guestPending=false,guestMode='voice',stageGuestsList=[],guestRequests=new Map(),guestRemoteStreams=new Map(),readyGuestIds=new Set(),stageRefreshTimer=null,hostMute=false;
   let stageLayout=[],selectedStageGuest=null,hostPublicIdentity={name:'Host',handle:''},hostPublicSupport={link:'',qris:''},tipRecipient={id:'host',name:'Host',handle:''},tipSupportRequest=0;
  let gameFaceStream=null,gameFaceDiameter=76;
- let subscriptionPollTimer=null,subscriptionGateSeen='';
+ let subscriptionPollTimer=null,subscriptionGateSeen='',hostSupportDraft={link:'',qris:''};
 
  // Worker-supplied createdAt is stable across reconnects and viewer joins.
  let liveStartedAt=0,liveClockRoom='',liveClockTimer=null,lastReminderHour=0,restDismissTimer=null;
@@ -4601,11 +4601,18 @@ body.live-immersive #watch #liveRestReminder{
    return info;
   }
   function renderSupportSetup(){
-   const info=supportInfoFromLinks(draftProfile.links);
+   const info=hostSupportDraft||{link:'',qris:''};
    if($('profileSupportUrl')&&document.activeElement!==$('profileSupportUrl'))$('profileSupportUrl').value=info.link||'';
    const image=$('profileQrisPreview'),empty=$('profileQrisEmpty'),remove=$('profileQrisRemove');
    if(image){image.hidden=!info.qris;if(info.qris)image.src=info.qris;else image.removeAttribute('src')}
    if(empty)empty.hidden=!!info.qris;if(remove)remove.hidden=!info.qris;
+  }
+  async function loadOwnSupportSettings(){
+   if(!activeAccount){hostSupportDraft={link:'',qris:''};renderSupportSetup();return}
+   try{
+    const d=await accountRequest('/api/subscription/me');
+    hostSupportDraft=d.support||{link:'',qris:''};renderSupportSetup();
+   }catch(e){hostSupportDraft={link:'',qris:''};renderSupportSetup()}
   }
   function renderTipSupport(info){
    const support=info||{link:'',qris:''},link=$('tipSupportLink'),box=$('tipQrisBox'),image=$('tipQrisImage'),open=$('tipQrisOpen'),empty=$('tipSupportEmpty');
@@ -4886,7 +4893,7 @@ body.live-immersive #watch #liveRestReminder{
  }
  $('editProfileBtn').onclick=()=>{
   $('profileEditBox').classList.remove('hide');show('accountPage');
-  $('editProfileBtn').textContent='EDIT';
+  $('editProfileBtn').textContent='EDIT';loadOwnSupportSettings();
  };
  $('profileAddLink').onclick=async()=>{
   if(profileLinkBusy)return;
@@ -4919,15 +4926,19 @@ body.live-immersive #watch #liveRestReminder{
     const capability=await accountRequest('/api/social/media/status');if(!capability.enabled)throw Error('Penyimpanan gambar belum aktif.');
     const response=await fetch(api('/api/social/media/upload'),{method:'PUT',credentials:'include',headers:{'Content-Type':file.type},body:file,cache:'no-store'});
     const result=await response.json();if(!response.ok||!result.ok||result.type!=='image')throw Error(result.error||'Upload QRIS gagal');
-    const keep=draftProfile.links.filter(item=>item.label!==SUPPORT_QRIS_LABEL&&item.url!==result.url);if(keep.length>=12)throw Error('Hapus satu link profil dulu karena batas 12 link.');
-    const saved=await commitProfileLinks([...keep,{label:SUPPORT_QRIS_LABEL,url:result.url}]);if(!saved)throw Error('QRIS terunggah tetapi belum tersimpan ke profil.');
+    const saved=await accountRequest('/api/subscription/support-methods','POST',{supportUrl:$('profileSupportUrl').value.trim(),qrisUrl:result.url});
+    hostSupportDraft=saved.support||{link:'',qris:''};
     $('profileSupportStatus').textContent='QRIS tersimpan. Penonton bisa melihatnya lewat DUKUNG HOST.';
    }catch(e){$('profileSupportStatus').textContent=e.message}
    finally{$('profileQrisChoose').disabled=false;renderSupportSetup()}
   };
   $('profileQrisRemove').onclick=async()=>{
-   if(profileLinkBusy)return;const next=draftProfile.links.filter(item=>item.label!==SUPPORT_QRIS_LABEL);
-   if(await commitProfileLinks(next))$('profileSupportStatus').textContent='QRIS dihapus dari profil.';
+   if(!activeAccount)return;
+   try{
+    const saved=await accountRequest('/api/subscription/support-methods','POST',{supportUrl:$('profileSupportUrl').value.trim(),qrisUrl:''});
+    hostSupportDraft=saved.support||{link:'',qris:''};renderSupportSetup();
+    $('profileSupportStatus').textContent='QRIS host dihapus.';
+   }catch(e){$('profileSupportStatus').textContent=e.message}
   };
  $('profileSave').onclick=async()=>{
   if(profileLinkBusy){$('profileEditStatus').textContent='Tunggu penyimpanan link selesai.';return}
@@ -4948,9 +4959,7 @@ body.live-immersive #watch #liveRestReminder{
     const candidate=/^[a-z][a-z0-9+.-]*:/i.test(supportRaw)?supportRaw:'https://'+supportRaw.replace(/^\/\//,'');
     supportUrl=validExternalLink(candidate)||'';if(!supportUrl){$('profileEditStatus').textContent='Link Saweria/dukungan harus URL HTTPS yang valid.';return}
    }
-   let supportLinks=draftProfile.links.filter(item=>item.label!==SUPPORT_LINK_LABEL);
-   if(supportUrl&&!supportLinks.some(item=>item.url===supportUrl)){if(supportLinks.length>=12){$('profileEditStatus').textContent='Hapus satu link profil dulu karena batas 12 link.';return}supportLinks.push({label:SUPPORT_LINK_LABEL,url:supportUrl})}
-   draftProfile.links=supportLinks;
+   // Support URL is stored in the dedicated subscription backend, not mixed into public profile links.
   draftProfile.name=$('profileName').value.trim().slice(0,60);
   draftProfile.handle=handle;
   draftProfile.bio=$('profileBio').value.trim().slice(0,300);
@@ -4964,7 +4973,9 @@ body.live-immersive #watch #liveRestReminder{
      {name:draftProfile.name||activeAccount.name,bio:draftProfile.bio,links:draftProfile.links,
        themeId:draftProfile.themeId,fontId:draftProfile.fontId,coverId:draftProfile.coverId});
     activeAccount=result.account;displayAccount();
-    $('profileLinkLabel').value='';$('profileLinkUrl').value='';$('profileEditStatus').textContent='Profil, tema dan link tersimpan di akun.';
+    const supportSaved=await accountRequest('/api/subscription/support-methods','POST',{supportUrl,qrisUrl:hostSupportDraft.qris||''});
+    hostSupportDraft=supportSaved.support||{link:'',qris:''};renderSupportSetup();
+    $('profileLinkLabel').value='';$('profileLinkUrl').value='';$('profileEditStatus').textContent='Profil dan metode Support tersimpan di akun.';
    }catch(e){$('profileEditStatus').textContent='Gagal menyimpan ke akun: '+e.message+' · Form tetap terbuka.';return}
   }else{
    renderProfileDraft();
