@@ -566,10 +566,8 @@ async function danaSandboxCreateOrderUat(env,origin){
    {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'N'}
   ],
   additionalInfo:{
-   supportDeepLinkCheckoutUrl:'true',
-   productCode:'51051000100000000001',
-   order:{orderTitle:'NADMO LIVE UAT'},
-   mcc:'',
+   order:{orderTitle:'NADMO LIVE UAT',scenario:'REDIRECT'},
+   mcc:'5814',
    envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM'}
   }
  });
