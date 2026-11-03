@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NADMO LIVE ADMIN</title>
+<style>
+:root{color-scheme:dark;--bg:#090b0a;--panel:#131814;--line:#364038;--neon:#dcff38;--text:#edf2e9;--dim:#9aa69a;--bad:#ff806c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}.app{max-width:920px;margin:auto;padding:24px 16px 70px}
+h1{font:900 34px Impact,Arial,sans-serif;margin:0}p{color:var(--dim);line-height:1.55}.top{display:flex;justify-content:space-between;align-items:end;gap:12px;border-bottom:1px solid var(--line);padding-bottom:16px}
+.card{border:1px solid var(--line);background:var(--panel);padding:14px;margin:12px 0}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.field{width:100%;background:#0f1310;border:1px solid var(--line);color:var(--text);padding:12px}
+button,a.btn{border:1px solid var(--neon);background:var(--neon);color:#111;padding:10px 13px;font-weight:800;text-decoration:none;cursor:pointer}.secondary{background:transparent!important;color:var(--text)!important;border-color:#657166!important}.danger{background:transparent!important;color:#ffb1a5!important;border-color:#8c4d43!important}
+.badge{display:inline-block;border:1px solid var(--line);padding:4px 7px;font-size:11px}.pending{color:var(--neon)}.approved{color:#9cf5a7}.rejected{color:#ff9c8b}
+.order{display:grid;grid-template-columns:1fr auto;gap:12px}.order img{width:130px;max-height:180px;object-fit:contain;background:#fff;padding:5px}.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px}.meta span{color:var(--dim)}#status{min-height:22px}@media(max-width:650px){.order{grid-template-columns:1fr}.order img{width:100%;max-height:280px}.meta{grid-template-columns:1fr}}
+</style></head>
+<body><main class="app">
+<div class="top"><div><small>NADMO LIVE / OWNER</small><h1>SUBSCRIPTION ADMIN</h1></div><a class="btn secondary" href="/app/">APP</a></div>
+<div class="card"><label>ADMIN KEY</label><div class="row"><input id="key" class="field" type="password" autocomplete="current-password" placeholder="Admin key" style="flex:1"><button id="load">BUKA PANEL</button></div><p id="status"></p></div>
+<div id="summary" class="card" hidden></div><section id="orders"></section>
+</main>
+<script>
+const $=id=>document.getElementById(id),money=n=>'Rp'+new Intl.NumberFormat('id-ID').format(Number(n)||0),date=n=>n?new Date(n).toLocaleString('id-ID'):'—';
+$('key').value=sessionStorage.getItem('nadmo.admin.key')||'';
+let adminKey='';
+async function api(path,options={}){
+ const headers=new Headers(options.headers||{});headers.set('X-NADMO-Admin-Key',adminKey);
+ if(options.body&&!headers.has('Content-Type'))headers.set('Content-Type','application/json');
+ const r=await fetch(path,{...options,headers,credentials:'include',cache:'no-store'});let d={};try{d=await r.json()}catch{}
+ if(!r.ok||d.ok===false)throw Error(d.error||('HTTP '+r.status));return d;
+}
+function render(data){
+ const pending=data.orders.filter(x=>x.status==='pending').length;
+ $('summary').hidden=false;$('summary').innerHTML='<b>'+pending+' PENDING</b> · '+data.orders.length+' order tersimpan · PRO '+money(data.plan.pro.price)+' / PLUS '+money(data.plan.plus.price);
+ const box=$('orders');box.replaceChildren();
+ if(!data.orders.length){box.innerHTML='<div class="card">Belum ada order subscription.</div>';return}
+ for(const o of data.orders){
+  const card=document.createElement('article');card.className='card order';
+  const left=document.createElement('div');
+  left.innerHTML='<div class="row"><b>@'+o.handle+'</b><span class="badge '+o.status+'">'+o.status.toUpperCase()+'</span><span class="badge">'+o.targetTier.toUpperCase()+'</span></div>'+
+   '<div class="meta"><span>Nama</span><b>'+o.name+'</b><span>Harga</span><b>'+money(o.price)+'</b><span>Dikirim</span><b>'+date(o.createdAt)+'</b><span>Grace</span><b>'+(o.graceGranted?'24 jam +20':'Tidak')+'</b><span>Support</span><b>'+(o.subscription?(o.subscription.count+' / '+(o.subscription.effectiveLimit===null?'∞':o.subscription.effectiveLimit)):'—')+'</b><span>Tier sekarang</span><b>'+(o.subscription?o.subscription.tier.toUpperCase():'—')+'</b></div>';
+  if(o.status==='pending'){
+   const actions=document.createElement('div');actions.className='row';actions.style.marginTop='12px';
+   const approve=document.createElement('button');approve.textContent='APPROVE';approve.onclick=()=>review(o.id,'approve');
+   const reject=document.createElement('button');reject.textContent='REJECT';reject.className='danger';reject.onclick=()=>review(o.id,'reject');
+   actions.append(approve,reject);left.append(actions);
+  }
+  const img=document.createElement('a');img.href=o.proofUrl;img.target='_blank';img.rel='noopener noreferrer';
+  const pic=document.createElement('img');pic.src=o.proofUrl;pic.alt='Bukti pembayaran '+o.handle;img.append(pic);
+  card.append(left,img);box.append(card);
+ }
+}
+async function load(){
+ adminKey=$('key').value.trim();if(!adminKey){$('status').textContent='Masukkan admin key.';return}
+ sessionStorage.setItem('nadmo.admin.key',adminKey);$('status').textContent='Memuat...';
+ try{const d=await api('/api/admin/subscriptions');render(d);$('status').textContent='Panel aktif.'}catch(e){$('status').textContent=e.message;$('summary').hidden=true;$('orders').replaceChildren()}
+}
+async function review(orderId,action){
+ if(!confirm((action==='approve'?'Approve':'Reject')+' order ini?'))return;
+ $('status').textContent='Memproses...';
+ try{await api('/api/admin/subscriptions/action',{method:'POST',body:JSON.stringify({orderId,action})});await load()}catch(e){$('status').textContent=e.message}
+}
+$('load').onclick=load;$('key').addEventListener('keydown',e=>{if(e.key==='Enter')load()});
+if($('key').value)load();
+</script></body></html>
