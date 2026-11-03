@@ -38,8 +38,13 @@ async function adminPrincipal(storage,request,env){
  if(configuredKey&&safeCompare(configuredKey,supplied))return user;
  const users=await storage.list({prefix:'auth-user:',limit:500});
  let oldest=null;
+ const qaLike=record=>{
+  const handle=String(record?.handle||'').toLowerCase(),name=String(record?.name||'').toLowerCase();
+  return /(?:^qa_|^logintest|^sbadge|^test|e2e|smoke|fixture|automation)/.test(handle)
+   || /(?:\bqa\b|\be2e\b|\btest\b|fixture|automation)/.test(name);
+ };
  for(const record of users.values()){
-  if(!record||record.disabled)continue;
+  if(!record||record.disabled||qaLike(record))continue;
   if(!oldest||Number(record.createdAt||Infinity)<Number(oldest.createdAt||Infinity))oldest=record;
  }
  return oldest?.id===user.id?user:null;
