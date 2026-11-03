@@ -554,21 +554,22 @@ async function danaSandboxCreateOrderUat(env,origin){
  if(apiOrigin!=='https://api.sandbox.dana.id'||!partnerId||!merchantId||!env.DANA_PRIVATE_KEY)
   return Response.json({ok:false,error:'DANA sandbox credentials are incomplete'},{status:503});
  const now=Date.now(),timestamp=danaJakartaTimestamp(now);
- const path='/payment-gateway/v1.0/debit/payment-host-to-host.htm';
+ const path='/rest/redirection/v1.0/debit/payment-host-to-host';
  const ref='NADMO-UAT-'+String(now);
  const body=JSON.stringify({
   partnerReferenceNo:ref,
   merchantId,
-  amount:{value:'10000.00',currency:'IDR'},
-  validUpTo:danaJakartaTimestamp(now+10*60*1000),
-  urlParams:[
-   {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'N'},
-   {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'N'}
-  ],
+  amount:{currency:'IDR',value:'1.00'},
+  validUpTo:danaJakartaTimestamp(now+15*60*1000),
   additionalInfo:{
-   order:{orderTitle:'NADMO LIVE UAT',scenario:'REDIRECT'},
-   mcc:'5814',
-   envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM'}
+   envInfo:{
+    appVersion:'',clientIp:'',extendInfo:'',merchantAppVersion:'',
+    orderOsType:'',orderTerminalType:'SYSTEM',osType:'',sdkVersion:'',
+    sessionId:'',sourcePlatform:'IPG',terminalType:'SYSTEM',tokenId:'',websiteLanguage:''
+   },
+   mcc:'5732',
+   order:{orderTitle:'DANA Widget Test Order',createdTime:timestamp},
+   productCode:'51051000100000000001'
   }
  });
  try{
