@@ -11,7 +11,7 @@ const accents={nadmo:'rgb(215, 255, 54)',electric:'rgb(109, 244, 255)',
 const selectors=['#watch','#watchTitle','#watchRoomSubtitle','#hostProfileCard','.onair-label',
  '#mobileLiveHud','#message','#send','#tipQuick','#giftQuick','#moreQuick',
  '#joinGuestVoice','#joinGuestCamera','#hostMicToggle','#chat','#chat div','#chat b',
- '#hostAccessPanel','#privatePrice','#privateCode','#viewerTipPanel','#tipPresets button',
+ '#hostAccessPanel','#privatePrice','#privateCode','#viewerTipPanel','#tipSupportLink','#tipQrisBox',
  '#liveSettingsPanel','#settingsCamera','#settingsRecover','#hostProfilePanel',
  '#hostProfilePanel .profile-business-link','#hostProfilePanel .sheet-close',
  '.stage-guest-tile','.stage-tag','.stage-guest-tip','.stage-slot-number'];
@@ -52,7 +52,7 @@ const selectors=['#watch','#watchTitle','#watchRoomSubtitle','#hostProfileCard',
       remote.dispatchEvent(new Event('loadedmetadata'));
       document.querySelector('#hostProfilePanel .host-public-links').innerHTML='<a class="profile-business-link" href="#">Host link</a>';
       document.querySelector('#chat').innerHTML='<div><b>Viewer</b>: Live message</div>';
-      document.querySelector('#guestStageGrid').innerHTML='<div class="stage-guest-tile"><small class="stage-tag">Guest · MIC ON</small><button class="stage-guest-tip">Rp</button><span class="stage-slot-number">01</span></div>';
+      document.querySelector('#guestStageGrid').innerHTML='<div class="stage-guest-tile"><small class="stage-tag">Guest · MIC ON</small><button class="stage-guest-tip">♡</button><span class="stage-slot-number">01</span></div>';
       const colors={};
       for(const selector of selectors){
        const el=watch.querySelector(selector)||document.querySelector(selector);
