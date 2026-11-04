@@ -18,7 +18,7 @@ function nadmoSociaBuzzHtmlText434(html){
      "link.hidden=!support.link;if(support.link)link.href=support.link;else link.removeAttribute('href');\n   social.hidden=!support.sociabuzz;if(support.sociabuzz)social.href=support.sociabuzz;else social.removeAttribute('href');"],
     ["empty.hidden=!!(support.link||support.qris);if(!empty.hidden)empty.textContent='Kreator ini belum memasang Saweria atau QRIS.';",
      "empty.hidden=!!(support.link||support.sociabuzz||support.qris);if(!empty.hidden)empty.textContent='Kreator ini belum memasang Saweria, SociaBuzz atau QRIS.';"],
-    ['<div id="tipQrisBox" hidden="">',
+    ['<div id="tipQrisBox" hidden>',
      '<a id="tipSociaBuzzLink" class="btn support-open" rel="noopener noreferrer nofollow ugc" target="_blank" hidden="">BUKA SOCIABUZZ TRIBE ↗</a><div id="tipQrisBox" hidden="">']
   ];
   for(const [from,to] of patches){
