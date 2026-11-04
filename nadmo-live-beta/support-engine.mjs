@@ -57,7 +57,7 @@ export function publicSupport(event,prefs=basePrefs()){
   amount:prefs.showAmount===false?null:event.amount,currency:'IDR',
   message:prefs.showMessage===false?'':event.message,occurredAt:event.occurredAt,
   verified:true,verificationStatus:'provider_authenticated',settlementStatus:event.settlementStatus,
-  alertStatus:event.alertStatus};
+  alertStatus:event.alertStatus,alertConfig:{animation:prefs.animation||'pulse',sound:prefs.sound||'off',durationSeconds:Number(prefs.durationSeconds)||6}};
 }
 const parse = async request => {
  const length=Number(request.headers.get('Content-Length')||0);
@@ -115,7 +115,7 @@ export async function supportEndpoint(storage,request,env,emit=async()=>false){
   const filtered=list.filter(x=>x?.verificationStatus==='provider_authenticated');
   return respond({ok:true,hostHandle:host.handle,events:filtered.slice(0,30).map(x=>publicSupport(x,prefs)).filter(Boolean),
    verifiedCount:filtered.length,visibleTotalIdr:prefs.showAmount===false?null:filtered.reduce((sum,e)=>sum+e.amount,0),
-   scope:'recent-records-only',settlementConfirmed:false});
+   scope:'recent-records-only',settlementConfirmed:false,appearance:{animation:prefs.animation,sound:prefs.sound,durationSeconds:prefs.durationSeconds}});
  }
  if(!['/api/support/me','/api/support/settings','/api/support/test-alert'].includes(p))return error(404,'NOT_FOUND');
  const principal=await getAccount(storage,request);if(!principal)return error(401,'LOGIN_REQUIRED');
