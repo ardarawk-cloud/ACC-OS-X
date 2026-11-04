@@ -545,7 +545,7 @@ async function danaSign(env,method,path,body,timestamp){
  let binary='';for(const b of new Uint8Array(sig))binary+=String.fromCharCode(b);
  return btoa(binary);
 }
-async function danaSandboxCreateOrderUat(env,origin){
+async function danaSandboxCreateOrderUat(env,origin,scenario='success'){
  if(String(env.DANA_ENV||'').toLowerCase()!=='sandbox')
   return Response.json({ok:false,error:'DANA sandbox mode is not enabled'},{status:403});
  const partnerId=String(env.DANA_X_PARTNER_ID||'').trim();
@@ -579,7 +579,7 @@ async function danaSandboxCreateOrderUat(env,origin){
    method:'POST',
    headers:{
     'Content-Type':'application/json',
-    'X-TIMESTAMP':timestamp,
+    ...(scenario==='missing-mandatory'?{}:{'X-TIMESTAMP':timestamp}),
     'X-SIGNATURE':signature,
     'X-PARTNER-ID':partnerId,
     'X-EXTERNAL-ID':crypto.randomUUID(),
@@ -738,7 +738,7 @@ export default {
   }
 
   if(url.pathname==='/api/dana/sandbox/uat/create-order-success'&&request.method==='GET'){
-    return danaSandboxCreateOrderUat(env,url.origin);
+    return danaSandboxCreateOrderUat(env,url.origin,url.searchParams.get('scenario')||'success');
   }
   if(url.pathname==='/api/radio/status')return cors(request,Response.json(await radioStatus(env)));
   if(url.pathname==='/health')return cors(request,Response.json({ok:true,service:'nadmo-live-beta',engine:'cloudflare-durable-objects',mode:'webrtc-p2p',maxViewers:VIEWER_LIMIT,maxGuestSeats:GUEST_LIMIT,guestMediaArchitecture:'BETA_HOST_RELAY_P2P',payments:false,creatorVerificationRequired:env.VERIFY_CREATOR_REQUIRED==='true'||env.BETA_TEST_HOSTS_ENABLED!=='true',anonymousBetaHostsEnabled:env.BETA_TEST_HOSTS_ENABLED==='true'&&env.VERIFY_CREATOR_REQUIRED!=='true'}));
