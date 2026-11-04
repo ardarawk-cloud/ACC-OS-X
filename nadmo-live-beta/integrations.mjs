@@ -130,6 +130,7 @@ export async function integrationEndpoint(storage,request){
  const overlay=p.match(/^\/api\/integrations\/overlay\/([a-f0-9]{48})$/);
  if(overlay&&method==='GET'){
   const userId=await storage.get('integration-overlay:'+overlay[1]);if(!userId)return fail(404,'Overlay tidak ditemukan','NOT_FOUND');
+  const record=await storage.get('auth-user:'+userId);
   const event=await storage.get('integration-latest:'+userId);
   const after=clean(u.searchParams.get('after'),180);
   return json({ok:true,event:event&&event.id!==after?event:null,appearance:{
