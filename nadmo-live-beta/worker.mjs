@@ -778,6 +778,17 @@ export default {
     return new Response(JSON.stringify({responseCode:'2004300',responseMessage:'Successful'}),{status:200,headers});
   }
 
+  if(url.pathname==='/api/dana/sandbox/uat/run-remaining-create-order'&&request.method==='GET'){
+    const scenarios=['merchant-abnormal','inconsistent','internal-error'];
+    const results=[];
+    for(const scenario of scenarios){
+      const response=await danaSandboxCreateOrderUat(env,url.origin,scenario);
+      let data;try{data=await response.json()}catch{data={ok:false,error:'INVALID_UAT_RESPONSE'}}
+      results.push({scenario,...data});
+      await new Promise(resolve=>setTimeout(resolve,350));
+    }
+    return Response.json({ok:results.every(x=>['4045408','4045418','5005401'].includes(x.responseCode)),results},{headers:{'Cache-Control':'no-store'}});
+  }
   if(url.pathname==='/api/dana/sandbox/uat/create-order-success'&&request.method==='GET'){
     return danaSandboxCreateOrderUat(env,url.origin,url.searchParams.get('scenario')||'success');
   }
