@@ -1101,9 +1101,9 @@ export default {
   // acknowledge sandbox/bootstrap notifications without changing subscription state.
   // Production activation remains gated until DANA webhook signature credentials are configured.
   if(url.pathname==='/v1.0/debit/notify'&&request.method==='POST'){
-    const danaTs=new Date(Date.now()+7*3600000).toISOString().replace('Z','+07:00');
-    const headers=new Headers({'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-TIMESTAMP':danaTs});
-    return new Response(JSON.stringify({responseCode:'2005600',responseMessage:'Successful'}),{status:200,headers});
+    const body=await request.arrayBuffer();
+    const hub=env.ROOM_HUB.get(env.ROOM_HUB.idFromName('nadmo-beta-v1'));
+    return hub.fetch(new Request(url.origin+'/api/subscription/dana/notify',{method:'POST',headers:request.headers,body}));
   }
   if(url.pathname==='/v1.0/debit/emoney/transfer-bank/notify.htm'&&request.method==='POST'){
     const danaTs=new Date(Date.now()+7*3600000).toISOString().replace('Z','+07:00');
