@@ -556,12 +556,13 @@ async function danaSandboxCreateOrderUat(env,origin,scenario='success'){
  const now=Date.now(),timestamp=danaJakartaTimestamp(now);
  const path='/rest/redirection/v1.0/debit/payment-host-to-host';
  const ref='NADMO-UAT-'+String(now);
- const errorFixture=scenario==='general-error';
+ const errorAmounts={'general-error':'505400.00','not-permitted':'435415.00','merchant-abnormal':'445408.00','internal-error':'505401.00'};
+ const errorFixture=Object.prototype.hasOwnProperty.call(errorAmounts,scenario);
  const body=JSON.stringify(errorFixture?{
   partnerReferenceNo:ref,
   merchantId,
   validUpTo:danaJakartaTimestamp(now+15*60*1000),
-  amount:{currency:'IDR',value:'505400.00'},
+  amount:{currency:'IDR',value:errorAmounts[scenario]},
   additionalInfo:{
    envInfo:{appVersion:'',clientIp:'',extendInfo:'',merchantAppVersion:'',orderOsType:'',orderTerminalType:'WEB',osType:'',sdkVersion:'',sessionId:'',sourcePlatform:'IPG',terminalType:'WEB',tokenId:'',websiteLanguage:''},
    mcc:'',
@@ -586,6 +587,34 @@ async function danaSandboxCreateOrderUat(env,origin,scenario='success'){
   }
  });
  try{
+  if(scenario==='inconsistent'){
+   const firstObj={
+    partnerReferenceNo:ref,merchantId,validUpTo:danaJakartaTimestamp(now+15*60*1000),
+    amount:{currency:'IDR',value:'1.00'},
+    additionalInfo:{
+     envInfo:{appVersion:'',clientIp:'',extendInfo:'',merchantAppVersion:'',orderOsType:'',orderTerminalType:'APP',osType:'',sdkVersion:'',sessionId:'',sourcePlatform:'IPG',terminalType:'WEB',tokenId:'',websiteLanguage:''},
+     mcc:'',order:{orderTitle:'shoe'},productCode:'51051000100000000001'
+    }
+   };
+   const send=async obj=>{
+    const raw=JSON.stringify(obj),ts=danaJakartaTimestamp(Date.now());
+    const sig=await danaSign(env,'POST',path,raw,ts);
+    return fetch(apiOrigin+path,{method:'POST',headers:{
+     'Content-Type':'application/json','X-TIMESTAMP':ts,'X-SIGNATURE':sig,'X-PARTNER-ID':partnerId,
+     'X-EXTERNAL-ID':crypto.randomUUID(),'CHANNEL-ID':partnerId+'-SERVER','X-Debug-Mode':'true','ORIGIN':origin,'Accept':'application/json'
+    },body:raw,redirect:'manual',signal:AbortSignal.timeout(12000)});
+   };
+   const first=await send(firstObj);
+   await first.text();
+   const secondObj={...firstObj,amount:{currency:'IDR',value:'10000.00'}};
+   const second=await send(secondObj);
+   const secondText=await second.text();
+   let secondDana;try{secondDana=JSON.parse(secondText)}catch{secondDana={raw:secondText.slice(0,1000)}}
+   return Response.json({
+    ok:secondDana?.responseCode==='4045418',httpStatus:second.status,responseCode:secondDana?.responseCode||null,
+    responseMessage:secondDana?.responseMessage||null,partnerReferenceNo:secondDana?.partnerReferenceNo||ref,detail:secondDana
+   },{status:200,headers:{'Cache-Control':'no-store'}});
+  }
   const signature=await danaSign(env,'POST',path,body,timestamp);
   const response=await fetch(apiOrigin+path,{
    method:'POST',
