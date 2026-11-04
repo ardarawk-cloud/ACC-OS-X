@@ -2594,6 +2594,7 @@ body.live-immersive #watch #liveRestReminder{
 
 
 /* MOSHI Messenger v2: accessible touch controls without changing NADMO app chrome. */
+.message-bubble[hidden]{display:none!important}
 .message-toolbelt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
 .message-toolbelt input,.message-toolbelt select{min-width:0;border:1px solid var(--cbw-405442,#405442);background:var(--cbw-111b14,#111b14);color:var(--paper);border-radius:10px;padding:11px;min-height:43px}
 .message-toolbelt input{flex:1 1 160px}.message-toolbelt select{flex:0 1 145px}
@@ -3232,7 +3233,8 @@ body.live-immersive #watch #liveRestReminder{
  // Android WebView's appassets:// origin must keep the original Worker backend.
  const NADMO_LEGACY_ORIGIN='https://nadmo-live-beta-20261009.ardarawk.workers.dev';
  const NADMO_PUBLIC_ORIGIN='https://live.nadmo.id';
- const DEFAULT_BACKEND=(location.origin===NADMO_PUBLIC_ORIGIN||location.origin===NADMO_LEGACY_ORIGIN)
+ const NADMO_MOSHI_STAGING_ORIGIN='https://nadmo-live-moshi-v2-staging.ardarawk.workers.dev';
+ const DEFAULT_BACKEND=(location.origin===NADMO_PUBLIC_ORIGIN||location.origin===NADMO_LEGACY_ORIGIN||location.origin===NADMO_MOSHI_STAGING_ORIGIN)
   ?location.origin:NADMO_LEGACY_ORIGIN;
  let server=DEFAULT_BACKEND, socket=null, localStream=null, currentRoom='', selfId='', host=false, peers=new Map(), peer=null;
  let followedHandles=new Set(),socialConnectionsKind='following';
@@ -4237,7 +4239,7 @@ body.live-immersive #watch #liveRestReminder{
     await loadMessageInbox(threads,requests);
   }catch(error){console.warn('Chat unread count not available',error)}
  }
- let moshiConversationPrefs={},moshiComposer={mode:'',id:''},moshiCachedMessages=[];
+ let moshiConversationPrefs={},moshiComposer={mode:'',id:''},moshiCachedMessages=[],moshiLastRender='';
  function moshiResetComposer(){
   moshiComposer={mode:'',id:''};$('messageComposerMode').hidden=true;
   $('messageBody').placeholder='Tulis pesan...';$('messageSend').textContent='➤';
@@ -4405,7 +4407,7 @@ body.live-immersive #watch #liveRestReminder{
   try{
    // Opening a chat respects the recipient's own privacy and blocking decisions.
    const data=await accountRequest('/api/messages/thread/'+encodeURIComponent(normalized));
-   moshiConversationPrefs=data.preferences||{};moshiCachedMessages=data.messages||[];
+   moshiConversationPrefs=data.preferences||{};moshiCachedMessages=data.messages||[];moshiLastRender='';
    moshiResetComposer();$('messageTextSearch').value='';$('messageTextSearch').hidden=false;
    $('messageThreadMenu').hidden=true;$('messageBlockPeer').setAttribute('aria-expanded','false');moshiSyncMenuLabels();
    activeChatHandle=normalized;activeChatPeer={handle:normalized,name:data.participant?.name||name||normalized,
@@ -4436,7 +4438,11 @@ body.live-immersive #watch #liveRestReminder{
  }
  function renderConversation(messages){
   moshiCachedMessages=messages;
-  const node=$('messageBubbles'),bottom=node.scrollTop+node.clientHeight>=node.scrollHeight-50;
+  const node=$('messageBubbles');
+  const fingerprint=JSON.stringify(messages);
+  if(fingerprint===moshiLastRender&&node.children.length){moshiFilterChat();return}
+  moshiLastRender=fingerprint;
+  const bottom=node.scrollTop+node.clientHeight>=node.scrollHeight-50;
   node.replaceChildren();
   for(const msg of messages){
    const mine=msg.fromHandle===activeAccount?.handle,deleted=msg.deletedForAll===true;
@@ -4497,7 +4503,7 @@ body.live-immersive #watch #liveRestReminder{
   }catch(error){$('messageConversationStatus').textContent=error.message}
  }
  function closeMessages(){
-  activeChatHandle='';activeChatPeer=null;moshiResetComposer();$('messageTextSearch').hidden=true;
+  activeChatHandle='';activeChatPeer=null;moshiLastRender='';moshiResetComposer();$('messageTextSearch').hidden=true;
   $('messageThreadMenu').hidden=true;$('messageBlockPeer').setAttribute('aria-expanded','false');
   if(chatRefreshTimer){clearInterval(chatRefreshTimer);chatRefreshTimer=null}
   $('messageConversation').classList.add('hide');
