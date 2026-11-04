@@ -1,41 +1,81 @@
-/* NADMO LIVE v436: Favicon cards. Preserve existing links. */
+/* NADMO LIVE v436 — Real site logos on ME/public creator link cards.
+ * Reads only the domain from an existing saved link. No links are changed,
+ * no profile data is sent to the logo service, and no site is treated as verified.
+ */
 (()=>{
-const domains=['instagram.com','facebook.com','tiktok.com','youtube.com','wa.me','whatsapp.com','x.com','sociabuzz.com'];
-const cache=new Map();
-function candidates(url){
- const host=url.hostname.toLowerCase(),origin=url.origin;
- const google='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
- if(domains.some(d=>host===d||host.endsWith('.'+d)))return [google,origin+'/favicon.ico'];
- if(host==='nadmo.id'||host.endsWith('.nadmo.id'))return [origin+'/logo.svg',origin+'/favicon.svg',origin+'/favicon.ico',google];
- return [origin+'/favicon.ico',origin+'/favicon.svg',google];
-}
-function decorate(a){
- const badge=a.querySelector('.cp-link-icon');if(!badge)return;
- const href=a.href;if(a.dataset.icon436===href)return;a.dataset.icon436=href;
- let u;try{u=new URL(href)}catch{return}
- if(!['https:','http:'].includes(u.protocol))return;
- const host=u.hostname,options=candidates(u);
- const chosen=cache.get(host);
- const sources=chosen?[chosen]:options;
- let i=0;
- function load(){
-  if(i>=sources.length)return;
-  const src=sources[i++],img=document.createElement('img');
-  img.alt='';img.className='cp-site-favicon';img.decoding='async';img.loading='lazy';
-  img.onload=()=>{if(a.href!==href)return;cache.set(host,src);badge.classList.add('cp-has-site-icon')};
-  img.onerror=()=>{img.remove();load()};
-  badge.querySelectorAll('img.cp-site-favicon').forEach(n=>n.remove());
-  badge.append(img);img.src=src;
+ 'use strict';
+ const version='436';
+ const socialProviders=new Set(['facebook','instagram','tiktok','youtube','whatsapp','x','twitch','discord','saweria','sociabuzz']);
+ const approvedHosts=host=>typeof host==='string'&&host.includes('.')&&
+   /^[a-z0-9.-]{4,253}$/i.test(host)&&!host.endsWith('.local')&&!/^[0-9.]+$/.test(host);
+ const domainHost=host=>host==='nadmo.id'||host.endsWith('.nadmo.id');
+ function candidates(host,provider){
+  const direct='https://'+host;
+  const google='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
+  if(socialProviders.has(provider))return [google,direct+'/favicon.ico',direct+'/favicon.svg'];
+  if(domainHost(host))return [direct+'/logo.svg',direct+'/favicon.svg',direct+'/favicon.ico',google];
+  return [direct+'/favicon.ico',direct+'/favicon.svg',direct+'/apple-touch-icon.png',google];
  }
- load();
-}
-function init(){
- for(const id of ['profileBusinessLinks','publicCreatorLinks']){
-  const list=document.getElementById(id);if(!list||list.dataset.iconWatch436)return;
-  list.dataset.iconWatch436='1';
-  const scan=()=>list.querySelectorAll(':scope > a.profile-business-link').forEach(decorate);
-  new MutationObserver(scan).observe(list,{childList:true,subtree:true});scan();
+ function mono(host){
+  const part=(host.endsWith('.nadmo.id')?host.slice(0,-'.nadmo.id'.length):host.split('.')[0])
+   .replace(/[^a-z0-9]/gi,'').toUpperCase();
+  return (part.slice(0,2)||'WEB');
  }
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+ function decorate(anchor){
+  if(!anchor?.matches?.('a.profile-business-link'))return;
+  const badge=anchor.querySelector('.cp-link-icon');
+  if(!badge||badge.dataset.cpLogoVersion===version)return;
+  let url;try{url=new URL(anchor.href)}catch{return}
+  if(!['http:','https:'].includes(url.protocol)||!approvedHosts(url.hostname))return;
+  const host=url.hostname.toLowerCase();
+  const provider=anchor.dataset.cpProvider||'website';
+  badge.dataset.cpLogoVersion=version;
+  badge.dataset.cpLogoHost=host;
+  const fallback=document.createElement('span');
+  fallback.className='cp-logo-fallback';
+  fallback.setAttribute('aria-hidden','true');
+  fallback.textContent=provider==='website'?mono(host):badge.textContent.trim()||mono(host);
+  const img=document.createElement('img');
+  img.className='cp-link-favicon';
+  img.alt='';img.setAttribute('aria-hidden','true');
+  img.loading='eager';img.decoding='async';img.referrerPolicy='no-referrer';
+  img.hidden=true;
+  const sources=candidates(host,provider);
+  let idx=0,finished=false;
+  function next(){
+   if(finished||!badge.isConnected)return;
+   if(idx>=sources.length){
+    finished=true;img.hidden=true;fallback.hidden=false;
+    badge.dataset.cpLogoStatus='fallback';return;
+   }
+   img.src=sources[idx++];
+  }
+  img.onload=()=>{
+   // Google's 16px default globe for an unknown NADMO site is not a real logo.
+   if(domainHost(host)&&img.src.includes('/s2/favicons')&&img.naturalWidth<=16){next();return}
+   if(img.naturalWidth<8||img.naturalHeight<8){next();return}
+   finished=true;img.hidden=false;fallback.hidden=true;
+   badge.dataset.cpLogoStatus='loaded';
+  };
+  img.onerror=next;
+  badge.replaceChildren(fallback,img);
+  next();
+ }
+ function scan(list){
+  if(!list?.isConnected)return;
+  for(const a of list.querySelectorAll('a.profile-business-link'))decorate(a);
+ }
+ function init(){
+  for(const id of ['profileBusinessLinks','publicCreatorLinks']){
+   const list=document.getElementById(id);
+   if(!list||list.dataset.cpFaviconWatch===version)continue;
+   list.dataset.cpFaviconWatch=version;
+   const observer=new MutationObserver(()=>scan(list));
+   // The original profile renderer may replace both links and their inner nodes.
+   observer.observe(list,{childList:true,subtree:true});
+   scan(list);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+ else init();
 })();
