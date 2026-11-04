@@ -1,0 +1,320 @@
+/* NADMO LIVE CYBERDECK PROFILE v432
+   Presentation only. Existing backend, covers, photos, external URLs and settings are authoritative. */
+#settings #betaSocialProfile,
+#publicProfilePage #publicMeSkin{
+  --cp-hot:var(--skin-accent,var(--neon,#ff55ce));
+  --cp-cyan:#56ecff;
+  --cp-lime:#e0ff47;
+  --cp-white:#f4f7ff;
+  --cp-surface:#0b1121;
+  width:100%;min-width:0;max-width:100%;position:relative;
+  color:var(--cp-white);
+  font-family:system-ui,"Arial",sans-serif;
+}
+html[data-nadmo-ui-theme="cyberneon"] #settings #betaSocialProfile,
+#publicProfilePage #publicMeSkin[data-theme="cyberneon"]{
+  --cp-hot:#ff52ce;--cp-cyan:#52f0ff;--cp-lime:#ddff42;
+}
+#settings #betaSocialProfile[data-theme="cyberbw"],
+#publicProfilePage #publicMeSkin[data-theme="cyberbw"]{
+  --cp-hot:#f6f6fb;--cp-cyan:#e3e9f2;--cp-lime:#f2f4f8;
+}
+#settings .me-top{
+  position:relative;min-height:56px;padding:7px 8px 13px;
+  border-bottom:1px solid #795588!important;
+  background:linear-gradient(90deg,#ff51d30d,transparent 50%);
+  margin:4px 0 15px!important;
+}
+#settings .me-top:before{
+  content:"";position:absolute;left:0;top:-7px;width:64px;height:2px;background:#fc56d9;
+  box-shadow:70px 0 #ffffff90,126px 0 #51efff;
+}
+#settings .me-top:after{
+  content:"NADMO LIVE // PROFILE  ▥▥";
+  position:absolute;right:54px;bottom:16px;
+  color:#afc5d1;font:800 9px/1.2 system-ui,Arial,sans-serif;
+  letter-spacing:.12em;white-space:nowrap;pointer-events:none;
+}
+#settings .me-top span{
+  color:#f5f7ff;font:950 clamp(24px,5.8vw,33px)/1.2 system-ui,Arial,sans-serif;
+  letter-spacing:.025em;text-transform:uppercase;
+}
+#settings .me-top span:after{content:" ///";color:#ff52ce;letter-spacing:-.07em;font-style:italic}
+#settings #meMore{z-index:2;position:relative}
+#settings #betaSocialProfile .profile-hero,
+#publicProfilePage #publicMeSkin .profile-hero{
+  position:relative!important;
+  border:2px solid var(--cp-hot)!important;
+  border-radius:20px!important;
+  box-shadow:0 0 0 1px #ffffff17,inset 0 0 0 1px #ffffff12,0 12px 35px #02031267!important;
+  background-color:#0d1121;
+  overflow:hidden!important;
+}
+#settings #betaSocialProfile .profile-hero:after,
+#publicProfilePage #publicMeSkin .profile-hero:after{
+  content:"";position:absolute;right:12px;bottom:13px;width:70px;height:8px;
+  background:repeating-linear-gradient(100deg,var(--cp-lime) 0 12px,transparent 12px 17px);
+  filter:drop-shadow(0 1px 3px #0009);pointer-events:none;z-index:5;
+}
+#settings #betaSocialProfile .profile-hero:before,
+#publicProfilePage #publicMeSkin[data-cover-photo="true"] .profile-hero:before{
+  background:linear-gradient(180deg,#030c1410 15%,#03091633 49%,#010712ed 100%)!important;
+  inset:0!important;opacity:1!important;z-index:1!important;pointer-events:none!important;
+}
+#settings #betaSocialProfile .profile-hero .profile-avatar,
+#publicProfilePage #publicMeSkin .profile-hero .profile-avatar{
+  border:2px solid var(--cp-lime)!important;
+  box-shadow:0 0 0 2px #050b12,0 0 0 4px #f7ff4b21,0 4px 15px #010307ab!important;
+  background:#08101a!important;
+}
+#settings #betaSocialProfile .profile-hero #profileDisplayName,
+#publicProfilePage #publicMeSkin .profile-hero #publicCreatorName{
+  color:var(--cp-white)!important;
+  font-family:system-ui,"Arial Black",Arial,sans-serif!important;
+  font-size:clamp(18px,5.2vw,27px)!important;
+  font-weight:900!important;
+  letter-spacing:.015em!important;
+  font-style:italic!important;
+  line-height:1.1!important;
+  text-transform:uppercase;
+  text-shadow:0 2px 8px #000e!important;
+}
+#settings #betaSocialProfile .profile-hero #profileDisplayHandle,
+#publicProfilePage #publicMeSkin .profile-hero #publicCreatorHandle{
+  color:#d9f4ff!important;
+  font:700 clamp(11px,3.4vw,14px)/1.3 system-ui,Arial,sans-serif!important;
+  letter-spacing:0!important;max-width:100%;
+  text-shadow:0 2px 7px #000e!important;
+}
+#settings #betaSocialProfile .profile-hero img.profile-cover-photo,
+#publicProfilePage #publicMeSkin img.profile-cover-photo{
+  filter:none!important; /* Never modify a creator's original photo */
+}
+#settings #betaSocialProfile #meProfileControls427{
+  gap:10px!important;margin:13px 0 16px!important;
+}
+#settings #betaSocialProfile #meProfileControls427>button{
+  min-height:50px!important;border:2px solid var(--cp-hot)!important;
+  background:linear-gradient(140deg,#141327,#090e20 65%,#10162b)!important;
+  color:var(--cp-white)!important;
+  border-radius:12px!important;
+  box-shadow:inset 0 1px #ffffff1c,0 1px 12px #0a051c5e!important;
+  letter-spacing:.07em!important;font:900 14px/1.2 system-ui,Arial,sans-serif!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+}
+#settings #betaSocialProfile #meProfileControls427>button:focus-visible{
+  outline:2px solid var(--cp-cyan);outline-offset:2px
+}
+#settings #betaSocialProfile #avatarChoose:before{content:"▧ ";font-size:19px;vertical-align:middle}
+#settings #betaSocialProfile #editProfileBtn:before{content:"✎ ";font-size:20px;vertical-align:middle}
+#settings #betaSocialProfile #profileDisplayBio,
+#publicProfilePage #publicMeSkin #publicCreatorBio{
+  position:relative;display:block;min-height:110px;
+  margin:9px 0 18px!important;padding:45px 22px 24px 26px!important;
+  max-width:100%;box-sizing:border-box;
+  color:var(--cp-white)!important;
+  background:
+    linear-gradient(135deg,#17213ad9,#09182ae8 50%,#101827ec),
+    linear-gradient(90deg,transparent 93%,#5ceeff28 94%)!important;
+  border:1px solid var(--cp-lime)!important;border-left:3px solid var(--cp-lime)!important;
+  border-radius:14px!important;
+  box-shadow:inset 0 0 0 1px #ffffff09,0 0 17px #80f9f70b;
+  font:italic 750 clamp(15px,3.5vw,19px)/1.53 system-ui,Arial,sans-serif!important;
+  letter-spacing:.008em!important;
+  overflow-wrap:anywhere!important;white-space:pre-wrap!important;
+  overflow:hidden;
+}
+#settings #betaSocialProfile #profileDisplayBio:before,
+#publicProfilePage #publicMeSkin #publicCreatorBio:before{
+  content:"// BIO   ▰▰▰";
+  position:absolute;top:12px;left:19px;
+  display:inline-block;padding:2px 10px;
+  background:var(--cp-lime);color:#091012;
+  border-radius:4px;
+  font:900 10px/1.5 system-ui,Arial,sans-serif!important;
+  letter-spacing:.15em!important;
+}
+#settings #betaSocialProfile #profileDisplayBio:after,
+#publicProfilePage #publicMeSkin #publicCreatorBio:after{
+  content:"▰ ▰ ▰     ━━  ━";
+  color:var(--cp-cyan);opacity:.72;
+  font:900 10px system-ui,Arial,sans-serif;
+  position:absolute;right:11px;bottom:4px;pointer-events:none;
+}
+#settings #betaSocialProfile .me-social-stats{
+  gap:11px!important;margin:7px 0 16px!important;
+}
+#settings #betaSocialProfile .me-social-stats button{
+  position:relative;border:1px solid var(--cp-lime)!important;
+  min-height:69px!important;border-radius:11px!important;
+  background:linear-gradient(135deg,#121e28,#101e25 70%,#152116)!important;
+  color:#e6eafb!important;gap:10px!important;overflow:hidden;
+  box-shadow:inset 0 1px #ffffff12;
+}
+#settings #betaSocialProfile .me-social-stats button:before{
+  content:"◌";color:var(--cp-lime);font-size:23px;line-height:1;
+}
+#settings #betaSocialProfile .me-social-stats button strong{
+  color:var(--cp-cyan)!important;font-size:clamp(21px,4.2vw,27px)!important;
+  font-family:system-ui,Arial,sans-serif!important;
+  font-weight:900!important;
+}
+#settings #openHostIntegrationsMe{
+  display:flex!important;width:100%!important;min-height:56px;
+  justify-content:center!important;align-items:center!important;
+  margin:0 0 13px!important;
+  border:1px solid #ff75e4!important;border-radius:11px!important;
+  background:linear-gradient(100deg,#e43fbd,#ff55d0 52%,#e83dbd)!important;
+  color:#0a1020!important;
+  font:900 clamp(13px,3.8vw,17px)/1.3 system-ui,Arial,sans-serif!important;
+  letter-spacing:.06em!important;
+  box-shadow:0 5px 16px #ff44ca32!important;
+  position:relative;overflow:hidden!important;
+}
+#settings #openHostIntegrationsMe:after{
+  content:"////";position:absolute;right:12px;bottom:1px;
+  color:#10151d;letter-spacing:-.12em;font-weight:900;opacity:.6;
+}
+#settings #openHostIntegrationsMe:focus-visible{outline:2px solid var(--cp-cyan);outline-offset:3px}
+#settings .me-public-share:not(.hide){
+  margin-top:14px!important;padding-top:12px!important;
+  border-top:1px solid #8b6384!important;
+}
+#settings .me-public-share .me-repost-header,
+#publicProfilePage .cp-public-links-header{
+  color:#ff61d7!important;
+  font:900 13px/1.35 system-ui,Arial,sans-serif!important;
+  letter-spacing:.09em!important;
+  margin:0 0 9px!important;
+  padding:0 0 11px!important;
+  border-bottom:1px solid #554a69;
+  text-transform:uppercase;
+}
+#settings .me-public-share .me-repost-header:after,
+#publicProfilePage .cp-public-links-header:after{
+  content:" ///";font-style:italic;color:#ff6ae2;letter-spacing:-.05em
+}
+#settings #profileBusinessLinks,
+#publicProfilePage #publicCreatorLinks{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px!important;
+  margin:5px 0 18px!important;
+  padding:2px 0!important;
+  align-items:stretch!important;min-width:0;
+}
+#settings #profileBusinessLinks>.profile-note{
+  grid-column:1/-1;
+  padding:14px!important;margin:5px 0 2px!important;
+  background:#0c1523;color:#b4c7dc!important;
+  border:1px dashed #465c81;border-radius:9px;
+  font:500 12px/1.7 system-ui,Arial,sans-serif;
+}
+#settings #profileBusinessLinks>a.profile-business-link,
+#publicProfilePage #publicCreatorLinks>a.profile-business-link{
+  position:relative;min-width:0;min-height:78px;
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  gap:10px;padding:13px 10px!important;margin:0!important;
+  text-decoration:none!important;
+  border:1px solid var(--cp-hot)!important;
+  border-bottom:2px solid var(--cp-cyan)!important;
+  border-radius:12px!important;
+  background:linear-gradient(138deg,#17182f,#0b1628 65%,#131127)!important;
+  color:#f9f7ff!important;
+  box-shadow:inset 0 1px #ffffff13,0 4px 12px #0005!important;
+  font-family:system-ui,Arial,sans-serif!important;
+  overflow:hidden;
+  transition:background .12s,border-color .12s;
+}
+#settings #profileBusinessLinks>a.profile-business-link:focus-visible,
+#publicProfilePage #publicCreatorLinks>a.profile-business-link:focus-visible{
+  outline:2px solid var(--cp-lime);outline-offset:2px;
+}
+#settings #profileBusinessLinks>a.profile-business-link:after,
+#publicProfilePage #publicCreatorLinks>a.profile-business-link:after{
+  content:"↗";display:grid;place-items:center;flex:0 0 16px;
+  margin-left:auto;color:var(--cp-lime)!important;
+  font:900 19px/1 system-ui,Arial,sans-serif;pointer-events:none;
+}
+#settings #profileBusinessLinks .cp-link-icon,
+#publicProfilePage #publicCreatorLinks .cp-link-icon{
+  display:grid;place-items:center;flex:0 0 34px;
+  width:34px;height:34px;border:1px solid #ffffff50;border-radius:9px;
+  background:var(--cp-hot);color:#11121a!important;
+  font:900 20px/1 system-ui,Arial,sans-serif;
+  box-shadow:0 1px 8px #ffffff14;pointer-events:none;
+}
+#settings #profileBusinessLinks .cp-link-main,
+#publicProfilePage #publicCreatorLinks .cp-link-main{
+  display:flex;flex:1 1 0;flex-direction:column;
+  gap:3px;min-width:0;align-items:flex-start;
+}
+#settings #profileBusinessLinks .cp-link-name,
+#publicProfilePage #publicCreatorLinks .cp-link-name{
+  font:italic 900 11px/1.2 system-ui,Arial,sans-serif;
+  letter-spacing:.035em;max-width:100%;min-width:0;
+  overflow-wrap:anywhere;text-overflow:ellipsis;
+}
+#settings #profileBusinessLinks .cp-link-target,
+#publicProfilePage #publicCreatorLinks .cp-link-target{
+  font:500 10px/1.35 system-ui,Arial,sans-serif;
+  color:#a8c3d8!important;min-width:0;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#settings #profileBusinessLinks>a[data-cp-provider="youtube"] .cp-link-icon,
+#publicProfilePage #publicCreatorLinks>a[data-cp-provider="youtube"] .cp-link-icon{background:#f83753;color:#fff!important}
+#settings #profileBusinessLinks>a[data-cp-provider="instagram"] .cp-link-icon,
+#publicProfilePage #publicCreatorLinks>a[data-cp-provider="instagram"] .cp-link-icon{background:linear-gradient(135deg,#f5be41,#ec2a90,#673af9);color:#fff!important}
+#settings #profileBusinessLinks>a[data-cp-provider="tiktok"] .cp-link-icon,
+#publicProfilePage #publicCreatorLinks>a[data-cp-provider="tiktok"] .cp-link-icon{background:#10141e;color:#65f7f5!important}
+#settings #profileBusinessLinks>a[data-cp-provider="facebook"] .cp-link-icon,
+#publicProfilePage #publicCreatorLinks>a[data-cp-provider="facebook"] .cp-link-icon{background:#2778ef;color:#fff!important}
+#settings #profileBusinessLinks>a[data-cp-provider="whatsapp"] .cp-link-icon,
+#publicProfilePage #publicCreatorLinks>a[data-cp-provider="whatsapp"] .cp-link-icon{background:#30bc79;color:#09130b!important}
+#publicProfilePage .subpage-top{
+  border-bottom:1px solid #684878!important;padding-bottom:15px;
+}
+#publicProfilePage .subpage-top h2{
+  font:900 clamp(17px,4.2vw,25px)/1.35 system-ui,Arial,sans-serif!important;
+  letter-spacing:.025em;
+}
+#publicProfilePage #publicMeSkin .public-profile-meta{
+  display:flex;flex-wrap:wrap;gap:8px;
+  border-top:1px solid #695083;padding-top:12px!important;
+  font:800 12px/1.5 system-ui,Arial,sans-serif;
+}
+#publicProfilePage #publicMeSkin .public-profile-meta>span{
+  padding:8px 11px;border:1px solid #635276;background:#0d1528;border-radius:9px;
+}
+@media(max-width:420px){
+ #settings .me-top:after{font-size:8px;right:47px;letter-spacing:0}
+ #settings #betaSocialProfile .profile-hero #profileDisplayName,
+ #publicProfilePage #publicMeSkin .profile-hero #publicCreatorName{font-size:clamp(16px,4.6vw,21px)!important}
+ #settings #profileBusinessLinks>a.profile-business-link,
+ #publicProfilePage #publicCreatorLinks>a.profile-business-link{gap:6px;padding:10px 7px!important;min-height:70px}
+ #settings #profileBusinessLinks .cp-link-icon,
+ #publicProfilePage #publicCreatorLinks .cp-link-icon{width:29px;height:29px;flex-basis:29px;font-size:17px}
+ #settings #profileBusinessLinks .cp-link-name,
+ #publicProfilePage #publicCreatorLinks .cp-link-name{font-size:10px}
+ #settings #profileBusinessLinks .cp-link-target,
+ #publicProfilePage #publicCreatorLinks .cp-link-target{font-size:9px}
+}
+@media(max-width:330px){
+ #settings #profileBusinessLinks,#publicProfilePage #publicCreatorLinks{grid-template-columns:1fr}
+ #settings .me-top:after{display:none}
+ #settings #betaSocialProfile #profileDisplayBio,#publicProfilePage #publicMeSkin #publicCreatorBio{padding:41px 15px 20px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #settings #profileBusinessLinks a.profile-business-link,
+ #publicProfilePage #publicCreatorLinks a.profile-business-link{transition:none!important}
+}
+
+#settings #profileBusinessLinks>.cp-add-social{
+ grid-column:1/-1;min-height:51px;width:100%;
+ display:flex;justify-content:center;align-items:center;gap:9px;
+ border:1px dashed var(--cp-cyan);border-radius:10px;
+ background:linear-gradient(120deg,#10192b,#182033);
+ color:var(--cp-white);font:900 12px/1.2 system-ui,Arial,sans-serif;
+ letter-spacing:.06em;cursor:pointer;padding:10px 14px;touch-action:manipulation;
+}
+#settings #profileBusinessLinks>.cp-add-social:focus-visible{outline:2px solid var(--cp-lime);outline-offset:2px}
