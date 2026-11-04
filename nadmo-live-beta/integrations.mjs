@@ -120,7 +120,7 @@ export async function integrationEndpoint(storage,request){
   const userId=await storage.get('integration-overlay:'+overlay[1]);if(!userId)return fail(404,'Overlay tidak ditemukan','NOT_FOUND');
   const event=await storage.get('integration-latest:'+userId);
   const after=clean(u.searchParams.get('after'),180);
-  return json({ok:true,event:event&&event.id!==after?event:null},{200,'Access-Control-Allow-Origin':'*'});
+  return json({ok:true,event:event&&event.id!==after?event:null},200,{'Access-Control-Allow-Origin':'*'});
  }
 
  return fail(404,'Integration endpoint tidak ditemukan','NOT_FOUND');
