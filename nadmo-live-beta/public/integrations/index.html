@@ -1,0 +1,35 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NADMO LIVE — Integration Center</title><style>
+:root{color-scheme:dark;--bg:#090b0a;--panel:#131814;--line:#364038;--neon:#dcff38;--text:#edf2e9;--dim:#9aa69a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}.app{max-width:820px;margin:auto;padding:22px 16px 80px}.top{display:flex;justify-content:space-between;align-items:end;gap:12px;border-bottom:1px solid var(--line);padding-bottom:15px}h1,h2{margin:0}h1{font:900 34px Impact,Arial,sans-serif}.card{border:1px solid var(--line);background:var(--panel);padding:14px;margin:12px 0}.muted{color:var(--dim);line-height:1.55}.field{width:100%;background:#0f1310;border:1px solid var(--line);color:var(--text);padding:12px;margin:8px 0}.row{display:flex;gap:8px;flex-wrap:wrap}.linkbox{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:10px 0}.linkbox input{min-width:0}.btn,button{border:1px solid var(--neon);background:var(--neon);color:#111;padding:11px 14px;font-weight:800;text-decoration:none;cursor:pointer}.secondary{background:transparent;color:var(--text);border-color:#657166}.ok{border-left:3px solid var(--neon);padding:10px;background:#111713}.warn{border-left:3px solid #f5b942;padding:10px;background:#17130b}.step{padding:8px 0;border-bottom:1px solid #2c332d}.step:last-child{border:0}@media(max-width:620px){.linkbox{grid-template-columns:1fr}.linkbox button{width:100%}}</style></head><body><main class="app">
+<div class="top"><div><small>NADMO LIVE / HOST</small><h1>INTEGRATION CENTER</h1></div><a class="btn secondary" href="/subscription/">KEMBALI</a></div>
+<div id="login" class="card" hidden><b>Login diperlukan.</b><p class="muted">Masuk ke akun host NADMO LIVE terlebih dahulu.</p></div>
+<section id="content" hidden>
+<div class="card"><h2>Setup sekali, habis itu tinggal LIVE</h2><p class="muted">Tidak perlu bikin webhook sendiri, coding, CSS, atau token manual. Copy link yang tersedia di bawah ini.</p></div>
+
+<div class="card"><h2>1. Hubungkan Saweria</h2><p class="muted">Masukkan <b>Streaming Key Saweria</b> sekali saja. NADMO memakainya hanya untuk memverifikasi signature webhook Saweria.</p>
+<input id="streamKey" class="field" type="password" autocomplete="off" placeholder="Paste Saweria Streaming Key">
+<div class="row"><button id="saveKey">SIMPAN STREAMING KEY</button><span id="keyStatus" class="muted"></span></div>
+<div class="linkbox"><input id="webhookUrl" class="field" readonly><button data-copy="webhookUrl">COPY WEBHOOK URL</button></div>
+<p class="muted">Paste URL ini ke pengaturan <b>HTTP Webhook</b> Saweria. Saweria akan mengirim dukungan masuk ke NADMO secara otomatis.</p></div>
+
+<div class="card"><h2>2. Browser Source OBS / Streamlabs</h2>
+<div class="step"><b>Alert Visual</b><div class="linkbox"><input id="alertUrl" class="field" readonly><button data-copy="alertUrl">COPY ALERT LINK</button></div></div>
+<div class="step"><b>Alert Visual + TTS</b><div class="linkbox"><input id="ttsUrl" class="field" readonly><button data-copy="ttsUrl">COPY TTS LINK</button></div></div>
+<p class="muted">Di OBS: tambah <b>Browser Source</b> → paste salah satu link → ukuran rekomendasi 1920×1080. Background overlay transparan.</p>
+<div class="row"><button id="testAlert">TEST ALERT</button><button id="rotate" class="secondary">GANTI SEMUA LINK</button></div><p id="testStatus" class="muted"></p></div>
+
+<div class="card"><h2>Setup host paling singkat</h2>
+<div class="step">1. Paste Streaming Key Saweria → <b>Simpan</b>.</div>
+<div class="step">2. Copy <b>Webhook URL</b> → paste ke Saweria.</div>
+<div class="step">3. Copy <b>Alert Link</b> → paste ke Browser Source OBS.</div>
+<div class="step">4. Tekan <b>Test Alert</b>. Kalau muncul di OBS, selesai.</div>
+</div>
+</section></main><script>
+const $=id=>document.getElementById(id);let model=null;
+async function req(path,opt={}){const r=await fetch(path,{credentials:'include',cache:'no-store',...opt,headers:{...(opt.headers||{}),...(opt.body?{'Content-Type':'application/json'}:{})}});let d={};try{d=await r.json()}catch{}if(!r.ok||d.ok===false)throw Error(d.error||('HTTP '+r.status));return d}
+function draw(){if(!model)return;$('webhookUrl').value=model.urls.saweriaWebhook;$('alertUrl').value=model.urls.alertOverlay;$('ttsUrl').value=model.urls.alertTtsOverlay;$('keyStatus').textContent=model.saweria.configured?'Saweria sudah terhubung.':'Streaming Key belum disimpan.'}
+async function load(){try{model=await req('/api/integrations/me');$('content').hidden=false;$('login').hidden=true;draw()}catch(e){$('content').hidden=true;$('login').hidden=false}}
+document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{const el=$(b.dataset.copy);await navigator.clipboard.writeText(el.value);const old=b.textContent;b.textContent='COPIED';setTimeout(()=>b.textContent=old,1200)});
+$('saveKey').onclick=async()=>{const s=$('keyStatus');s.textContent='Menyimpan...';try{model=await req('/api/integrations/saweria-key',{method:'POST',body:JSON.stringify({streamingKey:$('streamKey').value.trim()})});$('streamKey').value='';draw();s.textContent='Streaming Key tersimpan.'}catch(e){s.textContent=e.message}};
+$('testAlert').onclick=async()=>{const s=$('testStatus');s.textContent='Mengirim test alert...';try{await req('/api/integrations/test-alert',{method:'POST',body:'{}'});s.textContent='Test alert dikirim. Cek Browser Source OBS.'}catch(e){s.textContent=e.message}};
+$('rotate').onclick=async()=>{if(!confirm('Ganti semua link integration? Link lama langsung tidak berlaku.'))return;try{model=await req('/api/integrations/rotate',{method:'POST',body:'{}'});draw();$('testStatus').textContent='Semua link sudah diganti.'}catch(e){$('testStatus').textContent=e.message}};
+load();</script></body></html>
