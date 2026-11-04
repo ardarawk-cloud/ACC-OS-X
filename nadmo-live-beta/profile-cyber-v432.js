@@ -51,6 +51,16 @@
    target.textContent=meta.subtitle;target.title=a.href;
    main.append(heading,target);a.replaceChildren(badge,main);
   }
+  if(!isPublic){
+   const existing=list.querySelector(':scope > .cp-add-social');
+   if(total===0&&!existing){
+    const btn=document.createElement('button');btn.type='button';
+    btn.className='cp-add-social';btn.textContent='＋ TAMBAH LINK SOSIAL';
+    btn.setAttribute('aria-label','Tambahkan tautan sosial ke profil NADMO');
+    btn.addEventListener('click',()=>document.getElementById('editProfileBtn')?.click());
+    list.append(btn);
+   }else if(total>0&&existing)existing.remove();
+  }
   if(isPublic){
    let heading=document.querySelector('#publicProfilePage .cp-public-links-header');
    if(total>0&&!heading){
@@ -60,7 +70,7 @@
    if(heading){heading.hidden=total===0;heading.textContent=socials>0?'SOSIAL MEDIA & LINK':'TERHUBUNG KE'}
   }else{
    const heading=document.querySelector('#settings .me-public-share .me-repost-header');
-   if(heading)heading.textContent=socials>0?'SOSIAL MEDIA & LINK':'TERHUBUNG KE';
+   if(heading)heading.textContent=socials>0?'SOSIAL MEDIA & LINK':'SOSIAL MEDIA';
   }
  }
  function setup(){
