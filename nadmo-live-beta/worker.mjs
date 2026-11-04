@@ -779,6 +779,210 @@ async function danaOfficialFinishNotifyUat(env,origin,scenario){
  }
 }
 
+
+async function danaUatPost(env,origin,path,bodyObj,opts={}){
+ if(String(env.DANA_ENV||'').toLowerCase()!=='sandbox')throw new Error('DANA_ENV_NOT_SANDBOX');
+ const apiOrigin=String(env.DANA_API_ORIGIN||'').replace(/\/$/,'');
+ if(apiOrigin!=='https://api.sandbox.dana.id')throw new Error('DANA_API_ORIGIN_NOT_SANDBOX');
+ const partnerId=String(env.DANA_X_PARTNER_ID||'').trim();
+ const timestamp=danaJakartaTimestamp(Date.now());
+ const body=JSON.stringify(bodyObj);
+ const signature=opts.invalidSignature
+  ?'85be817c55b2c135157c7e89f52499bf0c25ad6eeebe04a986e8c862561b19a5'
+  :await danaSign(env,'POST',path,body,timestamp);
+ const headers={
+  'Content-Type':'application/json',
+  ...(opts.omitTimestamp?{}:{'X-TIMESTAMP':timestamp}),
+  'X-SIGNATURE':signature,
+  'X-PARTNER-ID':partnerId,
+  'X-EXTERNAL-ID':crypto.randomUUID(),
+  'CHANNEL-ID':'95221',
+  'ORIGIN':origin,
+  'X-Debug-Mode':'true',
+  'Accept':'application/json'
+ };
+ if(env.DANA_CLIENT_SECRET)headers['CLIENT_SECRET']=String(env.DANA_CLIENT_SECRET);
+ const response=await fetch(apiOrigin+path,{
+  method:'POST',headers,body,redirect:'manual',signal:AbortSignal.timeout(15000)
+ });
+ const raw=await response.text();
+ let data;try{data=JSON.parse(raw)}catch{data={raw:raw.slice(0,800)}}
+ return {httpStatus:response.status,data};
+}
+
+async function danaPaymentGatewayRemainingUat(env,origin){
+ const merchantId=String(env.DANA_MERCHANT_ID||'').trim();
+ const path='/payment-gateway/v1.0/debit/payment-host-to-host.htm';
+ const results=[];
+
+ // 1) Invalid Field Format
+ {
+  const ref=crypto.randomUUID();
+  const body={
+   partnerReferenceNo:ref,merchantId,
+   amount:{value:'1500',currency:'IDR'},externalStoreId:'',
+   urlParams:[
+    {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'Y'},
+    {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'Y'}
+   ],
+   validUpTo:'2030-05-01T00:46:43+07:00',
+   additionalInfo:{
+    order:{orderTitle:'Payment Gateway Order',scenario:'API',merchantTransType:'SPECIAL_MOVIE',buyer:{}},
+    mcc:'5732',
+    envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM',orderTerminalType:'WEB'},
+    extendInfo:'{"key":"value"}'
+   },
+   payOptionDetails:[{payMethod:'BALANCE',payOption:'',transAmount:{value:'1500',currency:'IDR'}}]
+  };
+  const r=await danaUatPost(env,origin,path,body);
+  results.push({scenario:'invalid-field-format',expected:'4005401',httpStatus:r.httpStatus,responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+
+ // 2) Inconsistent Request
+ {
+  const ref=crypto.randomUUID();
+  const first={
+   partnerReferenceNo:ref,merchantId,
+   amount:{value:'1.00',currency:'IDR'},externalStoreId:'',
+   urlParams:[
+    {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'Y'},
+    {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'Y'}
+   ],
+   validUpTo:danaJakartaTimestamp(Date.now()+600000),
+   additionalInfo:{
+    order:{orderTitle:'Payment Gateway Order',scenario:'API',merchantTransType:'SPECIAL_MOVIE',buyer:{}},
+    mcc:'5732',
+    envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM',orderTerminalType:'WEB'},
+    extendInfo:'{"key":"value"}'
+   },
+   payOptionDetails:[{payMethod:'BALANCE',payOption:'',transAmount:{value:'15000.00',currency:'IDR'}}]
+  };
+  const a=await danaUatPost(env,origin,path,first);
+  await new Promise(resolve=>setTimeout(resolve,700));
+  const second=JSON.parse(JSON.stringify(first));
+  second.amount.value='10000.00';
+  second.payOptionDetails[0].transAmount.value='10000.00';
+  const b=await danaUatPost(env,origin,path,second);
+  results.push({scenario:'inconsistent-request',expected:'4045418',firstCode:a.data?.responseCode||null,httpStatus:b.httpStatus,responseCode:b.data?.responseCode||null,responseMessage:b.data?.responseMessage||null});
+ }
+
+ // 3) Missing mandatory X-TIMESTAMP
+ {
+  const ref=crypto.randomUUID();
+  const body={
+   partnerReferenceNo:ref,merchantId,
+   amount:{value:'15000.00',currency:'IDR'},
+   urlParams:[
+    {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'Y'},
+    {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'Y'}
+   ],
+   validUpTo:danaJakartaTimestamp(Date.now()+100000),
+   additionalInfo:{order:{orderTitle:'Paket Tinknet 10Mb',scenario:'API',merchantTransType:'SPECIAL_MOVIE'},mcc:'5732',envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM'}},
+   payOptionDetails:[{payMethod:'VIRTUAL_ACCOUNT',payOption:'VIRTUAL_ACCOUNT_BRI',transAmount:{value:'15000.00',currency:'IDR'}}]
+  };
+  const r=await danaUatPost(env,origin,path,body,{omitTimestamp:true});
+  results.push({scenario:'missing-mandatory',expected:'4005402',httpStatus:r.httpStatus,responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+
+ // 4) Unauthorized / invalid signature
+ {
+  const ref=crypto.randomUUID();
+  const body={
+   partnerReferenceNo:ref,merchantId,
+   amount:{value:'15000.00',currency:'IDR'},
+   urlParams:[
+    {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'Y'},
+    {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'Y'}
+   ],
+   validUpTo:danaJakartaTimestamp(Date.now()+100000),
+   additionalInfo:{order:{orderTitle:'Paket Tinknet 10Mb',scenario:'API',merchantTransType:'SPECIAL_MOVIE'},mcc:'5732',envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM'}},
+   payOptionDetails:[{payMethod:'VIRTUAL_ACCOUNT',payOption:'VIRTUAL_ACCOUNT_BRI',transAmount:{value:'15000.00',currency:'IDR'}}]
+  };
+  const r=await danaUatPost(env,origin,path,body,{invalidSignature:true});
+  results.push({scenario:'invalid-signature',expected:'4015400',httpStatus:r.httpStatus,responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+ const expected=['4005401','4045418','4005402','4015400'];
+ return {ok:results.every((x,i)=>x.responseCode===expected[i]),results};
+}
+
+function danaTopupBody(ref,customerNumber,amount='1.00'){
+ return {
+  partnerReferenceNo:ref,
+  ...(customerNumber===null?{}:{customerNumber}),
+  amount:{value:amount,currency:'IDR'},
+  feeAmount:{value:'1.00',currency:'IDR'},
+  transactionDate:danaJakartaTimestamp(Date.now()),
+  sessionId:null,categoryId:null,notes:null,
+  additionalInfo:{
+   extendInfo:null,accountType:null,fundType:'AGENT_TOPUP_FOR_USER_SETTLE',
+   externalDivisionId:null,chargeTarget:null,accessToken:null,customerId:null
+  }
+ };
+}
+
+async function danaDisburseBalanceUat(env,origin){
+ const path='/rest/v1.0/emoney/topup';
+ const results=[];
+
+ // 1) Valid - official fallback sandbox accounts
+ {
+  let chosen=null,last=null;
+  for(const customer of ['62811742234','62817345544','62817345545']){
+   const r=await danaUatPost(env,origin,path,danaTopupBody(crypto.randomUUID(),customer));
+   last=r;
+   const code=r.data?.responseCode||null;
+   if(code==='2003800'){chosen=customer;break}
+   if(!(String(code||'').startsWith('403')||String(code||'').startsWith('404')))break;
+  }
+  results.push({scenario:'valid',expected:'2003800',customerNumber:chosen,responseCode:last?.data?.responseCode||null,responseMessage:last?.data?.responseMessage||null});
+ }
+
+ // 2) Insufficient Fund
+ {
+  const r=await danaUatPost(env,origin,path,danaTopupBody(crypto.randomUUID(),'62811742234','1000000000000.00'));
+  results.push({scenario:'insufficient-fund',expected:'4033814',responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+
+ // 3) Frozen Account
+ {
+  const r=await danaUatPost(env,origin,path,danaTopupBody(crypto.randomUUID(),'628996647679'));
+  results.push({scenario:'frozen-account',expected:'4033805',responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+
+ // 4) Missing Mandatory Field customerNumber
+ {
+  const r=await danaUatPost(env,origin,path,danaTopupBody(crypto.randomUUID(),null));
+  results.push({scenario:'missing-customer-number',expected:'4003802',responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+
+ // 5) Inconsistent Request
+ {
+  const ref=crypto.randomUUID();
+  const first=danaTopupBody(ref,'62811742234','1.00');
+  const a=await danaUatPost(env,origin,path,first);
+  await new Promise(resolve=>setTimeout(resolve,700));
+  const second=JSON.parse(JSON.stringify(first));
+  second.amount.value='4.00';
+  const b=await danaUatPost(env,origin,path,second);
+  results.push({scenario:'inconsistent-request',expected:'4043818',firstCode:a.data?.responseCode||null,responseCode:b.data?.responseCode||null,responseMessage:b.data?.responseMessage||null});
+ }
+
+ // 6) Internal Server Error
+ {
+  const r=await danaUatPost(env,origin,path,danaTopupBody(crypto.randomUUID(),'628551008794'));
+  results.push({scenario:'internal-server-error',expected:'5003801',responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+
+ // 7) General Error
+ {
+  const r=await danaUatPost(env,origin,path,danaTopupBody(crypto.randomUUID(),'628121111111'));
+  results.push({scenario:'general-error',expected:'5003800',responseCode:r.data?.responseCode||null,responseMessage:r.data?.responseMessage||null});
+ }
+
+ const expected=['2003800','4033814','4033805','4003802','4043818','5003801','5003800'];
+ return {ok:results.every((x,i)=>x.responseCode===expected[i]),results};
+}
+
 function azuraStation(value){return typeof value==='string'&&/^[a-z0-9_-]{1,64}$/i.test(value)?value:'nadmo_radio'}
 function secureOrigin(value){
  if(typeof value!=='string'||!value.trim())return null;
@@ -908,6 +1112,13 @@ export default {
   }
 
 
+
+  if(url.pathname==='/api/dana/sandbox/uat/run-all-remaining'&&request.method==='GET'){
+    const paymentGateway=await danaPaymentGatewayRemainingUat(env,url.origin);
+    await new Promise(resolve=>setTimeout(resolve,700));
+    const disburseBalance=await danaDisburseBalanceUat(env,url.origin);
+    return Response.json({ok:paymentGateway.ok&&disburseBalance.ok,paymentGateway,disburseBalance},{headers:{'Cache-Control':'no-store'}});
+  }
   if(url.pathname==='/api/dana/sandbox/uat/run-official-finish-notify'&&request.method==='GET'){
     const results=[];
     for(const scenario of ['success','internal-error','expired']){
