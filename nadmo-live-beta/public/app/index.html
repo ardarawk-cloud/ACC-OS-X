@@ -2592,6 +2592,28 @@ body.live-immersive #watch #liveRestReminder{
  #radioMiniDock{bottom:20px}
 }
 
+
+/* MOSHI Messenger v2: accessible touch controls without changing NADMO app chrome. */
+.message-toolbelt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.message-toolbelt input,.message-toolbelt select{min-width:0;border:1px solid var(--cbw-405442,#405442);background:var(--cbw-111b14,#111b14);color:var(--paper);border-radius:10px;padding:11px;min-height:43px}
+.message-toolbelt input{flex:1 1 160px}.message-toolbelt select{flex:0 1 145px}
+.message-chat-row[hidden],.message-bubble-actions[hidden],#messageThreadMenu[hidden],#messageComposerMode[hidden]{display:none!important}
+.message-chat-row.is-pinned{border-inline-start:3px solid var(--neon);padding-inline-start:7px}
+.message-thread-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:9px 0;padding:10px;border-radius:12px;border:1px solid var(--cbw-405442,#405442);background:var(--cbw-121a14,#121a14)}
+.message-thread-menu button,.message-bubble-actions button{font-size:11px;font-weight:700;color:var(--paper);background:var(--cbw-1e2a20,#1e2a20);border:1px solid var(--cbw-405442,#405442);border-radius:8px;min-height:35px;padding:7px}
+.message-thread-menu button.danger,.message-bubble-actions button.danger{color:#ffb5ac;border-color:#9b4946}
+.message-bubble{position:relative;min-width:0;overflow-wrap:anywhere}
+.message-bubble-quote{border-inline-start:3px solid var(--neon);background:#0002;border-radius:4px;padding:7px 9px;margin-bottom:6px;font-size:11px;white-space:pre-wrap}
+.message-bubble-body{white-space:pre-wrap;overflow-wrap:anywhere}
+.message-bubble-meta{display:flex;justify-content:flex-end;gap:6px;align-items:center;font-size:10px}
+.message-bubble-open-actions{border:0;background:transparent;color:var(--paper);font-weight:800;min-width:28px;min-height:28px;cursor:pointer}
+.message-bubble-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:6px}
+.message-bubble.deleted{opacity:.65;font-style:italic}
+.message-composer-context{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 3px;padding:7px 9px;background:var(--cbw-182619,#182619);border-inline-start:3px solid var(--neon);border-radius:7px;font-size:12px}
+.message-composer-context button{border:0;background:transparent;color:var(--paper);font-size:21px;min-width:30px;min-height:30px}
+.message-message-search{width:100%;background:var(--cbw-111b14,#111b14);color:var(--paper);border:1px solid var(--cbw-405442,#405442);border-radius:10px;padding:10px;min-height:42px;margin:8px 0}
+.message-mute-label{font-size:10px;opacity:.75}
+@media(min-width:660px){.message-bubble-actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head>
 <body>
 <div class="app">
@@ -2906,6 +2928,10 @@ body.live-immersive #watch #liveRestReminder{
  <div id="messagesGuest" class="panel"><p>Masuk akun untuk berkirim pesan.</p><button type="button" class="btn" id="messagesLogin">MASUK</button></div>
  <div id="messagesSigned" class="hide">
   <div id="messageInboxMain">
+   <div class="message-toolbelt" aria-label="Cari dan filter percakapan">
+     <input id="messageSearch" type="search" autocomplete="off" maxlength="80" placeholder="Cari nama atau isi percakapan..." aria-label="Cari percakapan">
+     <select id="messageFolder" aria-label="Filter percakapan"><option value="all">Semua</option><option value="unread">Belum dibaca</option><option value="pinned">Disematkan</option><option value="archived">Arsip</option></select>
+   </div>
    <div id="messageNewPanel" class="message-new-panel hide">
     <label for="messageRecipient">CARI TEMAN DENGAN USERNAME</label>
     <div class="message-new-line"><input id="messageRecipient" class="field" maxlength="24" placeholder="Username, contoh: joker" autocomplete="off"><button type="button" id="messageRequest">CHAT</button></div>
@@ -2928,9 +2954,19 @@ body.live-immersive #watch #liveRestReminder{
     <div class="message-conversation-head">
       <button type="button" id="messageBack" class="message-icon-button" aria-label="Kembali ke daftar percakapan">‹</button>
       <button type="button" id="messageOpenCreator" class="message-person" aria-label="Lihat profil teman"><span id="messagePeerAvatar"></span><span id="messageThreadTitle"></span></button>
-      <button type="button" id="messageBlockPeer" class="message-more-button" aria-label="Blokir akun ini" title="Blokir kontak">⋮</button>
+      <button type="button" id="messageBlockPeer" class="message-more-button" aria-label="Opsi percakapan" aria-expanded="false" title="Opsi percakapan">⋮</button>
     </div>
+    <div id="messageThreadMenu" class="message-thread-menu" hidden aria-label="Pengaturan percakapan">
+      <button type="button" data-moshi-thread="pin">SEMATKAN</button>
+      <button type="button" data-moshi-thread="mute">SENYAPKAN</button>
+      <button type="button" data-moshi-thread="archive">ARSIPKAN</button>
+      <button type="button" data-moshi-thread="mark-unread">TANDAI BELUM DIBACA</button>
+      <button type="button" data-moshi-thread="clear" class="danger">BERSIHKAN CHAT</button>
+      <button type="button" data-moshi-thread="block" class="danger">BLOKIR KONTAK</button>
+    </div>
+    <input id="messageTextSearch" class="message-message-search" type="search" maxlength="100" autocomplete="off" placeholder="Cari isi pesan di chat ini..." aria-label="Cari pesan dalam chat" hidden>
     <div id="messageBubbles" class="message-bubbles" aria-live="polite"></div>
+    <div id="messageComposerMode" class="message-composer-context" hidden><span id="messageComposerLabel"></span><button type="button" id="messageComposerCancel" aria-label="Batalkan edit atau balas">×</button></div>
     <div class="message-compose"><textarea id="messageBody" class="field" maxlength="2000" rows="1" placeholder="Tulis pesan..." aria-label="Tulis pesan"></textarea><button id="messageSend" type="button" aria-label="Kirim pesan">➤</button></div>
     <p id="messageConversationStatus" class="message-inbox-status" role="status" aria-live="polite"></p>
   </div>
@@ -4201,6 +4237,87 @@ body.live-immersive #watch #liveRestReminder{
     await loadMessageInbox(threads,requests);
   }catch(error){console.warn('Chat unread count not available',error)}
  }
+ let moshiConversationPrefs={},moshiComposer={mode:'',id:''},moshiCachedMessages=[];
+ function moshiResetComposer(){
+  moshiComposer={mode:'',id:''};$('messageComposerMode').hidden=true;
+  $('messageBody').placeholder='Tulis pesan...';$('messageSend').textContent='➤';
+ }
+ function moshiBeginComposer(mode,msg){
+  moshiComposer={mode,id:msg.id};
+  $('messageComposerLabel').textContent=(mode==='edit'?'EDIT PESAN: ':'BALAS PESAN: ')+(msg.text||'Pesan dihapus').slice(0,90);
+  $('messageComposerMode').hidden=false;
+  $('messageBody').placeholder=mode==='edit'?'Ubah pesan (maksimal 15 menit)...':'Tulis balasan...';
+  $('messageSend').textContent=mode==='edit'?'✓':'➤';
+  if(mode==='edit')$('messageBody').value=msg.text;
+  $('messageBody').focus();
+ }
+ function moshiFilterInbox(){
+  const query=$('messageSearch').value.trim().toLocaleLowerCase('id-ID'),folder=$('messageFolder').value;
+  const rows=[...$('messageThreads').querySelectorAll('.message-chat-row')];
+  let visible=0;for(const row of rows){
+   const match=(!query||row.dataset.query.includes(query))&&(
+    folder==='all'?row.dataset.archived!=='true':
+    folder==='unread'?row.dataset.archived!=='true'&&Number(row.dataset.unread)>0:
+    folder==='pinned'?row.dataset.pinned==='true'&&row.dataset.archived!=='true':
+    row.dataset.archived==='true');
+   row.hidden=!match;if(match)visible++;
+  }
+  $('messageInboxEmpty').classList.toggle('hide',visible>0||$('messageRequests').children.length>0);
+  if(!visible)$('messageInboxEmpty').textContent=query?'Tidak ditemukan percakapan yang cocok.':folder==='archived'?'Belum ada chat yang diarsipkan.':'Belum ada percakapan di kategori ini.';
+ }
+ function moshiFilterChat(){
+  const q=$('messageTextSearch').value.trim().toLocaleLowerCase('id-ID');
+  for(const bubble of $('messageBubbles').querySelectorAll('.message-bubble'))
+   bubble.hidden=!!q&&!bubble.dataset.search.includes(q);
+ }
+ async function moshiMessageAction(msg,action,enabled){
+  if(!activeChatHandle||chatBusy)return;const status=$('messageConversationStatus');
+  if(action==='delete-for-all'&&!confirm('Hapus pesan ini untuk semua penerima? Pesan tidak dapat dikembalikan.'))return;
+  if(action==='delete-for-me'&&!confirm('Hapus pesan ini hanya dari akunmu?'))return;
+  chatBusy=true;
+  try{
+   await accountRequest('/api/messages/message-action','POST',{handle:activeChatHandle,id:msg.id,action,...(action==='star'?{enabled}:{})});
+   status.textContent=action==='delete-for-all'?'Pesan dihapus untuk kedua pihak.':action==='delete-for-me'?'Pesan dihapus dari akunmu.':enabled?'Pesan diberi bintang.':'Bintang dihapus.';
+   await refreshConversation();
+  }catch(e){status.textContent=e.message}finally{chatBusy=false}
+ }
+ async function moshiThreadAction(action){
+  if(!activeChatHandle||chatBusy)return;const status=$('messageConversationStatus');
+  if(action==='block'){
+   if(!confirm('Blokir '+(activeChatPeer?.name||activeChatHandle)+'?'))return;
+   try{await accountRequest('/api/messages/block','POST',{handle:activeChatHandle});closeMessages();await refreshMessageBadge()}catch(e){status.textContent=e.message}
+   return;
+  }
+  if(action==='clear'&&!confirm('Bersihkan semua pesan dari tampilan akunmu? Pesan pada akun teman tidak ikut terhapus.'))return;
+  chatBusy=true;
+  try{
+   const current=moshiConversationPrefs;
+   const data=await accountRequest('/api/messages/conversation-action','POST',{handle:activeChatHandle,action,
+    ...(['pin','mute','archive'].includes(action)?{enabled:!current[action==='pin'?'pinned':action==='mute'?'muted':'archived']}:{})});
+   if(data.preferences)moshiConversationPrefs=data.preferences;
+   $('messageThreadMenu').hidden=true;$('messageBlockPeer').setAttribute('aria-expanded','false');
+   if(action==='mark-unread'||action==='archive'||action==='clear'){closeMessages();await refreshMessageBadge();return}
+   status.textContent=action==='pin'?'Pengaturan semat diperbarui.':'Pengaturan senyap diperbarui.';
+   moshiSyncMenuLabels();
+   await refreshConversation();
+  }catch(e){status.textContent=e.message}finally{chatBusy=false}
+ }
+ function moshiSyncMenuLabels(){
+  for(const el of $('messageThreadMenu').querySelectorAll('[data-moshi-thread]')){
+   const action=el.dataset.moshiThread;
+   if(action==='pin')el.textContent=moshiConversationPrefs.pinned?'LEPAS SEMATAN':'SEMATKAN';
+   if(action==='mute')el.textContent=moshiConversationPrefs.muted?'NYALAKAN NOTIFIKASI':'SENYAPKAN';
+   if(action==='archive')el.textContent=moshiConversationPrefs.archived?'KELUARKAN DARI ARSIP':'ARSIPKAN';
+  }
+ }
+ $('messageSearch').addEventListener('input',moshiFilterInbox);
+ $('messageFolder').addEventListener('change',moshiFilterInbox);
+ $('messageTextSearch').addEventListener('input',moshiFilterChat);
+ $('messageComposerCancel').onclick=()=>{moshiResetComposer();$('messageBody').value=''};
+ $('messageThreadMenu').addEventListener('click',event=>{
+  const target=event.target.closest('[data-moshi-thread]');if(target)moshiThreadAction(target.dataset.moshiThread);
+ });
+
  async function loadMessageInbox(preloadedThreads=null,preloadedRequests=null){
   if(!activeAccount)return;
   const status=$('messageInboxStatus');
@@ -4244,7 +4361,10 @@ body.live-immersive #watch #liveRestReminder{
    const threads=threadsData.threads||[];
    for(const item of threads){
     const row=document.createElement('div');
-    row.className='message-chat-row'+(item.unread?' has-unread':'');
+    row.className='message-chat-row'+(item.unread?' has-unread':'')+(item.pinned?' is-pinned':'');
+    row.dataset.query=[item.name||'',item.handle||'',item.lastText||''].join(' ').toLocaleLowerCase('id-ID');
+    row.dataset.unread=String(item.unread||0);row.dataset.archived=String(item.archived===true);
+    row.dataset.pinned=String(item.pinned===true);
     row.setAttribute('aria-label','Buka percakapan dengan '+(item.name||item.handle));
     row.tabIndex=0;row.setAttribute('role','button');
     const person=document.createElement('button');person.type='button';person.className='message-profile-tap';
@@ -4254,7 +4374,7 @@ body.live-immersive #watch #liveRestReminder{
     row.append(person);
     const content=document.createElement('span');content.className='message-chat-copy';
     const name=document.createElement('button');name.type='button';name.className='message-chat-name';
-    name.textContent=item.name||item.handle;
+    name.textContent=(item.pinned?'◆ ':'')+(item.name||item.handle)+(item.muted?' · SENYAP':'');
     name.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)};
     const last=document.createElement('span');last.className='message-chat-last';
     last.textContent=item.lastText?(item.lastFromMe?'Kamu: ':'')+item.lastText:'Mulai mengobrol';
@@ -4274,6 +4394,7 @@ body.live-immersive #watch #liveRestReminder{
     box.append(row);
    }
    $('messageInboxEmpty').classList.toggle('hide',threads.length>0||requests.length>0);
+   moshiFilterInbox();
    if(!threads.length&&!requests.length)status.textContent='';
   }catch(error){status.textContent=error.message}
  }
@@ -4284,6 +4405,9 @@ body.live-immersive #watch #liveRestReminder{
   try{
    // Opening a chat respects the recipient's own privacy and blocking decisions.
    const data=await accountRequest('/api/messages/thread/'+encodeURIComponent(normalized));
+   moshiConversationPrefs=data.preferences||{};moshiCachedMessages=data.messages||[];
+   moshiResetComposer();$('messageTextSearch').value='';$('messageTextSearch').hidden=false;
+   $('messageThreadMenu').hidden=true;$('messageBlockPeer').setAttribute('aria-expanded','false');moshiSyncMenuLabels();
    activeChatHandle=normalized;activeChatPeer={handle:normalized,name:data.participant?.name||name||normalized,
     avatarVersion:data.participant?.avatarVersion||avatarVersion||0};
    $('messageThreadTitle').textContent=activeChatPeer.name;
@@ -4311,18 +4435,53 @@ body.live-immersive #watch #liveRestReminder{
   }
  }
  function renderConversation(messages){
+  moshiCachedMessages=messages;
   const node=$('messageBubbles'),bottom=node.scrollTop+node.clientHeight>=node.scrollHeight-50;
   node.replaceChildren();
   for(const msg of messages){
+   const mine=msg.fromHandle===activeAccount?.handle,deleted=msg.deletedForAll===true;
    const bubble=document.createElement('div');
-   bubble.className='message-bubble'+(msg.fromHandle===activeAccount?.handle?' mine':'');
-   const text=document.createElement('span');text.textContent=msg.text;
-   const time=document.createElement('small');time.className='message-bubble-time';time.textContent=messageTime(msg.createdAt,true);
-   bubble.append(text,time);node.append(bubble);
+   bubble.className='message-bubble'+(mine?' mine':'')+(deleted?' deleted':'')+(msg.starred?' starred':'');
+   bubble.dataset.search=(msg.text||'').toLocaleLowerCase('id-ID');
+   if(msg.replyToId){
+    const quote=document.createElement('div');quote.className='message-bubble-quote';
+    quote.textContent=(msg.replyFromHandle?('@'+msg.replyFromHandle+': '):'')+(msg.replyPreview||'Pesan tidak tersedia');
+    bubble.append(quote);
+   }
+   const body=document.createElement('span');body.className='message-bubble-body';
+   body.textContent=deleted?'Pesan ini telah dihapus':msg.text;bubble.append(body);
+   const meta=document.createElement('div');meta.className='message-bubble-meta';
+   const time=document.createElement('small');time.className='message-bubble-time';
+   time.textContent=(msg.starred?'★ ':'')+messageTime(msg.createdAt,true)+(msg.editedAt?' · diedit':'');
+   meta.append(time);
+   if(!deleted){
+    const more=document.createElement('button');more.type='button';more.className='message-bubble-open-actions';
+    more.setAttribute('aria-label','Opsi pesan');more.setAttribute('aria-expanded','false');more.textContent='⋯';
+    meta.append(more);
+    const buttons=document.createElement('div');buttons.className='message-bubble-actions';buttons.hidden=true;
+    const add=(text,action,onClick,danger=false)=>{
+     const btn=document.createElement('button');btn.type='button';btn.textContent=text;
+     if(danger)btn.className='danger';btn.onclick=onClick;buttons.append(btn);
+    };
+    add('BALAS','reply',()=>moshiBeginComposer('reply',msg));
+    add('SALIN','copy',async()=>{
+     try{await navigator.clipboard.writeText(msg.text);$('messageConversationStatus').textContent='Teks pesan disalin.'}
+     catch{$('messageConversationStatus').textContent='Gagal menyalin pesan.'}
+    });
+    add(msg.starred?'LEPAS BINTANG':'BINTANG', 'star',()=>moshiMessageAction(msg,'star',!msg.starred));
+    if(mine&&Date.now()-msg.createdAt<=15*60*1000)
+     add('EDIT','edit',()=>moshiBeginComposer('edit',msg));
+    add('HAPUS UNTUK SAYA','delete-for-me',()=>moshiMessageAction(msg,'delete-for-me'),true);
+    if(mine)add('HAPUS UNTUK SEMUA','delete-for-all',()=>moshiMessageAction(msg,'delete-for-all'),true);
+    more.onclick=()=>{buttons.hidden=!buttons.hidden;more.setAttribute('aria-expanded',String(!buttons.hidden))};
+    bubble.append(meta,buttons);
+   }else bubble.append(meta);
+   node.append(bubble);
   }
   if(!messages.length){
    const empty=document.createElement('p');empty.className='message-empty';empty.textContent='Mulai obrolan dengan pesan pertama.';node.append(empty);
   }
+  moshiFilterChat();
   if(bottom)node.scrollTop=node.scrollHeight;
  }
  async function refreshConversation(){
@@ -4331,13 +4490,15 @@ body.live-immersive #watch #liveRestReminder{
   try{
    const data=await accountRequest('/api/messages/thread/'+encodeURIComponent(handle));
    if(handle!==activeChatHandle)return;
+   moshiConversationPrefs=data.preferences||moshiConversationPrefs;moshiSyncMenuLabels();
    renderConversation(data.messages||[]);
    const count=await accountRequest('/api/messages/threads');
    setUnreadBadge(count.totalUnread||0);
   }catch(error){$('messageConversationStatus').textContent=error.message}
  }
  function closeMessages(){
-  activeChatHandle='';activeChatPeer=null;
+  activeChatHandle='';activeChatPeer=null;moshiResetComposer();$('messageTextSearch').hidden=true;
+  $('messageThreadMenu').hidden=true;$('messageBlockPeer').setAttribute('aria-expanded','false');
   if(chatRefreshTimer){clearInterval(chatRefreshTimer);chatRefreshTimer=null}
   $('messageConversation').classList.add('hide');
   $('messageInboxMain').classList.remove('hide');
@@ -4366,20 +4527,20 @@ body.live-immersive #watch #liveRestReminder{
   await openMessages(handle);
  };
  $('messageOpenCreator').onclick=()=>{if(activeChatHandle)openCreatorProfile(activeChatHandle)};
- $('messageBlockPeer').onclick=async()=>{
-  if(!activeChatHandle||!confirm('Blokir '+(activeChatPeer?.name||activeChatHandle)+'?'))return;
-  try{
-   await accountRequest('/api/messages/block','POST',{handle:activeChatHandle});
-   closeMessages();await refreshMessageBadge();
-  }catch(error){$('messageConversationStatus').textContent=error.message}
+ $('messageBlockPeer').onclick=()=>{
+  const menu=$('messageThreadMenu');menu.hidden=!menu.hidden;
+  $('messageBlockPeer').setAttribute('aria-expanded',String(!menu.hidden));
  };
  $('messageSend').onclick=async()=>{
   const text=$('messageBody').value.trim();
   if(!activeChatHandle||!text||chatBusy)return;
   chatBusy=true;$('messageSend').disabled=true;
   try{
-   await accountRequest('/api/messages/send','POST',{handle:activeChatHandle,text});
-   $('messageBody').value='';
+   if(moshiComposer.mode==='edit')
+    await accountRequest('/api/messages/message-action','POST',{handle:activeChatHandle,id:moshiComposer.id,action:'edit',text});
+   else await accountRequest('/api/messages/send','POST',{handle:activeChatHandle,text,
+    ...(moshiComposer.mode==='reply'?{replyToId:moshiComposer.id}:{})});
+   $('messageBody').value='';moshiResetComposer();
    await refreshConversation();
   }catch(error){$('messageConversationStatus').textContent=error.message}
   finally{chatBusy=false;$('messageSend').disabled=false}
