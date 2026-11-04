@@ -2952,6 +2952,9 @@ body.live-immersive #watch #liveRestReminder{
       <button type="button" id="meFollowers" aria-label="Buka daftar pengikut"><strong id="meFollowersCount">—</strong><span>FOLLOWERS</span></button>
       <button type="button" id="meFollowing" aria-label="Buka daftar akun yang diikuti"><strong id="meFollowingCount">—</strong><span>FOLLOWING</span></button>
     </div>
+    <div class="actions" style="margin:12px 0 4px">
+      <button type="button" class="btn" id="openHostIntegrationsMe">⚡ INTEGRASI HOST</button>
+    </div>
   <div class="me-public-share">
     <div class="me-repost-header">TERHUBUNG KE</div>
     <div id="profileBusinessLinks" class="profile-links"></div>
@@ -3011,7 +3014,10 @@ body.live-immersive #watch #liveRestReminder{
   <button type="button" data-open-page="supporterPage">✦ <span>Level pendukung</span><b>›</b></button>
  </div>
  <div class="me-menu-label">LIVE</div>
- <div class="me-menu"><button type="button" data-tab="studio">◉ <span>Pengaturan LIVE</span><b>›</b></button></div>
+ <div class="me-menu">
+  <button type="button" id="openHostIntegrations">⚡ <span>Integrasi Host · Alert / TTS / Saweria</span><b>›</b></button>
+  <button type="button" data-tab="studio">◉ <span>Pengaturan LIVE</span><b>›</b></button>
+ </div>
  <div class="me-menu-label">PRIVASI</div>
  <div class="me-menu"><button type="button" data-open-page="privacyPage">♙ <span>Keamanan & izin</span><b>›</b></button></div>
  <div class="me-menu-label">SESI</div>
@@ -5163,6 +5169,8 @@ body.live-immersive #watch #liveRestReminder{
  $('meMore').onclick=()=>show('preferencesPage');
  $('meLogin').onclick=()=>show('authPage');
  $('openHostSubscription').onclick=()=>{window.location.href=DEFAULT_BACKEND+'/subscription/'};
+ $('openHostIntegrations').onclick=()=>{window.location.href=DEFAULT_BACKEND+'/integrations/'};
+ $('openHostIntegrationsMe').onclick=()=>{window.location.href=DEFAULT_BACKEND+'/integrations/'};
  
  $('socialManageDrafts').onclick=()=>activeAccount?show('draftsPage'):show('authPage');
  $('messagesLogin').onclick=()=>show('authPage');
