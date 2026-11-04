@@ -23,6 +23,45 @@ function snapshot(record,now=Date.now()){
 }
 const publicPlan=()=>({free:{price:0,limit:50},pro:{price:19900,limit:200,days:30},plus:{price:99900,limit:null,days:30}});
 function qrisConfig(env,origin){const raw=clean(env?.DANA_BUSINESS_QRIS_URL||env?.ACM_STORE_QRIS_URL,500);if(raw){try{const u=new URL(raw);if(u.protocol==='https:')return u.href}catch{}}return origin+'/subscription/nadmo-dana-qris.png'}
+
+const DANA_SANDBOX_PUBLIC_KEY=`-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnaKVGRbin4Wh4KN35OPh
+ytJBjYTz7QZKSZjmHfiHxFmulfT87rta+IvGJ0rCBgg+1EtKk1hX8G5gPGJs1htJ
+5jHa3/jCk9l+luzjnuT9UVlwJahvzmFw+IoDoM7hIPjsLtnIe04SgYo0tZBpEmkQ
+vUGhmHPqYnUGSSMIpDLJDvbyr8gtwluja1SbRphgDCoYVXq+uUJ5HzPS049aaxTS
+nfXh/qXuDoB9EzCrgppLDS2ubmk21+dr7WaO/3RFjnwx5ouv6w+iC1XOJKar3CTk
+X6JV1OSST1C9sbPGzMHZ8AGB51BM0mok7davD/5irUk+f0C25OgzkwtxAt80dkDo
+/QIDAQAB
+-----END PUBLIC KEY-----`;
+function danaTs(ms=Date.now()){return new Date(ms+7*3600000).toISOString().replace(/\.\d{3}Z$/,'+07:00')}
+function pemBytes(raw){
+ const b64=String(raw||'').replace(/-----BEGIN [^-]+-----/g,'').replace(/-----END [^-]+-----/g,'').replace(/\s+/g,'');
+ const bin=atob(b64),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out;
+}
+async function danaSign(env,method,path,body,timestamp){
+ const key=await crypto.subtle.importKey('pkcs8',pemBytes(String(env.DANA_PRIVATE_KEY||'').replace(/\\n/g,'\n')),{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
+ const hash=await digest(body),input=method+':'+path+':'+hash+':'+timestamp;
+ const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,enc.encode(input));
+ let bin='';for(const b of new Uint8Array(sig))bin+=String.fromCharCode(b);return btoa(bin);
+}
+async function danaVerify(env,rawBody,timestamp,signature){
+ const publicKey=String(env.DANA_ENV||'').toLowerCase()==='sandbox'?DANA_SANDBOX_PUBLIC_KEY:clean(env.DANA_SENDER_PUBLIC_KEY,8000).replace(/\\n/g,'\n');
+ if(!publicKey||!timestamp||!signature)return false;
+ const body=JSON.stringify(JSON.parse(rawBody)),hash=await digest(body),input='POST:/v1.0/debit/notify:'+hash+':'+timestamp;
+ const key=await crypto.subtle.importKey('spki',pemBytes(publicKey),{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
+ const sig=pemBytes(signature);
+ return crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,sig,enc.encode(input));
+}
+function danaGatewayReady(env){
+ return !!(env?.DANA_API_ORIGIN&&env?.DANA_X_PARTNER_ID&&env?.DANA_MERCHANT_ID&&env?.DANA_PRIVATE_KEY);
+}
+async function activatePaidOrder(storage,order,record,now,referenceNo){
+ const currentTier=tierOf(record,now),sameTier=currentTier===order.targetTier&&Number(record.subscriptionExpiresAt)>now,base=sameTier?Number(record.subscriptionExpiresAt):now;
+ record.subscriptionTier=order.targetTier;record.subscriptionExpiresAt=base+SUBSCRIPTION_MS;record.subscriptionPendingOrderId='';record.subscriptionGraceUntil=0;record.subscriptionGraceLock='';record.updatedAt=now;
+ order.status='approved';order.paymentStatus='paid';order.reviewedAt=now;order.approvedAt=now;order.providerReferenceNo=referenceNo||order.providerReferenceNo||null;
+ await storage.put('auth-user:'+record.id,record);await storage.put('subscription-order:'+order.id,order);
+}
+
 function mediaOwned(raw,origin,userId){
  if(typeof raw!=='string'||raw.length>700)return false;
  try{const u=new URL(raw);if(u.origin!==origin||u.search||u.hash)return false;return new RegExp('^/api/social/media/'+userId+'/[a-f0-9-]{36}\\.(?:jpg|png|webp)$').test(u.pathname)}catch{return false}
@@ -64,8 +103,8 @@ export async function subscriptionEndpoint(storage,request,env){
  if(p==='/api/subscription/me'&&method==='GET'){
   const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
   const record=await storage.get('auth-user:'+user.id),pending=await pendingOrder(storage,record);
-  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env,u.origin),subscription:snapshot(record,now),support:supportMethods(record),
-   pending:pending?{id:pending.id,targetTier:pending.targetTier,price:pending.price,status:pending.status,createdAt:pending.createdAt,graceGranted:pending.graceGranted===true}:null});
+  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env,u.origin),paymentGateway:{enabled:danaGatewayReady(env),environment:clean(env?.DANA_ENV,16)||'unknown'},subscription:snapshot(record,now),support:supportMethods(record),
+   pending:pending?{id:pending.id,targetTier:pending.targetTier,price:pending.price,status:pending.status,provider:pending.provider||'manual',paymentStatus:pending.paymentStatus||null,createdAt:pending.createdAt,graceGranted:pending.graceGranted===true}:null});
  }
 
  if(p==='/api/subscription/support-action'&&method==='POST'){
@@ -94,6 +133,77 @@ export async function subscriptionEndpoint(storage,request,env){
   const qrisUrl=clean(body.qrisUrl,700);if(qrisUrl&&!mediaOwned(qrisUrl,u.origin,user.id))return fail(400,'QRIS harus berupa gambar yang diupload oleh akun ini','BAD_QRIS_URL');
   record.supportUrl=supportUrl||'';record.supportQrisUrl=qrisUrl||'';record.updatedAt=now;await storage.put('auth-user:'+user.id,record);
   return json({ok:true,support:supportMethods(record)});
+ }
+
+
+ if(p==='/api/subscription/dana/create'&&method==='POST'){
+  if(!originOK(request))return fail(403,'Permintaan harus dari NADMO LIVE','ORIGIN_REQUIRED');
+  if(!danaGatewayReady(env))return fail(503,'DANA Payment Gateway belum siap','DANA_NOT_READY');
+  const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
+  let body;try{body=await parseJSON(request)}catch{return fail(400,'Data tidak valid','INVALID_INPUT')}
+  const targetTier=clean(body.targetTier,10).toLowerCase();if(!['pro','plus'].includes(targetTier))return fail(400,'Paket tidak valid','BAD_PLAN');
+  const record=await storage.get('auth-user:'+user.id);if(!record)return fail(404,'Akun tidak ditemukan','ACCOUNT_NOT_FOUND');
+  const state=snapshot(record,now),allowed=state.tier==='free'?targetTier==='pro':state.tier==='pro'?['pro','plus'].includes(targetTier):targetTier==='plus';
+  if(!allowed)return fail(409,'Paket tujuan tidak sesuai tier saat ini','BAD_UPGRADE_PATH');
+  const existing=await pendingOrder(storage,record);
+  if(existing){
+   if(existing.provider==='dana-payment-gateway'&&existing.checkoutUrl&&Number(existing.validUntil)>now)return json({ok:true,duplicate:true,checkoutUrl:existing.checkoutUrl,order:{id:existing.id,targetTier:existing.targetTier,price:existing.price,status:existing.status,provider:existing.provider}});
+   return fail(409,'Masih ada pembayaran yang menunggu','ORDER_PENDING');
+  }
+  const id=crypto.randomUUID(),partnerReferenceNo='NADMO-'+id,price=PLAN[targetTier].price,validUntil=now+15*60*1000;
+  const apiOrigin=String(env.DANA_API_ORIGIN||'').replace(/\/$/,'');
+  const path='/payment-gateway/v1.0/debit/payment-host-to-host.htm',timestamp=danaTs(now);
+  const payload={
+   partnerReferenceNo,
+   merchantId:String(env.DANA_MERCHANT_ID),
+   amount:{value:Number(price).toFixed(2),currency:'IDR'},
+   validUpTo:danaTs(validUntil),
+   urlParams:[
+    {url:u.origin+'/subscription/?payment=dana&order='+encodeURIComponent(id),type:'PAY_RETURN',isDeeplink:'N'},
+    {url:u.origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'N'}
+   ],
+   additionalInfo:{
+    order:{orderTitle:'NADMO LIVE '+targetTier.toUpperCase()+' 30 Hari',scenario:'REDIRECT'},
+    mcc:'5817',
+    envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM',orderTerminalType:'WEB'}
+   }
+  };
+  const raw=JSON.stringify(payload),signature=await danaSign(env,'POST',path,raw,timestamp);
+  const headers={'Content-Type':'application/json','X-TIMESTAMP':timestamp,'X-SIGNATURE':signature,'X-PARTNER-ID':String(env.DANA_X_PARTNER_ID),'X-EXTERNAL-ID':crypto.randomUUID(),'CHANNEL-ID':'95221','ORIGIN':u.origin,'Accept':'application/json'};
+  if(String(env.DANA_ENV||'').toLowerCase()==='sandbox')headers['X-Debug-Mode']='true';
+  let response,data;try{
+   response=await fetch(apiOrigin+path,{method:'POST',headers,body:raw,redirect:'manual',signal:AbortSignal.timeout(10000)});
+   const text=await response.text();try{data=JSON.parse(text)}catch{data={responseMessage:text.slice(0,200)}}
+  }catch{return fail(502,'DANA tidak merespons','DANA_TIMEOUT')}
+  if(data?.responseCode!=='2005400'||!data?.webRedirectUrl)return json({ok:false,error:data?.responseMessage||'Create Order DANA gagal',code:data?.responseCode||'DANA_CREATE_FAILED'},502);
+  const order={id,userId:user.id,handle:record.handle,name:record.name,targetTier,price,proofUrl:'',status:'pending',provider:'dana-payment-gateway',paymentStatus:'awaiting_payment',partnerReferenceNo,providerReferenceNo:data.referenceNo||null,checkoutUrl:data.webRedirectUrl,validUntil,createdAt:now,graceGranted:false};
+  await storage.put('subscription-order:'+id,order);await storage.put('subscription-dana-ref:'+partnerReferenceNo,id);
+  record.subscriptionPendingOrderId=id;record.subscriptionGraceUntil=0;record.updatedAt=now;await storage.put('auth-user:'+user.id,record);
+  return json({ok:true,checkoutUrl:data.webRedirectUrl,order:{id,targetTier,price,status:'pending',provider:order.provider,validUntil}},201);
+ }
+
+ if(p==='/api/subscription/dana/notify'&&method==='POST'){
+  const raw=await request.text(),timestamp=clean(request.headers.get('X-TIMESTAMP'),40),signature=clean(request.headers.get('X-SIGNATURE'),1200),partnerId=clean(request.headers.get('X-PARTNER-ID'),80);
+  const ack=(code='2005600',message='Successful',status=200)=>new Response(JSON.stringify({responseCode:code,responseMessage:message}),{status,headers:{'Content-Type':'application/json; charset=utf-8','X-TIMESTAMP':danaTs(),'Cache-Control':'no-store'}});
+  if(partnerId!==String(env.DANA_X_PARTNER_ID||''))return ack('5005601','Internal Server Error',500);
+  let valid=false,data;try{valid=await danaVerify(env,raw,timestamp,signature);data=JSON.parse(raw)}catch{return ack('5005601','Internal Server Error',500)}
+  if(!valid)return ack('5005601','Internal Server Error',500);
+  if(String(data.merchantId||'')!==String(env.DANA_MERCHANT_ID||''))return ack('5005601','Internal Server Error',500);
+  const ref=clean(data.originalPartnerReferenceNo,80),id=ref&&await storage.get('subscription-dana-ref:'+ref);if(!id)return ack();
+  const order=await storage.get('subscription-order:'+id);if(!order)return ack();
+  if(order.status==='approved'||order.status==='rejected'||order.status==='cancelled')return ack();
+  const record=await storage.get('auth-user:'+order.userId);if(!record)return ack('5005601','Internal Server Error',500);
+  const amount=Number(data?.amount?.value),currency=String(data?.amount?.currency||'');
+  if(!Number.isFinite(amount)||amount!==Number(order.price)||currency!=='IDR')return ack('5005601','Internal Server Error',500);
+  const status=String(data.latestTransactionStatus||'');
+  if(status==='00'){
+   await activatePaidOrder(storage,order,record,now,clean(data.originalReferenceNo,80));return ack();
+  }
+  if(status==='05'){
+   order.status='cancelled';order.paymentStatus='expired';order.reviewedAt=now;record.subscriptionPendingOrderId='';record.updatedAt=now;
+   await storage.put('subscription-order:'+id,order);await storage.put('auth-user:'+record.id,record);return ack();
+  }
+  return ack();
  }
 
  if(p==='/api/subscription/order'&&method==='POST'){
