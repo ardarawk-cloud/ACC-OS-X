@@ -19,7 +19,7 @@
       key:"acc-dj", title:"ACC DJ", short:"DJ", accent:"#f8fafc", mode:"web",
       iconUrl:"https://raw.githubusercontent.com/balinightlife666-web/DJ-AM/main/icon-192.png",
       iconFallback:"DJ",
-      webUrl:"https://balinightlife666-web.github.io/DJ-AM/"
+      webUrl:"https://dj-am.ardarawk.workers.dev/"
     },
     {
       key:"entego", title:"ENTEGO", short:"ENTEGO", accent:"#ff7a18", mode:"division",

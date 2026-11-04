@@ -228,6 +228,15 @@ jobs:
             sleep 5
           done
           test "$produce_ok" = 1
+          UPLOAD="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/content-upload-v1.js")"
+          DESTINATIONS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/app-destinations-v1.js")"
+          INBOX="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/kai-autopilot-media-drop-v1.js")"
+          grep -Fq 'OWNER_CONTENT_UPLOAD_V1' <<<"$UPLOAD"
+          grep -Fq 'acc-produce-panel-ready' <<<"$UPLOAD"
+          grep -Fq 'VERIFIED_DESTINATIONS_20261104' <<<"$DESTINATIONS"
+          grep -Fq 'KAI_AUTOPILOT_MEDIA_DROP_V2_DURABLE_UPLOAD' <<<"$INBOX"
+          grep -Fq 'https://dj-am.ardarawk.workers.dev/' <<<"$HOME"
+          grep -Fq 'https://comics.nadmo.id/' <<<"$HOME"
           if grep -Fq 'name: ACC OS X Runtime Validation' <<<"$INTERNAL"; then
             echo "::error::Internal GitHub workflow is still exposed as a public Worker asset."
             exit 1

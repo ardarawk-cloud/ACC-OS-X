@@ -19,7 +19,8 @@ await Promise.all(Array.from({length:5},async()=>{
       const image=/\.(png|svg|jpg)(?:\?|$)/i.test(url);
       const gate=[401,403,429].includes(r.status)||(/chatgpt\.com$/.test(host)&&/login|sign.in|challenge/i.test(text));
       const validImage=!image||(r.headers.get('content-type')||'').startsWith('image/');
-      results.push({url,sources,status:r.status,finalUrl:r.url,result:gate?'ACCESS_RESTRICTED':r.ok&&validImage?'OK':'NEEDS_REVIEW',title:text.match(/<title[^>]*>([^<]*)/i)?.[1]||null});
+      const roblox=host==='apis.roblox.com',universeId=roblox?JSON.parse(text).universeId:null;
+      results.push({url,sources,status:r.status,finalUrl:r.url,result:gate?'ACCESS_RESTRICTED':r.ok&&validImage&&(!roblox||universeId)?'OK':'NEEDS_REVIEW',title:text.match(/<title[^>]*>([^<]*)/i)?.[1]||null,...(roblox?{universeId}: {})});
     }catch(error){results.push({url,sources,result:'UNVERIFIED_NETWORK',error:error.message});}
   }
 }));
@@ -29,4 +30,4 @@ const missing=packages.filter(name=>!java.includes(`"${name}"`));
 const report={checkedAt:new Date().toISOString(),webLinks:results.length,nativePackages:packages.length,missingNativeAllowlist:missing,results:results.sort((a,b)=>a.url.localeCompare(b.url))};
 fs.writeFileSync('launcher-link-audit.json',JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report,null,2));
-if(missing.length)process.exitCode=1;
+if(missing.length||results.some(x=>x.result==='NEEDS_REVIEW'))process.exitCode=1;

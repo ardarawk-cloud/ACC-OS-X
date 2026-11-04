@@ -87,8 +87,8 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.evaluate(()=>ACCKaiAutopilot.getJobs().length),1);
     await page.locator('[data-auto-channel]').selectOption('ch-titik-tanya');await page.locator('[data-auto-assign]').click();
     await page.waitForFunction(()=>ACCKaiAutopilot.getJobs()[0].status==='HANDOFF');
-    await page.locator('[data-auto-preview]').click();assert(await page.locator('dialog img').isVisible());await page.getByRole('button',{name:'TUTUP',exact:true}).click();
-    await page.locator('[data-auto-use]').click();assert.equal(await page.locator('select[name=channel]').inputValue(),'ch-titik-tanya');
+    await page.locator('[data-auto-preview]').click();await page.locator('dialog img').waitFor({state:'visible'});await page.waitForFunction(()=>document.querySelector('dialog img')?.naturalWidth>0);await page.getByRole('button',{name:'TUTUP',exact:true}).click();
+    await page.locator('[data-auto-use]').click();await page.locator('select[name=channel]').waitFor({state:'visible'});assert.equal(await page.locator('select[name=channel]').inputValue(),'ch-titik-tanya');
     const links=await page.evaluate(()=>({studio:ACCDestinations.division('studio','https://old.invalid/'),trade:ACCDestinations.resolve('https://kai-trad-pwa.ardarawk.workers.dev/test?q=1#open'),bad:ACCDestinations.resolve('javascript:alert(1)')}));
     assert.equal(links.studio,'https://comics.nadmo.id/');assert.equal(links.trade,'https://kai-sanban.nadmo.id/test?q=1#open');assert.equal(links.bad,'');
     assert.deepEqual(errors,[],'uncaught browser errors');

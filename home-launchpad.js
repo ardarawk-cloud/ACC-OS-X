@@ -10,7 +10,7 @@
 
   const apps = [
     {key:"cleaner", title:"ACC Cleaner", accent:"#38bdf8", fallback:"CLN", native:["com.acc.cleaner"]},
-    {key:"dj", title:"ACC DJ", accent:"#f8fafc", fallback:"DJ", icon:"https://raw.githubusercontent.com/balinightlife666-web/DJ-AM/main/icon-192.png", web:"https://balinightlife666-web.github.io/DJ-AM/"},
+    {key:"dj", title:"ACC DJ", accent:"#f8fafc", fallback:"DJ", icon:"https://raw.githubusercontent.com/balinightlife666-web/DJ-AM/main/icon-192.png", web:"https://dj-am.ardarawk.workers.dev/"},
     {key:"entego", title:"ENTEGO", accent:"#ff7a18", fallback:"E", icon:"https://entego-pwa.ardarawk.workers.dev/icon-512.png?v=79", web:"https://entego-pwa.ardarawk.workers.dev/", syncKey:"entego"},
     {key:"trade-x", title:"KAI TRADE X", accent:"#55d7ff", fallback:"KX", native:["com.kaitradex.app.dev","com.kaitradex.app"]},
     {key:"trad", title:"KAI TRAD", accent:"#60a5fa", fallback:"K", icon:"https://kai-sanban.nadmo.id/kai-trad-logo.png", web:"https://kai-sanban.nadmo.id/", syncKey:"trading"},
