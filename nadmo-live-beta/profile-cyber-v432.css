@@ -308,3 +308,13 @@ html[data-nadmo-ui-theme="cyberneon"] #settings #betaSocialProfile,
  #settings #profileBusinessLinks a.profile-business-link,
  #publicProfilePage #publicCreatorLinks a.profile-business-link{transition:none!important}
 }
+
+#settings #profileBusinessLinks>.cp-add-social{
+ grid-column:1/-1;min-height:51px;width:100%;
+ display:flex;justify-content:center;align-items:center;gap:9px;
+ border:1px dashed var(--cp-cyan);border-radius:10px;
+ background:linear-gradient(120deg,#10192b,#182033);
+ color:var(--cp-white);font:900 12px/1.2 system-ui,Arial,sans-serif;
+ letter-spacing:.06em;cursor:pointer;padding:10px 14px;touch-action:manipulation;
+}
+#settings #profileBusinessLinks>.cp-add-social:focus-visible{outline:2px solid var(--cp-lime);outline-offset:2px}
