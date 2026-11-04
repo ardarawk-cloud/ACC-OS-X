@@ -1,6 +1,7 @@
 import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFingerprint} from './account.mjs';
 import {getPublicSupporterBadge} from './supporter-levels.mjs';
 import {subscriptionEndpoint} from './subscription.mjs';
+import {integrationEndpoint} from './integrations.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
@@ -84,6 +85,13 @@ export class RoomHub{
    catch(error){
     console.error('NADMO subscription route',error?.name,String(error?.message||'').slice(0,150));
     return Response.json({ok:false,error:'Subscription temporarily unavailable',errorType:error?.name||'ServerError'},{status:500});
+   }
+  }
+  if(route.startsWith('/api/integrations/')){
+   try{return await integrationEndpoint(this.ctx.storage,request,this.env)}
+   catch(error){
+    console.error('NADMO integration route',error?.name,String(error?.message||'').slice(0,150));
+    return Response.json({ok:false,error:'Integration temporarily unavailable',errorType:error?.name||'ServerError'},{status:500});
    }
   }
   if(route.startsWith('/api/account/')||route.startsWith('/api/profile/')||route.startsWith('/api/supporter/')||route==='/api/payments/status'||route==='/api/streaming/capacity'||route.startsWith('/api/social/')||route.startsWith('/api/messages/')||route.startsWith('/api/wallet/')){
@@ -1042,7 +1050,7 @@ export default {
   const url=new URL(request.url);
   if(request.method==='OPTIONS')return cors(request,new Response(null,{status:204}));
   const danaCallback=(url.pathname==='/v1.0/debit/notify'||url.pathname==='/v1.0/debit/emoney/transfer-bank/notify.htm');
-  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!url.pathname.startsWith('/api/subscription/')&&!url.pathname.startsWith('/api/admin/subscriptions')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT')&&!(danaCallback&&request.method==='POST'))
+  if(request.method!=='GET'&&!url.pathname.startsWith('/api/account/')&&!url.pathname.startsWith('/api/messages/')&&!url.pathname.startsWith('/api/subscription/')&&!url.pathname.startsWith('/api/integrations/')&&!url.pathname.startsWith('/api/admin/subscriptions')&&!(url.pathname==='/api/wallet/withdraw'&&request.method==='POST')&&!(url.pathname==='/api/social/media/upload'&&request.method==='PUT')&&!(danaCallback&&request.method==='POST'))
     return new Response('Method Not Allowed',{status:405});
   // Official native GAME update: a safe 302 to the immutable owner-signed
   // release. Cloudflare Worker subrequests cannot reliably proxy this 50MB
@@ -1071,10 +1079,22 @@ export default {
   }
   if(url.pathname==='/app')return Response.redirect(url.origin+'/app/',308);
   if(url.pathname==='/subscription')return Response.redirect(url.origin+'/subscription/',308);
+  if(url.pathname==='/integrations')return Response.redirect(url.origin+'/integrations/',308);
+  if(url.pathname==='/overlay/support')return Response.redirect(url.origin+'/overlay/support/',308);
   if(url.pathname==='/admin')return Response.redirect(url.origin+'/admin/',308);
   if(url.pathname==='/subscription/'||url.pathname==='/subscription/index.html'){
     const asset=await env.ASSETS.fetch(new Request(url.origin+'/subscription/index.html'));
     const headers=new Headers(asset.headers);headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store, max-age=0');headers.set('Referrer-Policy','no-referrer');
+    return new Response(asset.body,{status:asset.status,headers});
+  }
+  if(url.pathname==='/integrations/'||url.pathname==='/integrations/index.html'){
+    const asset=await env.ASSETS.fetch(new Request(url.origin+'/integrations/index.html'));
+    const headers=new Headers(asset.headers);headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store, max-age=0');headers.set('Referrer-Policy','no-referrer');
+    return new Response(asset.body,{status:asset.status,headers});
+  }
+  if(url.pathname==='/overlay/support/'||url.pathname==='/overlay/support/index.html'){
+    const asset=await env.ASSETS.fetch(new Request(url.origin+'/overlay/support/index.html'));
+    const headers=new Headers(asset.headers);headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store, max-age=0');headers.set('Referrer-Policy','no-referrer');headers.set('Access-Control-Allow-Origin','*');
     return new Response(asset.body,{status:asset.status,headers});
   }
   if(url.pathname==='/subscription/nadmo-dana-qris.png'){
@@ -1161,7 +1181,7 @@ export default {
    }
    return cors(request,Response.json({service:'NADMO LIVE',status:'BETA',note:'Open /app/ in your browser; backend is configured automatically.'}));
   }
-  const isAccountApi=url.pathname.startsWith('/api/account/')||url.pathname.startsWith('/api/profile/')||url.pathname.startsWith('/api/supporter/')||url.pathname.startsWith('/api/subscription/')||url.pathname.startsWith('/api/admin/subscriptions')||
+  const isAccountApi=url.pathname.startsWith('/api/account/')||url.pathname.startsWith('/api/profile/')||url.pathname.startsWith('/api/supporter/')||url.pathname.startsWith('/api/subscription/')||url.pathname.startsWith('/api/integrations/')||url.pathname.startsWith('/api/admin/subscriptions')||
     url.pathname==='/api/payments/status'||url.pathname==='/api/streaming/capacity'||url.pathname.startsWith('/api/social/')||url.pathname.startsWith('/api/messages/')||url.pathname.startsWith('/api/wallet/');
   if(!isAccountApi&&url.pathname!=='/api/rooms'&&url.pathname!=='/ws')return new Response('Not Found',{status:404});
   if(url.pathname==='/ws'){
