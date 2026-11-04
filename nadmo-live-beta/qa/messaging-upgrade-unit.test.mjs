@@ -153,3 +153,66 @@ test('XSS input remains text payload for safe DOM textContent rendering',async()
  const m=(await x.thread('bravo','alpha')).data.messages[0];
  assert.equal(m.text,'<img src=x onerror=alert(1)>');
 });
+
+test('Emoji reaction is visible to both, toggle removes it',async()=>{
+ const x=await fixture(),sent=(await x.send('alpha','bravo','Reaction test')).data.message;
+ assert.equal((await x.act('bravo','react','alpha',{messageId:sent.id,emoji:'❤️'})).status,200);
+ const a=(await x.thread('alpha','bravo')).data.messages[0];
+ assert.equal(a.reactions[0].emoji,'❤️');assert.equal(a.reactions[0].count,1);
+ const b=(await x.thread('bravo','alpha')).data.messages[0];
+ assert.equal(b.reactions[0].mine,true);
+ assert.equal((await x.act('bravo','react','alpha',{messageId:sent.id,emoji:'❤️'})).status,200);
+ assert.equal((await x.thread('alpha','bravo')).data.messages[0].reactions.length,0);
+});
+test('One reaction per account and disallow unsupported emoji',async()=>{
+ const x=await fixture(),sent=(await x.send('alpha','bravo','Emoji')).data.message;
+ await x.act('alpha','react','bravo',{messageId:sent.id,emoji:'👍'});
+ await x.act('alpha','react','bravo',{messageId:sent.id,emoji:'🔥'});
+ const a=(await x.thread('bravo','alpha')).data.messages[0];
+ assert.equal(a.reactions.length,1);assert.equal(a.reactions[0].emoji,'🔥');
+ assert.equal((await x.act('alpha','react','bravo',{messageId:sent.id,emoji:'invalid'})).status,400);
+});
+test('Star is private, persistent and unstar works',async()=>{
+ const x=await fixture(),sent=(await x.send('alpha','bravo','Important')).data.message;
+ assert.equal((await x.act('bravo','star','alpha',{messageId:sent.id,enabled:true})).status,200);
+ assert.equal((await x.thread('bravo','alpha')).data.messages[0].starred,true);
+ assert.equal((await x.thread('alpha','bravo')).data.messages[0].starred,false);
+ assert.equal((await x.act('bravo','star','alpha',{messageId:sent.id,enabled:false})).status,200);
+ assert.equal((await x.thread('bravo','alpha')).data.messages[0].starred,false);
+});
+test('Archive status only affects account selected',async()=>{
+ const x=await fixture();await x.send('alpha','bravo','Archive test');
+ assert.equal((await x.act('bravo','archive','alpha',{enabled:true})).status,200);
+ assert.equal((await x.threads('bravo')).data.threads[0].archived,true);
+ assert.equal((await x.threads('alpha')).data.threads[0].archived,false);
+ assert.equal((await x.act('bravo','archive','alpha',{enabled:false})).status,200);
+ assert.equal((await x.threads('bravo')).data.threads[0].archived,false);
+});
+test('Mark unread is per user until opening thread',async()=>{
+ const x=await fixture();await x.send('alpha','bravo','Read first');
+ await x.thread('bravo','alpha');
+ assert.equal((await x.threads('bravo')).data.totalUnread,0);
+ assert.equal((await x.act('bravo','mark-unread','alpha')).status,200);
+ assert.equal((await x.threads('bravo')).data.totalUnread,1);
+ assert.equal((await x.threads('alpha')).data.totalUnread,0);
+ await x.thread('bravo','alpha');
+ assert.equal((await x.threads('bravo')).data.totalUnread,0);
+});
+test('Unverified stranger cannot react to random message',async()=>{
+ const x=await fixture(),sent=(await x.send('alpha','bravo','Secure')).data.message;
+ assert.equal((await x.act('anon','react','bravo',{messageId:sent.id,emoji:'❤️'})).status,401);
+ assert.equal((await x.act('bravo','react','alpha',{messageId:'0'.repeat(36),emoji:'❤️'})).status,404);
+});
+test('Deleted-for-everyone messages cannot be reacted or starred',async()=>{
+ const x=await fixture(),sent=(await x.send('alpha','bravo','Gone')).data.message;
+ await x.act('alpha','delete','bravo',{messageId:sent.id,scope:'everyone'});
+ assert.equal((await x.act('bravo','react','alpha',{messageId:sent.id,emoji:'❤️'})).status,404);
+ assert.equal((await x.act('bravo','star','alpha',{messageId:sent.id,enabled:true})).status,404);
+});
+test('Message reaction identities are not in public read payload',async()=>{
+ const x=await fixture(),sent=(await x.send('alpha','bravo','Private')).data.message;
+ await x.act('bravo','react','alpha',{messageId:sent.id,emoji:'👍'});
+ const serialized=JSON.stringify((await x.thread('alpha','bravo')).data.messages);
+ assert.ok(!serialized.includes('user-bravo-001'));assert.ok(!serialized.includes('user-alpha-001'));
+ assert.ok(!serialized.includes('hiddenFor'));
+});

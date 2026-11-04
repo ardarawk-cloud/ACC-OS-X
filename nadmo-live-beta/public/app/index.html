@@ -2616,6 +2616,18 @@ body.live-immersive #watch #liveRestReminder{
 #messageCancelDraft{width:43px;height:43px;background:var(--cbw-263927,#263927);color:#ffd4da;border:1px solid #886673}
 #messageSearchEmpty{color:var(--cbw-a5b6a0,#a5b6a0);font:12px Arial;padding:20px;text-align:center}
 @media(max-width:410px){#messageThreadTools{grid-template-columns:repeat(2,minmax(0,1fr))}#messageConversation .message-bubble{max-width:90%}}
+
+/* NADMO LIVE DM V2.0 — archive, reactions and saved messages */
+#messageArchiveToggle{width:100%;padding:10px 12px;margin:2px 0 10px;text-align:left;border-radius:10px;border:1px solid var(--cbw-556e4f,#556e4f);background:var(--cbw-253127,#253127);color:var(--neon);font:800 12px Arial;min-height:43px}
+#messageThreads .message-chat-row[hidden],#messageThreadTools[hidden],#messageStarredOnly[hidden]{display:none!important}
+#messageChatSearch{width:100%;min-height:42px;border-radius:9px;margin:7px 0}
+#messageStarredOnly{min-height:38px;padding:8px 10px;background:var(--cbw-263927,#263927);border:1px solid var(--cbw-556e4f,#556e4f);color:var(--neon);border-radius:9px;font:800 11px Arial;margin-bottom:7px}
+#messageStarredOnly[aria-pressed="true"]{background:var(--neon);color:#08150d}
+#messageConversation .message-reactions{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+#messageConversation .message-reactions button{border:1px solid #738d72;border-radius:19px;min-height:27px;padding:3px 7px;background:#293a2d;color:#f5f6f4;font:12px Arial}
+#messageConversation .message-reactions button.mine{outline:2px solid var(--neon)}
+#messageConversation .message-star{color:#ffe18e;margin-right:6px}
+#messageConversation .message-bubble[hidden]{display:none!important}
 </style></head>
 <body>
 <div class="app">
@@ -2946,6 +2958,7 @@ body.live-immersive #watch #liveRestReminder{
    <div class="message-inbox-status" id="messageInboxStatus" role="status" aria-live="polite"></div>
    <div id="messageRequests"></div>
    <input id="messageSearch" class="field" type="search" inputmode="search" placeholder="Cari nama, username, atau pesan..." aria-label="Cari percakapan">
+   <button type="button" id="messageArchiveToggle" aria-pressed="false">ARSIP CHAT</button>
    <div id="messageThreads" aria-label="Daftar percakapan"></div>
    <p id="messageSearchEmpty" hidden>Tidak ada percakapan yang cocok.</p>
    <p id="messageInboxEmpty" class="message-empty hide">Belum ada percakapan. Tekan + untuk memulai chat.</p>
@@ -2959,9 +2972,13 @@ body.live-immersive #watch #liveRestReminder{
     <div id="messageThreadTools" hidden aria-label="Pengaturan percakapan">
       <button id="messagePinThread" type="button">PIN PERCAKAPAN</button>
       <button id="messageMuteThread" type="button">BISUKAN</button>
+      <button id="messageArchiveThread" type="button">ARSIPKAN</button>
+      <button id="messageMarkUnread" type="button">TANDAI BELUM DIBACA</button>
       <button id="messageClearThread" type="button" class="danger">HAPUS CHAT SAYA</button>
       <button id="messageBlockPeer" type="button" class="danger">BLOKIR KONTAK</button>
     </div>
+    <input id="messageChatSearch" class="field" type="search" placeholder="Cari dalam chat..." aria-label="Cari pesan dalam percakapan">
+    <button id="messageStarredOnly" type="button" aria-pressed="false">PESAN BERBINTANG SAJA</button>
     <div id="messageBubbles" class="message-bubbles" aria-live="polite"></div>
     <div id="messageDraftContext" hidden role="status"></div>
     <div class="message-compose"><textarea id="messageBody" class="field" maxlength="2000" rows="1" placeholder="Tulis pesan..." aria-label="Tulis pesan"></textarea><button id="messageCancelDraft" type="button" hidden aria-label="Batalkan balas atau edit">✕</button><button id="messageSend" type="button" aria-label="Kirim pesan">➤</button></div>
@@ -4194,7 +4211,7 @@ body.live-immersive #watch #liveRestReminder{
   }catch(e){$('socialMediaStatus').textContent='Penyimpanan galeri belum siap.'}
  }
  refreshVideoCapability();
- let activeChatHandle='',chatRefreshTimer=null,chatNotificationTimer=null,chatBusy=false,activeChatPeer=null,chatDraft=null,chatPinned=false,chatMuted=false;
+ let activeChatHandle='',chatRefreshTimer=null,chatNotificationTimer=null,chatBusy=false,activeChatPeer=null,chatDraft=null,chatPinned=false,chatMuted=false,chatArchived=false,showMessageArchive=false,showOnlyStarred=false;
  function messageTime(value,full=false){
   if(!value)return '';
   const date=new Date(value),today=new Date();
@@ -4278,7 +4295,7 @@ body.live-immersive #watch #liveRestReminder{
    for(const item of threads){
     const row=document.createElement('div');
     row.className='message-chat-row'+(item.unread?' has-unread':'')+(item.pinned?' is-pinned':'');
-    row.dataset.search=[item.name,item.handle,item.lastText].join(' ').toLocaleLowerCase('id-ID');
+    row.dataset.search=[item.name,item.handle,item.lastText].join(' ').toLocaleLowerCase('id-ID');row.dataset.archived=String(item.archived===true);
     row.setAttribute('aria-label','Buka percakapan dengan '+(item.name||item.handle));
     row.tabIndex=0;row.setAttribute('role','button');
     const person=document.createElement('button');person.type='button';person.className='message-profile-tap';
@@ -4318,16 +4335,23 @@ body.live-immersive #watch #liveRestReminder{
   const query=$('messageSearch').value.trim().toLocaleLowerCase('id-ID');
   let shown=0;
   for(const row of $('messageThreads').querySelectorAll('.message-chat-row')){
-   const visible=!query||row.dataset.search.includes(query);
+   const visible=(!query||row.dataset.search.includes(query))&&((row.dataset.archived==='true')===showMessageArchive);
    row.hidden=!visible;if(visible)shown++;
   }
   $('messageSearchEmpty').hidden=!query||shown>0;
  }
  $('messageSearch').addEventListener('input',applyMessageSearch);
+ $('messageArchiveToggle').onclick=()=>{
+  showMessageArchive=!showMessageArchive;
+  $('messageArchiveToggle').textContent=showMessageArchive?'KEMBALI KE CHAT AKTIF':'ARSIP CHAT';
+  $('messageArchiveToggle').setAttribute('aria-pressed',String(showMessageArchive));
+  applyMessageSearch();
+ };
  function renderThreadControls(data){
-  chatPinned=data.pinned===true;chatMuted=data.muted===true;
+  chatPinned=data.pinned===true;chatMuted=data.muted===true;chatArchived=data.archived===true;
   $('messagePinThread').textContent=chatPinned?'LEPAS PIN':'PIN PERCAKAPAN';
   $('messageMuteThread').textContent=chatMuted?'AKTIFKAN SUARA':'BISUKAN';
+  $('messageArchiveThread').textContent=chatArchived?'KELUARKAN DARI ARSIP':'ARSIPKAN CHAT';
  }
  function resetMessageDraft(){
   chatDraft=null;$('messageDraftContext').hidden=true;$('messageDraftContext').textContent='';
@@ -4373,6 +4397,8 @@ body.live-immersive #watch #liveRestReminder{
    $('messageInboxMain').classList.add('hide');
    $('messageNewToggle').hidden=true;
    resetMessageDraft();
+   $('messageChatSearch').value='';showOnlyStarred=false;
+   $('messageStarredOnly').setAttribute('aria-pressed','false');
    $('messageThreadTools').hidden=true;$('messageThreadMenu').setAttribute('aria-expanded','false');
    renderThreadControls(data);
    renderConversation(data.messages||[]);
@@ -4407,6 +4433,20 @@ body.live-immersive #watch #liveRestReminder{
    const body=document.createElement('span');
    body.textContent=msg.deletedForEveryone?'Pesan telah dihapus':msg.text;
    bubble.append(body);
+   bubble.dataset.search=String(msg.text||'').toLocaleLowerCase('id-ID');
+   bubble.dataset.starred=String(msg.starred===true);
+   if(msg.starred){const star=document.createElement('span');star.className='message-star';star.textContent='★ Disimpan';bubble.append(star)}
+   if(!msg.deletedForEveryone&&Array.isArray(msg.reactions)&&msg.reactions.length){
+    const row=document.createElement('div');row.className='message-reactions';
+    for(const reaction of msg.reactions){
+     const btn=document.createElement('button');btn.type='button';
+     btn.textContent=reaction.emoji+' '+reaction.count;
+     btn.className=reaction.mine?'mine':'';
+     btn.onclick=()=>reactToMessage(msg.id,reaction.emoji);
+     row.append(btn);
+    }
+    bubble.append(row);
+   }
    const meta=document.createElement('div');meta.className='message-bubble-meta';
    const time=document.createElement('small');time.className='message-bubble-time';
    time.textContent=messageTime(msg.createdAt,true)+(msg.editedAt?' · diedit':'');
@@ -4423,6 +4463,13 @@ body.live-immersive #watch #liveRestReminder{
      actions.append(btn);
     }
     option('BALAS',()=>draftMessage('reply',msg));
+    option(msg.starred?'HAPUS BINTANG':'★ SIMPAN PESAN',async()=>{
+     try{await accountRequest('/api/messages/star','POST',{handle:activeChatHandle,messageId:msg.id,enabled:!msg.starred});await refreshConversation()}
+     catch(e){$('messageConversationStatus').textContent=e.message}
+    });
+    for(const emoji of ['❤️','👍','😂','🔥']){
+     option('REAKSI '+emoji,()=>reactToMessage(msg.id,emoji));
+    }
     option('SALIN',async()=>{
      try{await navigator.clipboard.writeText(msg.text);$('messageConversationStatus').textContent='Pesan disalin.'}
      catch{$('messageConversationStatus').textContent='Salin teks secara manual.'}
@@ -4444,7 +4491,24 @@ body.live-immersive #watch #liveRestReminder{
    const empty=document.createElement('p');empty.className='message-empty';
    empty.textContent='Belum ada pesan yang terlihat. Kamu bisa memulai percakapan lagi.';node.append(empty);
   }
+  applyChatMessageFilters();
   if(bottom)node.scrollTop=node.scrollHeight;
+ }
+ function applyChatMessageFilters(){
+  const search=$('messageChatSearch').value.trim().toLocaleLowerCase('id-ID');
+  for(const bubble of $('messageBubbles').querySelectorAll('.message-bubble')){
+   bubble.hidden=(showOnlyStarred&&bubble.dataset.starred!=='true')||!!(search&&!bubble.dataset.search.includes(search));
+  }
+ }
+ $('messageChatSearch').addEventListener('input',applyChatMessageFilters);
+ $('messageStarredOnly').onclick=()=>{
+  showOnlyStarred=!showOnlyStarred;$('messageStarredOnly').setAttribute('aria-pressed',String(showOnlyStarred));
+  applyChatMessageFilters();
+ };
+ async function reactToMessage(messageId,emoji){
+  if(!activeChatHandle)return;
+  try{await accountRequest('/api/messages/react','POST',{handle:activeChatHandle,messageId,emoji});await refreshConversation()}
+  catch(e){$('messageConversationStatus').textContent=e.message}
  }
  async function refreshConversation(){
   if(!activeChatHandle)return;
@@ -4475,13 +4539,28 @@ body.live-immersive #watch #liveRestReminder{
  $('messagePinThread').onclick=async()=>{
   if(!activeChatHandle)return;
   try{await accountRequest('/api/messages/pin','POST',{handle:activeChatHandle,enabled:!chatPinned});
-   chatPinned=!chatPinned;renderThreadControls({pinned:chatPinned,muted:chatMuted});
+   chatPinned=!chatPinned;renderThreadControls({pinned:chatPinned,muted:chatMuted,archived:chatArchived});
+  }catch(e){$('messageConversationStatus').textContent=e.message}
+ };
+ $('messageArchiveThread').onclick=async()=>{
+  if(!activeChatHandle)return;
+  try{
+   await accountRequest('/api/messages/archive','POST',{handle:activeChatHandle,enabled:!chatArchived});
+   chatArchived=!chatArchived;renderThreadControls({pinned:chatPinned,muted:chatMuted,archived:chatArchived});
+   $('messageConversationStatus').textContent=chatArchived?'Percakapan diarsipkan.':'Percakapan dikembalikan.';
+  }catch(e){$('messageConversationStatus').textContent=e.message}
+ };
+ $('messageMarkUnread').onclick=async()=>{
+  if(!activeChatHandle)return;
+  try{
+   await accountRequest('/api/messages/mark-unread','POST',{handle:activeChatHandle});
+   closeMessages();$('messageInboxStatus').textContent='Ditandai belum dibaca.';
   }catch(e){$('messageConversationStatus').textContent=e.message}
  };
  $('messageMuteThread').onclick=async()=>{
   if(!activeChatHandle)return;
   try{await accountRequest('/api/messages/mute','POST',{handle:activeChatHandle,enabled:!chatMuted});
-   chatMuted=!chatMuted;renderThreadControls({pinned:chatPinned,muted:chatMuted});
+   chatMuted=!chatMuted;renderThreadControls({pinned:chatPinned,muted:chatMuted,archived:chatArchived});
   }catch(e){$('messageConversationStatus').textContent=e.message}
  };
  $('messageClearThread').onclick=async()=>{

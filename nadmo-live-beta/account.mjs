@@ -196,14 +196,27 @@ export async function accountEndpoint(storage,request){
  const clearKey=(a,b)=>'dm-clear:'+a+':'+b;
  const muteKey=(a,b)=>'dm-muted:'+a+':'+b;
  const pinKey=(a,b)=>'dm-pinned:'+a+':'+b;
+ const archiveKey=(a,b)=>'dm-archived:'+a+':'+b;
+ const unreadKey=(a,b)=>'dm-manual-unread:'+a+':'+b;
+ const starKey=(a,b)=>'dm-stars:'+a+':'+b;
+ const emojis=['❤️','👍','😂','😮','😢','🔥','👏','🙏'];
+ const reactionsFor=(m,viewerId)=>{
+  const reactions=m?.reactions&&typeof m.reactions==='object'?m.reactions:{};
+  return emojis.map(emoji=>{
+   const actors=Array.isArray(reactions[emoji])?reactions[emoji]:[];
+   return {emoji,count:actors.length,mine:actors.includes(viewerId)};
+  }).filter(x=>x.count>0);
+ };
  // Explicit predicate separate from UI: do not leak hiddenFor/other account IDs.
  const filterDM=(messages,viewerId,clearAt=0)=>messages.filter(m=>
   Number(m.createdAt)>clearAt&&!(Array.isArray(m.hiddenFor)&&m.hiddenFor.includes(viewerId)));
- const viewDM=m=>({id:m.id,fromHandle:m.fromHandle,
+ const viewDM=(m,viewerId,stars=[])=>({id:m.id,fromHandle:m.fromHandle,
   text:m.deletedForEveryoneAt?'':m.text||'',createdAt:m.createdAt,
   editedAt:m.deletedForEveryoneAt?null:(m.editedAt||null),
   deletedForEveryone:!!m.deletedForEveryoneAt,
-  replyTo:m.deletedForEveryoneAt?null:(m.replyTo||null)});
+  replyTo:m.deletedForEveryoneAt?null:(m.replyTo||null),
+  reactions:m.deletedForEveryoneAt?[]:reactionsFor(m,viewerId),
+  starred:!m.deletedForEveryoneAt&&stars.includes(m.id)});
 
  const canDirect=async(sender,receiver)=>{
   if(await storage.get(approvalKey(sender.id,receiver.id)))return true;
@@ -230,14 +243,17 @@ export async function accountEndpoint(storage,request){
     if(clearAt&&!messages.length)continue;
     const readAt=Number(await storage.get(readKey(principal.id,item.otherId)))||0;
     const isMine=m=>m.fromId?m.fromId===principal.id:m.fromHandle===principal.handle;
-    const unread=messages.filter(m=>!isMine(m)&&!m.deletedForEveryoneAt&&m.createdAt>readAt).length;
+    const countedUnread=messages.filter(m=>!isMine(m)&&!m.deletedForEveryoneAt&&m.createdAt>readAt).length;
+    const manuallyUnread=!!await storage.get(unreadKey(principal.id,item.otherId));
+    const unread=Math.max(countedUnread,manuallyUnread?1:0);
     const last=messages.at(-1);
     threads.push({handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0,unread,
       updatedAt:last?.createdAt||item.createdAt||0,
       lastText:last?.deletedForEveryoneAt?'Pesan telah dihapus':(last?.text?.slice(0,100)||''),
       lastFromMe:!!last&&isMine(last),
       pinned:!!await storage.get(pinKey(principal.id,item.otherId)),
-      muted:!!await storage.get(muteKey(principal.id,item.otherId))});
+      muted:!!await storage.get(muteKey(principal.id,item.otherId)),
+      archived:!!await storage.get(archiveKey(principal.id,item.otherId))});
    }
    return json({ok:true,threads:threads.sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.updatedAt-a.updatedAt),
     totalUnread:threads.reduce((sum,item)=>sum+item.unread,0)});
@@ -267,10 +283,13 @@ export async function accountEndpoint(storage,request){
    if(!await canDirect(current,other))return fail(403,'Penerima membatasi pesan. Kirim permintaan chat.');
    const key=threadKey(principal.id,id);
    const clearAt=Number(await storage.get(clearKey(principal.id,id)))||0;
-   const msgs=filterDM(await storage.get(key)||[],principal.id,clearAt).slice(-80).map(viewDM);
+   const stars=await storage.get(starKey(principal.id,id))||[];
+   const msgs=filterDM(await storage.get(key)||[],principal.id,clearAt).slice(-80).map(m=>viewDM(m,principal.id,stars));
    await storage.put(readKey(principal.id,id),Date.now());
+   await storage.delete(unreadKey(principal.id,id));
    return json({ok:true,messages:msgs,participant:{handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0},
-    pinned:!!await storage.get(pinKey(principal.id,id)),muted:!!await storage.get(muteKey(principal.id,id))});
+    pinned:!!await storage.get(pinKey(principal.id,id)),muted:!!await storage.get(muteKey(principal.id,id)),
+    archived:!!await storage.get(archiveKey(principal.id,id))});
 
   }
   return fail(404,'Halaman pesan tidak ditemukan');
@@ -470,7 +489,8 @@ export async function accountEndpoint(storage,request){
   // Changing history never requires permission to send new messages; both
   // participants may clear their own history even after a block/privacy change.
   if(p==='/api/messages/delete'||p==='/api/messages/edit'||p==='/api/messages/clear'||
-     p==='/api/messages/pin'||p==='/api/messages/mute'){
+     p==='/api/messages/pin'||p==='/api/messages/mute'||p==='/api/messages/archive'||
+     p==='/api/messages/mark-unread'||p==='/api/messages/star'||p==='/api/messages/react'){
    const key=threadKey(user.id,otherId),now=Date.now();
    if(p==='/api/messages/clear'){
     await storage.put(clearKey(user.id,otherId),now);
@@ -478,15 +498,57 @@ export async function accountEndpoint(storage,request){
     await storage.delete(pinKey(user.id,otherId));
     return json({ok:true,cleared:true,scope:'me'});
    }
-   if(p==='/api/messages/pin'||p==='/api/messages/mute'){
+   if(p==='/api/messages/mark-unread'){
+    await storage.put(unreadKey(user.id,otherId),true);
+    return json({ok:true,manualUnread:true});
+   }
+   if(p==='/api/messages/pin'||p==='/api/messages/mute'||p==='/api/messages/archive'){
     const enabled=payload.enabled===true;
     if(typeof payload.enabled!=='boolean')return fail(400,'Pengaturan pesan tidak valid');
-    const prefKey=p.endsWith('/pin')?pinKey(user.id,otherId):muteKey(user.id,otherId);
+    const prefKey=p.endsWith('/pin')?pinKey(user.id,otherId):
+     p.endsWith('/archive')?archiveKey(user.id,otherId):muteKey(user.id,otherId);
     if(enabled)await storage.put(prefKey,true);else await storage.delete(prefKey);
     return json({ok:true,enabled});
    }
    const id=clean(payload.messageId,60);
    if(!/^[a-f0-9-]{36}$/.test(id))return fail(400,'ID pesan tidak valid');
+   if(p==='/api/messages/star'){
+    if(typeof payload.enabled!=='boolean')return fail(400,'Status simpan pesan tidak valid');
+    const result=await storage.transaction(async tx=>{
+     const msgs=await tx.get(key)||[],item=msgs.find(m=>m.id===id);
+     const clearAt=Number(await tx.get(clearKey(user.id,otherId)))||0;
+     if(!item||item.deletedForEveryoneAt||item.hiddenFor?.includes(user.id)||item.createdAt<=clearAt)return {error:'NOT_FOUND'};
+     const stars=await tx.get(starKey(user.id,otherId))||[];
+     const next=stars.filter(v=>v!==id);
+     if(payload.enabled)next.unshift(id);
+     if(next.length>100)return {error:'STAR_LIMIT'};
+     await tx.put(starKey(user.id,otherId),next);
+     return {ok:true,starred:payload.enabled};
+    });
+    if(result.error==='NOT_FOUND')return fail(404,'Pesan tidak ditemukan');
+    if(result.error==='STAR_LIMIT')return fail(409,'Maksimal 100 pesan berbintang per percakapan');
+    return json(result);
+   }
+   if(p==='/api/messages/react'){
+    const emoji=payload.emoji;
+    if(!emojis.includes(emoji))return fail(400,'Reaksi tidak tersedia');
+    const result=await storage.transaction(async tx=>{
+     const msgs=await tx.get(key)||[],position=msgs.findIndex(m=>m.id===id);
+     const clearAt=Number(await tx.get(clearKey(user.id,otherId)))||0;
+     if(position<0)return {error:'NOT_FOUND'};
+     const m=msgs[position];
+     if(m.deletedForEveryoneAt||m.hiddenFor?.includes(user.id)||m.createdAt<=clearAt)return {error:'NOT_FOUND'};
+     const reactions=m.reactions&&typeof m.reactions==='object'?m.reactions:{};
+     // One active reaction per account per message. Tapping same emoji removes it.
+     const had=(reactions[emoji]||[]).includes(user.id);
+     for(const label of emojis)reactions[label]=(Array.isArray(reactions[label])?reactions[label]:[]).filter(v=>v!==user.id);
+     if(!had)reactions[emoji].push(user.id);
+     m.reactions=reactions;msgs[position]=m;await tx.put(key,msgs);
+     return {ok:true,reactions:reactionsFor(m,user.id)};
+    });
+    if(result.error)return fail(404,'Pesan tidak ditemukan');
+    return json(result);
+   }
    const mode=p==='/api/messages/delete'?payload.scope:'edit';
    if(mode!=='me'&&mode!=='everyone'&&mode!=='edit')return fail(400,'Pilihan penghapusan tidak valid');
    const text=mode==='edit'?clean(payload.text,2000):'';
@@ -507,7 +569,7 @@ export async function accountEndpoint(storage,request){
       if(!Array.isArray(msg.hiddenFor))msg.hiddenFor=[];
       if(!msg.hiddenFor.includes(user.id))msg.hiddenFor.push(user.id);
      }else if(mode==='everyone'){
-      msg.deletedForEveryoneAt=now;msg.text='';msg.replyTo=null;
+      msg.deletedForEveryoneAt=now;msg.text='';msg.replyTo=null;msg.reactions={};
      }else{msg.text=text;msg.editedAt=now}
      msgs[position]=msg;await tx.put(key,msgs);
      return {ok:true,id,scope:mode};
