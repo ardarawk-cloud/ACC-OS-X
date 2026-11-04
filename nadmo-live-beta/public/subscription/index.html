@@ -25,10 +25,12 @@ button,a.btn{display:inline-block;border:1px solid var(--neon);background:var(--
 <div class="plan" data-tier="plus"><b>PLUS</b><strong>Rp99.900</strong><p>Unlimited / 30 hari</p><button data-buy="plus">PILIH PLUS</button></div>
 </div></div>
 
-<div id="checkout" class="card hidden"><h2 id="checkoutTitle">UPGRADE</h2><p id="checkoutPrice"></p><p class="muted"><b>Merchant:</b> Nadmo Studio, Konter · DANA Bisnis</p><div id="qrisMissing" class="notice hidden">QRIS DANA Bisnis NADMO Studio belum tersedia.</div><img id="storeQris" class="qris hidden" alt="QRIS DANA Bisnis NADMO Studio">
-<p class="muted">Bayar ke QRIS DANA Bisnis NADMO Studio sesuai paket, lalu upload bukti. Setelah bukti dikirim, status menjadi PENDING. Jika limit sedang penuh, grace 24 jam + 20 Support Actions aktif otomatis satu kali untuk siklus upgrade tersebut.</p>
+<div id="checkout" class="card hidden"><h2 id="checkoutTitle">UPGRADE</h2><p id="checkoutPrice"></p><p class="muted"><b>Merchant:</b> NADMO STUDIO INDONESIA · DANA Payment Gateway</p>
+<div id="gatewayBox" class="notice"><b>DANA PAYMENT GATEWAY</b><p class="muted">Pembayaran otomatis. Setelah DANA mengonfirmasi transaksi, paket aktif tanpa upload bukti dan tanpa approval admin.</p><button id="payDana">BAYAR DENGAN DANA</button><p id="gatewayStatus" class="muted"></p></div>
+<details id="manualFallback"><summary><b>Fallback QRIS manual</b></summary><div id="qrisMissing" class="notice hidden">QRIS DANA Bisnis NADMO Studio belum tersedia.</div><img id="storeQris" class="qris hidden" alt="QRIS DANA Bisnis NADMO Studio">
+<p class="muted">Gunakan hanya bila Payment Gateway sedang tidak tersedia. Bayar ke QRIS DANA Bisnis NADMO Studio, lalu upload bukti untuk verifikasi manual.</p>
 <label>BUKTI PEMBAYARAN</label><input id="proofFile" class="field" type="file" accept="image/jpeg,image/png,image/webp">
-<button id="submitOrder">KIRIM BUKTI & AKTIFKAN GRACE</button><p id="orderStatus" class="muted"></p></div>
+<button id="submitOrder">KIRIM BUKTI MANUAL</button></details><p id="orderStatus" class="muted"></p></div>
 </section>
 </main><script>
 const $=id=>document.getElementById(id),money=n=>'Rp'+new Intl.NumberFormat('id-ID').format(Number(n)||0),date=n=>n?new Date(n).toLocaleString('id-ID'):'—';
@@ -56,7 +58,7 @@ function draw(){
  $('supportUrl').value=state.support.link||'';hostQrisUrl=state.support.qris||'';
  $('hostQrisPreview').classList.toggle('hidden',!hostQrisUrl);if(hostQrisUrl)$('hostQrisPreview').src=hostQrisUrl;
  $('removeQris').disabled=!hostQrisUrl;
- if(state.pending){$('pending').classList.remove('hidden');$('pending').textContent='PENDING: '+state.pending.targetTier.toUpperCase()+' · '+money(state.pending.price)+(state.pending.graceGranted?' · Grace aktif':'');}
+ if(state.pending){$('pending').classList.remove('hidden');$('pending').textContent='PENDING: '+state.pending.targetTier.toUpperCase()+' · '+money(state.pending.price)+(state.pending.provider==='dana-payment-gateway'?' · DANA Payment Gateway':' · Manual')+(state.pending.graceGranted?' · Grace aktif':'');}
  else $('pending').classList.add('hidden');
  document.querySelector('[data-buy="pro"]').disabled=s.tier==='plus'||!!state.pending;
  document.querySelector('[data-buy="plus"]').disabled=!!state.pending;
@@ -81,9 +83,20 @@ document.querySelectorAll('[data-buy]').forEach(btn=>btn.onclick=()=>{
  selectedTier=btn.dataset.buy;const plan=state.plan[selectedTier];
  $('checkout').classList.remove('hidden');$('checkoutTitle').textContent=(state.subscription.tier===selectedTier?'PERPANJANG ':'UPGRADE KE ')+selectedTier.toUpperCase();
  $('checkoutPrice').textContent=money(plan.price)+' / 30 hari';
+ const gatewayReady=state.paymentGateway?.enabled===true;$('payDana').disabled=!gatewayReady;$('gatewayStatus').textContent=gatewayReady?'Gateway siap. Pembayaran akan dibuka di checkout DANA.':'Payment Gateway belum tersedia; gunakan fallback QRIS manual.';
  const configured=!!state.qrisUrl;$('qrisMissing').classList.toggle('hidden',configured);$('storeQris').classList.toggle('hidden',!configured);if(configured)$('storeQris').src=state.qrisUrl;
  $('submitOrder').disabled=!configured;location.hash='checkout';
 });
+
+$('payDana').onclick=async()=>{
+ const st=$('gatewayStatus');st.textContent='Membuat order DANA...';
+ try{
+  if(!selectedTier)throw Error('Pilih paket terlebih dahulu.');
+  const d=await request('/api/subscription/dana/create',{method:'POST',body:JSON.stringify({targetTier:selectedTier})});
+  if(!d.checkoutUrl)throw Error('Checkout DANA tidak tersedia.');
+  st.textContent='Mengarahkan ke DANA...';location.href=d.checkoutUrl;
+ }catch(e){st.textContent=e.message}
+};
 $('submitOrder').onclick=async()=>{
  const st=$('orderStatus');st.textContent='Memproses...';
  try{
@@ -91,7 +104,9 @@ $('submitOrder').onclick=async()=>{
   const proof=await uploadImage($('proofFile').files?.[0],st);
   const d=await request('/api/subscription/order',{method:'POST',body:JSON.stringify({targetTier:selectedTier,proofUrl:proof})});
   st.textContent=d.order?.graceGranted?'Bukti terkirim. PENDING VERIFICATION · Grace 24 jam +20 aktif.':'Bukti terkirim. PENDING VERIFICATION.';
-  await load();
+  await const danaReturn=new URLSearchParams(location.search).get('payment')==='dana';
+if(danaReturn){setTimeout(()=>load(),1200)}
+load();
  }catch(e){st.textContent=e.message}
 };
 load();
