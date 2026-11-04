@@ -39,9 +39,9 @@ assert.ok(!studio.includes('Semua siaran dimulai publik'),'Remove self-explanato
 assert.ok(studio.includes('id="createRoom"'),'Transmit control must remain unchanged');
 assert.ok(html.includes("personLink.onclick=()=>openCreatorProfile(person.handle)"),'Followers and Following identities open ME');
 assert.ok(html.includes("personLink.append(label);row.append(personLink,makeFollowButton(person.handle))"),'Profile and follow actions are separate');
-assert.ok(html.includes("name.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)}"),'Message names open ME');
-assert.ok(html.includes("person.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)}"),'Message avatars open ME');
-assert.ok(html.includes("person.onclick=()=>openCreatorProfile(req.handle)"),'Message requests can open profile');
+assert.ok(html.includes("name.onclick=event=>{event.stopPropagation();openMessages(item.handle,item.name,item.avatarVersion)}"),'Message names open chat');
+assert.ok(html.includes("person.onclick=event=>{event.stopPropagation();openMessages(item.handle,item.name,item.avatarVersion)}"),'Message avatars open chat');
+assert.ok(html.includes("person.onclick=()=>openMessages(req.handle,req.name,req.avatarVersion)"),'Message requests open conversation flow');
 assert.ok(html.includes("if(origin==='messagesPage'&&returnChat)openMessages(returnChat)"),'Returning from chat profile preserves chat navigation');
 assert.ok(html.includes("publicProfileOrigin=['socialConnectionsPage','messagesPage'].includes(origin)?origin:'socialPage'"),'Profile back origin is retained');
 
@@ -58,4 +58,4 @@ assert.ok(html.includes('.message-chat-avatar .message-avatar-fallback[hidden],'
 assert.ok(html.includes('.message-chat-avatar img[hidden]{display:none!important}'));
 assert.ok(html.includes("avatar.onload=()=>{fallback.hidden=true;avatar.hidden=false}"));
 assert.ok(html.includes("img.onload=()=>{fallback.hidden=true;img.hidden=false}"));
-console.log('PASS navigation signature, compact avatar navigation, plain names and repost actions');
+console.log('PASS navigation signature, chat-first inbox navigation, compact avatars, plain social names and repost actions');
