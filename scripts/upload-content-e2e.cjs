@@ -29,6 +29,7 @@ const server=http.createServer((req,res)=>{
     if(route.request().url().startsWith(origin))return route.continue();
     if(route.request().url().includes('acc-publish-connectorv2.')&&route.request().method()==='POST'){
       posts.push(route.request().postDataJSON());
+      await page.evaluate(()=>ACCProduceCopilot.refresh()); // A UI refresh must not detach the pending receipt.
       await new Promise(r=>setTimeout(r,120));
       return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,externalPostId:mode==='mock'?'server_mock_123':'123_456'})});
     }
@@ -92,5 +93,5 @@ const server=http.createServer((req,res)=>{
     assert.equal(links.studio,'https://comics.nadmo.id/');assert.equal(links.trade,'https://kai-sanban.nadmo.id/test?q=1#open');assert.equal(links.bad,'');
     assert.deepEqual(errors,[],'uncaught browser errors');
     console.log(JSON.stringify({pass:true,tests:['original bytes','no autopublish','reload persistence','double tap','reject mock ID','stable retry','published protection','news source gate','batch isolation','storage failure rollback','Android MIME','duplicate import','inbox preview and handoff','stale domain migration'],realPostsCreated:0}));
-  }finally{await browser.close();server.close();}
+  }catch(error){console.error('Browser diagnostics',JSON.stringify({errors,state:await page.evaluate(()=>({produce:!!window.ACCProduceCopilot,upload:!!window.ACCContentUpload,guard:!!window.ACCProductionContracts,panel:!!document.getElementById('acc-produce-copilot-panel'),uploadButton:!!document.querySelector('[data-owner-upload]'),status:document.querySelector('[data-upload-status]')?.textContent}))}));throw error;}finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});

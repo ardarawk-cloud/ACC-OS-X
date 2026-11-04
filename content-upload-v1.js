@@ -65,6 +65,6 @@
     button.addEventListener("click",()=>open({channelId:panel.dataset.channelId}));tools.appendChild(button);
   }
   window.ACCContentUpload=Object.freeze({revision:"OWNER_CONTENT_UPLOAD_V1",open});
-  ["acc-core-rendered","acc-produce-ready","acc-production-contract-updated"].forEach(name=>window.addEventListener(name,()=>requestAnimationFrame(mount)));
+  ["acc-core-rendered","acc-produce-ready","acc-produce-panel-ready","acc-production-contract-updated"].forEach(name=>window.addEventListener(name,()=>requestAnimationFrame(mount)));
   mount();
 })();

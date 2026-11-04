@@ -188,7 +188,7 @@
     await within(Promise.allSettled(keys.map(mediaDelete)),7000,"MEDIA_CLEAR");
   }
   async function migrateLegacyMedia(channelId,row){
-    const original=row.package||{},p=row.package=normalizePackage(original);let changed=false;
+    const original=row.package||emptyPackage(),p=row.package=original;let changed=false;
     const single=txt(original.posterBase64);
     if(single&&!p.posterMediaKey){p.posterMediaKey=`${channelId}:legacy:single`;await mediaPut(p.posterMediaKey,single);changed=true;}
     if(Array.isArray(original.batchPosters)){
@@ -353,8 +353,8 @@
     const missionSection=mission.closest("section.section")||mission.parentElement;if(!missionSection?.parentElement)return;
     const profile=currentProfile();if(!profile.id)return;const row=lane(profile.id);await migrateLegacyMedia(profile.id,row);
     let section=document.getElementById(PANEL_ID);
-    if(!section){section=document.createElement("section");section.id=PANEL_ID;section.className="section mono acc-copilot-section";section.dataset.channelId=profile.id;section.innerHTML=shellHtml(profile,row);missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);return;}
-    if(section.dataset.channelId!==profile.id){section.dataset.channelId=profile.id;section.dataset.bound="";section.innerHTML=shellHtml(profile,row);if(section.nextElementSibling!==missionSection)missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);return;}
+    if(!section){section=document.createElement("section");section.id=PANEL_ID;section.className="section mono acc-copilot-section";section.dataset.channelId=profile.id;section.innerHTML=shellHtml(profile,row);missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);window.dispatchEvent(new CustomEvent("acc-produce-panel-ready"));return;}
+    if(section.dataset.channelId!==profile.id){section.dataset.channelId=profile.id;section.dataset.bound="";section.innerHTML=shellHtml(profile,row);if(section.nextElementSibling!==missionSection)missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);window.dispatchEvent(new CustomEvent("acc-produce-panel-ready"));return;}
     if(section.nextElementSibling!==missionSection)missionSection.parentElement.insertBefore(section,missionSection);
     syncMeta(profile,row);syncMessages(row);
   }
@@ -519,17 +519,17 @@
   async function publishApproved(){
     if(runtimeBusy)return;
     const profile=currentProfile(),row=lane(profile.id),spec=effectiveSpec(profile,row);if(spec.count>1)return setStatus("Batch dipublish per item.",true);const pkg=row.package;if(!canPublishSingle(row))return setStatus("Poster + caption harus siap dulu.",true);if(!contractPublishAllowed(profile.id,pkg.posterMediaKey))return setStatus("PUBLISH BLOCKED // SAFETY GUARD",true);
-    const target=publishTarget(readMain(),profile.id);if(!target)return setStatus("Meta Page channel ini belum di-map di Publishing Hub.",true);setBusy(true,"Publishing approved package…");pkg.publishState="PUBLISHING";pkg.lastPublishError="";saveStore();
-    try{const generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,pkg.caption,pkg.posterMediaKey,`copilot:${profile.id}:${generation}:${pkg.posterMediaKey}:single`,`COPILOT:${profile.id}`);pkg.publishedPostId=result.postId;pkg.publishedAt=result.publishedAt;pkg.publishState="PUBLISHED";addMessage(profile.id,"kai",`PUBLISH SUCCESS ✅\n${profile.name}\nPOST ID: ${result.postId}`);saveStore();setStatus(`PUBLISHED ✅ ${result.postId}`);}
-    catch(error){const message=String(error?.message||error);pkg.publishState="FAILED";pkg.lastPublishError=message;saveStore();addMessage(profile.id,"kai",`PUBLISH FAILED // ${message}`);setStatus(`PUBLISH FAILED // ${message}`,true);}
+    const target=publishTarget(readMain(),profile.id);if(!target)return setStatus("Meta Page channel ini belum di-map di Publishing Hub.",true);setBusy(true,"Publishing approved package…");
+    try{pkg.publishState="PUBLISHING";pkg.lastPublishError="";saveStore();const generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,pkg.caption,pkg.posterMediaKey,`copilot:${profile.id}:${generation}:${pkg.posterMediaKey}:single`,`COPILOT:${profile.id}`);pkg.publishedPostId=result.postId;pkg.publishedAt=result.publishedAt;pkg.publishState="PUBLISHED";addMessage(profile.id,"kai",`PUBLISH SUCCESS ✅\n${profile.name}\nPOST ID: ${result.postId}`);setStatus(`PUBLISHED ✅ ${result.postId}`);}
+    catch(error){const message=String(error?.message||error);if(pkg.publishedPostId){setStatus(`PUBLISHED ✅ ${pkg.publishedPostId}\nBukti belum tersimpan di perangkat: ${message}`,true);}else{pkg.publishState="FAILED";pkg.lastPublishError=message;try{addMessage(profile.id,"kai",`PUBLISH FAILED // ${message}`);}catch{}setStatus(`PUBLISH FAILED // ${message}`,true);}}
     finally{setBusy(false);refresh();}
   }
   async function publishBatchItem(index){
     if(runtimeBusy)return;
     const profile=currentProfile(),row=lane(profile.id),pkg=row.package,spec=effectiveSpec(profile,row);if(!(spec.count>1)||index<0||index>=spec.count)return;if(!itemReady(pkg,index))return setStatus(`Item ${index+1} belum punya poster + caption lengkap.`,true);if(!contractPublishAllowed(profile.id,pkg.batchPosters?.[index]?.mediaKey))return setStatus("PUBLISH BLOCKED // SAFETY GUARD",true);
     const target=publishTarget(readMain(),profile.id);if(!target)return setStatus("Meta Page channel ini belum di-map di Publishing Hub.",true);runtimeBusy=true;syncControls(profile,row);setStatus(`Publishing item ${index+1}/${spec.count}…`);
-    try{const poster=pkg.batchPosters[index],caption=pkg.batchCaptions[index],generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,caption.caption,poster.mediaKey,`copilot:${profile.id}:${generation}:${poster.mediaKey}:item:${index+1}`,`COPILOT_BATCH:${profile.id}`);pkg.batchPublished[index]={postId:result.postId,publishedAt:result.publishedAt};pkg.publishState=pkg.batchPublished.filter(Boolean).length===spec.count?"PUBLISHED":"PARTIAL";pkg.lastPublishError="";addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} SUCCESS ✅\n${spec.labels[index]}\nPOST ID: ${result.postId}`);saveStore();setStatus(`ITEM ${index+1} PUBLISHED ✅ ${result.postId}`);}
-    catch(error){const message=String(error?.message||error);pkg.publishState="PARTIAL";pkg.lastPublishError=message;pkg.lastPublishErrorIndex=index;saveStore();addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} FAILED // ${message}`);setStatus(`ITEM ${index+1} FAILED // ${message}`,true);}
+    try{saveStore();const poster=pkg.batchPosters[index],caption=pkg.batchCaptions[index],generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,caption.caption,poster.mediaKey,`copilot:${profile.id}:${generation}:${poster.mediaKey}:item:${index+1}`,`COPILOT_BATCH:${profile.id}`);pkg.batchPublished[index]={postId:result.postId,publishedAt:result.publishedAt};pkg.publishState=pkg.batchPublished.filter(Boolean).length===spec.count?"PUBLISHED":"PARTIAL";pkg.lastPublishError="";addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} SUCCESS ✅\n${spec.labels[index]}\nPOST ID: ${result.postId}`);setStatus(`ITEM ${index+1} PUBLISHED ✅ ${result.postId}`);}
+    catch(error){const message=String(error?.message||error),receipt=pkg.batchPublished[index];if(receipt?.postId){setStatus(`ITEM ${index+1} PUBLISHED ✅ ${receipt.postId}\nBukti belum tersimpan di perangkat: ${message}`,true);}else{pkg.publishState="PARTIAL";pkg.lastPublishError=message;pkg.lastPublishErrorIndex=index;try{addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} FAILED // ${message}`);}catch{}setStatus(`ITEM ${index+1} FAILED // ${message}`,true);}}
     finally{runtimeBusy=false;refresh();}
   }
   function openPoster(src){if(!src)return;const modal=document.createElement("div");modal.className="acc-copilot-modal";modal.innerHTML=`<img src="${src}" alt="Poster preview"><button type="button">TUTUP</button>`;modal.addEventListener("click",e=>{if(e.target===modal||e.target.tagName==="BUTTON")modal.remove();});document.body.appendChild(modal);}
