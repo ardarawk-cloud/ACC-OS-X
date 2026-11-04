@@ -58,20 +58,21 @@ async function register(handle,name){
   await page.$eval('nav [data-tab="messagesPage"]',e=>e.click());
   await page.waitForFunction(()=>!!document.querySelector('.message-chat-row .message-profile-tap'),{timeout:14000});
   await page.$eval('.message-chat-row .message-profile-tap',e=>e.click());
-  await page.waitForFunction(()=>!document.querySelector('#publicProfilePage').classList.contains('hide'),{timeout:12000});
-  assert.equal(await page.$eval('#publicCreatorName',e=>e.textContent),'Navigator B');
-  await page.$eval('#publicProfileBack',e=>e.click());
-  assert.equal(await page.$eval('#messagesPage',e=>!e.classList.contains('hide')),true,'Profile back returns to inbox');
-  await page.waitForFunction(()=>!!document.querySelector('.message-chat-name'),{timeout:14000});
-  await page.$eval('.message-chat-name',e=>e.click());
-  await page.waitForFunction(()=>!document.querySelector('#publicProfilePage').classList.contains('hide'),{timeout:12000});
-  await page.$eval('#publicProfileBack',e=>e.click());
-  await page.waitForFunction(()=>!!document.querySelector('.message-chat-row'),{timeout:14000});
-  await page.$eval('.message-chat-row',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#messageConversation').classList.contains('hide'),{timeout:14000});
+  assert.equal(await page.$eval('#messageThreadTitle',e=>e.textContent),'Navigator B','Inbox avatar opens chat');
   await page.$eval('#messageOpenCreator',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#publicProfilePage').classList.contains('hide'),{timeout:14000});
+  assert.equal(await page.$eval('#publicCreatorName',e=>e.textContent),'Navigator B');
   await page.$eval('#publicProfileBack',e=>e.click());
+  await page.waitForFunction(()=>!document.querySelector('#messageConversation').classList.contains('hide'),{timeout:14000});
+  await page.$eval('#messageBack',e=>e.click());
+  await page.waitForFunction(()=>!!document.querySelector('.message-chat-name'),{timeout:14000});
+  await page.$eval('.message-chat-name',e=>e.click());
+  await page.waitForFunction(()=>!document.querySelector('#messageConversation').classList.contains('hide'),{timeout:14000});
+  assert.equal(await page.$eval('#messageThreadTitle',e=>e.textContent),'Navigator B','Inbox name opens chat');
+  await page.$eval('#messageBack',e=>e.click());
+  await page.waitForFunction(()=>!!document.querySelector('.message-chat-row'),{timeout:14000});
+  await page.$eval('.message-chat-row',e=>e.click());
   await page.waitForFunction(()=>!document.querySelector('#messageConversation').classList.contains('hide'),{timeout:14000});
   assert.equal(await page.$eval('#messageThreadTitle',e=>e.textContent),'Navigator B');
   const compact=await page.evaluate(()=>({
@@ -82,7 +83,7 @@ async function register(handle,name){
   }));
   assert.deepEqual(compact,{noAccessBanner:true,noPublicGratis:true,goLivePreserved:true,widthOk:true});
   assert.deepEqual(errors,[],'no browser errors');
-  console.log('PASS followers/following photo+name -> ME; inbox photo/name -> ME; header -> ME -> chat; no studio tutorials on mobile');
+  console.log('PASS followers/following photo+name -> ME; inbox photo/name/row -> chat; conversation header -> ME; no studio tutorials on mobile');
  }finally{
   if(browser)await browser.close();
   for(const cookie of cookies){
