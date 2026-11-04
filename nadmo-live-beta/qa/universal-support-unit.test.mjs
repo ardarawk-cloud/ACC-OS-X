@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {verifySaweriaSignature,normaliseVerifiedSupport,recordVerifiedSupport,publicSupport,supportEndpoint} from '../support-engine.mjs';
+import {verifySaweriaSignature,normaliseVerifiedSupport,recordVerifiedSupport,publicSupport,supportEndpoint,syncLegacySaweria} from '../support-engine.mjs';
 import {createHmac,createHash} from 'node:crypto';
 const key='server-owned-saweria-streaming-key-test';
 const callback=(id='receipt-001',amount=25000)=>({version:'2022.01',created_at:new Date().toISOString(),id,type:'donation',amount_raw:amount,cut:1250,donator_name:'Viewer <b>Test</b>',donator_email:'do-not-store@example.test',message:'Hello <script>alert(1)</script>'});
@@ -39,3 +39,21 @@ test('settings save SocialBuzz URL and presets by owner session only',async()=>{
 test('reject untrusted SociaBuzz lookalike link',async()=>{const {store,asHost}=await harness();const r=await supportEndpoint(store,asHost('/api/support/settings',{socialBuzzUrl:'https://sociabuzz.com.evil.example/arda'}),{});assert.equal(r.status,400)});
 test('DEMO alert emitted but never persisted as transaction',async()=>{const {store,asHost}=await harness();let captured=[];const r=await supportEndpoint(store,asHost('/api/support/test-alert',{name:'Demo',message:'Test'}),{},async(id,event)=>captured.push(event));assert.equal(r.status,200);const j=await r.json();assert.equal(j.DEMO,true);assert.equal(j.persisted,false);assert.equal(await store.get('support-wall:host-777'),undefined);assert.equal(captured.length,0)});
 test('provider authenticated signal sent only if enabled and not duplicated',async()=>{const {store,asHost,req}=await harness();await supportEndpoint(store,asHost('/api/support/settings',{alertEnabled:true}),{});let sent=0;const b=callback();const hit=()=>supportEndpoint(store,req('/api/support/webhooks/saweria/arda',b,{'Saweria-Callback-Signature':sign(b)}),{},async()=>{sent++});await hit();await hit();assert.equal(sent,1)});
+
+test('existing signed Saweria event is imported once, without changing webhook token',async()=>{
+ const {store,host}=await harness();const amountRaw=25000;
+ const legacy={id:'old-verified-event',provider:'saweria',createdAt:Date.now(),amountRaw,donor:'Sah',message:'Terima kasih'};
+ await store.put('integration-latest:'+host.id,legacy);
+ const before=await syncLegacySaweria(store,host);assert.equal(before.created,false);
+ await store.put('integration-saweria-event:'+host.id+':'+legacy.id,Date.now());
+ const first=await syncLegacySaweria(store,host),second=await syncLegacySaweria(store,host);
+ assert.equal(first.created,true);assert.equal(second.created,false);
+ assert.equal((await store.get('support-wall:'+host.id)).length,1);
+});
+test('legacy DEMO is ignored even if in latest overlay store',async()=>{
+ const {store,host}=await harness();
+ await store.put('integration-latest:'+host.id,{id:'demo-111',provider:'nadmo-test',createdAt:Date.now(),amountRaw:99999,donor:'Palsu'});
+ await store.put('integration-saweria-event:'+host.id+':demo-111',Date.now());
+ const out=await syncLegacySaweria(store,host);assert.equal(out.created,false);
+ assert.equal(await store.get('support-wall:'+host.id),undefined);
+});
