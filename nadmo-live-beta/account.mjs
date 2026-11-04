@@ -191,6 +191,20 @@ export async function accountEndpoint(storage,request){
  const approvalKey=(a,b)=>'dm-approved:'+pairId(a,b);
  const dmPrivacy=user=>['everyone','following','requests'].includes(user?.dmPrivacy)?user.dmPrivacy:'everyone';
  const readKey=(a,b)=>'dm-read:'+a+':'+b;
+ // Shared conversation contents stay in the existing Durable Object keys.
+ // Per-account visibility is enforced server-side and never sent to peers.
+ const clearKey=(a,b)=>'dm-clear:'+a+':'+b;
+ const muteKey=(a,b)=>'dm-muted:'+a+':'+b;
+ const pinKey=(a,b)=>'dm-pinned:'+a+':'+b;
+ // Explicit predicate separate from UI: do not leak hiddenFor/other account IDs.
+ const filterDM=(messages,viewerId,clearAt=0)=>messages.filter(m=>
+  Number(m.createdAt)>clearAt&&!(Array.isArray(m.hiddenFor)&&m.hiddenFor.includes(viewerId)));
+ const viewDM=m=>({id:m.id,fromHandle:m.fromHandle,
+  text:m.deletedForEveryoneAt?'':m.text||'',createdAt:m.createdAt,
+  editedAt:m.deletedForEveryoneAt?null:(m.editedAt||null),
+  deletedForEveryone:!!m.deletedForEveryoneAt,
+  replyTo:m.deletedForEveryoneAt?null:(m.replyTo||null)});
+
  const canDirect=async(sender,receiver)=>{
   if(await storage.get(approvalKey(sender.id,receiver.id)))return true;
   // Existing conversations remain available after switching privacy settings.
@@ -209,14 +223,23 @@ export async function accountEndpoint(storage,request){
     if(!item?.otherId||await hasBlock(principal.id,item.otherId))continue;
     const other=await storage.get('auth-user:'+item.otherId);
     if(!other||other.disabled)continue;
-    const messages=await storage.get(threadKey(principal.id,item.otherId))||[];
+    const allMessages=await storage.get(threadKey(principal.id,item.otherId))||[];
+    const clearAt=Number(await storage.get(clearKey(principal.id,item.otherId)))||0;
+    const messages=filterDM(allMessages,principal.id,clearAt);
+    // A cleared chat is hidden for one person until a newer message arrives.
+    if(clearAt&&!messages.length)continue;
     const readAt=Number(await storage.get(readKey(principal.id,item.otherId)))||0;
-    const unread=messages.filter(m=>m.fromHandle!==principal.handle&&m.createdAt>readAt).length;
+    const isMine=m=>m.fromId?m.fromId===principal.id:m.fromHandle===principal.handle;
+    const unread=messages.filter(m=>!isMine(m)&&!m.deletedForEveryoneAt&&m.createdAt>readAt).length;
+    const last=messages.at(-1);
     threads.push({handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0,unread,
-      updatedAt:messages.at(-1)?.createdAt||item.createdAt||0,
-      lastText:messages.at(-1)?.text?.slice(0,100)||'',lastFromMe:messages.at(-1)?.fromHandle===principal.handle});
+      updatedAt:last?.createdAt||item.createdAt||0,
+      lastText:last?.deletedForEveryoneAt?'Pesan telah dihapus':(last?.text?.slice(0,100)||''),
+      lastFromMe:!!last&&isMine(last),
+      pinned:!!await storage.get(pinKey(principal.id,item.otherId)),
+      muted:!!await storage.get(muteKey(principal.id,item.otherId))});
    }
-   return json({ok:true,threads:threads.sort((a,b)=>b.updatedAt-a.updatedAt),
+   return json({ok:true,threads:threads.sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.updatedAt-a.updatedAt),
     totalUnread:threads.reduce((sum,item)=>sum+item.unread,0)});
   }
   if(p==='/api/messages/settings'){
@@ -242,9 +265,12 @@ export async function accountEndpoint(storage,request){
    if(await hasBlock(principal.id,id))return fail(403,'Akun diblokir');
    const current=await storage.get('auth-user:'+principal.id);
    if(!await canDirect(current,other))return fail(403,'Penerima membatasi pesan. Kirim permintaan chat.');
-   const key=threadKey(principal.id,id),msgs=(await storage.get(key)||[]).slice(-80);
+   const key=threadKey(principal.id,id);
+   const clearAt=Number(await storage.get(clearKey(principal.id,id)))||0;
+   const msgs=filterDM(await storage.get(key)||[],principal.id,clearAt).slice(-80).map(viewDM);
    await storage.put(readKey(principal.id,id),Date.now());
-   return json({ok:true,messages:msgs,participant:{handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0}});
+   return json({ok:true,messages:msgs,participant:{handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0},
+    pinned:!!await storage.get(pinKey(principal.id,id)),muted:!!await storage.get(muteKey(principal.id,id))});
 
   }
   return fail(404,'Halaman pesan tidak ditemukan');
@@ -441,6 +467,58 @@ export async function accountEndpoint(storage,request){
   const otherId=await storage.get('auth-handle:'+handle);
   const other=otherId&&await storage.get('auth-user:'+otherId);
   if(!other||other.disabled)return fail(404,'Akun penerima tidak ditemukan');
+  // Changing history never requires permission to send new messages; both
+  // participants may clear their own history even after a block/privacy change.
+  if(p==='/api/messages/delete'||p==='/api/messages/edit'||p==='/api/messages/clear'||
+     p==='/api/messages/pin'||p==='/api/messages/mute'){
+   const key=threadKey(user.id,otherId),now=Date.now();
+   if(p==='/api/messages/clear'){
+    await storage.put(clearKey(user.id,otherId),now);
+    await storage.put(readKey(user.id,otherId),now);
+    await storage.delete(pinKey(user.id,otherId));
+    return json({ok:true,cleared:true,scope:'me'});
+   }
+   if(p==='/api/messages/pin'||p==='/api/messages/mute'){
+    const enabled=payload.enabled===true;
+    if(typeof payload.enabled!=='boolean')return fail(400,'Pengaturan pesan tidak valid');
+    const prefKey=p.endsWith('/pin')?pinKey(user.id,otherId):muteKey(user.id,otherId);
+    if(enabled)await storage.put(prefKey,true);else await storage.delete(prefKey);
+    return json({ok:true,enabled});
+   }
+   const id=clean(payload.messageId,60);
+   if(!/^[a-f0-9-]{36}$/.test(id))return fail(400,'ID pesan tidak valid');
+   const mode=p==='/api/messages/delete'?payload.scope:'edit';
+   if(mode!=='me'&&mode!=='everyone'&&mode!=='edit')return fail(400,'Pilihan penghapusan tidak valid');
+   const text=mode==='edit'?clean(payload.text,2000):'';
+   if(mode==='edit'&&(!text||typeof payload.text!=='string'||payload.text.length>2000))return fail(400,'Isi pesan tidak valid');
+   let result;
+   try{
+    result=await storage.transaction(async tx=>{
+     const msgs=await tx.get(key)||[];
+     const position=msgs.findIndex(m=>m.id===id);
+     if(position<0)return {error:'NOT_FOUND'};
+     const msg=msgs[position];
+     const mine=msg.fromId?msg.fromId===user.id:msg.fromHandle===user.handle;
+     if(mode!=='me'&&!mine)return {error:'NOT_OWNER'};
+     if(msg.deletedForEveryoneAt&&mode!=='me')return {error:'ALREADY_DELETED'};
+     if(mode==='everyone'&&now-msg.createdAt>86400000)return {error:'EXPIRED'};
+     if(mode==='edit'&&now-msg.createdAt>15*60000)return {error:'EXPIRED'};
+     if(mode==='me'){
+      if(!Array.isArray(msg.hiddenFor))msg.hiddenFor=[];
+      if(!msg.hiddenFor.includes(user.id))msg.hiddenFor.push(user.id);
+     }else if(mode==='everyone'){
+      msg.deletedForEveryoneAt=now;msg.text='';msg.replyTo=null;
+     }else{msg.text=text;msg.editedAt=now}
+     msgs[position]=msg;await tx.put(key,msgs);
+     return {ok:true,id,scope:mode};
+    });
+   }catch(error){console.error('DM change failed',error?.name);return fail(503,'Perubahan pesan belum berhasil')}
+   if(result.error==='NOT_FOUND')return fail(404,'Pesan tidak ditemukan');
+   if(result.error==='NOT_OWNER')return fail(403,'Hanya pengirim yang boleh mengubah pesan untuk semua orang');
+   if(result.error==='ALREADY_DELETED')return fail(409,'Pesan sudah dihapus untuk semua');
+   if(result.error==='EXPIRED')return fail(409,mode==='edit'?'Batas edit pesan 15 menit':'Batas tarik pesan 24 jam');
+   return json(result);
+  }
   if(p==='/api/messages/block'){
    await storage.put('dm-block:'+user.id+':'+otherId,true);
    // Blocking also severs following in either direction, no hidden social connection.
@@ -496,7 +574,10 @@ export async function accountEndpoint(storage,request){
    if(!msgs.length){
     if(!await throttle(storage,'dm-new-contact:'+user.id,12,86400000))return fail(429,'Batas percakapan baru harian tercapai');
    }
-   const message={id:crypto.randomUUID(),fromHandle:user.handle,text,createdAt:Date.now()};
+   const quoteId=clean(payload.replyTo,60);
+   const quoted=quoteId?(msgs.find(m=>m.id===quoteId&&!m.deletedForEveryoneAt&&!m.hiddenFor?.includes(user.id))||null):null;
+   const replyTo=quoted?{id:quoted.id,fromHandle:quoted.fromHandle,text:quoted.text.slice(0,120)}:null;
+   const message={id:crypto.randomUUID(),fromId:user.id,fromHandle:user.handle,text,createdAt:Date.now(),replyTo};
    await storage.put(key,[...msgs,message].slice(-100));
    if(!await storage.get('dm-member:'+user.id+':'+otherId))
     await storage.put('dm-member:'+user.id+':'+otherId,{otherId,createdAt:message.createdAt});

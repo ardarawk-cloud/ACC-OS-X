@@ -1,0 +1,22 @@
+name: NADMO LIVE Production Messaging Smoke
+on:
+  push:
+    branches:
+      - 'feat/nadmo-live-messaging-v1-20261105'
+    paths:
+      - 'nadmo-live-beta/qa/messaging-production-smoke.mjs'
+      - '.github/workflows/nadmo-live-messaging-production-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-chat-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test real production backend with isolated disposable QA users
+        run: node nadmo-live-beta/qa/messaging-production-smoke.mjs
