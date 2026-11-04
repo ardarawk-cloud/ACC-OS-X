@@ -19,8 +19,9 @@
   if(!['http:','https:'].includes(parsed.protocol))return null;
   const host=parsed.hostname.toLowerCase();
   const provider=specs.find(s=>s.domains.some(d=>hostIs(host,d))||s.labels.test(label))||null;
-  const firstSegment=decodeURIComponent(parsed.pathname.split('/').filter(Boolean).at(0)||'')
-    .replace(/^@/,'').slice(0,48);
+  let firstSegment=parsed.pathname.split('/').filter(Boolean).at(0)||'';
+  try{firstSegment=decodeURIComponent(firstSegment)}catch{/* Keep URL path without decoding */}
+  firstSegment=firstSegment.replace(/^@/,'').slice(0,48);
   const subtitle=provider&&firstSegment&&provider.id!=='whatsapp'?'@'+firstSegment:
    (host.replace(/^www\./,'')+(parsed.pathname==='/'?'':parsed.pathname.replace(/\/$/,'').slice(0,33)));
   return {provider,subtitle};
