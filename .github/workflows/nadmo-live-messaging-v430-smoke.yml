@@ -1,0 +1,21 @@
+name: NADMO LIVE Messaging v430 Production Smoke
+on:
+  push:
+    branches: ['feat/nadmo-live-messaging-v2-20261105']
+    paths:
+      - 'nadmo-live-beta/qa/messaging-production-v2-smoke.mjs'
+      - '.github/workflows/nadmo-live-messaging-v430-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v430-prod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify 8 v430 endpoints with disposable QA accounts
+        run: node nadmo-live-beta/qa/messaging-production-v2-smoke.mjs
