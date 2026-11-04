@@ -559,30 +559,18 @@ async function danaSandboxCreateOrderUat(env,origin){
  const body=JSON.stringify({
   partnerReferenceNo:ref,
   merchantId,
-  amount:{currency:'IDR',value:'1.00'},
-  validUpTo:danaJakartaTimestamp(now+15*60*1000),
+  validUpTo:danaJakartaTimestamp(now+10*60*1000),
+  amount:{value:'10000.00',currency:'IDR'},
+  urlParams:[
+   {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'Y'},
+   {url:origin+'/v1.0/debit/notify',type:'NOTIFICATION',isDeeplink:'N'}
+  ],
   additionalInfo:{
-   envInfo:{
-    appVersion:'',
-    clientIp:'',
-    extendInfo:'',
-    merchantAppVersion:'',
-    orderOsType:'',
-    orderTerminalType:'SYSTEM',
-    osType:'',
-    sdkVersion:'',
-    sessionId:'',
-    sourcePlatform:'IPG',
-    terminalType:'SYSTEM',
-    tokenId:'',
-    websiteLanguage:''
-   },
-   mcc:'5732',
-   order:{
-    orderTitle:'DANA Widget Test Order',
-    createdTime:danaJakartaTimestamp(now)
-   },
-   productCode:'51051000100000000001'
+   order:{orderTitle:'Payment Order Test'},
+   mcc:'5817',
+   envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM'},
+   productCode:'51051000100000000001',
+   supportDeepLinkCheckoutUrl:'true'
   }
  });
  try{
@@ -594,7 +582,7 @@ async function danaSandboxCreateOrderUat(env,origin){
     'X-TIMESTAMP':timestamp,
     'X-SIGNATURE':signature,
     'X-PARTNER-ID':partnerId,
-    'X-EXTERNAL-ID':String(now)+'01',
+    'X-EXTERNAL-ID':crypto.randomUUID(),
     'CHANNEL-ID':partnerId+'-SERVER',
     'X-Debug-Mode':'true',
     'ORIGIN':origin,
