@@ -644,6 +644,8 @@ export async function accountEndpoint(storage,request){
    await storage.delete('dm-member:'+user.id+':'+item.otherId);
    await storage.delete(readKey(user.id,item.otherId));
    await storage.delete(readKey(item.otherId,user.id));
+   await storage.delete(viewKey(user.id,item.otherId));
+   await storage.delete(viewKey(item.otherId,user.id));
    await storage.delete('dm-block:'+user.id+':'+item.otherId);
    await storage.delete('dm-block:'+item.otherId+':'+user.id);
   }
