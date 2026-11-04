@@ -4996,7 +4996,7 @@ body.live-immersive #watch #liveRestReminder{
     activeAccount=result.account;displayAccount();
     const supportSaved=await accountRequest('/api/subscription/support-methods','POST',{supportUrl,qrisUrl:hostSupportDraft.qris||''});
     hostSupportDraft=supportSaved.support||{link:'',qris:''};renderSupportSetup();
-    $('profileLinkLabel').value='';$('profileLinkUrl').value='';$('profileEditStatus').textContent='Profil dan metode Support tersimpan di akun.';
+    $('profileLinkLabel').value='';$('profileLinkUrl').value='';$('profileEditStatus').textContent='Profil, tema dan link tersimpan di akun. Metode Support juga tersimpan.';
    }catch(e){$('profileEditStatus').textContent='Gagal menyimpan ke akun: '+e.message+' · Form tetap terbuka.';return}
   }else{
    renderProfileDraft();
