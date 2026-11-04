@@ -69,7 +69,11 @@ export async function integrationEndpoint(storage,request){
   const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
   let record=await storage.get('auth-user:'+user.id);if(!record)return fail(404,'Akun tidak ditemukan','ACCOUNT_NOT_FOUND');
   record=await ensureTokens(storage,record);
-  return json({ok:true,urls:publicUrls(origin,record),saweria:{configured:!!record.saweriaStreamingKey}});
+  return json({ok:true,urls:publicUrls(origin,record),appearance:{
+   themeId:['nadmo','cyberbw','noir','retro','electric'].includes(record.themeId)?record.themeId:'nadmo',
+   fontId:['system','mono','editorial'].includes(record.fontId)?record.fontId:'system',
+   coverId:['grid','waves','dots'].includes(record.coverId)?record.coverId:'grid'
+  },saweria:{configured:!!record.saweriaStreamingKey}});
  }
 
  if(p==='/api/integrations/saweria-key'&&method==='POST'){
@@ -81,7 +85,11 @@ export async function integrationEndpoint(storage,request){
   let record=await storage.get('auth-user:'+user.id);if(!record)return fail(404,'Akun tidak ditemukan','ACCOUNT_NOT_FOUND');
   record=await ensureTokens(storage,record);record.saweriaStreamingKey=key;record.updatedAt=Date.now();
   await storage.put('auth-user:'+record.id,record);
-  return json({ok:true,saweria:{configured:true},urls:publicUrls(origin,record)});
+  return json({ok:true,saweria:{configured:true},urls:publicUrls(origin,record),appearance:{
+   themeId:['nadmo','cyberbw','noir','retro','electric'].includes(record.themeId)?record.themeId:'nadmo',
+   fontId:['system','mono','editorial'].includes(record.fontId)?record.fontId:'system',
+   coverId:['grid','waves','dots'].includes(record.coverId)?record.coverId:'grid'
+  }});
  }
 
  if(p==='/api/integrations/test-alert'&&method==='POST'){
@@ -99,7 +107,11 @@ export async function integrationEndpoint(storage,request){
   const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
   let record=await storage.get('auth-user:'+user.id);if(!record)return fail(404,'Akun tidak ditemukan','ACCOUNT_NOT_FOUND');
   record=await rotateTokens(storage,record);
-  return json({ok:true,urls:publicUrls(origin,record),saweria:{configured:!!record.saweriaStreamingKey}});
+  return json({ok:true,urls:publicUrls(origin,record),appearance:{
+   themeId:['nadmo','cyberbw','noir','retro','electric'].includes(record.themeId)?record.themeId:'nadmo',
+   fontId:['system','mono','editorial'].includes(record.fontId)?record.fontId:'system',
+   coverId:['grid','waves','dots'].includes(record.coverId)?record.coverId:'grid'
+  },saweria:{configured:!!record.saweriaStreamingKey}});
  }
 
  const saweria=p.match(/^\/api\/integrations\/saweria\/([a-f0-9]{48})$/);
@@ -120,7 +132,10 @@ export async function integrationEndpoint(storage,request){
   const userId=await storage.get('integration-overlay:'+overlay[1]);if(!userId)return fail(404,'Overlay tidak ditemukan','NOT_FOUND');
   const event=await storage.get('integration-latest:'+userId);
   const after=clean(u.searchParams.get('after'),180);
-  return json({ok:true,event:event&&event.id!==after?event:null},200,{'Access-Control-Allow-Origin':'*'});
+  return json({ok:true,event:event&&event.id!==after?event:null,appearance:{
+   themeId:['nadmo','cyberbw','noir','retro','electric'].includes(record?.themeId)?record.themeId:'nadmo',
+   fontId:['system','mono','editorial'].includes(record?.fontId)?record.fontId:'system'
+  }},200,{'Access-Control-Allow-Origin':'*'});
  }
 
  return fail(404,'Integration endpoint tidak ditemukan','NOT_FOUND');
