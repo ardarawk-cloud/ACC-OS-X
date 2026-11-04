@@ -563,12 +563,25 @@ async function danaSandboxCreateOrderUat(env,origin){
   validUpTo:danaJakartaTimestamp(now+15*60*1000),
   additionalInfo:{
    envInfo:{
-    appVersion:'',clientIp:'',extendInfo:'',merchantAppVersion:'',
-    orderOsType:'',orderTerminalType:'SYSTEM',osType:'',sdkVersion:'',
-    sessionId:'',sourcePlatform:'IPG',terminalType:'SYSTEM',tokenId:'',websiteLanguage:''
+    appVersion:'',
+    clientIp:'',
+    extendInfo:'',
+    merchantAppVersion:'',
+    orderOsType:'',
+    orderTerminalType:'SYSTEM',
+    osType:'',
+    sdkVersion:'',
+    sessionId:'',
+    sourcePlatform:'IPG',
+    terminalType:'SYSTEM',
+    tokenId:'',
+    websiteLanguage:''
    },
    mcc:'5732',
-   order:{orderTitle:'DANA Widget Test Order',createdTime:timestamp},
+   order:{
+    orderTitle:'DANA Widget Test Order',
+    createdTime:danaJakartaTimestamp(now)
+   },
    productCode:'51051000100000000001'
   }
  });
