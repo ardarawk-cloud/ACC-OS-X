@@ -1,0 +1,31 @@
+/* NADMO LIVE v436 — matched website icons, no card redesign */
+#settings #profileBusinessLinks .cp-link-icon,
+#publicProfilePage #publicCreatorLinks .cp-link-icon{
+  position:relative;
+  overflow:hidden;
+}
+#settings #profileBusinessLinks .cp-site-favicon,
+#publicProfilePage #publicCreatorLinks .cp-site-favicon{
+  display:block;
+  width:84%!important;
+  height:84%!important;
+  max-width:30px!important;
+  max-height:30px!important;
+  min-width:0!important;
+  object-fit:contain!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  border-radius:4px;
+}
+#settings #profileBusinessLinks .cp-link-icon.cp-has-site-icon,
+#publicProfilePage #publicCreatorLinks .cp-link-icon.cp-has-site-icon{
+  font-size:0!important;
+  letter-spacing:0!important;
+}
+#settings #profileBusinessLinks .cp-link-icon.cp-has-site-icon img,
+#publicProfilePage #publicCreatorLinks .cp-link-icon.cp-has-site-icon img{
+  position:absolute!important;
+  inset:0!important;
+  margin:auto!important;
+}
