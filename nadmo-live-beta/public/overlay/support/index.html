@@ -51,6 +51,7 @@ async function poll(){
   const res=await fetch('/api/support/wall?handle='+encodeURIComponent(handle),{cache:'no-store'});
   if(!res.ok)throw Error('WALL_'+res.status);
   const data=await res.json();if(!data.ok||!Array.isArray(data.events))throw Error('BAD_RESPONSE');
+  seconds=Number(data.appearance?.durationSeconds)||6;style=data.appearance?.animation||'pulse';sound=data.appearance?.sound||'off';
   if(!ready){
    for(const e of data.events)if(e.eventId)seen.add(e.eventId);
    ready=true;
