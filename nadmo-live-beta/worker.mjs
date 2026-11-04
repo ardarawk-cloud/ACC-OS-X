@@ -556,7 +556,19 @@ async function danaSandboxCreateOrderUat(env,origin,scenario='success'){
  const now=Date.now(),timestamp=danaJakartaTimestamp(now);
  const path='/rest/redirection/v1.0/debit/payment-host-to-host';
  const ref='NADMO-UAT-'+String(now);
- const body=JSON.stringify({
+ const errorFixture=scenario==='general-error';
+ const body=JSON.stringify(errorFixture?{
+  partnerReferenceNo:ref,
+  merchantId,
+  validUpTo:danaJakartaTimestamp(now+15*60*1000),
+  amount:{currency:'IDR',value:'505400.00'},
+  additionalInfo:{
+   envInfo:{appVersion:'',clientIp:'',extendInfo:'',merchantAppVersion:'',orderOsType:'',orderTerminalType:'WEB',osType:'',sdkVersion:'',sessionId:'',sourcePlatform:'IPG',terminalType:'WEB',tokenId:'',websiteLanguage:''},
+   mcc:'',
+   order:{orderTitle:'shoe'},
+   productCode:'51051000100000000001'
+  }
+ }:{
   partnerReferenceNo:ref,
   merchantId,
   validUpTo:danaJakartaTimestamp(now+10*60*1000),
