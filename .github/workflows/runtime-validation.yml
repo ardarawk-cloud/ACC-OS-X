@@ -11,6 +11,11 @@ on:
       - 'app.js'
       - 'index.html'
       - 'home-launchpad.js'
+      - 'app-destinations-v1.js'
+      - 'content-upload-v1.js'
+      - 'kai-autopilot-media-drop-v1.js'
+      - 'scripts/upload-content-e2e.cjs'
+      - 'scripts/audit-launcher-links.mjs'
       - 'home-launcher-chain-v1.js'
       - 'home-quick-access-v1.js'
       - 'my-projects-launcher-v1.js'
@@ -82,6 +87,9 @@ jobs:
           set -euo pipefail
           node --check app.js
           node --check home-launchpad.js
+          node --check app-destinations-v1.js
+          node --check content-upload-v1.js
+          node --check kai-autopilot-media-drop-v1.js
           node --check home-launcher-chain-v1.js
           node --check home-quick-access-v1.js
           node --check my-projects-launcher-v1.js
@@ -180,9 +188,9 @@ jobs:
           set -euo pipefail
 
           # Active client authority must be v2578 only.
-          grep -q 'BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY' produce-copilot-v2578.js
-          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY' release-version-v257.js
-          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY' service-worker.js
+          grep -q 'BUILD257_8_R4_OWNER_UPLOAD_DURABLE_PUBLISH' produce-copilot-v2578.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_R4_OWNER_UPLOAD_DURABLE_PUBLISH' release-version-v257.js
+          grep -q 'produce-copilot-v2578.js?rev=BUILD257_8_R4_OWNER_UPLOAD_DURABLE_PUBLISH' service-worker.js
           if grep -Eq 'produce-copilot-v257[67]\.js\?rev=' release-version-v257.js release-version-v258.js service-worker.js; then
             echo 'FAIL: legacy Produce v2576/v2577 is still active.' >&2
             exit 1
@@ -342,3 +350,34 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/produce-e2e-smoke.mjs
+
+  upload_e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Verify owner upload, durable media, and publication receipts
+        run: node scripts/upload-content-e2e.cjs
+
+  launcher_links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit web destinations and native package allowlist
+        run: node scripts/audit-launcher-links.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osx-launcher-link-audit
+          path: launcher-link-audit.json

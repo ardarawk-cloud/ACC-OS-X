@@ -5,7 +5,7 @@
   if (window.__ACC_PRODUCE_COPILOT_V2578__) return;
   window.__ACC_PRODUCE_COPILOT_V2578__ = true;
 
-  const REVISION = "BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY";
+  const REVISION = "BUILD257_8_R4_OWNER_UPLOAD_DURABLE_PUBLISH";
   const MAIN_STATE_KEY = "acc_os_x_ecosystem_v214";
   const COPILOT_KEY = "acc_os_x_produce_copilot_v1";
   const AI_ACCESS_KEY = "acc_os_x_ai_access_v1";
@@ -117,12 +117,12 @@
     }
     return clone;
   }
-  function saveStore(){try{localStorage.setItem(COPILOT_KEY,JSON.stringify(sanitizedStore()));}catch(error){console.warn("[PRODUCE STORE]",error);}}
+  function saveStore(){localStorage.setItem(COPILOT_KEY,JSON.stringify(sanitizedStore()));}
 
   function lane(channelId){
     if(!store.channels[channelId])store.channels[channelId]={messages:[],package:emptyPackage(),updatedAt:now()};
     const row=store.channels[channelId];
-    row.package=normalizePackage(row.package);
+    row.package=row.package||emptyPackage();
     row.messages=Array.isArray(row.messages)?row.messages:[];
     return row;
   }
@@ -144,9 +144,9 @@
   }
   async function mediaPut(key,base64,mimeType="image/jpeg"){
     if(!key||!txt(base64))throw new Error("POSTER_MEDIA_EMPTY");
-    mediaMemory.set(key,{base64,mimeType});
+    let db;
     try{
-      const db=await openMediaDb();
+      db=await openMediaDb();
       await within(new Promise((resolve,reject)=>{
         const tx=db.transaction(MEDIA_DB_STORE,"readwrite");
         tx.objectStore(MEDIA_DB_STORE).put({key,base64,mimeType,updatedAt:now()});
@@ -154,8 +154,8 @@
         tx.onerror=()=>reject(tx.error||new Error("MEDIA_DB_PUT_FAILED"));
         tx.onabort=()=>reject(tx.error||new Error("MEDIA_DB_PUT_ABORTED"));
       }),6000,"MEDIA_DB_PUT");
-      db.close();
-    }catch(error){console.warn("[POSTER MEDIA PUT]",error);}
+      mediaMemory.set(key,{base64,mimeType});
+    }finally{db?.close();}
     return key;
   }
   async function mediaGet(key){
@@ -188,7 +188,7 @@
     await within(Promise.allSettled(keys.map(mediaDelete)),7000,"MEDIA_CLEAR");
   }
   async function migrateLegacyMedia(channelId,row){
-    const original=row.package||{},p=row.package=normalizePackage(original);let changed=false;
+    const original=row.package||emptyPackage(),p=row.package=original;let changed=false;
     const single=txt(original.posterBase64);
     if(single&&!p.posterMediaKey){p.posterMediaKey=`${channelId}:legacy:single`;await mediaPut(p.posterMediaKey,single);changed=true;}
     if(Array.isArray(original.batchPosters)){
@@ -228,19 +228,6 @@
     const research=assets.find(a=>a?.channelId===channelId&&String(a?.stage||"").toUpperCase()==="RESEARCH"&&txt(a?.output));
     return {id:channelId,code:meta.code||"",name,platform:meta.platform||"Facebook",workspaceId:txt(main.activeWorkspaceId),contexts,research:txt(research?.output).slice(0,12000)};
   }
-  function lane(channelId){
-    if(!store.channels[channelId])store.channels[channelId]={messages:[],package:{material:"",caption:"",posterBase64:"",posterDataUrl:"",posterHeadline:"",posterSubhead:"",publishedPostId:"",publishedAt:""},updatedAt:now()};
-    const row=store.channels[channelId];
-    row.package=row.package||{material:"",caption:"",posterBase64:"",posterDataUrl:"",posterHeadline:"",posterSubhead:"",publishedPostId:"",publishedAt:""};
-    row.messages=Array.isArray(row.messages)?row.messages:[];
-    return row;
-  }
-  function addMessage(channelId,role,content,type="text",extra={}){
-    const row=lane(channelId);
-    row.messages.push({id:id("msg"),role,content:txt(content),type,at:now(),...extra});
-    row.messages=row.messages.slice(-40);row.updatedAt=now();saveStore();
-  }
-
   function ensureStyle(){
     if(document.getElementById(STYLE_ID))return;
     document.getElementById("acc-produce-copilot-style")?.remove();document.getElementById("acc-produce-copilot-style-v2577")?.remove();
@@ -277,7 +264,7 @@
   }
   function itemReady(pkg,index){return Boolean(txt(pkg?.batchPosters?.[index]?.mediaKey)&&txt(pkg?.batchCaptions?.[index]?.caption)&&!txt(pkg?.batchPublished?.[index]?.postId));}
   function canPublishSingle(row){return Boolean(txt(row.package?.posterMediaKey)&&txt(row.package?.caption)&&!txt(row.package?.publishedPostId));}
-  function contractPublishAllowed(channelId){try{if(!window.ACCProductionContracts?.state)return false;const state=window.ACCProductionContracts.state();return state?.channels?.[channelId]?.publishBlocked===false;}catch{return false;}}
+  function contractPublishAllowed(channelId,mediaKey){try{const api=window.ACCProductionContracts;if(!api?.state)return false;const pkg=lane(channelId).package;if(pkg.ownerUploads?.[mediaKey])return api.ownerUploadReady?.(channelId,mediaKey)===true;return api.state()?.channels?.[channelId]?.publishBlocked===false;}catch{return false;}}
 
   function messageHtml(m){
     const label=m.role==="user"?"OWNER":"KAI";
@@ -335,9 +322,9 @@
     if(publish){
       const published=txt(row.package?.publishedPostId);
       publish.textContent=spec.count>1?"PUBLISH PER ITEM":published?`PUBLISHED ✅ ${published}`:"⚡ PUBLISH APPROVED PACKAGE";
-      publish.disabled=runtimeBusy||spec.count>1||!canPublishSingle(row)||!contractPublishAllowed(profile.id);
+      publish.disabled=runtimeBusy||spec.count>1||!canPublishSingle(row)||!contractPublishAllowed(profile.id,row.package.posterMediaKey);
     }
-    document.querySelectorAll("[data-publish-item]").forEach(btn=>{const i=Number(btn.dataset.publishItem);btn.disabled=runtimeBusy||!itemReady(row.package,i)||!contractPublishAllowed(profile.id);});
+    document.querySelectorAll("[data-publish-item]").forEach(btn=>{const i=Number(btn.dataset.publishItem);btn.disabled=runtimeBusy||!itemReady(row.package,i)||!contractPublishAllowed(profile.id,row.package.batchPosters?.[i]?.mediaKey);});
   }
   function syncMeta(profile,row){
     const name=document.getElementById("acc-copilot-channel-name"),meta=document.getElementById("acc-copilot-channel-meta"),count=document.getElementById("acc-copilot-context-count"),batch=document.getElementById("acc-copilot-batch");
@@ -366,8 +353,8 @@
     const missionSection=mission.closest("section.section")||mission.parentElement;if(!missionSection?.parentElement)return;
     const profile=currentProfile();if(!profile.id)return;const row=lane(profile.id);await migrateLegacyMedia(profile.id,row);
     let section=document.getElementById(PANEL_ID);
-    if(!section){section=document.createElement("section");section.id=PANEL_ID;section.className="section mono acc-copilot-section";section.dataset.channelId=profile.id;section.innerHTML=shellHtml(profile,row);missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);return;}
-    if(section.dataset.channelId!==profile.id){section.dataset.channelId=profile.id;section.dataset.bound="";section.innerHTML=shellHtml(profile,row);if(section.nextElementSibling!==missionSection)missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);return;}
+    if(!section){section=document.createElement("section");section.id=PANEL_ID;section.className="section mono acc-copilot-section";section.dataset.channelId=profile.id;section.innerHTML=shellHtml(profile,row);missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);window.dispatchEvent(new CustomEvent("acc-produce-panel-ready"));return;}
+    if(section.dataset.channelId!==profile.id){section.dataset.channelId=profile.id;section.dataset.bound="";section.innerHTML=shellHtml(profile,row);if(section.nextElementSibling!==missionSection)missionSection.parentElement.insertBefore(section,missionSection);bindPanel();syncMessages(row);syncControls(profile,row);window.dispatchEvent(new CustomEvent("acc-produce-panel-ready"));return;}
     if(section.nextElementSibling!==missionSection)missionSection.parentElement.insertBefore(section,missionSection);
     syncMeta(profile,row);syncMessages(row);
   }
@@ -434,11 +421,11 @@
     row.package=emptyPackage();row.package.generationId=id("pkg");row.package.material=txt(data.reply);row.package.batchCount=count;row.package.batchLabels=labels.length===count?labels:Array.from({length:count},(_,i)=>`Item ${i+1}`);
   }
   async function storeSinglePoster(profile,row,data){
-    await within(clearPackageMedia(row.package),8000,"POSTER_CLEAR_OLD_MEDIA");const generation=row.package.generationId||id("pkg"),key=`${profile.id}:${generation}:single`,base64=await within(composePoster(profile,data),45000,"POSTER_LOCAL_COMPOSE");await within(mediaPut(key,base64),8000,"POSTER_LOCAL_STORE");
+    const generation=id("poster"),key=`${profile.id}:${generation}:single`,base64=await within(composePoster(profile,data),45000,"POSTER_LOCAL_COMPOSE");await within(mediaPut(key,base64),8000,"POSTER_LOCAL_STORE");
     row.package.posterMediaKey=key;row.package.posterHeadline=txt(data.plan?.headline);row.package.posterSubhead=txt(data.plan?.subhead);row.package.batchCount=1;row.package.batchLabels=[];row.package.batchPosters=[];row.package.batchCaptions=[];row.package.batchPublished=[];row.package.publishedPostId="";row.package.publishedAt="";row.package.publishState="READY";row.package.lastPublishError="";addMessage(profile.id,"kai",data.reply||"Poster siap.","poster",{mediaKey:key,channelName:profile.name});
   }
   async function storePosterBatch(profile,row,data){
-    const posters=Array.isArray(data.posters)?data.posters:[];if(!posters.length)throw new Error("BATCH_POSTER_EMPTY");await clearPackageMedia(row.package);const generation=row.package.generationId||id("pkg"),built=[];
+    const posters=Array.isArray(data.posters)?data.posters:[];if(!posters.length)throw new Error("BATCH_POSTER_EMPTY");const generation=id("poster"),built=[];
     for(let i=0;i<posters.length;i++){const p=posters[i],label=txt(p.label)||txt(data?.masterRuntime?.series?.[i])||`Item ${i+1}`,key=`${profile.id}:${generation}:batch:${i+1}`,base64=await within(composePoster(profile,p,i,posters.length,label),45000,`POSTER_LOCAL_COMPOSE_${i+1}`);await within(mediaPut(key,base64),8000,`POSTER_LOCAL_STORE_${i+1}`);built.push({index:i+1,label,mediaKey:key,headline:txt(p.plan?.headline),subhead:txt(p.plan?.subhead),subjectAnchor:txt(p.plan?.subjectAnchor)});}
     row.package.batchCount=built.length;row.package.batchLabels=built.map(x=>x.label);row.package.batchPosters=built;row.package.batchPublished=Array.from({length:built.length},()=>null);row.package.posterMediaKey="";row.package.publishedPostId="";row.package.publishedAt="";row.package.publishState="READY";row.package.lastPublishError="";addMessage(profile.id,"kai",`${built.length} POSTER BATCH SIAP ✅`);
   }
@@ -476,26 +463,73 @@
     finally{setBusy(false);refresh();}
   }
 
+  async function importOwnerPackage({channelId,file,caption,sources=[],reviewed=false,index=0,newPackage=false,replace=false}){
+    if(runtimeBusy)throw new Error("Tunggu proses yang sedang berjalan selesai.");
+    if(![...document.querySelectorAll("#channel-select option")].some(x=>x.value===channelId))throw new Error("Channel tujuan tidak ditemukan.");
+    const review=window.ACCProductionContracts?.validateOwnerUpload?.(channelId,sources,reviewed);
+    if(!review)throw new Error("Aturan channel belum siap. Buka Produce lalu coba lagi.");
+    const text=txt(caption);if(!text)throw new Error("Caption wajib diisi.");
+    if(text.length>60000)throw new Error("Caption terlalu panjang.");
+    if(!file?.size||file.size>8*1024*1024)throw new Error("Pilih poster JPG, PNG, atau WebP maksimal 8 MB.");
+    const header=new Uint8Array(await file.slice(0,12).arrayBuffer());
+    const mime=header[0]===255&&header[1]===216&&header[2]===255?"image/jpeg":header.slice(0,8).join(",")==="137,80,78,71,13,10,26,10"?"image/png":String.fromCharCode(...header.slice(0,4))==="RIFF"&&String.fromCharCode(...header.slice(8,12))==="WEBP"?"image/webp":"";
+    if(!mime)throw new Error("Format poster harus JPG, PNG, atau WebP yang valid.");
+    const row=lane(channelId),before=structuredClone(row),spec=contractSpec(channelId),count=Math.max(1,spec.count);
+    if(!Number.isInteger(index)||index<0||index>=count)throw new Error("Item batch tidak valid.");
+    if(!newPackage){
+      const published=count>1?row.package.batchPublished?.[index]?.postId:row.package.publishedPostId;
+      if(published)throw new Error("Item ini sudah terbit. Pilih Paket baru untuk konten berikutnya.");
+      const current=count>1?row.package.batchPosters?.[index]?.mediaKey:row.package.posterMediaKey;
+      if(current&&!replace)throw new Error("Centang Ganti item aktif untuk mengganti poster yang tersimpan.");
+    }
+    setBusy(true,"Menyimpan poster dan caption…");
+    const key=`${channelId}:upload:${id("media")}`;
+    try{
+      const base64=await within(new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(",")[1]||"");reader.onerror=()=>reject(new Error("File tidak dapat dibaca."));reader.readAsDataURL(file);}),15000,"UPLOAD_READ");
+      await within(loadImage(`data:${mime};base64,${base64}`),18000,"UPLOAD_DECODE");
+      await mediaPut(key,base64,mime);
+      const pkg=newPackage?emptyPackage():normalizePackage(row.package);
+      pkg.generationId=pkg.generationId||id("upload");pkg.batchCount=count;pkg.source="OWNER_UPLOAD";
+      pkg.material=pkg.material||text;pkg.publishState="READY";pkg.lastPublishError="";
+      pkg.ownerUploads={...(pkg.ownerUploads||{}),[key]:{...review,fileName:txt(file.name),importedAt:now()}};
+      if(count===1){pkg.posterMediaKey=key;pkg.caption=text;pkg.publishedPostId="";pkg.publishedAt="";}
+      else{
+        pkg.batchLabels=Array.from({length:count},(_,i)=>spec.labels[i]||`Item ${i+1}`);
+        pkg.batchPosters[index]={index:index+1,label:pkg.batchLabels[index],mediaKey:key};
+        pkg.batchCaptions[index]={index:index+1,label:pkg.batchLabels[index],caption:text};
+        pkg.batchPublished[index]=null;
+      }
+      row.package=pkg;row.updatedAt=now();
+      row.messages.push({id:id("msg"),role:"user",type:"poster",content:`UPLOAD • ${file.name}\n${text}`,mediaKey:key,at:now()});
+      saveStore();
+      window.dispatchEvent(new CustomEvent("acc-produce-package-updated",{detail:{channelId,kind:"owner_upload",revision:REVISION}}));
+      return {channelId,mediaKey:key,count,index};
+    }catch(error){store.channels[channelId]=before;await mediaDelete(key);throw error;}
+    finally{setBusy(false);refresh();}
+  }
   function publishTarget(main,channelId){return main?.settings?.publishMappings?.[channelId]||FALLBACK_TARGETS[channelId]||null;}
   function publishEndpoint(){const configured=txt(localStorage.getItem(PUBLISH_ENDPOINT_KEY));if(!configured)return DEFAULT_PUBLISH_ENDPOINT;return configured.replace("acc-publish-connector.ardarawk.workers.dev","acc-publish-connectorv2.ardarawk.workers.dev");}
   async function publishRequest(profile,target,message,mediaKey,idempotencyKey,sourceWorkflowId){
     const access=localStorage.getItem(PUBLISH_ACCESS_KEY)||"";if(!access)throw new Error("Connector access belum tersimpan di perangkat.");const media=await mediaGet(mediaKey);if(!media?.base64)throw new Error("POSTER_MEDIA_MISSING");
     const platform=String(profile.platform||"Facebook").toUpperCase(),payload={id:id("copilot_publish"),sourceWorkflowId,sourceWorkflowRunKey:idempotencyKey,sourceTaskId:null,channelId:profile.id,channelName:profile.name,workspaceId:profile.workspaceId||readMain().activeWorkspaceId||"acc-enterprise",platform,status:"QUEUED",attempts:1,idempotencyKey,createdAt:now(),updatedAt:now(),connector:target.connector||"META_FACEBOOK",target,pageId:target.pageId||null,pageName:target.pageName||null,instagramAccountId:target.instagramAccountId||null,content:{message:txt(message),mediaUrl:null,imageBase64:media.base64,mimeType:media.mimeType||"image/jpeg"},clientRevision:REVISION,mediaSource:"PRODUCE_MEDIA_DB"};
-    const response=await fetch(publishEndpoint(),{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json","X-ACC-Access-Code":access},body:JSON.stringify(payload)}),data=await response.json().catch(()=>({}));
-    if(!response.ok||!data.ok){const e=data?.error||{};throw new Error(e.message||e.code||data.message||`HTTP ${response.status}`);}const postId=txt(data.externalPostId||data.postId||data.id||data.result?.id);if(!postId)throw new Error("PUBLISH_RESPONSE_MISSING_POST_ID");return{postId,publishedAt:now()};
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),90000);
+    let response,data;try{response=await fetch(publishEndpoint(),{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json","X-ACC-Access-Code":access},body:JSON.stringify(payload),signal:controller.signal});data=await response.json();}catch(error){throw new Error(error.name==="AbortError"?"Publish timeout. Periksa halaman tujuan; retry memakai ID paket yang sama.":"Connector tidak memberi respons JSON yang valid.");}finally{clearTimeout(timer);}
+    if(!response.ok||!data.ok){const e=data?.error||{};throw new Error(e.message||e.code||data.message||`HTTP ${response.status}`);}const postId=txt(data.externalPostId||data.postId||data.id||data.result?.id);if(!/^\d+(?:_\d+)?$/.test(postId)||data.mock===true||/mock|simulat/i.test(String(data.mode||"")))throw new Error("PUBLISH_RESPONSE_MISSING_POST_ID");return{postId,publishedAt:now()};
   }
   async function publishApproved(){
-    const profile=currentProfile(),row=lane(profile.id),spec=effectiveSpec(profile,row);if(spec.count>1)return setStatus("Batch dipublish per item.",true);const pkg=row.package;if(!canPublishSingle(row))return setStatus("Poster + caption harus siap dulu.",true);if(!contractPublishAllowed(profile.id))return setStatus("PUBLISH BLOCKED // SAFETY GUARD",true);
-    const target=publishTarget(readMain(),profile.id);if(!target)return setStatus("Meta Page channel ini belum di-map di Publishing Hub.",true);setBusy(true,"Publishing approved package…");pkg.publishState="PUBLISHING";pkg.lastPublishError="";saveStore();
-    try{const generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,pkg.caption,pkg.posterMediaKey,`copilot:${profile.id}:${generation}:single`,`COPILOT:${profile.id}`);pkg.publishedPostId=result.postId;pkg.publishedAt=result.publishedAt;pkg.publishState="PUBLISHED";addMessage(profile.id,"kai",`PUBLISH SUCCESS ✅\n${profile.name}\nPOST ID: ${result.postId}`);saveStore();setStatus(`PUBLISHED ✅ ${result.postId}`);}
-    catch(error){const message=String(error?.message||error);pkg.publishState="FAILED";pkg.lastPublishError=message;saveStore();addMessage(profile.id,"kai",`PUBLISH FAILED // ${message}`);setStatus(`PUBLISH FAILED // ${message}`,true);}
+    if(runtimeBusy)return;
+    const profile=currentProfile(),row=lane(profile.id),spec=effectiveSpec(profile,row);if(spec.count>1)return setStatus("Batch dipublish per item.",true);const pkg=row.package;if(!canPublishSingle(row))return setStatus("Poster + caption harus siap dulu.",true);if(!contractPublishAllowed(profile.id,pkg.posterMediaKey))return setStatus("PUBLISH BLOCKED // SAFETY GUARD",true);
+    const target=publishTarget(readMain(),profile.id);if(!target)return setStatus("Meta Page channel ini belum di-map di Publishing Hub.",true);setBusy(true,"Publishing approved package…");
+    try{pkg.publishState="PUBLISHING";pkg.lastPublishError="";saveStore();const generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,pkg.caption,pkg.posterMediaKey,`copilot:${profile.id}:${generation}:${pkg.posterMediaKey}:single`,`COPILOT:${profile.id}`);pkg.publishedPostId=result.postId;pkg.publishedAt=result.publishedAt;pkg.publishState="PUBLISHED";addMessage(profile.id,"kai",`PUBLISH SUCCESS ✅\n${profile.name}\nPOST ID: ${result.postId}`);setStatus(`PUBLISHED ✅ ${result.postId}`);}
+    catch(error){const message=String(error?.message||error);if(pkg.publishedPostId){setStatus(`PUBLISHED ✅ ${pkg.publishedPostId}\nBukti belum tersimpan di perangkat: ${message}`,true);}else{pkg.publishState="FAILED";pkg.lastPublishError=message;try{addMessage(profile.id,"kai",`PUBLISH FAILED // ${message}`);}catch{}setStatus(`PUBLISH FAILED // ${message}`,true);}}
     finally{setBusy(false);refresh();}
   }
   async function publishBatchItem(index){
-    const profile=currentProfile(),row=lane(profile.id),pkg=row.package,spec=effectiveSpec(profile,row);if(!(spec.count>1)||index<0||index>=spec.count)return;if(!itemReady(pkg,index))return setStatus(`Item ${index+1} belum punya poster + caption lengkap.`,true);if(!contractPublishAllowed(profile.id))return setStatus("PUBLISH BLOCKED // SAFETY GUARD",true);
+    if(runtimeBusy)return;
+    const profile=currentProfile(),row=lane(profile.id),pkg=row.package,spec=effectiveSpec(profile,row);if(!(spec.count>1)||index<0||index>=spec.count)return;if(!itemReady(pkg,index))return setStatus(`Item ${index+1} belum punya poster + caption lengkap.`,true);if(!contractPublishAllowed(profile.id,pkg.batchPosters?.[index]?.mediaKey))return setStatus("PUBLISH BLOCKED // SAFETY GUARD",true);
     const target=publishTarget(readMain(),profile.id);if(!target)return setStatus("Meta Page channel ini belum di-map di Publishing Hub.",true);runtimeBusy=true;syncControls(profile,row);setStatus(`Publishing item ${index+1}/${spec.count}…`);
-    try{const poster=pkg.batchPosters[index],caption=pkg.batchCaptions[index],generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,caption.caption,poster.mediaKey,`copilot:${profile.id}:${generation}:item:${index+1}`,`COPILOT_BATCH:${profile.id}`);pkg.batchPublished[index]={postId:result.postId,publishedAt:result.publishedAt};pkg.publishState=pkg.batchPublished.filter(Boolean).length===spec.count?"PUBLISHED":"PARTIAL";pkg.lastPublishError="";addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} SUCCESS ✅\n${spec.labels[index]}\nPOST ID: ${result.postId}`);saveStore();setStatus(`ITEM ${index+1} PUBLISHED ✅ ${result.postId}`);}
-    catch(error){const message=String(error?.message||error);pkg.publishState="PARTIAL";pkg.lastPublishError=message;pkg.lastPublishErrorIndex=index;saveStore();addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} FAILED // ${message}`);setStatus(`ITEM ${index+1} FAILED // ${message}`,true);}
+    try{saveStore();const poster=pkg.batchPosters[index],caption=pkg.batchCaptions[index],generation=pkg.generationId||"legacy",result=await publishRequest(profile,target,caption.caption,poster.mediaKey,`copilot:${profile.id}:${generation}:${poster.mediaKey}:item:${index+1}`,`COPILOT_BATCH:${profile.id}`);pkg.batchPublished[index]={postId:result.postId,publishedAt:result.publishedAt};pkg.publishState=pkg.batchPublished.filter(Boolean).length===spec.count?"PUBLISHED":"PARTIAL";pkg.lastPublishError="";addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} SUCCESS ✅\n${spec.labels[index]}\nPOST ID: ${result.postId}`);setStatus(`ITEM ${index+1} PUBLISHED ✅ ${result.postId}`);}
+    catch(error){const message=String(error?.message||error),receipt=pkg.batchPublished[index];if(receipt?.postId){setStatus(`ITEM ${index+1} PUBLISHED ✅ ${receipt.postId}\nBukti belum tersimpan di perangkat: ${message}`,true);}else{pkg.publishState="PARTIAL";pkg.lastPublishError=message;pkg.lastPublishErrorIndex=index;try{addMessage(profile.id,"kai",`PUBLISH ITEM ${index+1} FAILED // ${message}`);}catch{}setStatus(`ITEM ${index+1} FAILED // ${message}`,true);}}
     finally{runtimeBusy=false;refresh();}
   }
   function openPoster(src){if(!src)return;const modal=document.createElement("div");modal.className="acc-copilot-modal";modal.innerHTML=`<img src="${src}" alt="Poster preview"><button type="button">TUTUP</button>`;modal.addEventListener("click",e=>{if(e.target===modal||e.target.tagName==="BUTTON")modal.remove();});document.body.appendChild(modal);}
@@ -505,5 +539,6 @@
   window.addEventListener("acc-production-contract-updated",refresh);
   window.addEventListener("acc-ai-access-changed",()=>{ensureBackendHealth(true);refresh();});
   ensureStyle();ensureBackendHealth(true);refresh();
-  window.ACCProduceCopilot=Object.freeze({revision:REVISION,refresh,publishMode:"SINGLE_OR_PER_ITEM",mediaStore:"INDEXEDDB",health:()=>({...backendHealth}),recoverBusy:(message="Proses di-reset.")=>{runtimeBusy=false;setStatus(message,true);refresh();}});
+  window.ACCProduceCopilot=Object.freeze({revision:REVISION,refresh,importOwnerPackage,target:channelId=>publishTarget(readMain(),channelId),publishMode:"SINGLE_OR_PER_ITEM",mediaStore:"INDEXEDDB",health:()=>({...backendHealth}),recoverBusy:(message="Proses di-reset.")=>{runtimeBusy=false;setStatus(message,true);refresh();}});
+  window.dispatchEvent(new CustomEvent("acc-produce-ready"));
 })();

@@ -19,7 +19,7 @@
       key:"acc-dj", title:"ACC DJ", short:"DJ", accent:"#f8fafc", mode:"web",
       iconUrl:"https://raw.githubusercontent.com/balinightlife666-web/DJ-AM/main/icon-192.png",
       iconFallback:"DJ",
-      webUrl:"https://balinightlife666-web.github.io/DJ-AM/"
+      webUrl:"https://dj-am.ardarawk.workers.dev/"
     },
     {
       key:"entego", title:"ENTEGO", short:"ENTEGO", accent:"#ff7a18", mode:"division",
@@ -37,16 +37,16 @@
     {
       key:"kai-trad", title:"KAI TRAD", short:"TRAD", accent:"#55e6a5", mode:"division",
       divisionKey:"trading",
-      iconUrl:"https://kai-trad-pwa.ardarawk.workers.dev/kai-trad-logo.png",
+      iconUrl:"https://kai-sanban.nadmo.id/kai-trad-logo.png",
       iconFallback:"K",
-      webUrl:"https://kai-trad-pwa.ardarawk.workers.dev/"
+      webUrl:"https://kai-sanban.nadmo.id/"
     },
     {
       key:"am-studio", title:"AM STUDIO", short:"STUDIO", accent:"#c084fc", mode:"division",
       divisionKey:"studio",
-      iconUrl:"https://am-studio-pwa.ardarawk.workers.dev/icon.svg",
+      iconUrl:"https://comics.nadmo.id/icon.svg",
       iconFallback:"AM",
-      webUrl:"https://am-studio-pwa.ardarawk.workers.dev/"
+      webUrl:"https://comics.nadmo.id/"
     },
     {
       key:"nadmo-ai", title:"NADMO AI", short:"NADMO", accent:"#8b5cf6", mode:"android",
@@ -136,7 +136,7 @@
 
   function divisionUrl(app){
     const state=window.ACCSyncHub?.getState?.() || {};
-    return state?.[app.divisionKey]?.manifest?.appUrl || app.webUrl;
+    return window.ACCDestinations?.division(app.divisionKey,state?.[app.divisionKey]?.manifest?.appUrl || app.webUrl) || app.webUrl;
   }
 
   function launchNative(app){

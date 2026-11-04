@@ -1,5 +1,5 @@
 // Legacy deploy validation marker: acc-os-x-maps-v17-roblox-icon-proxy
-const CACHE="acc-os-x-build10-page-picker-v34-poster-postprocess-recovery";
+const CACHE="acc-os-x-v35-owner-upload-links-20261104";
 const MAP_CACHE="acc-os-x-maps-v18-mount-bbya-correct-place";
 const MAP_ICON_REV="KAI_ONE_MY_MAPS_V18_MOUNT_BBYA_CORRECT_PLACE";
 const MAP_CORE=[
@@ -12,15 +12,17 @@ const CORE=[
   "./desktop-mode-v1.js?rev=KAI_ONE_DESKTOP_MODE_V1",
   "./app.js",
   "./home-launchpad.js",
+  "./app-destinations-v1.js?rev=VERIFIED_DESTINATIONS_20261104",
+  "./content-upload-v1.js?rev=OWNER_CONTENT_UPLOAD_V1",
   "./home-launcher-chain-v1.js?rev=KAI_ONE_HOME_LAUNCHER_CHAIN_V1",
   "./owner-phone-launcher-v1.js?rev=KAI_ONE_OWNER_PHONE_LAUNCHER_V3_FAST_TAP_BUILD10",
   "./owner-app-launcher-v2.js?rev=KAI_ONE_MY_APPS_V4_NEW_APPS_BWD_CLIENT_REMOVED",
   "./my-projects-launcher-v1.js?rev=KAI_ONE_MY_PROJECTS_V5_NADMO_LIVE",
   "./my-admin-launcher-v1.js?rev=KAI_ONE_MY_ADMIN_V3_BWD_OWNER_PACKAGE",
   "./release-version-v257.js?rev=BUILD257_PRODUCTION_PUBLISHING_STABLE",
-  "./produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY",
+  "./produce-copilot-v2578.js?rev=BUILD257_8_R4_OWNER_UPLOAD_DURABLE_PUBLISH",
   "./produce-copilot-preview-fix-v25762.js?rev=BUILD257_6_4_PREVIEW_ONLY_NO_SCROLL_CONTROL",
-  "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V1",
+  "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V2_DURABLE_UPLOAD",
   "./kai-autopilot-folder-fallback-v1.js?rev=KAI_AUTOPILOT_SINGLE_MEDIA_BUTTON_V5_ANDROID_PICKER_FEEDBACK_COMPACT",
   "./home-quick-access-v1.js?rev=KAI_ONE_HOME_QUICK_ACCESS_V1_CHANNEL_INFO_COMPACT",
   "./poster-studio-v1.js?rev=BUILD253_KAI_CREATIVE",
@@ -53,6 +55,9 @@ const FORCE_FRESH=new Set([
   "/desktop-mode-v1.js",
   "/app.js",
   "/home-launchpad.js",
+  "/app-destinations-v1.js",
+  "/content-upload-v1.js",
+  "/division-sync-hub-v2.js",
   "/home-launcher-chain-v1.js",
   "/owner-phone-launcher-v1.js",
   "/service-worker.js",

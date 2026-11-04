@@ -66,6 +66,7 @@
     const source = DIVISIONS[key];
     try {
       const manifest = await fetchJson(source.manifestUrl);
+      manifest.appUrl=window.ACCDestinations?.division(key,manifest.appUrl)||manifest.appUrl;
       state[key] = {
         manifest,
         syncedAt: new Date().toISOString(),

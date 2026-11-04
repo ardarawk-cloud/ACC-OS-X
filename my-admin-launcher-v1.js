@@ -26,8 +26,8 @@
       accent:"#ef4444",
       fallback:"AM",
       kind:"WEB / ADMIN",
-      icon:"https://am-studio-pwa.ardarawk.workers.dev/icon.svg",
-      web:"https://am-studio-pwa.ardarawk.workers.dev/"
+      icon:"https://comics.nadmo.id/icon.svg",
+      web:"https://comics.nadmo.id/"
     },
     {
       key:"am-digital-lab-crm",
