@@ -715,6 +715,70 @@ async function danaSandboxFinishNotifyUat(env,origin,scenario){
  }
 }
 
+
+async function danaOfficialFinishNotifyUat(env,origin,scenario){
+ if(String(env.DANA_ENV||'').toLowerCase()!=='sandbox')
+  return {ok:false,error:'DANA sandbox mode is not enabled'};
+ const partnerId=String(env.DANA_X_PARTNER_ID||'').trim();
+ const merchantId=String(env.DANA_MERCHANT_ID||'').trim();
+ const apiOrigin=String(env.DANA_API_ORIGIN||'').replace(/\/$/,'');
+ const amountMap={success:'11011.00','internal-error':'11012.00','expired':'11013.00'};
+ const amount=amountMap[scenario];
+ if(!amount||apiOrigin!=='https://api.sandbox.dana.id'||!partnerId||!merchantId||!env.DANA_PRIVATE_KEY)
+  return {ok:false,error:'DANA sandbox finish-notify config incomplete'};
+ const now=Date.now(),timestamp=danaJakartaTimestamp(now);
+ const path='/payment-gateway/v1.0/debit/payment-host-to-host.htm';
+ const ref='NADMO-UAT-FINISH-'+scenario+'-'+String(now);
+ const verifierUrl='https://n8n.automation.dana.id/webhook/3676a08f-b06e-416c-b6cd-bea04f71c4d5';
+ const body=JSON.stringify({
+  partnerReferenceNo:ref,
+  merchantId,
+  amount:{value:amount,currency:'IDR'},
+  externalStoreId:'',
+  urlParams:[
+   {url:origin+'/subscription/?payment=dana',type:'PAY_RETURN',isDeeplink:'Y'},
+   {url:verifierUrl,type:'NOTIFICATION',isDeeplink:'Y'}
+  ],
+  validUpTo:danaJakartaTimestamp(now+(scenario==='expired'?135000:360000)),
+  additionalInfo:{
+   order:{orderTitle:'Payment Gateway Order',scenario:'API',merchantTransType:'SPECIAL_MOVIE',buyer:{}},
+   mcc:'5732',
+   envInfo:{sourcePlatform:'IPG',terminalType:'SYSTEM',orderTerminalType:'WEB'},
+   extendInfo:'{"key":"value"}'
+  },
+  payOptionDetails:[{
+   payMethod:'VIRTUAL_ACCOUNT',
+   payOption:'VIRTUAL_ACCOUNT_CIMB',
+   transAmount:{value:amount,currency:'IDR'}
+  }]
+ });
+ try{
+  const signature=await danaSign(env,'POST',path,body,timestamp);
+  const create=await fetch(apiOrigin+path,{method:'POST',headers:{
+   'Content-Type':'application/json','X-TIMESTAMP':timestamp,'X-SIGNATURE':signature,
+   'X-PARTNER-ID':partnerId,'X-EXTERNAL-ID':crypto.randomUUID(),'CHANNEL-ID':'95221',
+   'ORIGIN':origin,'X-Debug-Mode':'true','Accept':'application/json'
+  },body,redirect:'manual',signal:AbortSignal.timeout(12000)});
+  const createText=await create.text();
+  let data;try{data=JSON.parse(createText)}catch{data={raw:createText.slice(0,1000)}}
+  if(data?.responseCode!=='2005400')
+   return {ok:false,phase:'create-order',httpStatus:create.status,responseCode:data?.responseCode||null,responseMessage:data?.responseMessage||null};
+  const paymentCode=data?.additionalInfo?.paymentCode||data?.additionalInfo?.payment_code||null;
+  if(!paymentCode)return {ok:false,phase:'create-order',error:'paymentCode missing',responseCode:data?.responseCode};
+  if(scenario==='expired')
+   return {ok:true,scenario,phase:'created-expiring',responseCode:data.responseCode,partnerReferenceNo:ref};
+  const trigger=await fetch('https://dashboard-sandbox.dana.id/merchant-portal-app/api/sandbox-tools/execute',{
+   method:'POST',
+   headers:{'accept':'application/json','content-type':'application/json','origin':'https://dashboard.dana.id','referer':'https://dashboard.dana.id/'},
+   body:JSON.stringify({urlEndpoint:'/v1.0/transfer-va/payment.htm',requestBody:{virtualAccountNo:paymentCode}}),
+   redirect:'manual',signal:AbortSignal.timeout(15000)
+  });
+  return {ok:trigger.ok,scenario,phase:'triggered',responseCode:data.responseCode,partnerReferenceNo:ref,sandboxToolStatus:trigger.status};
+ }catch(error){
+  return {ok:false,scenario,error:String(error?.message||error).slice(0,180)};
+ }
+}
+
 function azuraStation(value){return typeof value==='string'&&/^[a-z0-9_-]{1,64}$/i.test(value)?value:'nadmo_radio'}
 function secureOrigin(value){
  if(typeof value!=='string'||!value.trim())return null;
@@ -843,6 +907,15 @@ export default {
     return new Response(JSON.stringify({responseCode:'2004300',responseMessage:'Successful'}),{status:200,headers});
   }
 
+
+  if(url.pathname==='/api/dana/sandbox/uat/run-official-finish-notify'&&request.method==='GET'){
+    const results=[];
+    for(const scenario of ['success','internal-error','expired']){
+      results.push(await danaOfficialFinishNotifyUat(env,url.origin,scenario));
+      await new Promise(resolve=>setTimeout(resolve,500));
+    }
+    return Response.json({ok:results.every(x=>x.ok),results},{headers:{'Cache-Control':'no-store'}});
+  }
   if(url.pathname==='/api/dana/sandbox/uat/run-finish-notify'&&request.method==='GET'){
     const results=[];
     for(const scenario of ['success','internal-error','expired']){
