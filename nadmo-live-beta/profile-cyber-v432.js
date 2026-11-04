@@ -75,8 +75,8 @@
  }
  function setup(){
   for(const [id,pub] of [['profileBusinessLinks',false],['publicCreatorLinks',true]]){
-   const el=document.getElementById(id);if(!el||el.dataset.cpWatch==='432')continue;
-   el.dataset.cpWatch='432';
+   const el=document.getElementById(id);if(!el||el.dataset.cpWatch==='433')continue;
+   el.dataset.cpWatch='433';
    const update=()=>renderLinks(el,pub);
    const observer=new MutationObserver(update);
    observer.observe(el,{childList:true});
