@@ -4,7 +4,7 @@ import {getAccount, urlOK} from './account.mjs';
 // Provider-authenticated events are not settlement/withdrawal evidence.
 const enc = new TextEncoder();
 const allowedProviders = new Set(['saweria','sociabuzz','dana_qris']);
-const safe = (v,max=120) => String(v??'').replace(/[<>\\x00-\\x1f\\x7f]/g,' ').replace(/\\s+/g,' ').trim().slice(0,max);
+const safe = (v,max=120) => String(v??'').replace(/[<>\x00-\x1f\x7f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const respond = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const error = (status,code) => respond({ok:false,code},status);
 const basePrefs = () => ({alertEnabled:false,providers:['saweria'],animation:'pulse',sound:'off',durationSeconds:6,showName:true,showAmount:true,showMessage:true,socialBuzzUrl:''});
@@ -83,7 +83,7 @@ export async function supportEndpoint(storage,request,env,emit=async()=>false){
  const url=new URL(request.url),p=url.pathname,method=request.method;
  if(p.startsWith('/api/support/webhooks/')){
   if(method!=='POST')return error(405,'METHOD');
-  const m=p.match(/^\\/api\\/support\\/webhooks\\/(saweria|sociabuzz|dana_qris)\\/([a-z][a-z0-9_]{2,23})$/);
+  const m=p.match(/^\/api\/support\/webhooks\/(saweria|sociabuzz|dana_qris)\/([a-z][a-z0-9_]{2,23})$/);
   if(!m)return error(404,'WEBHOOK_UNKNOWN');
   const [,provider,handle]=m;
   if(provider!=='saweria')return error(501,'PROVIDER_NOT_VERIFIED');
