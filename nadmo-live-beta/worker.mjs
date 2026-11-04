@@ -624,10 +624,24 @@ export default {
   }
   if(url.pathname==='/app')return Response.redirect(url.origin+'/app/',308);
   if(url.pathname==='/subscription')return Response.redirect(url.origin+'/subscription/',308);
+  if(url.pathname==='/support-center')return Response.redirect(url.origin+'/support-center/',308);
+  if(url.pathname==='/overlay/support')return Response.redirect(url.origin+'/overlay/support/',308);
   if(url.pathname==='/admin')return Response.redirect(url.origin+'/admin/',308);
   if(url.pathname==='/subscription/'||url.pathname==='/subscription/index.html'){
     const asset=await env.ASSETS.fetch(new Request(url.origin+'/subscription/index.html'));
     const headers=new Headers(asset.headers);headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store, max-age=0');headers.set('Referrer-Policy','no-referrer');
+    return new Response(asset.body,{status:asset.status,headers});
+  }
+  if(url.pathname==='/support-center/'||url.pathname==='/support-center/index.html'){
+    const asset=await env.ASSETS.fetch(new Request(url.origin+'/support-center/index.html'));
+    const headers=new Headers(asset.headers);
+    headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store');headers.set('Referrer-Policy','no-referrer');
+    return new Response(asset.body,{status:asset.status,headers});
+  }
+  if(url.pathname==='/overlay/support/'||url.pathname==='/overlay/support/index.html'){
+    const asset=await env.ASSETS.fetch(new Request(url.origin+'/overlay/support/index.html'));
+    const headers=new Headers(asset.headers);
+    headers.set('X-Content-Type-Options','nosniff');headers.set('Cache-Control','no-store');headers.set('Referrer-Policy','no-referrer');
     return new Response(asset.body,{status:asset.status,headers});
   }
   if(url.pathname==='/admin/'||url.pathname==='/admin/index.html'){
