@@ -2592,6 +2592,21 @@ body.live-immersive #watch #liveRestReminder{
  #radioMiniDock{bottom:20px}
 }
 
+
+/* Public profile avatar geometry hard lock: never stretch inside a 16:9 cover hero. */
+#publicProfilePage .public-me-skin .profile-hero .profile-avatar{
+  position:relative!important;display:grid!important;place-items:center!important;
+  flex:0 0 58px!important;width:58px!important;height:58px!important;
+  min-width:58px!important;min-height:58px!important;max-width:58px!important;max-height:58px!important;
+  aspect-ratio:1/1!important;overflow:hidden!important;border-radius:50%!important;padding:0!important;
+}
+#publicProfilePage .public-me-skin .profile-hero .profile-avatar img{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-width:100%!important;min-height:100%!important;max-width:100%!important;max-height:100%!important;
+  object-fit:cover!important;object-position:center!important;border-radius:50%!important;
+}
+#publicProfilePage .public-me-skin .profile-hero .profile-avatar span{position:relative!important;z-index:0!important}
+
 </style></head>
 <body>
 <div class="app">
@@ -4229,7 +4244,7 @@ body.live-immersive #watch #liveRestReminder{
     person.setAttribute('aria-label','Lihat profil '+(req.name||req.handle));
     person.append(avatarNode(req.handle,req.name,req.avatarVersion));
     const name=document.createElement('span');name.className='message-chat-copy';
-    name.textContent=req.name||req.handle;person.append(name);person.onclick=()=>openCreatorProfile(req.handle);row.append(person);
+    name.textContent=req.name||req.handle;person.append(name);person.onclick=()=>openMessages(req.handle,req.name,req.avatarVersion);row.append(person);
     const actions=document.createElement('span');actions.className='message-request-buttons';
     const accept=document.createElement('button');accept.type='button';accept.textContent='TERIMA';
     accept.onclick=async()=>{
@@ -4256,12 +4271,12 @@ body.live-immersive #watch #liveRestReminder{
     const person=document.createElement('button');person.type='button';person.className='message-profile-tap';
     person.setAttribute('aria-label','Lihat profil '+(item.name||item.handle));
     person.append(avatarNode(item.handle,item.name,item.avatarVersion));
-    person.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)};
+    person.onclick=event=>{event.stopPropagation();openMessages(item.handle,item.name,item.avatarVersion)};
     row.append(person);
     const content=document.createElement('span');content.className='message-chat-copy';
     const name=document.createElement('button');name.type='button';name.className='message-chat-name';
     name.textContent=item.name||item.handle;
-    name.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)};
+    name.onclick=event=>{event.stopPropagation();openMessages(item.handle,item.name,item.avatarVersion)};
     const last=document.createElement('span');last.className='message-chat-last';
     last.textContent=item.lastText?(item.lastFromMe?'Kamu: ':'')+item.lastText:'Mulai mengobrol';
     content.append(name,last);row.append(content);
@@ -5220,6 +5235,7 @@ body.live-immersive #watch #liveRestReminder{
  $('openPrivateControls').onclick=()=>$('privateControls').classList.toggle('hide');
  function closeLiveSheets(){
   $('hostAccessPanel').classList.remove('sheet-open');$('viewerTipPanel').classList.remove('sheet-open');$('liveSettingsPanel').classList.remove('sheet-open');$('hostProfilePanel').classList.remove('sheet-open');
+  $('hostAccessPanel').hidden=true;$('viewerTipPanel').hidden=true;
   $('liveSheetBackdrop').classList.add('hide');
  }
  function applyMirroring(){
@@ -5286,6 +5302,7 @@ body.live-immersive #watch #liveRestReminder{
 
  function openLiveSheet(panel){
   closeLiveSheets();
+  panel.hidden=false;
   panel.classList.add('sheet-open');
   $('liveSheetBackdrop').classList.remove('hide');
  }
