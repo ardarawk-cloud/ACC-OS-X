@@ -1,6 +1,7 @@
 import {scrypt} from 'node:crypto';
 import {SUPPORTER_THRESHOLDS,SUPPORTER_TIERS,getSupporterProfile,getPublicSupporterBadge} from './supporter-levels.mjs';
 import {walletSnapshot,payoutCapability} from './wallet.mjs';
+import {normaliseDmView,visibleDmMessages,summariseDm,updateDmText,validateDmReply} from './messages-v2.mjs';
 // NADMO LIVE authenticated profiles — PRIVATE beta, NOT government identity verification.
 // All persistent account state is in RoomHub Durable Object storage, isolated by prefix.
 // Never store KTP, NIK, passports, selfies, government ID or raw payment credentials here.
@@ -191,6 +192,9 @@ export async function accountEndpoint(storage,request){
  const approvalKey=(a,b)=>'dm-approved:'+pairId(a,b);
  const dmPrivacy=user=>['everyone','following','requests'].includes(user?.dmPrivacy)?user.dmPrivacy:'everyone';
  const readKey=(a,b)=>'dm-read:'+a+':'+b;
+ const viewKey=(a,b)=>'dm-view:'+a+':'+b;
+ const loadView=async(a,b)=>normaliseDmView(await storage.get(viewKey(a,b)));
+ const saveView=async(a,b,view)=>storage.put(viewKey(a,b),normaliseDmView(view));
  const canDirect=async(sender,receiver)=>{
   if(await storage.get(approvalKey(sender.id,receiver.id)))return true;
   // Existing conversations remain available after switching privacy settings.
@@ -211,12 +215,16 @@ export async function accountEndpoint(storage,request){
     if(!other||other.disabled)continue;
     const messages=await storage.get(threadKey(principal.id,item.otherId))||[];
     const readAt=Number(await storage.get(readKey(principal.id,item.otherId)))||0;
-    const unread=messages.filter(m=>m.fromHandle!==principal.handle&&m.createdAt>readAt).length;
-    threads.push({handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0,unread,
-      updatedAt:messages.at(-1)?.createdAt||item.createdAt||0,
-      lastText:messages.at(-1)?.text?.slice(0,100)||'',lastFromMe:messages.at(-1)?.fromHandle===principal.handle});
+    const view=await loadView(principal.id,item.otherId);
+    const summary=summariseDm(messages,view,principal.handle,readAt);
+    // A cleared conversation is hidden from the inbox until a new message arrives.
+    if(!summary.visible.length&&!summary.pinned)continue;
+    threads.push({handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0,
+      unread:summary.unread,updatedAt:summary.updatedAt||item.createdAt||0,
+      lastText:summary.lastText,lastFromMe:summary.lastFromMe,
+      pinned:summary.pinned,archived:summary.archived,muted:summary.muted});
    }
-   return json({ok:true,threads:threads.sort((a,b)=>b.updatedAt-a.updatedAt),
+   return json({ok:true,threads:threads.sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.updatedAt-a.updatedAt),
     totalUnread:threads.reduce((sum,item)=>sum+item.unread,0)});
   }
   if(p==='/api/messages/settings'){
@@ -242,9 +250,12 @@ export async function accountEndpoint(storage,request){
    if(await hasBlock(principal.id,id))return fail(403,'Akun diblokir');
    const current=await storage.get('auth-user:'+principal.id);
    if(!await canDirect(current,other))return fail(403,'Penerima membatasi pesan. Kirim permintaan chat.');
-   const key=threadKey(principal.id,id),msgs=(await storage.get(key)||[]).slice(-80);
+   const key=threadKey(principal.id,id),msgs=(await storage.get(key)||[]).slice(-100);
+   const view=await loadView(principal.id,id),visible=visibleDmMessages(msgs,view);
+   if(view.markedUnread){view.markedUnread=false;await saveView(principal.id,id,view)}
    await storage.put(readKey(principal.id,id),Date.now());
-   return json({ok:true,messages:msgs,participant:{handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0}});
+   return json({ok:true,messages:visible,preferences:view,
+     participant:{handle:other.handle,name:other.name,avatarVersion:other.avatarVersion||0}});
 
   }
   return fail(404,'Halaman pesan tidak ditemukan');
@@ -441,6 +452,56 @@ export async function accountEndpoint(storage,request){
   const otherId=await storage.get('auth-handle:'+handle);
   const other=otherId&&await storage.get('auth-user:'+otherId);
   if(!other||other.disabled)return fail(404,'Akun penerima tidak ditemukan');
+  // MOSHI v2 server-authorized controls. Never trust sender identity from a payload.
+  if(p==='/api/messages/conversation-action'){
+   const action=clean(payload.action,32);
+   const view=await loadView(user.id,otherId);
+   if(action==='clear'){
+    view.clearedAt=Date.now();view.hiddenIds=[];view.starredIds=[];view.markedUnread=false;
+    await saveView(user.id,otherId,view);
+    return json({ok:true,clearedForMe:true,appliesToOther:false});
+   }
+   if(action==='pin'||action==='mute'||action==='archive'){
+    if(typeof payload.enabled!=='boolean')return fail(400,'Status percakapan harus boolean');
+    view[action==='pin'?'pinned':action==='mute'?'muted':'archived']=payload.enabled;
+    await saveView(user.id,otherId,view);
+    return json({ok:true,preferences:view});
+   }
+   if(action==='mark-unread'){
+    view.markedUnread=true;await saveView(user.id,otherId,view);
+    return json({ok:true,unread:true});
+   }
+   return fail(400,'Aksi percakapan tidak tersedia');
+  }
+  if(p==='/api/messages/message-action'){
+   const action=clean(payload.action,32),id=clean(payload.id,40);
+   if(!/^[0-9a-f-]{36}$/i.test(id))return fail(400,'ID pesan tidak valid');
+   const key=threadKey(user.id,otherId),view=await loadView(user.id,otherId);
+   const msgs=await storage.get(key)||[],current=visibleDmMessages(msgs,view).find(m=>m.id===id);
+   if(action==='delete-for-me'){
+    if(!current)return json({ok:true,unchanged:true});
+    view.hiddenIds=[...new Set([...view.hiddenIds,id])].slice(-200);
+    view.starredIds=view.starredIds.filter(x=>x!==id);
+    await saveView(user.id,otherId,view);
+    return json({ok:true,deletedForMe:true,appliesToOther:false});
+   }
+   if(action==='star'){
+    if(typeof payload.enabled!=='boolean'||!current||current.deletedForAll)return fail(400,'Pesan tidak bisa dibintangi');
+    view.starredIds=payload.enabled?[...new Set([...view.starredIds,id])].slice(-200):view.starredIds.filter(x=>x!==id);
+    await saveView(user.id,otherId,view);
+    return json({ok:true,starred:payload.enabled});
+   }
+   if(!current)return fail(404,'Pesan tidak ditemukan');
+   if(!['edit','delete-for-all'].includes(action))return fail(400,'Aksi tidak valid');
+   if(!await throttle(storage,'dm-edit:'+user.id,90,3600000))return fail(429,'Terlalu banyak perubahan pesan');
+   const result=updateDmText(msgs,{actorHandle:user.handle,id,action,text:payload.text,now:Date.now()});
+   if(result.error)return fail(result.error==='NOT_AUTHOR'?403:result.error==='EDIT_WINDOW_EXPIRED'?409:400,
+     {NOT_AUTHOR:'Hanya pengirim yang dapat mengubah atau menghapus untuk semua',
+      EDIT_WINDOW_EXPIRED:'Batas edit pesan 15 menit sudah lewat',
+      ALREADY_DELETED:'Pesan sudah dihapus',BAD_TEXT:'Isi pesan tidak valid'}[result.error]||'Pesan tidak tersedia');
+   if(!result.unchanged)await storage.put(key,result.messages);
+   return json({ok:true,message:result.message,unchanged:result.unchanged||false});
+  }
   if(p==='/api/messages/block'){
    await storage.put('dm-block:'+user.id+':'+otherId,true);
    // Blocking also severs following in either direction, no hidden social connection.
@@ -496,7 +557,12 @@ export async function accountEndpoint(storage,request){
    if(!msgs.length){
     if(!await throttle(storage,'dm-new-contact:'+user.id,12,86400000))return fail(429,'Batas percakapan baru harian tercapai');
    }
-   const message={id:crypto.randomUUID(),fromHandle:user.handle,text,createdAt:Date.now()};
+   const view=await loadView(user.id,otherId);
+   const reply=validateDmReply(msgs,payload.replyToId,view);
+   if(reply.error)return fail(400,'Pesan yang dibalas tidak tersedia');
+   const createdAt=Math.max(Date.now(),view.clearedAt+1);
+   const message={id:crypto.randomUUID(),fromHandle:user.handle,text,createdAt,
+     ...(reply.replyToId?{replyToId:reply.replyToId}:{})};
    await storage.put(key,[...msgs,message].slice(-100));
    if(!await storage.get('dm-member:'+user.id+':'+otherId))
     await storage.put('dm-member:'+user.id+':'+otherId,{otherId,createdAt:message.createdAt});
