@@ -582,7 +582,8 @@ async function danaSandboxCreateOrderUat(env,origin){
     'X-SIGNATURE':signature,
     'X-PARTNER-ID':partnerId,
     'X-EXTERNAL-ID':String(now)+'01',
-    'CHANNEL-ID':'95221',
+    'CHANNEL-ID':partnerId+'-SERVER',
+    'X-Debug-Mode':'true',
     'ORIGIN':origin,
     'Accept':'application/json'
    },
