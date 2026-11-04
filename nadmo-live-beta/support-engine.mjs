@@ -50,6 +50,29 @@ export async function recordVerifiedSupport(storage,event){
   return {created:true,event};
  });
 }
+
+// Compatibility with the already-deployed token-based Saweria webhook.
+// Only events with BOTH the legacy provider record and its signed-handler
+// dedupe marker are eligible. Never trust demo events or bare client claims.
+// The legacy store contains only its latest event; this is a bounded backfill
+// until the existing webhook can atomically emit normalized support events.
+export async function syncLegacySaweria(storage,host){
+ if(!host?.id)return {created:false,reason:'NO_HOST'};
+ const legacy=await storage.get('integration-latest:'+host.id);
+ if(!legacy||legacy.provider!=='saweria'||typeof legacy.id!=='string')return {created:false,reason:'NO_SIGNED_EVENT'};
+ const signatureMarker=await storage.get('integration-saweria-event:'+host.id+':'+legacy.id);
+ if(!signatureMarker)return {created:false,reason:'UNVERIFIED_LEGACY'};
+ const amount=Number(legacy.amountRaw);
+ if(!Number.isSafeInteger(amount)||amount<1)return {created:false,reason:'INVALID_AMOUNT'};
+ let occurredAt;
+ try{occurredAt=new Date(legacy.createdAt).toISOString()}catch{return {created:false,reason:'BAD_TIME'}}
+ try{
+  const event=normaliseVerifiedSupport({provider:'saweria',hostId:host.id,
+   providerRef:legacy.id,amount,name:legacy.donor,message:legacy.message,occurredAt});
+  return recordVerifiedSupport(storage,event);
+ }catch{return {created:false,reason:'UNSAFE_EVENT'}}
+}
+
 export function publicSupport(event,prefs=basePrefs()){
  if(!event||event.verificationStatus!=='provider_authenticated')return null;
  return {eventId:event.eventId,provider:event.provider,hostId:event.hostId,
@@ -111,6 +134,7 @@ export async function supportEndpoint(storage,request,env,emit=async()=>false){
  if(p==='/api/support/wall'&&method==='GET'){
   const host=await userForHandle(storage,safe(url.searchParams.get('handle'),24).replace(/^@/,'').toLowerCase());
   if(!host||host.disabled)return error(404,'HOST_NOT_FOUND');
+  await syncLegacySaweria(storage,host);
   const prefs=await prefsFor(storage,host.id),list=await storage.get('support-wall:'+host.id)||[];
   const filtered=list.filter(x=>x?.verificationStatus==='provider_authenticated');
   return respond({ok:true,hostHandle:host.handle,events:filtered.slice(0,30).map(x=>publicSupport(x,prefs)).filter(Boolean),
