@@ -84,7 +84,7 @@
   if (document.querySelector('script[data-acc-produce-copilot="v2578"]')) return;
   document.querySelectorAll('script[data-acc-produce-copilot]').forEach(node => node.remove());
   const script = document.createElement("script");
-  script.src = "./produce-copilot-v2578.js?rev=BUILD257_8_PRODUCTION_PUBLISHING_STABLE_R3_ANDROID_POSTPROCESS_RECOVERY";
+  script.src = "./produce-copilot-v2578.js?rev=BUILD257_8_R4_OWNER_UPLOAD_DURABLE_PUBLISH";
   script.dataset.accProduceCopilot = "v2578";
   script.async = false;
   document.head.appendChild(script);
@@ -95,7 +95,7 @@
 (() => {
   if (document.querySelector('script[data-acc-kai-autopilot="v1"]')) return;
   const script = document.createElement("script");
-  script.src = "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V1";
+  script.src = "./kai-autopilot-media-drop-v1.js?rev=KAI_AUTOPILOT_MEDIA_DROP_V2_DURABLE_UPLOAD";
   script.dataset.accKaiAutopilot = "v1";
   script.async = false;
   document.head.appendChild(script);
@@ -140,4 +140,10 @@
   script.dataset.accProduceBusyWatchdog = "v1";
   script.async = false;
   document.head.appendChild(script);
+})();
+
+// Explicit owner import; keeps OS X publishing separate from Content Hub.
+(() => {
+  if(document.querySelector('script[data-acc-content-upload]'))return;
+  const script=document.createElement("script");script.src="./content-upload-v1.js?rev=OWNER_CONTENT_UPLOAD_V1";script.dataset.accContentUpload="1";script.async=false;document.head.appendChild(script);
 })();

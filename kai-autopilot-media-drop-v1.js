@@ -6,7 +6,7 @@
   if (window.__ACC_KAI_AUTOPILOT_MEDIA_DROP_V1__) return;
   window.__ACC_KAI_AUTOPILOT_MEDIA_DROP_V1__ = true;
 
-  const REVISION = "KAI_AUTOPILOT_MEDIA_DROP_V1";
+  const REVISION = "KAI_AUTOPILOT_MEDIA_DROP_V2_DURABLE_UPLOAD";
   const PANEL_ID = "acc-kai-autopilot-panel";
   const STYLE_ID = "acc-kai-autopilot-style";
   const STORE_KEY = "acc_os_x_kai_autopilot_v1";
@@ -39,22 +39,28 @@
     } catch { return {jobs:[],instruction:"",updatedAt:now()}; }
   }
   let state = readStore();
+  let operationBusy=false;
+  const MIME_BY_EXT={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",heic:"image/heic",heif:"image/heif",mp4:"video/mp4",mov:"video/quicktime",m4v:"video/x-m4v",webm:"video/webm",mkv:"video/x-matroska",avi:"video/x-msvideo","3gp":"video/3gpp"};
+  const mediaMime=file=>/^(image|video)\//.test(file.type||"")?file.type:MIME_BY_EXT[String(file.name||"").split(".").pop().toLowerCase()]||"";
   function save(){
-    state.jobs = state.jobs.slice(-120);
+
     state.updatedAt = now();
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {}
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
   }
 
   function openDb(){
     return new Promise((resolve,reject) => {
+      if(!window.indexedDB)return reject(new Error("Penyimpanan media tidak tersedia."));
+      const timer=setTimeout(()=>reject(new Error("Penyimpanan media tidak merespons.")),8000);
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(MEDIA_STORE)) db.createObjectStore(MEDIA_STORE, {keyPath:"id"});
         if (!db.objectStoreNames.contains(KV_STORE)) db.createObjectStore(KV_STORE, {keyPath:"key"});
       };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error || new Error("INDEXEDDB_OPEN_FAILED"));
+      request.onsuccess = () => {clearTimeout(timer);resolve(request.result);};
+      request.onblocked = () => {clearTimeout(timer);reject(new Error("Tutup tab OS X lain lalu coba lagi."));};
+      request.onerror = () => {clearTimeout(timer);reject(request.error || new Error("INDEXEDDB_OPEN_FAILED"));};
     });
   }
   async function dbPut(storeName,value){
@@ -63,7 +69,7 @@
       const tx = db.transaction(storeName,"readwrite");
       tx.objectStore(storeName).put(value);
       tx.oncomplete = () => { db.close(); resolve(true); };
-      tx.onerror = () => { db.close(); reject(tx.error || new Error("INDEXEDDB_WRITE_FAILED")); };
+      tx.onabort = tx.onerror = () => { db.close(); reject(tx.error || new Error("INDEXEDDB_WRITE_FAILED")); };
     });
   }
   async function dbGet(storeName,key){
@@ -80,7 +86,7 @@
       const tx = db.transaction(storeName,"readwrite");
       tx.objectStore(storeName).delete(key);
       tx.oncomplete = () => { db.close(); resolve(true); };
-      tx.onerror = () => { db.close(); reject(tx.error || new Error("INDEXEDDB_DELETE_FAILED")); };
+      tx.onabort = tx.onerror = () => { db.close(); reject(tx.error || new Error("INDEXEDDB_DELETE_FAILED")); };
     });
   }
 
@@ -93,50 +99,50 @@
   }
 
   async function probeFile(file){
-    const base = {width:0,height:0,duration:0};
-    const url = URL.createObjectURL(file);
-    try {
-      if ((file.type || "").startsWith("image/")) {
-        const image = await new Promise((resolve,reject) => {
-          const el = new Image();
-          el.onload=()=>resolve(el); el.onerror=()=>reject(new Error("IMAGE_PROBE_FAILED")); el.src=url;
-        });
-        base.width=image.naturalWidth||0; base.height=image.naturalHeight||0;
-      } else if ((file.type || "").startsWith("video/")) {
-        const video = await new Promise((resolve,reject) => {
-          const el=document.createElement("video");
-          el.preload="metadata"; el.muted=true;
-          el.onloadedmetadata=()=>resolve(el); el.onerror=()=>reject(new Error("VIDEO_PROBE_FAILED")); el.src=url;
-        });
-        base.width=video.videoWidth||0; base.height=video.videoHeight||0; base.duration=Number(video.duration||0);
-      }
-    } catch {} finally { URL.revokeObjectURL(url); }
+    const base={width:0,height:0,duration:0},url=URL.createObjectURL(file);
+    const el=file.type.startsWith("image/")?new Image():document.createElement("video");
+    let timer;
+    try{
+      await new Promise((resolve,reject)=>{
+        timer=setTimeout(()=>reject(new Error("MEDIA_PROBE_TIMEOUT")),7000);
+        el.onload=el.onloadedmetadata=resolve;el.onerror=reject;
+        if(el.tagName==="VIDEO"){el.preload="metadata";el.muted=true;}
+        el.src=url;
+      });
+      base.width=el.naturalWidth||el.videoWidth||0;base.height=el.naturalHeight||el.videoHeight||0;
+      base.duration=Number.isFinite(el.duration)?el.duration:0;
+    }catch{}finally{clearTimeout(timer);el.removeAttribute("src");if(el.tagName==="VIDEO")el.load();URL.revokeObjectURL(url);}
     return base;
   }
-
-  function fingerprint(file,path=""){
-    return `${path||file.name}:${file.size}:${file.lastModified}`;
-  }
-  async function ingestFiles(files, source="DROP", paths=new Map()){
-    const input = [...files].filter(file => /^image\//.test(file.type||"") || /^video\//.test(file.type||""));
-    if (!input.length) return;
-    setStatus(`Menyimpan ${input.length} media ke ACC Inbox…`);
-    for (const file of input) {
-      const path = paths.get(file) || file.webkitRelativePath || file.name;
-      const fp = fingerprint(file,path);
-      if (state.jobs.some(job => job.fingerprint === fp)) continue;
-      const meta = await probeFile(file);
-      const job = {
-        id:uid("auto"), fileName:file.name, path, fingerprint:fp,
-        mimeType:file.type||"application/octet-stream", size:file.size||0,
-        width:meta.width||0, height:meta.height||0, duration:meta.duration||0,
-        source, status:"INBOX", channelId:"", channelName:"", confidence:0, reason:"",
-        handoffAt:"", createdAt:now(), updatedAt:now()
-      };
-      await dbPut(MEDIA_STORE,{id:job.id,file,path,storedAt:now()}).catch(()=>{});
-      state.jobs.push(job);
-    }
-    save(); render(); setStatus(`${input.length} media diproses. Siap ROUTE.`);
+  function fingerprint(file,path=""){return `${path||file.name}:${file.size}:${file.lastModified}`;}
+  async function ingestFiles(files,source="DROP",paths=new Map()){
+    if(operationBusy)return setStatus("Tunggu proses media selesai.",true);
+    const input=[...files];if(!input.length)return;
+    operationBusy=true;setBusy(true);
+    let added=0,duplicates=0,failed=0;const errors=[];
+    try{
+      for(let i=0;i<input.length;i++){
+        const original=input[i],mime=mediaMime(original);
+        setStatus(`Menyimpan ${i+1}/${input.length}: ${original.name}`);
+        if(!mime||!original.size||original.size>100*1024*1024){failed++;errors.push(`${original.name}: pilih foto/video maksimal 100 MB.`);continue;}
+        const file=original.type===mime?original:new File([original],original.name,{type:mime,lastModified:original.lastModified});
+        const path=paths.get(original)||original.webkitRelativePath||file.name,fp=fingerprint(file,path);
+        const old=state.jobs.find(job=>job.fingerprint===fp);
+        let newJob;
+        try{
+          if(old){const stored=await dbGet(MEDIA_STORE,old.id);if(stored?.file?.size){duplicates++;continue;}}
+          if(!old&&state.jobs.length>=120)throw new Error("Inbox penuh. Hapus media yang sudah selesai terlebih dahulu.");
+          const meta=await probeFile(file);
+          newJob=old||{id:uid("auto"),fileName:file.name,path,fingerprint:fp,mimeType:mime,size:file.size,...meta,source,status:"INBOX",channelId:"",channelName:"",confidence:0,reason:"",handoffAt:"",createdAt:now(),updatedAt:now()};
+          await dbPut(MEDIA_STORE,{id:newJob.id,file,path,storedAt:now()});
+          if(!old)state.jobs.push(newJob);
+          try{save();}catch(error){if(!old)state.jobs=state.jobs.filter(x=>x.id!==newJob.id);await dbDelete(MEDIA_STORE,newJob.id);throw error;}
+          added++;
+        }catch(error){failed++;errors.push(`${original.name}: ${error.message||error}`);}
+      }
+    }finally{operationBusy=false;render();setBusy(false);}
+    setStatus(`${added} tersimpan • ${duplicates} duplikat dilewati • ${failed} gagal${errors.length?"\n"+errors.slice(0,3).join("\n"):". Siap route."}`,failed>0);
+    return {added,duplicates,failed};
   }
 
   function exactInstructionRoute(job,list,instruction){
@@ -189,7 +195,8 @@
     const channelRows=list.map(row=>({id:row.id,name:row.name}));
     const prompt=`You are KAI ONE, ACC OS X global media router. Route each media item to exactly one ACC channel only when reasonably confident. Do not use the currently selected UI channel. Use owner instruction, file name/path and media metadata. If uncertain, use an empty channelId and confidence below 0.60. Return JSON only in this exact shape: {"routes":[{"fileId":"...","channelId":"...","confidence":0.0,"reason":"short reason"}]}. Owner instruction: ${instruction||"(none)"}. Files: ${JSON.stringify(fileRows)}. Available channels: ${JSON.stringify(channelRows)}`;
     const body={messages:[{role:"user",content:prompt}],context:{workerTask:{id:uid("router"),stage:"ROUTING",workerType:"KAI_AUTOPILOT_ROUTER",workerName:"KAI ONE",goal:"Route global media inbox independently of active channel",source:"MEDIA_DROP",autoApply:false},autopilot:{revision:REVISION,files:fileRows,channels:channelRows,instruction},client:{revision:REVISION,language:"id-ID",timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Makassar"}}};
-    const response=await fetch("/api/acc-ai",{method:"POST",headers,body:JSON.stringify(body)});
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
+    let response;try{response=await fetch("/api/acc-ai",{method:"POST",headers,body:JSON.stringify(body),signal:controller.signal});}finally{clearTimeout(timer);}
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.ok) throw new Error(data?.error||data?.errorDetail?.message||`HTTP ${response.status}`);
     const parsed=extractJson(data.reply||data.output||data.text||"");
@@ -197,7 +204,9 @@
     return parsed.routes;
   }
 
-  function handoff(job,instruction){
+  async function handoff(job,instruction){
+    const media=await dbGet(MEDIA_STORE,job.id).catch(()=>null);
+    if(!media?.file?.size){job.status="MEDIA_MISSING";job.reason="File tidak tersimpan. Pilih file yang sama lagi untuk memulihkan.";return false;}
     if(!job.channelId) return false;
     let store;
     try{store=JSON.parse(localStorage.getItem(COPILOT_KEY)||"{}");}catch{store={};}
@@ -218,12 +227,14 @@
   }
 
   async function routeAll(){
+    if(operationBusy)return;
     const pending=state.jobs.filter(job=>job.status==="INBOX"||job.status==="NEED_OWNER"||job.status==="ROUTED");
     if(!pending.length)return setStatus("Tidak ada media baru untuk di-route.");
     const list=channels(); if(!list.length)return setStatus("Channel registry belum terbaca.",true);
     const instruction=txt(document.getElementById("acc-autopilot-instruction")?.value)||state.instruction;
     state.instruction=instruction;save();
-    setBusy(true);setStatus(`KAI ONE routing ${pending.length} media tanpa membaca selector channel atas…`);
+    operationBusy=true;setBusy(true);setStatus(`KAI ONE routing ${pending.length} media tanpa membaca selector channel atas…`);
+    try{
     let aiRoutes=[];
     try{aiRoutes=await kaiRoute(pending,list,instruction);}catch(error){setStatus(`KAI router fallback aktif: ${String(error?.message||error)}`);}
     for(const job of pending){
@@ -235,12 +246,13 @@
       }else routed=fallbackRoute(job,list,instruction);
       Object.assign(job,routed,{updatedAt:now()});
       job.status=job.channelId&&job.confidence>=.65?"ROUTED":"NEED_OWNER";
-      if(job.status==="ROUTED")handoff(job,instruction);
+      if(job.status==="ROUTED")await handoff(job,instruction);
     }
-    save();render();setBusy(false);
+    save();render();
     const handoffCount=state.jobs.filter(job=>job.status==="HANDOFF").length;
     const need=state.jobs.filter(job=>job.status==="NEED_OWNER").length;
     setStatus(`Routing selesai. ${handoffCount} job sudah dikirim ke KAI channel • ${need} NEED OWNER.`);
+    }catch(error){setStatus(`Routing gagal: ${error.message||error}`,true);}finally{operationBusy=false;setBusy(false);}
   }
 
   async function linkOrImportFolder(){
@@ -258,7 +270,7 @@
     for await(const [name,entry] of handle.entries()){
       if(entry.kind==="file"){
         const file=await entry.getFile();
-        if(/^image\//.test(file.type||"")||/^video\//.test(file.type||"")){files.push(file);paths.set(file,`${prefix}${name}`);}
+        if(mediaMime(file)){files.push(file);paths.set(file,`${prefix}${name}`);}
       }else if(entry.kind==="directory")await collectDirectory(entry,`${prefix}${name}/`,depth+1,files,paths);
     }
     return {files,paths};
@@ -301,15 +313,15 @@
   }
   function jobHtml(job){
     const statusClass=job.status==="HANDOFF"?"handoff":job.status==="NEED_OWNER"?"need":"";
-    return `<div class="acc-auto-job" data-auto-job="${esc(job.id)}"><div class="acc-auto-job-top"><div><div class="acc-auto-file">${esc(job.fileName)}</div><div class="acc-auto-meta">${esc(job.mimeType)} • ${bytes(job.size)}${job.width?` • ${job.width}×${job.height}`:""}${job.duration?` • ${Math.round(job.duration)}s`:""}<br>${esc(job.path||"")}</div></div><span class="acc-auto-badge ${statusClass}">${esc(job.status)}</span></div>${job.channelId?`<div class="acc-auto-route">→ <b>${esc(job.channelName||job.channelId)}</b> • ${Math.round((job.confidence||0)*100)}%<br><span class="muted">${esc(job.reason||"")}</span></div>`:`<div class="acc-auto-route muted">Belum ada channel route.</div>`}<div class="acc-auto-job-actions">${job.channelId?`<button class="acc-auto-mini" data-auto-open="${esc(job.id)}">OPEN KAI CHANNEL</button>`:""}<button class="acc-auto-mini" data-auto-remove="${esc(job.id)}">REMOVE</button></div></div>`;
+    return `<div class="acc-auto-job" data-auto-job="${esc(job.id)}"><div class="acc-auto-job-top"><div><div class="acc-auto-file">${esc(job.fileName)}</div><div class="acc-auto-meta">${esc(job.mimeType)} • ${bytes(job.size)}${job.width?` • ${job.width}×${job.height}`:""}${job.duration?` • ${Math.round(job.duration)}s`:""}<br>${esc(job.path||"")}</div></div><span class="acc-auto-badge ${statusClass}">${esc(job.status)}</span></div>${job.channelId?`<div class="acc-auto-route">→ <b>${esc(job.channelName||job.channelId)}</b> • ${Math.round((job.confidence||0)*100)}%<br><span class="muted">${esc(job.reason||"")}</span></div>`:`<div class="acc-auto-route muted">Belum ada channel route.</div>`}<div class="acc-auto-job-actions">${job.channelId?`<button class="acc-auto-mini" data-auto-open="${esc(job.id)}">OPEN KAI CHANNEL</button>`:""}<button class="acc-auto-mini" data-auto-preview="${esc(job.id)}">PREVIEW</button>${/^image\//.test(job.mimeType)?`<button class="acc-auto-mini" data-auto-use="${esc(job.id)}">PAKAI POSTER</button>`:""}<button class="acc-auto-mini" data-auto-remove="${esc(job.id)}">REMOVE</button></div><label style="font-size:11px">Channel tujuan<select data-auto-channel="${esc(job.id)}"><option value="">Pilih channel…</option>${channels().map(c=>`<option value="${esc(c.id)}" ${c.id===job.channelId?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label><button type="button" class="acc-auto-mini" data-auto-assign="${esc(job.id)}">MASUKKAN KE CHANNEL</button></div>`;
   }
   function panelHtml(){
     const s=stats();
-    return `<div class="card acc-auto-card mono"><div class="acc-auto-head"><div><div class="eyebrow">KAI ONE // STANDALONE AUTOPILOT</div><div class="acc-auto-title">MEDIA DROP</div><div class="acc-auto-desc">Tidak membaca channel yang sedang dipilih. Media masuk ke inbox global → KAI ONE route → handoff ke KAI per-channel. Manual Produce tetap terpisah dan aman.</div></div><span class="badge">BETA V1</span></div><div class="acc-auto-stats"><div class="acc-auto-stat"><b>${s.inbox}</b><span>INBOX</span></div><div class="acc-auto-stat"><b>${s.handoff}</b><span>TO KAI</span></div><div class="acc-auto-stat"><b>${s.need}</b><span>NEED OWNER</span></div><div class="acc-auto-stat"><b>${s.total}</b><span>TOTAL</span></div></div><div class="acc-auto-drop" id="acc-autopilot-drop"><b>DROP FOTO / VIDEO DI SINI</b><div class="acc-auto-desc" style="margin:5px auto 0">Atau link/import satu folder. File disimpan lokal di device (IndexedDB), bukan dimasukkan ke channel selector.</div><input id="acc-autopilot-file-input" type="file" accept="image/*,video/*" multiple hidden><input id="acc-autopilot-folder-input" type="file" accept="image/*,video/*" webkitdirectory directory multiple hidden></div><div class="acc-auto-actions"><button class="acc-auto-btn" id="acc-autopilot-add">+ ADD MEDIA</button><button class="acc-auto-btn" id="acc-autopilot-folder">LINK / SCAN FOLDER</button><button class="acc-auto-btn green" id="acc-autopilot-route">⚡ KAI AUTO ROUTE</button></div><textarea class="acc-auto-instruction" id="acc-autopilot-instruction" placeholder="Opsional: kasih perintah global. Contoh: 'Ini video gaming dan motocamp, pilih channel sendiri lalu kirim ke KAI masing-masing.'">${esc(state.instruction)}</textarea><div class="acc-auto-status" id="acc-autopilot-status"></div><div class="acc-auto-list">${state.jobs.length?state.jobs.slice().reverse().map(jobHtml).join(""):`<div class="acc-auto-desc">ACC Inbox masih kosong.</div>`}</div></div>`;
+    return `<div class="card acc-auto-card mono"><div class="acc-auto-head"><div><div class="eyebrow">KAI ONE // STANDALONE AUTOPILOT</div><div class="acc-auto-title">MEDIA DROP</div><div class="acc-auto-desc">Tidak membaca channel yang sedang dipilih. Media masuk ke inbox global → KAI ONE route → handoff ke KAI per-channel. Manual Produce tetap terpisah dan aman.</div></div><span class="badge">MEDIA INBOX</span></div><div class="acc-auto-stats"><div class="acc-auto-stat"><b>${s.inbox}</b><span>INBOX</span></div><div class="acc-auto-stat"><b>${s.handoff}</b><span>TO KAI</span></div><div class="acc-auto-stat"><b>${s.need}</b><span>NEED OWNER</span></div><div class="acc-auto-stat"><b>${s.total}</b><span>TOTAL</span></div></div><div class="acc-auto-drop" id="acc-autopilot-drop"><b>DROP FOTO / VIDEO DI SINI</b><div class="acc-auto-desc" style="margin:5px auto 0">Atau link/import satu folder. File disimpan lokal di device (IndexedDB), bukan dimasukkan ke channel selector.</div><input id="acc-autopilot-file-input" type="file" accept="image/*,video/*" multiple hidden><input id="acc-autopilot-folder-input" type="file" accept="image/*,video/*" webkitdirectory directory multiple hidden></div><div class="acc-auto-actions"><button class="acc-auto-btn" id="acc-autopilot-add">+ ADD MEDIA</button><button class="acc-auto-btn" id="acc-autopilot-folder">LINK / SCAN FOLDER</button><button class="acc-auto-btn green" id="acc-autopilot-route">⚡ KAI AUTO ROUTE</button></div><textarea class="acc-auto-instruction" id="acc-autopilot-instruction" placeholder="Opsional: kasih perintah global. Contoh: 'Ini video gaming dan motocamp, pilih channel sendiri lalu kirim ke KAI masing-masing.'">${esc(state.instruction)}</textarea><div class="acc-auto-status" id="acc-autopilot-status"></div><div class="acc-auto-list">${state.jobs.length?state.jobs.slice().reverse().map(jobHtml).join(""):`<div class="acc-auto-desc">ACC Inbox masih kosong.</div>`}</div></div>`;
   }
 
   function setStatus(value,error=false){const node=document.getElementById("acc-autopilot-status");if(node){node.textContent=value||"";node.style.color=error?"#ff8095":"#8796ad";}}
-  function setBusy(value){document.querySelectorAll(`#${PANEL_ID} button,#${PANEL_ID} textarea`).forEach(node=>node.disabled=value);}
+  function setBusy(value){document.querySelectorAll(`#${PANEL_ID} button,#${PANEL_ID} textarea,#${PANEL_ID} select`).forEach(node=>node.disabled=value);}
   function bind(){
     const drop=document.getElementById("acc-autopilot-drop"),fileInput=document.getElementById("acc-autopilot-file-input"),folderInput=document.getElementById("acc-autopilot-folder-input");
     document.getElementById("acc-autopilot-add")?.addEventListener("click",()=>fileInput?.click());
@@ -324,7 +336,31 @@
       drop.addEventListener("drop",event=>ingestFiles(event.dataTransfer?.files||[],"DROP"));
     }
     document.querySelectorAll("[data-auto-open]").forEach(button=>button.addEventListener("click",()=>openChannel(button.dataset.autoOpen)));
+    document.querySelectorAll("[data-auto-preview]").forEach(button=>button.addEventListener("click",()=>previewJob(button.dataset.autoPreview)));
+    document.querySelectorAll("[data-auto-use]").forEach(button=>button.addEventListener("click",async()=>{
+      const job=state.jobs.find(x=>x.id===button.dataset.autoUse),media=await dbGet(MEDIA_STORE,job.id).catch(()=>null);
+      if(!media?.file)return setStatus("File tidak tersedia. Pilih file yang sama lagi.",true);
+      if(!window.ACCContentUpload)return setStatus("Upload konten belum siap. Buka ulang Produce.",true);
+      window.ACCContentUpload.open({channelId:job.channelId,file:media.file});
+    }));
+    document.querySelectorAll("[data-auto-assign]").forEach(button=>button.addEventListener("click",async()=>{
+      if(operationBusy)return;const job=state.jobs.find(x=>x.id===button.dataset.autoAssign);
+      const selected=document.querySelector(`[data-auto-channel="${CSS.escape(job.id)}"]`)?.value,channel=channels().find(x=>x.id===selected);
+      if(!channel)return setStatus("Pilih channel tujuan terlebih dahulu.",true);
+      Object.assign(job,{channelId:channel.id,channelName:channel.name,confidence:1,reason:"Dipilih owner"});
+      try{await handoff(job,state.instruction);save();render();setStatus(job.status==="HANDOFF"?"File masuk ke channel pilihan.":job.reason,job.status!=="HANDOFF");}catch(error){setStatus(String(error.message||error),true);}
+    }));
     document.querySelectorAll("[data-auto-remove]").forEach(button=>button.addEventListener("click",()=>removeJob(button.dataset.autoRemove)));
+  }
+  async function previewJob(jobId){
+    const media=await dbGet(MEDIA_STORE,jobId).catch(()=>null);
+    if(!media?.file)return setStatus("File tidak tersedia. Pilih file yang sama lagi.",true);
+    const url=URL.createObjectURL(media.file),dialog=document.createElement("dialog");
+    dialog.style.cssText="max-width:94vw;max-height:90dvh;background:#071023;color:white;border:1px solid #40506a;border-radius:16px";
+    const el=document.createElement(media.file.type.startsWith("video/")?"video":"img");
+    el.src=url;el.style.cssText="max-width:85vw;max-height:75dvh;object-fit:contain";if(el.tagName==="VIDEO")el.controls=true;
+    const close=document.createElement("button");close.textContent="TUTUP";close.onclick=()=>dialog.close();
+    dialog.append(el,close);dialog.addEventListener("close",()=>{if(el.tagName==="VIDEO")el.pause();URL.revokeObjectURL(url);dialog.remove();});document.body.appendChild(dialog);dialog.showModal();
   }
   function openChannel(jobId){
     const job=state.jobs.find(row=>row.id===jobId);if(!job?.channelId)return;
@@ -355,6 +391,6 @@
   const observer=new MutationObserver(()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;mount();});});
   observer.observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener("storage",event=>{if(event.key===STORE_KEY){state=readStore();render();}});
-  window.ACCKaiAutopilot=Object.freeze({revision:REVISION,route:routeAll,scanFolder:scanLinkedFolder,getJobs:()=>state.jobs.map(job=>({...job}))});
+  window.ACCKaiAutopilot=Object.freeze({revision:REVISION,ingest:ingestFiles,route:routeAll,scanFolder:scanLinkedFolder,getJobs:()=>state.jobs.map(job=>({...job}))});
   ensureStyle();mount();
 })();

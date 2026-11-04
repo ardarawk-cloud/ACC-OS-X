@@ -1713,7 +1713,7 @@ Operational rules:
 
 
   // R6.10A.1 — deployable standalone Connector API bridge. Credentials stay on the server.
-  const DEFAULT_PUBLISH_ENDPOINT="https://acc-publish-connector.ardarawk.workers.dev/api/acc-publish";
+  const DEFAULT_PUBLISH_ENDPOINT="https://acc-publish-connectorv2.ardarawk.workers.dev/api/acc-publish";
   const normalizePageName=value=>String(value||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   const publishMappings=()=>state.settings.publishMappings&&typeof state.settings.publishMappings==="object"?state.settings.publishMappings:{};
   const publishTargetForChannel=channelId=>publishMappings()[channelId]||BOOTSTRAP_PUBLISH_TARGETS[channelId]||null;

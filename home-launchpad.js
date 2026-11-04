@@ -13,16 +13,16 @@
     {key:"dj", title:"ACC DJ", accent:"#f8fafc", fallback:"DJ", icon:"https://raw.githubusercontent.com/balinightlife666-web/DJ-AM/main/icon-192.png", web:"https://balinightlife666-web.github.io/DJ-AM/"},
     {key:"entego", title:"ENTEGO", accent:"#ff7a18", fallback:"E", icon:"https://entego-pwa.ardarawk.workers.dev/icon-512.png?v=79", web:"https://entego-pwa.ardarawk.workers.dev/", syncKey:"entego"},
     {key:"trade-x", title:"KAI TRADE X", accent:"#55d7ff", fallback:"KX", native:["com.kaitradex.app.dev","com.kaitradex.app"]},
-    {key:"trad", title:"KAI TRAD", accent:"#60a5fa", fallback:"K", icon:"https://kai-trad-pwa.ardarawk.workers.dev/kai-trad-logo.png", web:"https://kai-trad-pwa.ardarawk.workers.dev/", syncKey:"trading"},
-    {key:"studio", title:"AM STUDIO", accent:"#ef4444", fallback:"AM", icon:"https://am-studio-pwa.ardarawk.workers.dev/icon.svg", web:"https://am-studio-pwa.ardarawk.workers.dev/", syncKey:"studio"},
+    {key:"trad", title:"KAI TRAD", accent:"#60a5fa", fallback:"K", icon:"https://kai-sanban.nadmo.id/kai-trad-logo.png", web:"https://kai-sanban.nadmo.id/", syncKey:"trading"},
+    {key:"studio", title:"AM STUDIO", accent:"#ef4444", fallback:"AM", icon:"https://comics.nadmo.id/icon.svg", web:"https://comics.nadmo.id/", syncKey:"studio"},
     {key:"nadmo", title:"NADMO AI", accent:"#22d3ee", fallback:"N", native:["com.nadmo.ai"]},
     {key:"casino", title:"KAI CASINO X", accent:"#facc15", fallback:"KC", native:["com.kai.casinox"]},
     {key:"media", title:"ACC Media", accent:"#ff2d55", fallback:"M", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/acc-media-downloader/icon.svg", native:["com.accbuilder.accmediadownloader"]},
     {key:"mashup", title:"AI Mashup", accent:"#a855f7", fallback:"AI", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/ai-mashup-bootleg-studio/icon.svg", native:["com.accbuilder.aimashupbootlegstudio"]},
     {key:"content", title:"ACC Content Hub", accent:"#fbbf24", fallback:"ACC", native:["com.acc.contenthub"]},
-    {key:"music-distribution", title:"AM STUDIO Music Distribution", accent:"#e879f9", fallback:"MD", native:["com.amstudio.distribution"]},
+    {key:"music-distribution", title:"AM STUDIO Music Distribution", accent:"#e879f9", fallback:"MD", native:["com.amstudio.distribution"], web:"https://musicdistribution.nadmo.id/"},
     {key:"kai-3d-free", title:"KAI 3D FREE", accent:"#22d3ee", fallback:"3D", icon:"https://raw.githubusercontent.com/ardarawk-cloud/ACC-Builder-Apk/main/apps/kai-3d-free/icon.svg", native:["com.accbuilder.kai3dfree"]},
-    {key:"oracly", title:"ORACLY", accent:"#d4af37", fallback:"O", native:["com.accbuilder.oracly"]},
+    {key:"oracly", title:"ORACLY", accent:"#d4af37", fallback:"O", native:["com.accbuilder.oracly"], web:"https://oracly.nadmo.id/"},
     {key:"papa-sauce-lab", title:"Papa Sauce Lab", accent:"#fb923c", fallback:"PSL", native:["com.nadmo.papasaucelab","com.accbuilder.papasaucelab"]}
   ];
 
@@ -73,13 +73,12 @@
         if(window.ACCSyncHub?.refresh){
           await Promise.race([window.ACCSyncHub.refresh(),new Promise(r=>setTimeout(r,700))]);
         }
-        url=window.ACCSyncHub?.getState?.()?.[app.syncKey]?.manifest?.appUrl || url;
+        url=window.ACCDestinations?.division(app.syncKey,window.ACCSyncHub?.getState?.()?.[app.syncKey]?.manifest?.appUrl || url) || url;
       }catch{}
     }
     if(url){
       if(isDesktop()){
-        const opened=window.open(url,"_blank","noopener,noreferrer");
-        if(!opened) window.location.assign(url);
+        window.open(url,"_blank","noopener,noreferrer");
       }else{
         window.location.assign(url);
       }
