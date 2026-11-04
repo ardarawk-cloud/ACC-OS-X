@@ -2595,6 +2595,12 @@ body.live-immersive #watch #liveRestReminder{
 
 /* MOSHI Messenger v2: accessible touch controls without changing NADMO app chrome. */
 .message-bubble[hidden]{display:none!important}
+.message-chat-row{flex-wrap:wrap}
+.message-inbox-more{min-width:32px;min-height:32px;border:1px solid var(--cbw-405442,#405442);background:transparent;color:var(--paper);border-radius:8px;font-size:17px}
+.message-inbox-quick{display:flex;flex:1 1 100%;gap:7px;flex-wrap:wrap;padding:2px 3px 9px 59px}
+.message-inbox-quick[hidden]{display:none!important}
+.message-inbox-quick button{min-height:35px;border:1px solid var(--cbw-405442,#405442);background:var(--cbw-141e15,#141e15);color:var(--paper);border-radius:7px;padding:6px 9px;font-size:11px}
+.message-inbox-quick button.danger{color:#ffb4aa;border-color:#a54f4f}
 .message-toolbelt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
 .message-toolbelt input,.message-toolbelt select{min-width:0;border:1px solid var(--cbw-405442,#405442);background:var(--cbw-111b14,#111b14);color:var(--paper);border-radius:10px;padding:11px;min-height:43px}
 .message-toolbelt input{flex:1 1 160px}.message-toolbelt select{flex:0 1 145px}
@@ -4388,7 +4394,35 @@ body.live-immersive #watch #liveRestReminder{
      const unread=document.createElement('span');unread.className='message-unread-pill';
      unread.textContent=item.unread>99?'99+':String(item.unread);aside.append(unread);
     }
-    row.append(aside);row.onclick=()=>openMessages(item.handle,item.name,item.avatarVersion);
+
+    const rowMore=document.createElement('button');rowMore.type='button';
+    rowMore.className='message-inbox-more';rowMore.textContent='⋯';
+    rowMore.setAttribute('aria-label','Opsi percakapan '+(item.name||item.handle));
+    rowMore.setAttribute('aria-expanded','false');aside.append(rowMore);
+    row.append(aside);
+    const quick=document.createElement('div');quick.className='message-inbox-quick';quick.hidden=true;
+    const addQuick=(label,action,enabled,danger=false)=>{
+     const button=document.createElement('button');button.type='button';button.textContent=label;
+     if(danger)button.className='danger';
+     button.onclick=async event=>{
+      event.stopPropagation();
+      if(action==='clear'&&!confirm('Hapus seluruh chat ini hanya dari akunmu? Penerima masih memiliki salinannya.'))return;
+      button.disabled=true;
+      try{
+       await accountRequest('/api/messages/conversation-action','POST',{handle:item.handle,action,
+        ...(['pin','archive','mute'].includes(action)?{enabled}:{})});
+       await loadMessageInbox();
+      }catch(error){$('messageInboxStatus').textContent=error.message;button.disabled=false}
+     };quick.append(button);
+    };
+    addQuick(item.pinned?'LEPAS SEMATAN':'SEMATKAN','pin',!item.pinned);
+    addQuick(item.archived?'KELUARKAN ARSIP':'ARSIPKAN','archive',!item.archived);
+    addQuick(item.muted?'BATAL SENYAP':'SENYAPKAN','mute',!item.muted);
+    addQuick('HAPUS CHAT SAYA','clear',null,true);
+    rowMore.onclick=event=>{event.stopPropagation();quick.hidden=!quick.hidden;rowMore.setAttribute('aria-expanded',String(!quick.hidden))};
+    quick.onclick=event=>event.stopPropagation();
+    row.append(quick);
+    row.onclick=()=>openMessages(item.handle,item.name,item.avatarVersion);
     row.onkeydown=event=>{
      if(event.target!==row)return;
      if(event.key==='Enter'||event.key===' '){event.preventDefault();row.click()}
