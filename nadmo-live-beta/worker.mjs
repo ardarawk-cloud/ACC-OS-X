@@ -1204,10 +1204,12 @@ export default {
    if(request.headers.get('Origin')!==url.origin)return new Response('Forbidden',{status:403});
    const mime=(request.headers.get('Content-Type')||'').split(';')[0].toLowerCase();
    const ext=Object.keys(mediaExt).find(x=>mediaExt[x]===mime),isPhoto=ext&&['jpg','png','webp'].includes(ext);
-   const size=Number(request.headers.get('Content-Length')),max=isPhoto?8*1024*1024:25*1024*1024;
+   const declaredSize=Number(request.headers.get('Content-Length')),max=isPhoto?8*1024*1024:25*1024*1024;
    if(!ext)return cors(request,Response.json({ok:false,error:'Gunakan JPG, PNG, WebP, MP4 atau WebM'},{status:415}));
-   if(!Number.isSafeInteger(size)||size<100||size>max)
+   if(Number.isSafeInteger(declaredSize)&&declaredSize>max)
     return cors(request,Response.json({ok:false,error:isPhoto?'Foto maksimal 8 MB':'Video maksimal 25 MB'},{status:413}));
+   if(!isPhoto&&(!Number.isSafeInteger(declaredSize)||declaredSize<100))
+    return cors(request,Response.json({ok:false,error:'Video harus memiliki ukuran yang valid'},{status:413}));
    const auth=await hub.fetch(new Request(url.origin+'/api/account/me',{headers:{Cookie:request.headers.get('Cookie')||''}}));
    const account=(await auth.json()).account;
    if(!account?.id)return cors(request,Response.json({ok:false,error:'Masuk akun untuk upload'},{status:401}));
@@ -1215,10 +1217,21 @@ export default {
     headers:{Origin:url.origin,'Content-Type':'application/json',Cookie:request.headers.get('Cookie')||''},body:'{}'}));
    if(!approval.ok)return cors(request,new Response(approval.body,{status:approval.status,headers:{'Content-Type':'application/json'}}));
    const id=crypto.randomUUID(),key=mediaKey(account.id,id,ext);
+   let actualSize=declaredSize;
    try{
     let data=request.body;
     if(isPhoto){
-     const bytes=new Uint8Array(await request.arrayBuffer());
+     const reader=request.body?.getReader();if(!reader)return cors(request,Response.json({ok:false,error:'File gambar kosong'},{status:400}));
+     const chunks=[];let total=0;
+     while(true){
+      const {done,value}=await reader.read();if(done)break;
+      total+=value.byteLength;
+      if(total>max){try{await reader.cancel()}catch{};return cors(request,Response.json({ok:false,error:'Foto maksimal 8 MB'},{status:413}))}
+      chunks.push(value);
+     }
+     if(total<100)return cors(request,Response.json({ok:false,error:'File gambar terlalu kecil atau rusak'},{status:413}));
+     const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+     actualSize=total;
      const valid=ext==='jpg'&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255||
       ext==='png'&&bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71||
       ext==='webp'&&String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP';
@@ -1227,7 +1240,7 @@ export default {
     }
     await env.SOCIAL_MEDIA.put(key,data,{httpMetadata:{contentType:mime,cacheControl:'public, max-age=3600'},customMetadata:{owner:account.id}});
    }catch(e){console.error('SOCIAL R2 upload',e?.name);return cors(request,Response.json({ok:false,error:'Upload media gagal'},{status:503}))}
-   return cors(request,Response.json({ok:true,type:isPhoto?'image':'video',url:url.origin+'/api/social/media/'+account.id+'/'+id+'.'+ext,bytes:size},{status:201}));
+   return cors(request,Response.json({ok:true,type:isPhoto?'image':'video',url:url.origin+'/api/social/media/'+account.id+'/'+id+'.'+ext,bytes:actualSize},{status:201}));
   }
   if(url.pathname.startsWith('/api/social/media/')&&request.method==='GET'){
    if(!env.SOCIAL_MEDIA)return new Response('Media unavailable',{status:503});
