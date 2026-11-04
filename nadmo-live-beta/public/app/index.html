@@ -2768,6 +2768,7 @@ body.live-immersive #watch #liveRestReminder{
      <div id="tipRecipientOptions" class="filterstrip" aria-label="Penerima dukungan"></div>
      <p>Dukungan pada mode Beta dikirim langsung ke metode pembayaran milik kreator.</p>
      <a id="tipSupportLink" class="btn support-open" href="#" rel="nofollow ugc noreferrer" hidden>BUKA SAWERIA / LINK DUKUNGAN ↗</a>
+     <a id="tipSociaBuzzLink" class="btn support-open" rel="nofollow ugc noreferrer" hidden>BUKA SOCIABUZZ / DUKUNGAN ↗</a>
      <div id="tipQrisBox" hidden><b>QRIS HOST</b><img id="tipQrisImage" alt="QRIS milik host"><a id="tipQrisOpen" class="btn secondary support-open" href="#" rel="nofollow ugc noreferrer">BUKA QRIS ↗</a></div>
      <p id="tipSupportEmpty">Memeriksa metode dukungan host...</p>
      <p class="deck">Pembayaran terjadi langsung antara penonton dan kreator. NADMO LIVE tidak memproses, menahan, atau memotong dana pada mode Beta ini.</p>
@@ -4622,10 +4623,11 @@ body.live-immersive #watch #liveRestReminder{
    }catch(e){hostSupportDraft={link:'',qris:''};renderSupportSetup()}
   }
   function renderTipSupport(info){
-   const support=info||{link:'',qris:''},link=$('tipSupportLink'),box=$('tipQrisBox'),image=$('tipQrisImage'),open=$('tipQrisOpen'),empty=$('tipSupportEmpty');
+   const support=info||{link:'',qris:'',sociabuzz:''},link=$('tipSupportLink'),social=$('tipSociaBuzzLink'),box=$('tipQrisBox'),image=$('tipQrisImage'),open=$('tipQrisOpen'),empty=$('tipSupportEmpty');
    link.hidden=!support.link;if(support.link)link.href=support.link;else link.removeAttribute('href');
+   social.hidden=!support.sociabuzz;if(support.sociabuzz)social.href=support.sociabuzz;else social.removeAttribute('href');
    box.hidden=!support.qris;if(support.qris){image.src=support.qris;open.href=support.qris}else{image.removeAttribute('src');open.removeAttribute('href')}
-   empty.hidden=!!(support.link||support.qris);if(!empty.hidden)empty.textContent='Kreator ini belum memasang Saweria atau QRIS.';
+   empty.hidden=!!(support.link||support.sociabuzz||support.qris);if(!empty.hidden)empty.textContent='Kreator ini belum memasang Saweria, SociaBuzz atau QRIS.';
   }
   async function loadTipRecipientSupport(handle){
    const token=++tipSupportRequest;renderTipSupport({link:'',qris:''});
