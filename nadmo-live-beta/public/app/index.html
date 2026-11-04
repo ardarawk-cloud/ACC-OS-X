@@ -4193,7 +4193,7 @@ body.live-immersive #watch #liveRestReminder{
   }catch(e){$('socialMediaStatus').textContent='Penyimpanan galeri belum siap.'}
  }
  refreshVideoCapability();
- let activeChatHandle='',chatRefreshTimer=null,chatNotificationTimer=null,chatBusy=false,activeChatPeer=null;
+ let activeChatHandle='',chatRefreshTimer=null,chatNotificationTimer=null,chatBusy=false,activeChatPeer=null,chatDraft=null,chatPinned=false,chatMuted=false;
  function messageTime(value,full=false){
   if(!value)return '';
   const date=new Date(value),today=new Date();
@@ -4276,7 +4276,8 @@ body.live-immersive #watch #liveRestReminder{
    const threads=threadsData.threads||[];
    for(const item of threads){
     const row=document.createElement('div');
-    row.className='message-chat-row'+(item.unread?' has-unread':'');
+    row.className='message-chat-row'+(item.unread?' has-unread':'')+(item.pinned?' is-pinned':'');
+    row.dataset.search=[item.name,item.handle,item.lastText].join(' ').toLocaleLowerCase('id-ID');
     row.setAttribute('aria-label','Buka percakapan dengan '+(item.name||item.handle));
     row.tabIndex=0;row.setAttribute('role','button');
     const person=document.createElement('button');person.type='button';person.className='message-profile-tap';
@@ -4290,7 +4291,9 @@ body.live-immersive #watch #liveRestReminder{
     name.onclick=event=>{event.stopPropagation();openCreatorProfile(item.handle)};
     const last=document.createElement('span');last.className='message-chat-last';
     last.textContent=item.lastText?(item.lastFromMe?'Kamu: ':'')+item.lastText:'Mulai mengobrol';
-    content.append(name,last);row.append(content);
+    content.append(name,last);
+    if(item.pinned||item.muted){const flags=document.createElement('span');flags.className='message-chat-flags';flags.textContent=(item.pinned?'PIN ':'')+(item.muted?'BISU':'');content.append(flags)}
+    row.append(content);
     const aside=document.createElement('span');aside.className='message-chat-aside';
     const when=document.createElement('span');when.className='message-chat-time';when.textContent=messageTime(item.updatedAt);
     aside.append(when);
@@ -4306,8 +4309,52 @@ body.live-immersive #watch #liveRestReminder{
     box.append(row);
    }
    $('messageInboxEmpty').classList.toggle('hide',threads.length>0||requests.length>0);
+   applyMessageSearch();
    if(!threads.length&&!requests.length)status.textContent='';
   }catch(error){status.textContent=error.message}
+ }
+ function applyMessageSearch(){
+  const query=$('messageSearch').value.trim().toLocaleLowerCase('id-ID');
+  let shown=0;
+  for(const row of $('messageThreads').querySelectorAll('.message-chat-row')){
+   const visible=!query||row.dataset.search.includes(query);
+   row.hidden=!visible;if(visible)shown++;
+  }
+  $('messageSearchEmpty').hidden=!query||shown>0;
+ }
+ $('messageSearch').addEventListener('input',applyMessageSearch);
+ function renderThreadControls(data){
+  chatPinned=data.pinned===true;chatMuted=data.muted===true;
+  $('messagePinThread').textContent=chatPinned?'LEPAS PIN':'PIN PERCAKAPAN';
+  $('messageMuteThread').textContent=chatMuted?'AKTIFKAN SUARA':'BISUKAN';
+ }
+ function resetMessageDraft(){
+  chatDraft=null;$('messageDraftContext').hidden=true;$('messageDraftContext').textContent='';
+  $('messageCancelDraft').hidden=true;$('messageSend').textContent='➤';
+  $('messageBody').placeholder='Tulis pesan...';
+ }
+ function draftMessage(mode,msg){
+  chatDraft={mode,id:msg.id};
+  $('messageDraftContext').hidden=false;
+  $('messageDraftContext').textContent=(mode==='edit'?'EDIT PESAN':'BALAS PESAN')+' · '+(msg.text||'').slice(0,130);
+  $('messageCancelDraft').hidden=false;$('messageSend').textContent=mode==='edit'?'✓':'➤';
+  $('messageBody').placeholder=mode==='edit'?'Perbaiki pesan...':'Tulis balasan...';
+  if(mode==='edit')$('messageBody').value=msg.text||'';
+  $('messageBody').focus();
+ }
+ $('messageCancelDraft').onclick=()=>{resetMessageDraft();$('messageBody').value=''};
+ async function changeMessage(id,scope,text){
+  if(chatBusy||!activeChatHandle)return;
+  chatBusy=true;$('messageSend').disabled=true;
+  try{
+   const route=scope==='edit'?'/api/messages/edit':'/api/messages/delete';
+   const body={handle:activeChatHandle,messageId:id,...(scope==='edit'?{text}:{scope})};
+   await accountRequest(route,'POST',body);
+   if(scope==='edit'){resetMessageDraft();$('messageBody').value=''}
+   $('messageConversationStatus').textContent=scope==='edit'?'Pesan diperbarui.':scope==='me'?'Pesan disembunyikan hanya untukmu.':'Pesan ditarik dari percakapan.';
+   await refreshConversation();
+  }catch(error){$('messageConversationStatus').textContent=error.message}
+  finally{chatBusy=false;$('messageSend').disabled=false}
  }
  async function openMessages(handle,name,avatarVersion=0){
   if(!activeAccount)return;
@@ -4324,6 +4371,9 @@ body.live-immersive #watch #liveRestReminder{
    $('messageConversation').classList.remove('hide');
    $('messageInboxMain').classList.add('hide');
    $('messageNewToggle').hidden=true;
+   resetMessageDraft();
+   $('messageThreadTools').hidden=true;$('messageThreadMenu').setAttribute('aria-expanded','false');
+   renderThreadControls(data);
    renderConversation(data.messages||[]);
    if(pendingSocialShare){$('messageBody').value=pendingSocialShare;pendingSocialShare=''}
    if(chatRefreshTimer)clearInterval(chatRefreshTimer);
@@ -4343,17 +4393,55 @@ body.live-immersive #watch #liveRestReminder{
   }
  }
  function renderConversation(messages){
-  const node=$('messageBubbles'),bottom=node.scrollTop+node.clientHeight>=node.scrollHeight-50;
+  const node=$('messageBubbles'),bottom=node.scrollTop+node.clientHeight>=node.scrollHeight-60;
   node.replaceChildren();
   for(const msg of messages){
+   const mine=msg.fromHandle===activeAccount?.handle;
    const bubble=document.createElement('div');
-   bubble.className='message-bubble'+(msg.fromHandle===activeAccount?.handle?' mine':'');
-   const text=document.createElement('span');text.textContent=msg.text;
-   const time=document.createElement('small');time.className='message-bubble-time';time.textContent=messageTime(msg.createdAt,true);
-   bubble.append(text,time);node.append(bubble);
+   bubble.className='message-bubble'+(mine?' mine':'')+(msg.deletedForEveryone?' message-bubble-deleted':'');
+   if(msg.replyTo&&!msg.deletedForEveryone){
+    const quote=document.createElement('span');quote.className='message-bubble-quote';
+    quote.textContent=(msg.replyTo.fromHandle||'')+': '+(msg.replyTo.text||'');bubble.append(quote);
+   }
+   const body=document.createElement('span');
+   body.textContent=msg.deletedForEveryone?'Pesan telah dihapus':msg.text;
+   bubble.append(body);
+   const meta=document.createElement('div');meta.className='message-bubble-meta';
+   const time=document.createElement('small');time.className='message-bubble-time';
+   time.textContent=messageTime(msg.createdAt,true)+(msg.editedAt?' · diedit':'');
+   meta.append(time);
+   if(!msg.deletedForEveryone){
+    const menu=document.createElement('button');menu.type='button';
+    menu.className='message-bubble-more';menu.textContent='⋯';
+    menu.setAttribute('aria-label','Opsi pesan');menu.setAttribute('aria-expanded','false');
+    const actions=document.createElement('div');actions.className='message-bubble-actions';actions.hidden=true;
+    function option(label,action,danger=false){
+     const btn=document.createElement('button');btn.type='button';btn.textContent=label;
+     if(danger)btn.className='danger';
+     btn.onclick=async e=>{e.stopPropagation();actions.hidden=true;menu.setAttribute('aria-expanded','false');await action()};
+     actions.append(btn);
+    }
+    option('BALAS',()=>draftMessage('reply',msg));
+    option('SALIN',async()=>{
+     try{await navigator.clipboard.writeText(msg.text);$('messageConversationStatus').textContent='Pesan disalin.'}
+     catch{$('messageConversationStatus').textContent='Salin teks secara manual.'}
+    });
+    if(mine&&Date.now()-Number(msg.createdAt)<=15*60000)option('EDIT',()=>draftMessage('edit',msg));
+    option('HAPUS UNTUK SAYA',async()=>{
+     if(confirm('Hapus pesan ini hanya dari tampilan akunmu?'))await changeMessage(msg.id,'me');
+    },true);
+    if(mine&&Date.now()-Number(msg.createdAt)<=86400000)option('HAPUS UNTUK SEMUA',async()=>{
+     if(confirm('Tarik pesan ini untuk pengirim dan penerima? Penerima mungkin sudah membacanya.'))await changeMessage(msg.id,'everyone');
+    },true);
+    menu.onclick=e=>{e.stopPropagation();actions.hidden=!actions.hidden;menu.setAttribute('aria-expanded',String(!actions.hidden))};
+    bubble.addEventListener('contextmenu',e=>{e.preventDefault();actions.hidden=false;menu.setAttribute('aria-expanded','true')});
+    meta.append(menu);bubble.append(meta,actions);
+   }else bubble.append(meta);
+   node.append(bubble);
   }
   if(!messages.length){
-   const empty=document.createElement('p');empty.className='message-empty';empty.textContent='Mulai obrolan dengan pesan pertama.';node.append(empty);
+   const empty=document.createElement('p');empty.className='message-empty';
+   empty.textContent='Belum ada pesan yang terlihat. Kamu bisa memulai percakapan lagi.';node.append(empty);
   }
   if(bottom)node.scrollTop=node.scrollHeight;
  }
@@ -4364,12 +4452,14 @@ body.live-immersive #watch #liveRestReminder{
    const data=await accountRequest('/api/messages/thread/'+encodeURIComponent(handle));
    if(handle!==activeChatHandle)return;
    renderConversation(data.messages||[]);
+   renderThreadControls(data);
    const count=await accountRequest('/api/messages/threads');
    setUnreadBadge(count.totalUnread||0);
   }catch(error){$('messageConversationStatus').textContent=error.message}
  }
  function closeMessages(){
   activeChatHandle='';activeChatPeer=null;
+  resetMessageDraft();$('messageThreadTools').hidden=true;
   if(chatRefreshTimer){clearInterval(chatRefreshTimer);chatRefreshTimer=null}
   $('messageConversation').classList.add('hide');
   $('messageInboxMain').classList.remove('hide');
@@ -4377,6 +4467,28 @@ body.live-immersive #watch #liveRestReminder{
   $('messageConversationStatus').textContent='';
   loadMessageInbox();
  }
+ $('messageThreadMenu').onclick=()=>{
+  const tools=$('messageThreadTools');tools.hidden=!tools.hidden;
+  $('messageThreadMenu').setAttribute('aria-expanded',String(!tools.hidden));
+ };
+ $('messagePinThread').onclick=async()=>{
+  if(!activeChatHandle)return;
+  try{await accountRequest('/api/messages/pin','POST',{handle:activeChatHandle,enabled:!chatPinned});
+   chatPinned=!chatPinned;renderThreadControls({pinned:chatPinned,muted:chatMuted});
+  }catch(e){$('messageConversationStatus').textContent=e.message}
+ };
+ $('messageMuteThread').onclick=async()=>{
+  if(!activeChatHandle)return;
+  try{await accountRequest('/api/messages/mute','POST',{handle:activeChatHandle,enabled:!chatMuted});
+   chatMuted=!chatMuted;renderThreadControls({pinned:chatPinned,muted:chatMuted});
+  }catch(e){$('messageConversationStatus').textContent=e.message}
+ };
+ $('messageClearThread').onclick=async()=>{
+  if(!activeChatHandle||!confirm('Hapus seluruh riwayat chat dari akunmu saja? Riwayat kontak tetap ada.'))return;
+  try{await accountRequest('/api/messages/clear','POST',{handle:activeChatHandle});closeMessages();await refreshMessageBadge();
+   $('messageInboxStatus').textContent='Chat dihapus dari akunmu. Kontak tidak terpengaruh.';
+  }catch(e){$('messageConversationStatus').textContent=e.message}
+ };
  $('messageBack').onclick=closeMessages;
  $('messageNewToggle').onclick=()=>{
   if(!activeAccount){show('authPage');return}
@@ -4408,10 +4520,13 @@ body.live-immersive #watch #liveRestReminder{
  $('messageSend').onclick=async()=>{
   const text=$('messageBody').value.trim();
   if(!activeChatHandle||!text||chatBusy)return;
+  if(chatDraft?.mode==='edit'){await changeMessage(chatDraft.id,'edit',text);return}
   chatBusy=true;$('messageSend').disabled=true;
   try{
-   await accountRequest('/api/messages/send','POST',{handle:activeChatHandle,text});
-   $('messageBody').value='';
+   await accountRequest('/api/messages/send','POST',{
+    handle:activeChatHandle,text,...(chatDraft?.mode==='reply'?{replyTo:chatDraft.id}:{})
+   });
+   $('messageBody').value='';resetMessageDraft();
    await refreshConversation();
   }catch(error){$('messageConversationStatus').textContent=error.message}
   finally{chatBusy=false;$('messageSend').disabled=false}
