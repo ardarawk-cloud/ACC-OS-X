@@ -1,0 +1,34 @@
+name: NADMO LIVE MOSHI Messages v2 QA
+on:
+  push:
+    branches: ['feat/nadmo-live-moshi-messages-v2-20261105']
+  pull_request:
+    paths:
+      - 'nadmo-live-beta/account.mjs'
+      - 'nadmo-live-beta/messages-v2.mjs'
+      - 'nadmo-live-beta/public/app/index.html'
+      - 'nadmo-live-beta/qa/moshi-messages-v2.test.mjs'
+      - '.github/workflows/nadmo-live-moshi-v2-qa.yml'
+permissions:
+  contents: read
+jobs:
+  messages-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Strict JavaScript syntax
+        run: |
+          node --check nadmo-live-beta/messages-v2.mjs
+          node --check nadmo-live-beta/account.mjs
+          node --check nadmo-live-beta/worker.mjs
+          node -e "const fs=require('fs'),vm=require('vm');let s=fs.readFileSync('nadmo-live-beta/public/app/index.html','utf8');let a=s.indexOf('<script>'),b=s.indexOf('</script>',a);if(a<0||b<a)throw Error('inline script missing');new vm.Script(s.slice(a+8,b));console.log('Inline browser JS PASS')"
+      - name: Account and messaging regressions
+        run: node --test nadmo-live-beta/qa/moshi-messages-v2.test.mjs
+      - name: Existing messaging UX protections
+        run: |
+          node --check nadmo-live-beta/qa/moshi-chat-mobile-e2e.cjs
+          node --check nadmo-live-beta/qa/moshi-chat-modern-e2e.mjs
