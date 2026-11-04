@@ -1,0 +1,22 @@
+name: NADMO LIVE SociaBuzz v435 Production Smoke
+on:
+  push:
+    branches:
+      - 'feat/nadmo-live-sociabuzz-support-v434-20261105'
+    paths:
+      - 'nadmo-live-beta/qa/sociabuzz-v435-production-smoke.mjs'
+      - '.github/workflows/nadmo-live-sociabuzz-v435-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sociabuzz-provider-link:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test live provider link with disposable QA host and auto cleanup
+        run: node nadmo-live-beta/qa/sociabuzz-v435-production-smoke.mjs
