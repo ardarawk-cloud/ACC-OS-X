@@ -1,0 +1,65 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NADMO LIVE • Verified Support Overlay</title>
+<style>
+:root{color-scheme:dark;background:transparent}
+*{box-sizing:border-box}body{margin:0;background:transparent;overflow:hidden;font:800 18px/1.3 system-ui,Arial,sans-serif;color:#fff}
+#alert[hidden],#status[hidden]{display:none!important}
+#alert{position:fixed;top:4vh;left:50%;transform:translateX(-50%);width:min(94vw,560px);border:2px solid #6bf4ff;border-radius:16px;background:#0a1022eb;box-shadow:0 0 35px #4de7ff58,0 20px 40px #000a;padding:18px 24px;text-align:center;animation:show .28s ease-out}
+#alert[data-style=slide]{animation:slide .25s ease-out}#alert[data-style=minimal]{animation:none;border-color:#fff;background:#111e}
+#alert strong{display:block;color:#72efff;overflow-wrap:anywhere;font-size:clamp(18px,4vw,30px)}
+#alert .amount{font-size:clamp(15px,3vw,25px);color:#f69bdf}
+#alert p{font-weight:500;overflow-wrap:anywhere;white-space:pre-wrap}
+#status{position:fixed;bottom:2vh;left:2vw;font:11px system-ui;color:#afb6b9;opacity:.6}
+@keyframes show{from{opacity:0;transform:translate(-50%,-10px) scale(.92)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes slide{from{opacity:0;transform:translate(-50%,-30px)}to{opacity:1;transform:translate(-50%,0)}}
+</style></head><body><div id="alert" role="status" aria-live="polite" hidden><strong id="name"></strong><div id="amount" class="amount"></div><p id="message"></p></div><small id="status" hidden>OFFLINE</small>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),param=new URLSearchParams(location.search);
+const handle=(param.get('handle')||'').trim().replace(/^@/,'').toLowerCase();
+const seen=new Set(),queue=[];let ready=false,playing=false,seconds=6,style='pulse',sound='off',time=0,abort=null,failures=0;
+const valid=/^[a-z][a-z0-9_]{2,23}$/.test(handle);
+if(!valid){$('status').hidden=false;$('status').textContent='Invalid host handle';return}
+function chime(){
+ if(sound==='off')return;
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  const ctx=window.__nadmoAudioContext||(window.__nadmoAudioContext=new C());
+  if(ctx.state==='suspended')return;
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.type='sine';osc.frequency.setValueAtTime(sound==='soft'?540:740,ctx.currentTime);
+  gain.gain.setValueAtTime(.001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.07,ctx.currentTime+.035);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.35);
+  osc.connect(gain).connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.37);
+ }catch(e){}
+}
+const currency=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
+function next(){
+ if(playing||queue.length===0)return;
+ playing=true;const event=queue.shift();
+ $('name').textContent=event.supporterName||'Pendukung';
+ $('amount').textContent=Number.isSafeInteger(event.amount)?currency(event.amount):'';
+ $('message').textContent=event.message||'';
+ $('alert').dataset.style=style;$('alert').hidden=false;chime();
+ setTimeout(()=>{$('alert').hidden=true;playing=false;next()},Math.max(4,Math.min(8,seconds))*1000);
+}
+function receive(e){
+ if(!e||e.verified!==true||e.verificationStatus!=='provider_authenticated'||seen.has(e.eventId))return;
+ seen.add(e.eventId);queue.push(e);if(queue.length>20)queue.shift();next();
+}
+async function poll(){
+ try{
+  const res=await fetch('/api/support/wall?handle='+encodeURIComponent(handle),{cache:'no-store'});
+  if(!res.ok)throw Error('WALL_'+res.status);
+  const data=await res.json();if(!data.ok||!Array.isArray(data.events))throw Error('BAD_RESPONSE');
+  seconds=Number(data.appearance?.durationSeconds)||6;style=data.appearance?.animation||'pulse';sound=data.appearance?.sound||'off';
+  if(!ready){
+   for(const e of data.events)if(e.eventId)seen.add(e.eventId);
+   ready=true;
+  }else{for(const e of data.events.slice().reverse())receive(e)}
+  failures=0;$('status').hidden=true;
+ }catch(e){failures++;$('status').textContent='SUPPORT OVERLAY • RETRY';$('status').hidden=failures<2}
+ finally{setTimeout(poll,Math.min(15000,2500*Math.max(1,failures)))}
+}
+poll();
+})();
+</script></body></html>

@@ -45,7 +45,7 @@ async function adminPrincipal(storage,request,env){
  return oldest?.id===user.id?user:null;
 }
 async function parseJSON(request,max=12000){const len=Number(request.headers.get('content-length')||0);if(len>max)throw Error('TOO_LARGE');const raw=await request.text();if(raw.length>max)throw Error('TOO_LARGE');const data=JSON.parse(raw);if(!data||Array.isArray(data)||typeof data!=='object')throw Error('INVALID');return data}
-const supportMethods=record=>({link:urlOK(record?.supportUrl)||'',qris:clean(record?.supportQrisUrl,700)});
+const supportMethods=(record,prefs={})=>({link:urlOK(record?.supportUrl)||'',qris:clean(record?.supportQrisUrl,700),sociabuzz:urlOK(prefs?.socialBuzzUrl)||''});
 
 export async function subscriptionEndpoint(storage,request,env){
  const u=new URL(request.url),p=u.pathname,method=request.method,now=Date.now();
@@ -53,13 +53,13 @@ export async function subscriptionEndpoint(storage,request,env){
  if(p==='/api/subscription/host'&&method==='GET'){
   const handle=clean(u.searchParams.get('handle'),24).replace(/^@/,'').toLowerCase(),record=await userByHandle(storage,handle);
   if(!record)return fail(404,'Host tidak ditemukan','HOST_NOT_FOUND');
-  return json({ok:true,host:{handle:record.handle,name:record.name},subscription:snapshot(record,now),support:supportMethods(record)});
+  return json({ok:true,host:{handle:record.handle,name:record.name},subscription:snapshot(record,now),support:supportMethods(record,await storage.get('support-prefs:'+record.id))});
  }
 
  if(p==='/api/subscription/me'&&method==='GET'){
   const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
   const record=await storage.get('auth-user:'+user.id),pending=await pendingOrder(storage,record);
-  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env),subscription:snapshot(record,now),support:supportMethods(record),
+  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env),subscription:snapshot(record,now),support:supportMethods(record,await storage.get('support-prefs:'+record.id)),
    pending:pending?{id:pending.id,targetTier:pending.targetTier,price:pending.price,status:pending.status,createdAt:pending.createdAt,graceGranted:pending.graceGranted===true}:null});
  }
 
@@ -68,8 +68,8 @@ export async function subscriptionEndpoint(storage,request,env){
   let body;try{body=await parseJSON(request)}catch{return fail(400,'Data tidak valid','INVALID_INPUT')}
   const handle=clean(body.handle,24).replace(/^@/,'').toLowerCase(),record=await userByHandle(storage,handle);
   if(!record)return fail(404,'Host tidak ditemukan','HOST_NOT_FOUND');
-  const methods=supportMethods(record);if(!methods.link&&!methods.qris)return fail(409,'Host belum memasang Saweria atau QRIS','NO_SUPPORT_METHOD');
-  const before=snapshot(record,now);if(before.locked)return json({ok:false,error:'Batas Support host sudah tercapai',code:'SUPPORT_LIMIT',subscription:before,support:{link:'',qris:''}},409);
+  const methods=supportMethods(record,await storage.get('support-prefs:'+record.id));if(!methods.link&&!methods.qris&&!methods.sociabuzz)return fail(409,'Host belum memasang Saweria, SociaBuzz atau QRIS','NO_SUPPORT_METHOD');
+  const before=snapshot(record,now);if(before.locked)return json({ok:false,error:'Batas Support host sudah tercapai',code:'SUPPORT_LIMIT',subscription:before,support:{link:'',qris:'',sociabuzz:''}},409);
   const viewer=await getAccount(storage,request);
   if(viewer?.id===record.id)return json({ok:true,allowed:true,counted:false,self:true,subscription:before,support:methods});
   const rawIdentity=viewer?.id?('account:'+viewer.id):('guest:'+clean(request.headers.get('x-nadmo-client-ip')||'unknown',80)+'|'+clean(request.headers.get('user-agent')||'',180));
@@ -88,7 +88,7 @@ export async function subscriptionEndpoint(storage,request,env){
   const supportUrl=body.supportUrl?urlOK(clean(body.supportUrl,500)):'';if(body.supportUrl&&!supportUrl)return fail(400,'Link Saweria/dukungan harus HTTPS yang valid','BAD_SUPPORT_URL');
   const qrisUrl=clean(body.qrisUrl,700);if(qrisUrl&&!mediaOwned(qrisUrl,u.origin,user.id))return fail(400,'QRIS harus berupa gambar yang diupload oleh akun ini','BAD_QRIS_URL');
   record.supportUrl=supportUrl||'';record.supportQrisUrl=qrisUrl||'';record.updatedAt=now;await storage.put('auth-user:'+user.id,record);
-  return json({ok:true,support:supportMethods(record)});
+  return json({ok:true,support:supportMethods(record,await storage.get('support-prefs:'+record.id))});
  }
 
  if(p==='/api/subscription/order'&&method==='POST'){

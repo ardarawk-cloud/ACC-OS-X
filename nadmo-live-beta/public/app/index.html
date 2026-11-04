@@ -2592,6 +2592,12 @@ body.live-immersive #watch #liveRestReminder{
  #radioMiniDock{bottom:20px}
 }
 
+
+/* Universal support v1: viewer-safe display, NEVER fake a payment. */
+#watch #verifiedSupportAlert{position:fixed;z-index:19;pointer-events:none;left:50%;top:clamp(105px,19vh,190px);transform:translateX(-50%);width:min(calc(100vw - 48px),470px);background:#10172ced;border:2px solid var(--neon);border-radius:15px;padding:15px 20px;box-shadow:0 0 28px #40defd44;color:#f8fbff;text-align:center;overflow-wrap:anywhere}
+#verifiedSupportAlert[hidden]{display:none!important}#verifiedSupportAlert b{display:block;color:#72f5ff;font-size:clamp(16px,4vw,23px)}#verifiedSupportAlert p{font-size:13px;font-weight:500;margin:6px 0}#verifiedSupportAlert em{display:block;color:#ffb1e0;font-style:normal;font-weight:900}
+#verifiedSupportAlert[data-demo=true]{border-style:dashed;border-color:#ffb1e0}
+@media(prefers-reduced-motion:reduce){#verifiedSupportAlert{animation:none!important}}
 </style></head>
 <body>
 <div class="app">
@@ -2643,6 +2649,7 @@ body.live-immersive #watch #liveRestReminder{
 <button type="button" data-live-mode="gaming"><span class="mode-icon">▣</span>GAMING</button>
 <button type="button" data-live-mode="studio"><span class="mode-icon">⌘</span>STUDIO PC</button></div>
 <div class="mode-details" id="modeDetails" hidden></div>
+  <div class="actions" style="margin:9px 0 13px"><a class="btn secondary" id="hostSupportCenterEntry" href="/support-center/" style="text-decoration:none;display:flex;justify-content:center;align-items:center;width:100%;min-height:44px">SUPPORT CENTER · SAWERIA / QRIS / SOCIABUZZ</a></div>
 <div id="gameSetup" class="panel hide"><label for="gameName">PILIH GAME</label><select class="field" id="gameName"><option>Mobile Legends</option><option>Free Fire</option><option>PUBG Mobile</option><option>Honor of Kings</option><option>Roblox</option><option>Minecraft</option><option>Lainnya</option></select>
  <label for="gameStreamQuality">KUALITAS VIDEO GAME</label><select class="field" id="gameStreamQuality"><option value="stable" selected>STABIL — 720p / 18 FPS (disarankan)</option><option value="low">HEMAT DATA — 640p / 15 FPS</option><option value="quality">DETAIL — 960p / 20 FPS (internet cepat)</option></select><p class="profile-note">Jika video dan suara tersendat, coba HEMAT DATA pada LIVE berikutnya. Kualitas bisa dipilih sebelum mulai siaran.</p><div id="gameOverlayPreview" aria-label="Pratinjau posisi kamera saat bermain">
   <div class="game-canvas-note">LAYAR GAME<br><small>Android meminta izin sebelum siaran</small></div>
@@ -2761,6 +2768,7 @@ body.live-immersive #watch #liveRestReminder{
      <div id="tipRecipientOptions" class="filterstrip" aria-label="Penerima dukungan"></div>
      <p>Dukungan pada mode Beta dikirim langsung ke metode pembayaran milik kreator.</p>
      <a id="tipSupportLink" class="btn support-open" href="#" rel="nofollow ugc noreferrer" hidden>BUKA SAWERIA / LINK DUKUNGAN ↗</a>
+     <a id="tipSociaBuzzLink" class="btn support-open" rel="nofollow ugc noreferrer" hidden>BUKA SOCIABUZZ / DUKUNGAN ↗</a>
      <div id="tipQrisBox" hidden><b>QRIS HOST</b><img id="tipQrisImage" alt="QRIS milik host"><a id="tipQrisOpen" class="btn secondary support-open" href="#" rel="nofollow ugc noreferrer">BUKA QRIS ↗</a></div>
      <p id="tipSupportEmpty">Memeriksa metode dukungan host...</p>
      <p class="deck">Pembayaran terjadi langsung antara penonton dan kreator. NADMO LIVE tidak memproses, menahan, atau memotong dana pada mode Beta ini.</p>
@@ -4615,10 +4623,11 @@ body.live-immersive #watch #liveRestReminder{
    }catch(e){hostSupportDraft={link:'',qris:''};renderSupportSetup()}
   }
   function renderTipSupport(info){
-   const support=info||{link:'',qris:''},link=$('tipSupportLink'),box=$('tipQrisBox'),image=$('tipQrisImage'),open=$('tipQrisOpen'),empty=$('tipSupportEmpty');
+   const support=info||{link:'',qris:'',sociabuzz:''},link=$('tipSupportLink'),social=$('tipSociaBuzzLink'),box=$('tipQrisBox'),image=$('tipQrisImage'),open=$('tipQrisOpen'),empty=$('tipSupportEmpty');
    link.hidden=!support.link;if(support.link)link.href=support.link;else link.removeAttribute('href');
+   social.hidden=!support.sociabuzz;if(support.sociabuzz)social.href=support.sociabuzz;else social.removeAttribute('href');
    box.hidden=!support.qris;if(support.qris){image.src=support.qris;open.href=support.qris}else{image.removeAttribute('src');open.removeAttribute('href')}
-   empty.hidden=!!(support.link||support.qris);if(!empty.hidden)empty.textContent='Kreator ini belum memasang Saweria atau QRIS.';
+   empty.hidden=!!(support.link||support.sociabuzz||support.qris);if(!empty.hidden)empty.textContent='Kreator ini belum memasang Saweria, SociaBuzz atau QRIS.';
   }
   async function loadTipRecipientSupport(handle){
    const token=++tipSupportRequest;renderTipSupport({link:'',qris:''});
@@ -6138,7 +6147,37 @@ body.live-immersive #watch #liveRestReminder{
    }
   },attempt===0?9000:12000);
  }
+
+ const verifiedSupportQueue=[],verifiedSupportSeen=new Set();let supportPopupBusy=false;
+ function showNextVerifiedSupport(){
+  if(supportPopupBusy||!verifiedSupportQueue.length)return;
+  const event=verifiedSupportQueue.shift();supportPopupBusy=true;
+  let node=document.getElementById('verifiedSupportAlert');
+  if(!node){
+   node=document.createElement('div');node.id='verifiedSupportAlert';node.hidden=true;
+   node.setAttribute('role','status');node.setAttribute('aria-live','polite');
+   const w=document.getElementById('watch');if(!w){supportPopupBusy=false;return}w.append(node);
+  }
+  node.replaceChildren();node.dataset.demo=String(event.demo===true);
+  const name=document.createElement('b'),amount=document.createElement('em'),message=document.createElement('p');
+  name.textContent=event.demo===true?'DEMO · BUKAN PEMBAYARAN':event.supporterName||'Pendukung';
+  if(event.demo===true)amount.textContent='SIMULASI NOTIFIKASI';
+  else amount.textContent=Number.isSafeInteger(event.amount)?new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(event.amount):'Dukungan terverifikasi';
+  message.textContent=event.message||'Terima kasih atas dukungannya!';
+  node.append(name,amount,message);node.hidden=false;
+  const ms=Math.max(4,Math.min(8,Number(event.alertConfig?.durationSeconds)||6))*1000;
+  setTimeout(()=>{node.hidden=true;supportPopupBusy=false;showNextVerifiedSupport()},ms);
+ }
+ function enqueueVerifiedSupport(event){
+  if(!event||(!event.demo&&!(event.verified===true&&event.verificationStatus==='provider_authenticated')))return;
+  const id=String(event.eventId||'');if(!id||verifiedSupportSeen.has(id))return;
+  verifiedSupportSeen.add(id);if(verifiedSupportSeen.size>500){const oldest=verifiedSupportSeen.values().next().value;verifiedSupportSeen.delete(oldest)}
+  verifiedSupportQueue.push(event);if(verifiedSupportQueue.length>20)verifiedSupportQueue.shift();
+  showNextVerifiedSupport();
+ }
+
  async function incoming(m){
+  if(m?.type==='support-alert'){enqueueVerifiedSupport(m.event);return}
   if(m.type==='created'){stageLayout=[];stageGuestsList=[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();refreshGuestButtons();renderStageGuests();$('reportLive').hidden=true;$('hostModeration').hidden=false;mutedViewerIds.clear();mirrorBroadcast=false;closeLiveSheets();$('viewerTools').hidden=true;stopRetry();currentRoom=m.id;selfId=m.selfId;host=true;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=true;activeAccessMode='public';$('hostAccessPanel').hidden=false;$('hostAccessLabel').textContent='PUBLIC / GRATIS';$('restorePublic').classList.add('hide');resumeToken=m.resumeToken||'';roomPassword='';$('net').textContent='SERVER ONLINE';$('hostControls').hidden=false;$('afkHint').hidden=false;$('restartRoom').classList.add('hide');notice('SIARAN AKTIF • Bagikan kode room '+m.id,'liveState');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle($('title').value.trim());$('watchState').textContent='Siaran aktif';clearWatchWarning();$('remote').muted=true;$('remote').srcObject=localStream;show('watch');applyMirroring();$('giftQuick').hidden=true;startHostSubscriptionWatch();}
   if(m.type==='joined'){if(m.facecam)applyGameFaceLayout(m.facecam);stageLayout=normalizeLayout(m.layout);stageGuestsList=Array.isArray(m.guests)?m.guests:[];guestRequests.clear();guestRemoteStreams.clear();readyGuestIds.clear();guestOnStage=false;guestPending=false;refreshGuestButtons();renderStageGuests();$('reportLive').hidden=false;$('hostModeration').hidden=true;closeLiveSheets();$('viewerTools').hidden=false;stopRetry();currentRoom=m.id;selfId=m.selfId;host=false;activateLiveClock(m.id,m.createdAt);$('viewerTipPanel').hidden=false;$('hostAccessPanel').hidden=true;resumeToken='';$('net').textContent='SERVER ONLINE';if(peer){peer.close();peer=null}pendingIce.clear();$('remote').muted=false;mirrorBroadcast=m.mirrorBroadcast===true;$('hostControls').hidden=true;$('afkHint').hidden=true;$('restartRoom').classList.add('hide');setStreamerName($('watchTitle'),m.hostHandle?'@'+m.hostHandle:(m.hostName||'Host'));updateHostCard(m);setRoomSubtitle(m.title);$('watchState').textContent='Menghubungkan video...';clearWatchWarning();show('watch');applyMirroring();$('giftQuick').hidden=false;checkViewerFrame(m.id)}
   if(m.type==='resumed'){stageLayout=normalizeLayout(m.layout);refreshGuestButtons();renderStageGuests();

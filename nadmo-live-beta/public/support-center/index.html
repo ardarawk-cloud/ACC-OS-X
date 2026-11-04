@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NADMO LIVE · Support Center</title>
+<style>
+:root{color-scheme:dark;--ink:#ecf7f6;--dim:#a5bab6;--bg:#090f13;--card:#111c22;--line:#42636d;--neon:#70eff2;--pink:#ff6cd8}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#1e234c,#090f13 68%);color:var(--ink);font:14px/1.5 system-ui,Arial,sans-serif}
+main{width:min(770px,100%);padding:20px 16px 85px;margin:auto}
+h1{font-size:clamp(24px,6vw,34px);margin:5px 0}h2{font-size:17px;margin:0 0 10px;color:var(--neon)}
+header{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--line);padding:0 0 13px}
+a{color:var(--neon)}p{color:var(--dim);margin:7px 0 14px}
+.card{background:#101720ed;border:1px solid var(--line);padding:16px;border-radius:14px;margin:12px 0;box-shadow:0 7px 27px #0004}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+@media(max-width:510px){.grid{grid-template-columns:1fr}}
+label{display:block;font-weight:700;font-size:12px;margin:12px 0 5px}
+input,select{width:100%;min-height:43px;background:#070f16;color:#efffff;border:1px solid #596c7b;border-radius:9px;padding:9px}
+input[type=checkbox]{min-height:0;width:19px;height:19px;accent-color:var(--neon)}
+button,.button{appearance:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:11px 13px;min-height:42px;background:var(--neon);color:#09141a;border:0;border-radius:9px;font-weight:800;text-decoration:none;text-align:center}
+button.secondary,.button.secondary{color:var(--ink);border:1px solid var(--line);background:#1a2836}
+button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.switch{display:flex;align-items:center;gap:10px;min-height:38px;margin:6px 0}
+.switch label{margin:0;font-size:13px}
+.pill{font-size:11px;padding:2px 9px;border:1px solid var(--line);border-radius:20px;color:var(--dim)}
+#notice{min-height:22px;color:var(--neon)}#qrisPreview{max-width:260px;max-height:330px;width:auto;height:auto;object-fit:contain;margin:9px auto;display:block;background:#fff;padding:6px}
+#qrisPreview[hidden],#loginNeeded[hidden],#appContent[hidden],#demoPreview[hidden]{display:none!important}
+#wall{display:grid;gap:7px}#wall article{padding:10px;background:#0b1520;border:1px solid #263949;border-radius:8px}
+#wall article strong{color:var(--pink)}small{color:var(--dim)}.demo{border:2px dashed var(--pink);border-radius:10px;padding:13px}
+</style></head>
+<body><main>
+<header><div><small>NADMO LIVE / HOST STUDIO</small><h1>SUPPORT CENTER</h1></div><a class="button secondary" href="/app/">KEMBALI</a></header>
+<div id="notice" role="status" aria-live="polite">Memuat pengaturan host...</div>
+<section id="loginNeeded" class="card" hidden>Masuk ke akun NADMO LIVE yang sudah ada untuk menyimpan pengaturan host. <a href="/app/">Buka NADMO LIVE</a></section>
+<div id="appContent" hidden>
+<section class="card">
+<h2>Metode dukungan milik host</h2><p>Setiap pembayaran melalui Saweria/SociaBuzz/QRIS tetap masuk langsung ke penerima masing-masing. Langganan NADMO adalah sistem terpisah.</p>
+<div class="grid">
+<div><label for="saweria">Link Saweria</label><input id="saweria" type="url" inputmode="url" maxlength="500" placeholder="https://saweria.co/username"><small id="saweriaState"></small></div>
+<div><label for="sociabuzz">Link SociaBuzz TRIBE</label><input id="sociabuzz" type="url" inputmode="url" maxlength="500" placeholder="https://sociabuzz.com/username/tribe"><small id="sociabuzzState"></small></div>
+</div><label>QRIS Host (tersimpan sebelumnya tetap dipakai)</label><img id="qrisPreview" hidden alt="QRIS host">
+<div class="actions"><label class="button secondary" for="qrisFile" style="margin:0">UPLOAD / GANTI QRIS</label><input id="qrisFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><button class="secondary" id="removeQr">HAPUS QRIS</button></div>
+<p>QRIS statis tanpa callback terverifikasi tidak menghasilkan alert pembayaran sukses otomatis.</p>
+</section>
+<section class="card">
+<h2>Universal Support Alert</h2>
+<div class="switch"><input id="enabled" type="checkbox"><label for="enabled">Aktifkan alert dukungan terverifikasi</label></div>
+<p>Pilih provider. Provider tanpa koneksi autentikasi resmi tetap bisa dipakai sebagai link pembayaran, tetapi alert otomatisnya akan nonaktif.</p>
+<div class="grid"><div class="switch"><input id="psaweria" type="checkbox"><label for="psaweria">Saweria</label></div><div class="switch"><input id="psociabuzz" type="checkbox"><label for="psociabuzz">SociaBuzz</label></div><div class="switch"><input id="pqris" type="checkbox"><label for="pqris">QRIS / DANA</label></div></div>
+<div class="grid">
+<div><label for="animation">Animasi</label><select id="animation"><option value="pulse">PULSE</option><option value="slide">SLIDE</option><option value="minimal">MINIMAL</option></select></div>
+<div><label for="sound">Suara</label><select id="sound"><option value="off">TANPA SUARA</option><option value="chime">CHIME</option><option value="soft">SOFT</option></select></div>
+<div><label for="duration">Durasi alert</label><select id="duration"><option value="4">4 detik</option><option value="5">5 detik</option><option value="6">6 detik</option><option value="7">7 detik</option><option value="8">8 detik</option></select></div>
+</div>
+<h2 style="margin-top:19px">Privasi pendukung</h2>
+<div class="switch"><input id="showName" type="checkbox"><label for="showName">Tampilkan nama (jika diizinkan)</label></div>
+<div class="switch"><input id="showAmount" type="checkbox"><label for="showAmount">Tampilkan nominal</label></div>
+<div class="switch"><input id="showMessage" type="checkbox"><label for="showMessage">Tampilkan pesan yang aman</label></div>
+<div class="actions"><button id="save">SIMPAN PENGATURAN</button><button class="secondary" id="demo">TEST ALERT · DEMO</button></div>
+<div id="demoPreview" class="demo" hidden><strong>DEMO — BUKAN PEMBAYARAN</strong><p id="demoText"></p></div>
+</section>
+<section class="card">
+<h2>Support Wall</h2><div class="actions"><button id="refreshWall" class="secondary">MUAT RIWAYAT</button><button id="copyOverlay" class="secondary">SALIN LINK OVERLAY</button></div>
+<p id="wallMeta">Riwayat hanya berisi event provider terautentikasi. Tidak ada email pembayar atau transaksi DEMO.</p><div id="wall" aria-live="polite"></div>
+</section>
+</div>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);let state={support:null,config:null,host:null},busy=false;
+async function api(path,body,method=body?'POST':'GET'){
+ const res=await fetch(path,{method,credentials:'include',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+ let payload;try{payload=await res.json()}catch{throw Error('Respon tidak valid dari server')}
+ if(!res.ok||!payload.ok)throw Error(payload.code||payload.error||'REQUEST_FAILED');
+ return payload;
+}
+function notice(text){$('notice').textContent=text}
+function checked(id,value){$(id).checked=value===true}
+function toggle(enabled){for(const id of ['save','demo','removeQr','qrisFile'])$(id).disabled=!enabled}
+async function load(){
+ try{
+  const data=await api('/api/support/me');state.config=data.config;state.support=data.links;state.host=data.host;
+  $('loginNeeded').hidden=true;$('appContent').hidden=false;
+  $('saweria').value=data.links.saweria||'';$('sociabuzz').value=data.links.sociabuzz||'';
+  const qr=data.links.qris;$('qrisPreview').hidden=!qr;if(qr)$('qrisPreview').src=qr;
+  $('saweriaState').textContent=data.providers.saweria.webhookConnected?'Webhook Saweria terhubung':'Link tanpa webhook terverifikasi';
+  $('sociabuzzState').textContent='Alert otomatis belum diaktifkan sampai callback resmi terverifikasi';
+  const c=data.config;
+  checked('enabled',c.alertEnabled);checked('psaweria',c.providers.includes('saweria'));
+  checked('psociabuzz',c.providers.includes('sociabuzz'));checked('pqris',c.providers.includes('dana_qris'));
+  checked('showName',c.showName);checked('showAmount',c.showAmount);checked('showMessage',c.showMessage);
+  $('animation').value=c.animation;$('sound').value=c.sound;$('duration').value=String(c.durationSeconds);
+  notice('Pengaturan host termuat.');await refreshWall();
+ }catch(e){$('loginNeeded').hidden=false;$('appContent').hidden=true;notice('Akun belum terautentikasi: '+e.message)}
+}
+async function save(){
+ if(busy)return;busy=true;toggle(false);notice('Menyimpan ...');
+ try{
+  const providers=[['psaweria','saweria'],['psociabuzz','sociabuzz'],['pqris','dana_qris']].filter(([id])=>$(id).checked).map(x=>x[1]);
+  const settings={providers,alertEnabled:$('enabled').checked,durationSeconds:Number($('duration').value),
+   animation:$('animation').value,sound:$('sound').value,showName:$('showName').checked,
+   showAmount:$('showAmount').checked,showMessage:$('showMessage').checked,socialBuzzUrl:$('sociabuzz').value.trim()};
+  const oldQris=state.support?.qris||'';
+  // Preserve both existing support fields; never silently delete a host's QRIS.
+  const [method,config]=await Promise.all([
+   api('/api/subscription/support-methods',{supportUrl:$('saweria').value.trim(),qrisUrl:oldQris}),
+   api('/api/support/settings',settings)
+  ]);
+  state.support={...state.support,saweria:method.support.link,qris:method.support.qris};
+  state.config=config.config;notice('Tersimpan untuk sesi LIVE berikutnya.');
+ }catch(e){notice('Belum berhasil: '+e.message)}finally{busy=false;toggle(true)}
+}
+async function uploadQr(e){
+ const file=e.target.files?.[0];e.target.value='';if(!file)return;
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size<100||file.size>8*1024*1024){notice('QRIS harus JPG/PNG/WebP maksimal 8 MB.');return}
+ toggle(false);
+ try{
+  const res=await fetch('/api/social/media/upload',{method:'PUT',headers:{'Content-Type':file.type},body:file,credentials:'include',cache:'no-store'});
+  const result=await res.json();if(!res.ok||!result.ok||result.type!=='image')throw Error(result.error||'UPLOAD_FAILED');
+  const saved=await api('/api/subscription/support-methods',{supportUrl:$('saweria').value.trim(),qrisUrl:result.url});
+  state.support={...state.support,saweria:saved.support.link,qris:saved.support.qris};
+  $('qrisPreview').src=result.url;$('qrisPreview').hidden=false;notice('QRIS host diperbarui.');
+ }catch(error){notice('Upload belum berhasil: '+error.message)}finally{toggle(true)}
+}
+async function removeQr(){
+ if(!state.support?.qris)return;
+ try{
+  const saved=await api('/api/subscription/support-methods',{supportUrl:$('saweria').value.trim(),qrisUrl:''});
+  state.support={...state.support,qris:saved.support.qris};
+  $('qrisPreview').hidden=true;$('qrisPreview').removeAttribute('src');notice('QRIS host dilepas dari profil.');
+ }catch(e){notice('Gagal menghapus QRIS: '+e.message)}
+}
+async function demo(){
+ try{
+  const d=await api('/api/support/test-alert',{name:'DEMO Pendukung',message:'Ini simulasi notifikasi, bukan uang masuk.'});
+  $('demoPreview').hidden=false;$('demoText').textContent=d.event.supporterName+' · '+d.event.message;
+  notice('DEMO dibuat tanpa transaksi finansial, tidak masuk Support Wall.');
+ }catch(e){notice('DEMO gagal: '+e.message)}
+}
+async function refreshWall(){
+ if(!state.host?.handle)return;
+ try{
+  const d=await api('/api/support/wall?handle='+encodeURIComponent(state.host.handle));
+  $('wallMeta').textContent=d.verifiedCount+' event terautentikasi dalam riwayat terbaru. Settlement bukan bagian dari perhitungan ini.';
+  $('wall').replaceChildren();
+  if(!d.events.length){const e=document.createElement('p');e.textContent='Belum ada dukungan terautentikasi.';$('wall').append(e)}
+  for(const ev of d.events){
+   const item=document.createElement('article');
+   const label=document.createElement('strong');label.textContent=ev.supporterName+' · '+ev.provider;
+   const amount=document.createElement('div');amount.textContent=ev.amount===null?'Nominal disembunyikan':new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(ev.amount);
+   const msg=document.createElement('p');msg.textContent=ev.message;
+   const date=document.createElement('small');date.textContent=new Date(ev.occurredAt).toLocaleString('id-ID');
+   item.append(label,amount,msg,date);$('wall').append(item);
+  }
+ }catch(e){$('wallMeta').textContent='Belum bisa memuat riwayat: '+e.message}
+}
+$('save').addEventListener('click',save);$('qrisFile').addEventListener('change',uploadQr);
+$('removeQr').addEventListener('click',removeQr);$('demo').addEventListener('click',demo);
+$('refreshWall').addEventListener('click',refreshWall);
+$('copyOverlay').addEventListener('click',async()=>{
+ const u=location.origin+'/overlay/support/?handle='+encodeURIComponent(state.host?.handle||'');
+ try{await navigator.clipboard.writeText(u);notice('Link overlay tersalin. Periksa ketersediaan overlay di perangkat siaran.')}catch(e){notice('Tautan overlay: '+u)}
+});
+load();
+})();
+</script></body></html>
