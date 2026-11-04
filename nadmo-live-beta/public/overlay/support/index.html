@@ -6,7 +6,7 @@ html[data-theme="retro"]{--accent:#ffb9d8;--panel:rgba(48,35,60,.94);--ink:#f8ed
 html[data-theme="electric"]{--accent:#71f3fc;--panel:rgba(11,33,51,.94);--ink:#ddfbff}
 html[data-font="mono"]{--font:"Courier New",monospace}
 html[data-font="editorial"]{--font:Georgia,serif}
-html,data-font="system"{--font:Arial,sans-serif}
+html[data-font="system"]{--font:Arial,sans-serif}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:var(--font)}.wrap{position:fixed;inset:0;display:grid;place-items:start center;pointer-events:none}.alert{margin-top:70px;min-width:360px;max-width:900px;padding:20px 26px;border-radius:18px;background:var(--panel);border:2px solid var(--accent);box-shadow:0 14px 48px rgba(0,0,0,.45);color:var(--ink);text-align:center;opacity:0;transform:translateY(-22px) scale(.97);transition:.28s ease}.alert.show{opacity:1;transform:translateY(0) scale(1)}.donor{font-size:34px;font-weight:900}.amount{font-size:26px;font-weight:800;color:var(--accent);margin-top:5px}.message{font-size:22px;margin-top:10px;line-height:1.35;white-space:pre-wrap}.brand{font-size:12px;letter-spacing:.18em;margin-top:12px;color:#aeb7ae}@media(max-width:700px){.alert{min-width:0;width:88vw}.donor{font-size:26px}.amount{font-size:22px}.message{font-size:18px}}</style></head><body><div class="wrap"><div id="alert" class="alert"><div id="donor" class="donor"></div><div id="amount" class="amount"></div><div id="message" class="message"></div><div class="brand">NADMO LIVE • SUPPORT ALERT</div></div></div><script>
 const q=new URLSearchParams(location.search),token=q.get('token')||'',tts=q.get('tts')==='1';let last='',first=true,timer=null;
 const rupiah=n=>'Rp'+new Intl.NumberFormat('id-ID').format(Number(n)||0);
