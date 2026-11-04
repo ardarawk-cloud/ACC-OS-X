@@ -1,0 +1,25 @@
+name: NADMO LIVE Universal Support QA
+on:
+  pull_request:
+    paths:
+      - 'nadmo-live-beta/support-engine.mjs'
+      - 'nadmo-live-beta/worker.mjs'
+      - 'nadmo-live-beta/qa/universal-support-unit.test.mjs'
+      - 'nadmo-live-beta/public/support-center/**'
+      - '.github/workflows/nadmo-live-universal-support-qa.yml'
+  push:
+    branches:
+      - 'feat/nadmo-live-universal-support-v1-20261105'
+jobs:
+  support-engine:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check nadmo-live-beta/support-engine.mjs
+      - run: node --check nadmo-live-beta/worker.mjs
+      - run: node --test nadmo-live-beta/qa/universal-support-unit.test.mjs
