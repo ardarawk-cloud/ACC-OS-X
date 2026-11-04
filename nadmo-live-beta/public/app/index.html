@@ -2592,6 +2592,29 @@ body.live-immersive #watch #liveRestReminder{
  #radioMiniDock{bottom:20px}
 }
 
+
+/* NADMO MESAGES 2026-11-05 — make controls usable on HP and PC without redesign */
+#messageSearch{width:100%;min-height:46px;border-radius:13px;margin:5px 0 12px}
+#messageSearchEmpty[hidden],#messageThreadTools[hidden],#messageDraftContext[hidden],#messageCancelDraft[hidden],.message-bubble-actions[hidden]{display:none!important}
+#messageThreadMenu{border:0;background:none;color:var(--neon);min-width:44px;min-height:44px;font-size:24px}
+#messageThreadTools{padding:9px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#messageThreadTools button{min-height:43px;padding:9px;background:var(--cbw-253127,#253127);color:#e9f8e8;border:1px solid var(--cbw-556e4f,#556e4f);border-radius:9px;font:700 11px Arial,sans-serif}
+#messageThreadTools button.danger{border-color:#c45a62;color:#ffb7bf}
+.message-chat-row.is-pinned{border-left:3px solid var(--neon);padding-left:9px}
+.message-chat-flags{font-size:11px;color:var(--neon)}
+#messageConversation .message-bubble{position:relative;padding-right:11px}
+.message-bubble-quote{display:block;padding:6px 8px;border-left:3px solid var(--neon);font-size:11px;opacity:.87;margin-bottom:6px;white-space:pre-wrap;overflow-wrap:anywhere}
+.message-bubble-deleted{opacity:.68;font-style:italic}
+.message-bubble-meta{display:flex;align-items:center;justify-content:flex-end;gap:7px}
+.message-bubble-more{border:0;background:transparent;min-width:30px;min-height:29px;color:inherit;opacity:.82;font-size:19px;padding:0 4px}
+.message-bubble-more:focus-visible{outline:2px solid var(--neon)}
+.message-bubble-actions{display:grid;gap:5px;margin-top:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.message-bubble-actions button{background:var(--cbw-1a2c1b,#1a2c1b);color:#f1f7ef;border:1px solid var(--cbw-6c8562,#6c8562);padding:8px 6px;border-radius:7px;font:700 11px Arial,sans-serif;min-height:39px}
+.message-bubble-actions button.danger{color:#ffbec4;border-color:#995665}
+#messageDraftContext{margin:8px 0 0;padding:8px 11px;border-left:3px solid var(--neon);color:#f2f8ee;background:var(--cbw-17201a,#17201a);font:12px/1.5 Arial,sans-serif;overflow-wrap:anywhere}
+#messageCancelDraft{width:43px;height:43px;background:var(--cbw-263927,#263927);color:#ffd4da;border:1px solid #886673}
+#messageSearchEmpty{color:var(--cbw-a5b6a0,#a5b6a0);font:12px Arial;padding:20px;text-align:center}
+@media(max-width:410px){#messageThreadTools{grid-template-columns:repeat(2,minmax(0,1fr))}#messageConversation .message-bubble{max-width:90%}}
 </style></head>
 <body>
 <div class="app">
@@ -2921,17 +2944,26 @@ body.live-immersive #watch #liveRestReminder{
    </details>
    <div class="message-inbox-status" id="messageInboxStatus" role="status" aria-live="polite"></div>
    <div id="messageRequests"></div>
+   <input id="messageSearch" class="field" type="search" inputmode="search" placeholder="Cari nama, username, atau pesan..." aria-label="Cari percakapan">
    <div id="messageThreads" aria-label="Daftar percakapan"></div>
+   <p id="messageSearchEmpty" hidden>Tidak ada percakapan yang cocok.</p>
    <p id="messageInboxEmpty" class="message-empty hide">Belum ada percakapan. Tekan + untuk memulai chat.</p>
   </div>
   <div id="messageConversation" class="hide">
     <div class="message-conversation-head">
       <button type="button" id="messageBack" class="message-icon-button" aria-label="Kembali ke daftar percakapan">‹</button>
       <button type="button" id="messageOpenCreator" class="message-person" aria-label="Lihat profil teman"><span id="messagePeerAvatar"></span><span id="messageThreadTitle"></span></button>
-      <button type="button" id="messageBlockPeer" class="message-more-button" aria-label="Blokir akun ini" title="Blokir kontak">⋮</button>
+      <button type="button" id="messageThreadMenu" class="message-more-button" aria-label="Opsi percakapan" aria-expanded="false" title="Opsi percakapan">⋮</button>
+    </div>
+    <div id="messageThreadTools" hidden aria-label="Pengaturan percakapan">
+      <button id="messagePinThread" type="button">PIN PERCAKAPAN</button>
+      <button id="messageMuteThread" type="button">BISUKAN</button>
+      <button id="messageClearThread" type="button" class="danger">HAPUS CHAT SAYA</button>
+      <button id="messageBlockPeer" type="button" class="danger">BLOKIR KONTAK</button>
     </div>
     <div id="messageBubbles" class="message-bubbles" aria-live="polite"></div>
-    <div class="message-compose"><textarea id="messageBody" class="field" maxlength="2000" rows="1" placeholder="Tulis pesan..." aria-label="Tulis pesan"></textarea><button id="messageSend" type="button" aria-label="Kirim pesan">➤</button></div>
+    <div id="messageDraftContext" hidden role="status"></div>
+    <div class="message-compose"><textarea id="messageBody" class="field" maxlength="2000" rows="1" placeholder="Tulis pesan..." aria-label="Tulis pesan"></textarea><button id="messageCancelDraft" type="button" hidden aria-label="Batalkan balas atau edit">✕</button><button id="messageSend" type="button" aria-label="Kirim pesan">➤</button></div>
     <p id="messageConversationStatus" class="message-inbox-status" role="status" aria-live="polite"></p>
   </div>
  </div>
