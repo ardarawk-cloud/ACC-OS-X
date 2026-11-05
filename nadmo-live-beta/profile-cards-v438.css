@@ -1,0 +1,127 @@
+/* NADMO LIVE v438 — brand-aware fallback badges + readable 2-line names.
+   Scope: ME/public-creator profile cards only, no global redesign. */
+#settings #profileBusinessLinks>a.profile-business-link,
+#publicProfilePage #publicCreatorLinks>a.profile-business-link{
+  min-height:91px!important;
+  padding:11px 10px!important;
+  gap:8px!important;
+  align-items:center!important;
+  overflow:hidden;
+}
+#settings #profileBusinessLinks .cp-link-main,
+#publicProfilePage #publicCreatorLinks .cp-link-main{
+  min-width:0!important;
+  flex:1 1 0!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:4px!important;
+}
+#settings #profileBusinessLinks .cp-link-name,
+#publicProfilePage #publicCreatorLinks .cp-link-name{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  line-clamp:2;
+  white-space:normal!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  max-width:100%!important;
+  font:italic 900 11px/1.3 system-ui,Arial,sans-serif!important;
+  letter-spacing:.012em!important;
+  text-wrap:pretty;
+}
+#settings #profileBusinessLinks .cp-link-target,
+#publicProfilePage #publicCreatorLinks .cp-link-target{
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  font:550 10px/1.3 system-ui,Arial,sans-serif!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  color:#b1d0e3!important;
+}
+#settings #profileBusinessLinks .cp-link-icon,
+#publicProfilePage #publicCreatorLinks .cp-link-icon{
+  flex:0 0 37px!important;
+  width:37px!important;height:37px!important;
+  border-radius:10px!important;
+  display:grid!important;place-items:center!important;
+  overflow:hidden!important;
+}
+#settings #profileBusinessLinks .cp-link-favicon,
+#publicProfilePage #publicCreatorLinks .cp-link-favicon{
+  padding:1px!important;
+  width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
+#settings #profileBusinessLinks .cp-link-icon[data-cp-logo-status="fallback"],
+#publicProfilePage #publicCreatorLinks .cp-link-icon[data-cp-logo-status="fallback"]{
+  color:#d9f8ff!important;
+  background:linear-gradient(145deg,#162f4d,#080f24)!important;
+  border:1px solid #58d8ef!important;
+  box-shadow:inset 0 0 8px #43ecfc23,0 2px 9px #0005!important;
+}
+#settings #profileBusinessLinks .cp-link-icon[data-cp-logo-status="fallback"] .cp-logo-fallback,
+#publicProfilePage #publicCreatorLinks .cp-link-icon[data-cp-logo-status="fallback"] .cp-logo-fallback{
+  color:inherit!important;
+  font:900 13px/1 system-ui,Arial,sans-serif!important;
+  letter-spacing:.025em!important;
+  text-shadow:0 0 6px #41d6ff31;
+}
+#settings #profileBusinessLinks .cp-link-icon[data-cp-logo-host="amsound.nadmo.id"][data-cp-logo-status="fallback"],
+#publicProfilePage #publicCreatorLinks .cp-link-icon[data-cp-logo-host="amsound.nadmo.id"][data-cp-logo-status="fallback"]{
+  color:#f0d79a!important;background:linear-gradient(135deg,#30251b,#171319)!important;
+  border-color:#caab72!important;
+}
+#settings #profileBusinessLinks .cp-link-icon[data-cp-logo-host="kerthawisesa.nadmo.id"][data-cp-logo-status="fallback"],
+#publicProfilePage #publicCreatorLinks .cp-link-icon[data-cp-logo-host="kerthawisesa.nadmo.id"][data-cp-logo-status="fallback"]{
+  color:#fff7f4!important;background:linear-gradient(135deg,#a2212f,#47151b)!important;
+  border-color:#ff7676!important;
+}
+#settings #profileBusinessLinks .cp-link-icon[data-cp-logo-host="originalbali.nadmo.id"][data-cp-logo-status="fallback"],
+#publicProfilePage #publicCreatorLinks .cp-link-icon[data-cp-logo-host="originalbali.nadmo.id"][data-cp-logo-status="fallback"]{
+  color:#f7e8ce!important;background:linear-gradient(135deg,#634b28,#171b21)!important;
+  border-color:#ddbc78!important;
+}
+#settings #profileBusinessLinks .cp-link-icon[data-cp-logo-host="roamink.nadmo.id"][data-cp-logo-status="loaded"],
+#publicProfilePage #publicCreatorLinks .cp-link-icon[data-cp-logo-host="roamink.nadmo.id"][data-cp-logo-status="loaded"]{
+  background:#e7faff!important;
+  border-color:#59dcea!important;
+}
+#settings #profileBusinessLinks .cp-link-icon[data-cp-logo-host="roamink.nadmo.id"] .cp-link-favicon,
+#publicProfilePage #publicCreatorLinks .cp-link-icon[data-cp-logo-host="roamink.nadmo.id"] .cp-link-favicon{
+  transform:scale(1.65)!important;
+  transform-origin:center!important;
+  filter:contrast(1.18) saturate(1.36)!important;
+}
+@media(min-width:600px){
+  #settings #profileBusinessLinks .cp-link-name,
+  #publicProfilePage #publicCreatorLinks .cp-link-name{
+    font-size:12px!important;
+  }
+}
+@media(max-width:390px){
+  #settings #profileBusinessLinks>a.profile-business-link,
+  #publicProfilePage #publicCreatorLinks>a.profile-business-link{
+    padding:9px 7px!important;
+    gap:6px!important;
+  }
+  #settings #profileBusinessLinks .cp-link-name,
+  #publicProfilePage #publicCreatorLinks .cp-link-name{
+    font-size:10.5px!important;
+  }
+  #settings #profileBusinessLinks .cp-link-icon,
+  #publicProfilePage #publicCreatorLinks .cp-link-icon{
+    flex-basis:34px!important;width:34px!important;height:34px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #settings #profileBusinessLinks .cp-link-favicon,
+  #publicProfilePage #publicCreatorLinks .cp-link-favicon{
+    transition:none!important;
+  }
+}
