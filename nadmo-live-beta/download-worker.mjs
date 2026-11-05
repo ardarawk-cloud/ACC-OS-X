@@ -43,7 +43,7 @@ export default {
     if (url.pathname === "/health") return Response.json({ app: "nadmo-live-download", ok: true });
     if (!["/", "/download", "/download.apk", "/api/status"].includes(url.pathname)) return new Response("Not Found", { status: 404, headers: safeHeaders });
     let r = null, error = null;
-    try { r = await release(); } catch (e) { error = "Release service currently unavailable"; }
+    try { r = await release(); } catch (e) { error = String(e.message || e).slice(0,180); }
     if (url.pathname === "/api/status") return Response.json({ ready: !!r, version: r?.version || null, size: r?.size || null, error }, { headers: safeHeaders });
     if (url.pathname === "/download.apk") {
       if (!r) return new Response("APK terbaru belum diterbitkan. Buka https://download.nadmo.id", { status: 503, headers: { ...safeHeaders, "Content-Type": "text/plain; charset=utf-8" } });
