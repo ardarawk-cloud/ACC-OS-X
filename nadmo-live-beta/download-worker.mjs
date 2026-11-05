@@ -1,7 +1,7 @@
 // NADMO LIVE public Android download gateway.
 // Separate Worker: never intercepts the LIVE app or serves another NADMO APK.
 const safeHeaders = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "Cache-Control": "no-store" };
-const VERIFIED_RELEASE = false; // Enable only after signed release is publicly verified.
+const VERIFIED_RELEASE = true; // Enable only after signed release is publicly verified.
 const OFFICIAL_RELEASE = {
   version: "0.10.25",
   tag: "nadmo-live-v0.10.25",
