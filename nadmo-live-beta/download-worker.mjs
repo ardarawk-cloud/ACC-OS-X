@@ -1,35 +1,13 @@
 // NADMO LIVE public Android download gateway.
 // Separate Worker: never intercepts the LIVE app or serves another NADMO APK.
-const API = "https://api.github.com/repos/ardarawk-cloud/ACC-Builder-Apk/releases?per_page=100";
-const MIN_VERSION = [0, 10, 25];
-let cached = { at: 0, value: null };
-const safeHeaders = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "Cache-Control": "no-store" };
-function versionParts(v) { return v.split(".").map(Number); }
-function acceptable(v) {
-  const x = versionParts(v);
-  for (let i = 0; i < 3; i++) { if (x[i] !== MIN_VERSION[i]) return x[i] > MIN_VERSION[i]; }
-  return true;
-}
-async function release() {
-  if (Date.now() - cached.at < 180000) return cached.value;
-  const response = await fetch(API, { headers: { "Accept": "application/vnd.github+json", "User-Agent": "NADMO-LIVE-public-download" } });
-  if (!response.ok) throw new Error("Release index unavailable: " + response.status);
-  const all = await response.json();
-  let best = null;
-  for (const item of all) {
-    if (item.draft) continue;
-    const m = String(item.tag_name || "").match(/^nadmo-live-v(\d+\.\d+\.\d+)(?:-beta)?$/i);
-    if (!m || !acceptable(m[1])) continue;
-    const asset = (item.assets || []).find(a => /^NADMO-LIVE.*\.apk$/i.test(a.name) && !/debug|unsigned/i.test(a.name) && a.size > 1000000 && /^https:\/\/github\.com\/ardarawk-cloud\/ACC-Builder-Apk\/releases\/download\//.test(a.browser_download_url));
-    if (!asset) continue;
-    const parts = versionParts(m[1]);
-    if (!best || parts.some((n, i) => n !== best.parts[i] && parts.slice(0, i).every((p, j) => p === best.parts[j]) && n > best.parts[i])) {
-      best = { version: m[1], parts, tag: item.tag_name, name: asset.name, url: asset.browser_download_url, size: asset.size };
-    }
-  }
-  cached = { at: Date.now(), value: best };
-  return best;
-}
+const VERIFIED_RELEASE = false; // Enable only after signed release is publicly verified.
+const OFFICIAL_RELEASE = {
+  version: "0.10.25",
+  tag: "nadmo-live-v0.10.25",
+  name: "NADMO-LIVE-v0.10.25.apk",
+  url: "https://github.com/ardarawk-cloud/ACC-Builder-Apk/releases/download/nadmo-live-v0.10.25/NADMO-LIVE-v0.10.25.apk"
+};
+async function release() { return VERIFIED_RELEASE ? OFFICIAL_RELEASE : null; }
 function html(r, err) {
   const ready = !!r;
   const sub = ready ? "Versi " + r.version + " tersedia untuk Android." : "APK terbaru sedang disiapkan untuk unduhan publik.";
@@ -43,15 +21,11 @@ export default {
     if (url.pathname === "/health") return Response.json({ app: "nadmo-live-download", ok: true });
     if (!["/", "/download", "/download.apk", "/api/status"].includes(url.pathname)) return new Response("Not Found", { status: 404, headers: safeHeaders });
     let r = null, error = null;
-    try { r = await release(); } catch (e) { error = String(e.message || e).slice(0,180); }
+    try { r = await release(); } catch (e) { error = 'Public release unavailable'; }
     if (url.pathname === "/api/status") return Response.json({ ready: !!r, version: r?.version || null, size: r?.size || null, error }, { headers: safeHeaders });
     if (url.pathname === "/download.apk") {
       if (!r) return new Response("APK terbaru belum diterbitkan. Buka https://download.nadmo.id", { status: 503, headers: { ...safeHeaders, "Content-Type": "text/plain; charset=utf-8" } });
-      try {
-        const file = await fetch(r.url, { redirect: "follow", headers: { "User-Agent": "NADMO-LIVE-public-download", "Accept": "application/octet-stream" } });
-        if (!file.ok || !file.body) throw new Error("Download upstream: " + file.status);
-        return new Response(request.method === "HEAD" ? null : file.body, { status: 200, headers: { "Content-Type": "application/vnd.android.package-archive", "Content-Disposition": 'attachment; filename="NADMO-LIVE-v' + r.version + '.apk"', "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" } });
-      } catch (e) { return new Response("Server unduhan belum siap. Silakan coba lagi.", { status: 502, headers: safeHeaders }); }
+      return Response.redirect(r.url, 302);
     }
     return new Response(request.method === "HEAD" ? null : html(r, error), { status: 200, headers: { ...safeHeaders, "Content-Type": "text/html; charset=utf-8" } });
   }
