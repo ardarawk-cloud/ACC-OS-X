@@ -1,0 +1,58 @@
+// NADMO LIVE public Android download gateway.
+// Separate Worker: never intercepts the LIVE app or serves another NADMO APK.
+const API = "https://api.github.com/repos/ardarawk-cloud/ACC-Builder-Apk/releases?per_page=100";
+const MIN_VERSION = [0, 10, 25];
+let cached = { at: 0, value: null };
+const safeHeaders = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "Cache-Control": "no-store" };
+function versionParts(v) { return v.split(".").map(Number); }
+function acceptable(v) {
+  const x = versionParts(v);
+  for (let i = 0; i < 3; i++) { if (x[i] !== MIN_VERSION[i]) return x[i] > MIN_VERSION[i]; }
+  return true;
+}
+async function release() {
+  if (Date.now() - cached.at < 180000) return cached.value;
+  const response = await fetch(API, { headers: { "Accept": "application/vnd.github+json", "User-Agent": "NADMO-LIVE-public-download" } });
+  if (!response.ok) throw new Error("Release index unavailable: " + response.status);
+  const all = await response.json();
+  let best = null;
+  for (const item of all) {
+    if (item.draft) continue;
+    const m = String(item.tag_name || "").match(/^nadmo-live-v(\d+\.\d+\.\d+)(?:-beta)?$/i);
+    if (!m || !acceptable(m[1])) continue;
+    const asset = (item.assets || []).find(a => /^NADMO-LIVE.*\.apk$/i.test(a.name) && !/debug|unsigned/i.test(a.name) && a.size > 1000000 && /^https:\/\/github\.com\/ardarawk-cloud\/ACC-Builder-Apk\/releases\/download\//.test(a.browser_download_url));
+    if (!asset) continue;
+    const parts = versionParts(m[1]);
+    if (!best || parts.some((n, i) => n !== best.parts[i] && parts.slice(0, i).every((p, j) => p === best.parts[j]) && n > best.parts[i])) {
+      best = { version: m[1], parts, tag: item.tag_name, name: asset.name, url: asset.browser_download_url, size: asset.size };
+    }
+  }
+  cached = { at: Date.now(), value: best };
+  return best;
+}
+function html(r, err) {
+  const ready = !!r;
+  const sub = ready ? "Versi " + r.version + " tersedia untuk Android." : "APK terbaru sedang disiapkan untuk unduhan publik.";
+  const button = ready ? '<a class="download" href="/download.apk">UNDUH APK ANDROID <span>↓</span></a>' : '<span class="download disabled">UNDUHAN BELUM TERSEDIA</span>';
+  return '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NADMO LIVE — Download Resmi</title><meta name="description" content="Download APK resmi NADMO LIVE untuk Android."><style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#090c0a;color:#edf0e7;font-family:Arial,system-ui,sans-serif;display:grid;place-items:center;padding:24px;background-image:linear-gradient(90deg,#d6ff4110 1px,transparent 1px),linear-gradient(#d6ff4110 1px,transparent 1px),radial-gradient(ellipse at top right,#b8fe211f,transparent 55%);background-size:24px 24px,24px 24px,100% 100%}.panel{width:100%;max-width:540px;border:1px solid #424c33;background:#0e140fd9;padding:clamp(25px,6vw,46px);box-shadow:0 25px 75px #0008}.top{display:flex;gap:14px;align-items:center;border-bottom:1px solid #354034;padding-bottom:23px}.mark{font:900 36px Impact,Arial,sans-serif;color:#e3fd72;transform:skew(-9deg);border:2px solid #e3fd72;padding:5px 12px}.brand{font-size:29px;font-weight:900;letter-spacing:-.7px}.brand em{color:#e3fd72;font-style:normal}.eyebrow{font-size:11px;color:#e3fd72;font-weight:900;letter-spacing:2.2px;margin:37px 0 12px}h1{font-size:clamp(37px,8vw,56px);line-height:.97;margin:0;font-weight:900}p{color:#aeb7a5;line-height:1.7;font-size:14px}.download{display:flex;justify-content:space-between;align-items:center;background:#e3fd72;color:#10160c;padding:19px 22px;margin-top:28px;font-size:15px;font-weight:900;text-decoration:none;letter-spacing:.4px}.download span{font-size:25px}.download:not(.disabled):hover{background:#f2ffaf}.download.disabled{background:#35402d;color:#9eaf8d;cursor:not-allowed}.note{font-size:11px;color:#899886;border-top:1px solid #354034;padding-top:22px;margin-top:29px}a.other{color:#e3fd72;text-decoration:none}</style></head><body><main class="panel"><header class="top"><span class="mark">N/</span><div class="brand">NADMO <em>LIVE</em></div></header><div class="eyebrow">OFFICIAL ANDROID APP</div><h1>LIVE TANPA<br>BATAS.</h1><p>' + sub + ' Unduh langsung lewat website NADMO, tanpa akun GitHub.</p>' + button + '<p class="note">Penerbit: PT Nadmo Studio Indonesia · Paket Android: id.nadmo.live · ' + (ready ? "APK resmi bertanda tangan digital." : "Belum ada APK terbaru yang terverifikasi untuk publik.") + '</p><a class="other" href="https://live.nadmo.id/app/">Buka NADMO LIVE di browser</a></main></body></html>';
+}
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method Not Allowed", { status: 405 });
+    if (url.pathname === "/health") return Response.json({ app: "nadmo-live-download", ok: true });
+    if (!["/", "/download", "/download.apk", "/api/status"].includes(url.pathname)) return new Response("Not Found", { status: 404, headers: safeHeaders });
+    let r = null, error = null;
+    try { r = await release(); } catch (e) { error = "Release service currently unavailable"; }
+    if (url.pathname === "/api/status") return Response.json({ ready: !!r, version: r?.version || null, size: r?.size || null, error }, { headers: safeHeaders });
+    if (url.pathname === "/download.apk") {
+      if (!r) return new Response("APK terbaru belum diterbitkan. Buka https://download.nadmo.id", { status: 503, headers: { ...safeHeaders, "Content-Type": "text/plain; charset=utf-8" } });
+      try {
+        const file = await fetch(r.url, { redirect: "follow", headers: { "User-Agent": "NADMO-LIVE-public-download", "Accept": "application/octet-stream" } });
+        if (!file.ok || !file.body) throw new Error("Download upstream: " + file.status);
+        return new Response(request.method === "HEAD" ? null : file.body, { status: 200, headers: { "Content-Type": "application/vnd.android.package-archive", "Content-Disposition": 'attachment; filename="NADMO-LIVE-v' + r.version + '.apk"', "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" } });
+      } catch (e) { return new Response("Server unduhan belum siap. Silakan coba lagi.", { status: 502, headers: safeHeaders }); }
+    }
+    return new Response(request.method === "HEAD" ? null : html(r, error), { status: 200, headers: { ...safeHeaders, "Content-Type": "text/html; charset=utf-8" } });
+  }
+};
