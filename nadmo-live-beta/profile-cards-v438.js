@@ -13,6 +13,11 @@
     'originalbali.nadmo.id':'OB',
     'roamink.nadmo.id':'RM'
   };
+  // Assets located on the creator's own official sites, not guessed or generated.
+  const approvedLogos={
+    'amsound.nadmo.id':"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2310110f'/%3E%3Cg fill='%23dfbd85'%3E%3Crect x='14' y='25' width='6' height='14' rx='3'/%3E%3Crect x='24' y='15' width='6' height='34' rx='3'/%3E%3Crect x='34' y='21' width='6' height='22' rx='3'/%3E%3Crect x='44' y='28' width='6' height='8' rx='3'/%3E%3C/g%3E%3C/svg%3E",
+    'kerthawisesa.nadmo.id':'https://kerthawisesa.nadmo.id/assets/kertha-wisesa-logo.webp?v=20261016-full'
+  };
   const logoCandidates=new Map();
   function isNadmoSite(host){return host==='nadmo.id'||host.endsWith('.nadmo.id')}
   function safeHost(h){return /^[a-z0-9][a-z0-9.-]{2,251}[a-z0-9]$/i.test(h)}
@@ -25,6 +30,9 @@
     }
   }
   function discover(host,done){
+    if(Object.prototype.hasOwnProperty.call(approvedLogos,host)){
+      done(approvedLogos[host]);return;
+    }
     if(logoCandidates.has(host)){done(logoCandidates.get(host));return}
     // Only probe same-brand NADMO sites: avoid leaking visits to arbitrary sites.
     if(!isNadmoSite(host)||!safeHost(host)){done('');return}
@@ -75,7 +83,7 @@
         const label=target.querySelector('.cp-logo-fallback');
         if(label)label.hidden=true;
         target.dataset.cpLogoStatus='loaded';
-        target.dataset.cpLogoSource='verified-direct';
+        target.dataset.cpLogoSource=Object.prototype.hasOwnProperty.call(approvedLogos,host)?'official-site-asset':'verified-direct';
       };
       img.onerror=()=>{
         img.hidden=true;
