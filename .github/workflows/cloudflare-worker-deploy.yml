@@ -210,12 +210,12 @@ jobs:
 
           QUICK="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-quick-access-v1.js")"
           PROJECTS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/my-projects-launcher-v1.js")"
-          HOME="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-launchpad.js")"
+          HOME_JS="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/home-launchpad.js")"
           INTERNAL="$(curl --fail --silent --show-error --max-time 30 "$BASE_URL/.github/workflows/runtime-validation.yml" || true)"
 
           grep -Fq 'const DESKTOP_LIMIT = 8;' <<<"$QUICK"
           grep -Fq 'g-p-6ac8f1bfb7748191a4905d68ee1b0315-nadmo-live/project' <<<"$PROJECTS"
-          grep -Fq 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' <<<"$HOME"
+          grep -Fq 'com.nadmo.papasaucelab","com.accbuilder.papasaucelab' <<<"$HOME_JS"
 
           produce_ok=0
           for attempt in 1 2 3 4 5 6; do
@@ -235,8 +235,8 @@ jobs:
           grep -Fq 'acc-produce-panel-ready' <<<"$UPLOAD"
           grep -Fq 'VERIFIED_DESTINATIONS_20261104' <<<"$DESTINATIONS"
           grep -Fq 'KAI_AUTOPILOT_MEDIA_DROP_V2_DURABLE_UPLOAD' <<<"$INBOX"
-          grep -Fq 'https://dj-am.ardarawk.workers.dev/' <<<"$HOME"
-          grep -Fq 'https://comics.nadmo.id/' <<<"$HOME"
+          grep -Fq 'https://dj-am.ardarawk.workers.dev/' <<<"$HOME_JS"
+          grep -Fq 'https://comics.nadmo.id/' <<<"$HOME_JS"
           if grep -Fq 'name: ACC OS X Runtime Validation' <<<"$INTERNAL"; then
             echo "::error::Internal GitHub workflow is still exposed as a public Worker asset."
             exit 1
