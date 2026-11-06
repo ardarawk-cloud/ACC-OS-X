@@ -83,7 +83,7 @@ async function issueCreate(ticket) {
   ].join("\n");
   return fetchJson(ghBase + "/repos/" + GH_REPO + "/issues", GH_TOKEN, {
     method: "POST",
-    body: JSON.stringify({ title: issueTitle(ticket.id), body, labels: ["bug"] })
+    body: JSON.stringify({ title: issueTitle(ticket.id), body })
   });
 }
 async function issueClose(issue) {
