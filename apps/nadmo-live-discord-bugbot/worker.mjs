@@ -308,10 +308,13 @@ export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     if (request.method === "GET" && path === "/health") {
+      const registration = env.BUG_REPORTS ?
+        await env.BUG_REPORTS.get("ops/discord-command-registration.json") : null;
       return json({
         service: "nadmo-live-discord-bugbot",
         configured: Boolean(env.DISCORD_PUBLIC_KEY && env.DISCORD_BOT_TOKEN &&
-          env.DISCORD_GUILD_ID && env.DISCORD_BUG_CHANNEL_ID && env.BUG_REPORTS)
+          env.DISCORD_GUILD_ID && env.DISCORD_BUG_CHANNEL_ID && env.BUG_REPORTS),
+        commands_registered: Boolean(registration)
       });
     }
     if (request.method !== "POST" || path !== "/interactions") {
