@@ -30,6 +30,10 @@ jobs:
           node-version: '22'
       - name: Syntax check
         run: node --check apps/nadmo-live-discord-bugbot/sync-github-issues.mjs
+      - name: Validate Discord bot signature handling
+        run: |
+          node --check apps/nadmo-live-discord-bugbot/worker.mjs
+          node --test apps/nadmo-live-discord-bugbot/test.mjs
       - name: Sync private R2 tickets to sanitized GitHub issues
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
