@@ -14,6 +14,12 @@ Official NADMO LIVE CS invite: https://discord.gg/zEstQXh4xc
 - Only one configured guild/channel is permitted.
 - No privileged message-content intent, no Gateway connection, no third-party subscription.
 
+## Automated handling (active)
+- Each new ticket mentions the server admin in `#bugreport` and also attempts a private Discord DM. Configure `DISCORD_ADMIN_USER_ID` as an encrypted Worker secret.
+- GitHub Actions workflow `.github/workflows/nadmo-live-discord-issues-sync.yml` reads ticket records from private R2 using the repository's existing Cloudflare API credentials every 10 minutes.
+- New open tickets create minimal GitHub Issues in `ardarawk-cloud/ACC-OS-X`; resolved or closed tickets close the matching issue. Identifiers and internal Discord links are used; user reports, usernames, and device details stay out of the public repository.
+- Automated triage **does not** deploy untested code or silently mark a bug fixed.
+
 ## Cloudflare
 Existing main account R2 bucket: \`nadmo-live-bugreports\`.
 D1 was intentionally **not used**, because existing account reached its D1 database-count quota.
@@ -41,4 +47,4 @@ node --test test.mjs
 \`\`\`
 
 ## Safety notes
-Ticket metadata is stored in private R2; never expose a public listing endpoint. Avoid sensitive personal details or passwords in reports. Message details sent to Discord \`#bugreport\` are visible to channel members. Future optional GitHub Issue integration must be behind admin review and use a scoped GitHub token stored as a Cloudflare secret.
+Ticket metadata is stored in private R2; never expose a public listing endpoint. Avoid sensitive personal details or passwords in reports. Message details sent to Discord \`#bugreport\` are visible to channel members. GitHub sync uses the repository-scoped ephemeral GitHub Actions token and existing Cloudflare credentials; never place access tokens in the code or issue body.
