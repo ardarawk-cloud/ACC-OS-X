@@ -30,7 +30,7 @@ To enable:
 2. Create its bot and install it in the NADMO LIVE server. Grant only View Channel, Send Messages, Embed Links in \`#bugreport\` and Use Application Commands.
 3. Deploy the isolated Cloudflare Worker with \`BUG_REPORTS\` R2 binding and set the four values above via Cloudflare encrypted secrets.
 4. Configure application's **Interactions Endpoint URL**: \`https://<worker-origin>/interactions\`.
-5. Run \`node register-commands.mjs\` with DISCORD_APPLICATION_ID, DISCORD_GUILD_ID, DISCORD_BOT_TOKEN exported **locally**, not stored in Git.
+5. Setting the signed `Interactions Endpoint URL` triggers a Discord PING; the Worker then automatically registers `/bug`, `/cekbug`, and `/setbug` in the authorized NADMO LIVE server using the Bot Token stored as a Cloudflare secret. The manual `register-commands.mjs` utility is retained as an optional fallback.
 6. Test \`/bug\`, \`/cekbug\`, and admin-only \`/setbug\` in \`#bugreport\`.
 
 Do not claim the bot is active until the bot is installed, secrets are configured, and signed Discord PING and ticket end-to-end tests pass.
