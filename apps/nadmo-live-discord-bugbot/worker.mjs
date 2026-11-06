@@ -248,6 +248,44 @@ async function processDeferred(interaction, env) {
     } catch {}
   }
 }
+async function registerGuildCommands(env, appId) {
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID || !appId) return;
+  const codeOption = () => ({
+    type: 3, name: "kode", description: "Kode tiket NML-...", required: true
+  });
+  const commands = [
+    { name: "bug", type: 1, description: "Laporkan masalah NADMO LIVE melalui formulir" },
+    { name: "cekbug", type: 1, description: "Cek status laporan bug", options: [codeOption()] },
+    {
+      name: "setbug", type: 1, description: "Admin: ubah status laporan bug",
+      default_member_permissions: "32",
+      options: [
+        codeOption(),
+        {
+          type: 3, name: "status", description: "Status baru", required: true,
+          choices: [
+            { name: "Baru", value: "open" },
+            { name: "Investigasi", value: "investigating" },
+            { name: "Diperbaiki", value: "fixing" },
+            { name: "Selesai", value: "resolved" },
+            { name: "Ditutup", value: "closed" }
+          ]
+        }
+      ]
+    }
+  ];
+  const response = await fetch(DISCORD_API + "/applications/" + appId +
+    "/guilds/" + env.DISCORD_GUILD_ID + "/commands", {
+    method: "PUT",
+    headers: {
+      authorization: "Bot " + env.DISCORD_BOT_TOKEN,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(commands)
+  });
+  if (!response.ok) throw new Error("Discord command registration HTTP " + response.status);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
@@ -269,7 +307,12 @@ export default {
     let interaction;
     try { interaction = JSON.parse(raw); }
     catch { return json({ error: "Invalid payload" }, 400); }
-    if (interaction.type === 1) return json({ type: 1 }); // Discord PING
+    if (interaction.type === 1) {
+      ctx.waitUntil(registerGuildCommands(env, interaction.application_id).catch(e => {
+        console.error("Discord command registration:", e?.message || "error");
+      }));
+      return json({ type: 1 }); // Discord PING (register guild commands asynchronously)
+    }
     if (!env.DISCORD_GUILD_ID || !env.DISCORD_BUG_CHANNEL_ID ||
         interaction.guild_id !== env.DISCORD_GUILD_ID ||
         interaction.channel_id !== env.DISCORD_BUG_CHANNEL_ID) {
