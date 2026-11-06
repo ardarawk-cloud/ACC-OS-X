@@ -286,9 +286,57 @@ async function registerGuildCommands(env, appId) {
   if (!response.ok) throw new Error("Discord command registration HTTP " + response.status);
 }
 
+async function activateCommands(request, env) {
+  const url = new URL(request.url);
+  const pass = url.searchParams.get("code") || "";
+  if (!env.DISCORD_SETUP_KEY || pass.length < 48 || pass !== env.DISCORD_SETUP_KEY) {
+    return json({ ok: false, error: "Unauthorized" }, 403);
+  }
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID || !env.DISCORD_BUG_CHANNEL_ID) {
+    return json({ ok: false, error: "Bot configuration incomplete" }, 503);
+  }
+  try {
+    // Verify the bot has access to the requested server and channel before registering commands.
+    const auth = { authorization: "Bot " + env.DISCORD_BOT_TOKEN };
+    const guildResponse = await fetch(DISCORD_API + "/guilds/" + env.DISCORD_GUILD_ID, { headers: auth });
+    if (!guildResponse.ok) {
+      return json({ ok: false, step: "guild", status: guildResponse.status,
+        error: "Bot tidak bisa mengakses server NADMO LIVE" }, 502);
+    }
+    const channelResponse = await fetch(DISCORD_API + "/channels/" + env.DISCORD_BUG_CHANNEL_ID, { headers: auth });
+    if (!channelResponse.ok) {
+      return json({ ok: false, step: "channel", status: channelResponse.status,
+        error: "Bot tidak bisa mengakses channel #bugreport" }, 502);
+    }
+    const channel = await channelResponse.json();
+    if (channel.guild_id !== env.DISCORD_GUILD_ID) {
+      return json({ ok: false, error: "Channel tidak cocok dengan server" }, 400);
+    }
+    await registerGuildCommands(env, "1568360275109879918");
+    if (env.BUG_REPORTS) {
+      await env.BUG_REPORTS.put("ops/discord-command-registration.json", JSON.stringify({
+        application_id: "1568360275109879918",
+        server_id: env.DISCORD_GUILD_ID,
+        channel_id: env.DISCORD_BUG_CHANNEL_ID,
+        registered_at: new Date().toISOString(),
+        commands: ["bug", "cekbug", "setbug"]
+      }), { httpMetadata: { contentType: "application/json" } });
+    }
+    return json({ ok: true, bot: "NADMO LIVE BUG BOT",
+      commands: ["/bug", "/cekbug", "/setbug"],
+      channel: "#bugreport", message: "Perintah Discord berhasil didaftarkan. Silakan refresh Discord." });
+  } catch (e) {
+    console.error("Command activation failed:", String(e?.message || e));
+    return json({ ok: false, error: "Aktivasi gagal. Periksa bot token / akses Discord." }, 502);
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
+    if (request.method === "GET" && path === "/activate") {
+      return activateCommands(request, env);
+    }
     if (request.method === "GET" && path === "/health") {
       return json({
         service: "nadmo-live-discord-bugbot",
