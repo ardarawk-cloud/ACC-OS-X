@@ -155,17 +155,17 @@ async function editEphemeral(interaction, content) {
 }
 async function notifyOwner(env, ticket) {
   const adminId = String(env.DISCORD_ADMIN_USER_ID || "");
-  if (!/^\\d{16,22}$/.test(adminId) || !env.DISCORD_BOT_TOKEN) return false;
+  if (!/^\d{16,22}$/.test(adminId) || !env.DISCORD_BOT_TOKEN) return false;
   const user = await discordBot(env, "POST", "/users/@me/channels", { recipient_id: adminId });
   if (!user?.id) throw new Error("Discord admin DM channel was not created");
   const ticketUrl = "https://discord.com/channels/" +
     env.DISCORD_GUILD_ID + "/" + env.DISCORD_BUG_CHANNEL_ID +
     (ticket.messageId ? "/" + ticket.messageId : "");
   await discordBot(env, "POST", "/channels/" + user.id + "/messages", {
-    content: "**NADMO LIVE | LAPORAN BUG BARU**\\n" +
-      "Tiket: **" + ticket.id + "**\\n" +
-      "Judul: " + clean(ticket.title, 100) + "\\n" +
-      "Status: Baru\\n" + ticketUrl,
+    content: "**NADMO LIVE | LAPORAN BUG BARU**\n" +
+      "Tiket: **" + ticket.id + "**\n" +
+      "Judul: " + clean(ticket.title, 100) + "\n" +
+      "Status: Baru\n" + ticketUrl,
     allowed_mentions: { parse: [] }
   });
   return true;
@@ -202,7 +202,7 @@ async function processBug(interaction, env) {
   await saveTicket(env, ticket);
   try {
     const adminId = String(env.DISCORD_ADMIN_USER_ID || "");
-    const mention = /^\\d{16,22}$/.test(adminId) ? "<@" + adminId + ">" : "";
+    const mention = /^\d{16,22}$/.test(adminId) ? "<@" + adminId + ">" : "";
     const posted = await discordBot(env, "POST", "/channels/" + env.DISCORD_BUG_CHANNEL_ID + "/messages", {
       content: mention ? mention + " laporan baru masuk: **" + id + "**" : undefined,
       embeds: [embedFor(ticket)],
