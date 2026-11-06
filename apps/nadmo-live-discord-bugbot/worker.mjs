@@ -198,6 +198,19 @@ async function processBug(interaction, env) {
       "** sudah tersimpan, tetapi notifikasi channel belum berhasil. Admin akan memeriksa.";
   }
 }
+function formatWita(timestamp) {
+  const date = new Date(timestamp);
+  if (!Number.isFinite(date.getTime())) return "Tidak tersedia";
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Makassar",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).format(date) + " WITA";
+}
 async function processLookup(interaction, env) {
   const id = clean(option(interaction, "kode"), 32).toUpperCase();
   const ticket = await readTicket(env, id);
@@ -206,7 +219,7 @@ async function processLookup(interaction, env) {
     return "Hanya pelapor atau admin yang dapat melihat status tiket ini.";
   }
   return "**" + ticket.id + "** | " + ticket.title + "\nStatus: **" +
-    (LABELS[ticket.status] || ticket.status) + "**\nDiperbarui: " + ticket.updatedAt;
+    (LABELS[ticket.status] || ticket.status) + "**\nDiperbarui: " + formatWita(ticket.updatedAt);
 }
 async function processStatus(interaction, env) {
   if (!isModerator(interaction)) return "Perintah ini hanya untuk admin server.";
