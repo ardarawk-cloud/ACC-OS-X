@@ -7,5 +7,10 @@
       "binding": "BUG_REPORTS",
       "bucket_name": "nadmo-live-bugreports"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  }
 }
