@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - feat/nadmo-live-discord-bugbot-20261107
     paths:
       - '.github/workflows/nadmo-live-discord-issues-sync.yml'
