@@ -153,6 +153,23 @@ async function editEphemeral(interaction, content) {
   });
   if (!response.ok) throw new Error("Unable to deliver Discord response: " + response.status);
 }
+async function notifyOwner(env, ticket) {
+  const adminId = String(env.DISCORD_ADMIN_USER_ID || "");
+  if (!/^\\d{16,22}$/.test(adminId) || !env.DISCORD_BOT_TOKEN) return false;
+  const user = await discordBot(env, "POST", "/users/@me/channels", { recipient_id: adminId });
+  if (!user?.id) throw new Error("Discord admin DM channel was not created");
+  const ticketUrl = "https://discord.com/channels/" +
+    env.DISCORD_GUILD_ID + "/" + env.DISCORD_BUG_CHANNEL_ID +
+    (ticket.messageId ? "/" + ticket.messageId : "");
+  await discordBot(env, "POST", "/channels/" + user.id + "/messages", {
+    content: "**NADMO LIVE | LAPORAN BUG BARU**\\n" +
+      "Tiket: **" + ticket.id + "**\\n" +
+      "Judul: " + clean(ticket.title, 100) + "\\n" +
+      "Status: Baru\\n" + ticketUrl,
+    allowed_mentions: { parse: [] }
+  });
+  return true;
+}
 async function processBug(interaction, env) {
   if (!env.BUG_REPORTS || !env.DISCORD_BOT_TOKEN) {
     return "Bot belum diaktifkan oleh admin. Silakan coba lagi nanti.";
@@ -184,11 +201,22 @@ async function processBug(interaction, env) {
   };
   await saveTicket(env, ticket);
   try {
+    const adminId = String(env.DISCORD_ADMIN_USER_ID || "");
+    const mention = /^\\d{16,22}$/.test(adminId) ? "<@" + adminId + ">" : "";
     const posted = await discordBot(env, "POST", "/channels/" + env.DISCORD_BUG_CHANNEL_ID + "/messages", {
+      content: mention ? mention + " laporan baru masuk: **" + id + "**" : undefined,
       embeds: [embedFor(ticket)],
-      allowed_mentions: { parse: [] }
+      allowed_mentions: { parse: [], users: mention ? [adminId] : [] }
     });
     ticket.messageId = posted?.id || null;
+    await saveTicket(env, ticket);
+    // Discord mention is the primary push channel. DM is an additional best-effort alert.
+    try {
+      ticket.adminNotifiedByDM = await notifyOwner(env, ticket);
+    } catch (e) {
+      ticket.adminNotifiedByDM = false;
+      console.warn("DM notification unavailable (channel mention remains):", String(e?.message || e));
+    }
     await saveTicket(env, ticket);
     return "Laporan diterima! Kode tiket **" + id +
       "**. Gunakan /cekbug untuk memantau perbaikannya.";
