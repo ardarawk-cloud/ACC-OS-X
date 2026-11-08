@@ -23,6 +23,7 @@ jobs:
           URL="https://nadmo-live-broadcast-stage.ardarawk.workers.dev"
           curl -fsS --max-time 20 "$URL/health" | grep -q '"productionTouched":false'
           curl -fsS --max-time 20 "$URL/api/route/demo" | grep -q '"mode":"WAITING"'
+          curl -fsS --max-time 20 "$URL/watch/demo" | grep -q 'BROADCAST STAGING'
           STATUS="$(curl -sS -o /tmp/broadcast-auth -w '%{http_code}' --max-time 20 -X POST "$URL/admin/configure/demo")"
           test "$STATUS" = "401"
           grep -q 'ADMIN_ONLY' /tmp/broadcast-auth
