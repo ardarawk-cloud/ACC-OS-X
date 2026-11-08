@@ -1,3 +1,4 @@
+import {PLAYER_HTML} from './player.mjs';
 // NADMO LIVE Broadcast Route Guard v0.1 — staging only.
 // Never proxy media bytes or provision paid providers. Public routes expose only approved HLS URLs.
 const H={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','x-robots-tag':'noindex,nofollow'};
@@ -71,6 +72,7 @@ export class BroadcastHub{
 }
 export default {
  async fetch(req,env){
+  if(/^\/watch\/[a-z0-9_-]{3,48}$/.test(new URL(req.url).pathname)&&req.method==='GET')return new Response(PLAYER_HTML,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex,nofollow','x-frame-options':'DENY','content-security-policy':"default-src 'none';script-src 'unsafe-inline' https://cdn.jsdelivr.net;style-src 'unsafe-inline';connect-src 'self' https:;media-src https: blob:;base-uri 'none';form-action 'none'"}});
   const u=new URL(req.url),p=u.pathname;
   if(p==='/health')return J({ok:true,service:'nadmo-live-broadcast-stage',stage:true,controllerReady:true,streamConfigured:!!env.ALLOWED_ORIGIN_HOSTS,mediaStreamingActive:false,productionTouched:false});
   if(p==='/')return J({service:'NADMO LIVE Broadcast',stage:true,notice:'Control plane ready. No configured video sources. GET /api/route/demo for current state.'});
