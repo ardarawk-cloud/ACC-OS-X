@@ -26,6 +26,10 @@ trap cleanup EXIT
 docker run -d --name nadmo-media-test-a -p 11935:1935 -p 18888:8888 -e MTX_HLSVARIANT=mpegts "$BASE" >/dev/null
 docker run -d --name nadmo-media-test-b -p 21935:1935 -p 28888:8888 -e MTX_HLSVARIANT=mpegts "$BASE" >/dev/null
 sleep 5
+echo "MediaMTX container status:"
+docker ps -a --filter name=nadmo-media-test --format "table {{.Names}}\t{{.Status}}"
+docker logs --tail 25 nadmo-media-test-a || true
+docker logs --tail 25 nadmo-media-test-b || true
 ffmpeg -y -hide_banner -loglevel error \
   -f lavfi -i "testsrc2=size=320x180:rate=12" \
   -f lavfi -i "sine=frequency=440:sample_rate=44100" \
@@ -37,13 +41,20 @@ ffmpeg -hide_banner -loglevel error -re -stream_loop -1 -i /tmp/nadmo-source.mp4
   -f tee "[f=flv:onfail=ignore]rtmp://127.0.0.1:11935/live|[f=flv:onfail=ignore]rtmp://127.0.0.1:21935/live" \
   >/tmp/nadmo-publisher.log 2>&1 &
 PUBLISHER_PID="$!"
-for attempt in $(seq 1 45); do
+echo "Publisher launched with PID: $PUBLISHER_PID"
+sleep 4
+if ! kill -0 "$PUBLISHER_PID"; then echo "::error::Publisher exited early"; cat /tmp/nadmo-publisher.log; exit 1; fi
+for attempt in $(seq 1 12); do
+  echo "checking HLS on both origins, attempt $attempt"
   if curl -fsS --max-time 3 http://127.0.0.1:18888/live/index.m3u8 -o /tmp/nadmo-a.m3u8 &&
      curl -fsS --max-time 3 http://127.0.0.1:28888/live/index.m3u8 -o /tmp/nadmo-b.m3u8 &&
      grep -q 'EXTM3U' /tmp/nadmo-a.m3u8 &&
      grep -q 'EXTM3U' /tmp/nadmo-b.m3u8; then break; fi
   sleep 2
 done
+echo "Publisher log:"; tail -50 /tmp/nadmo-publisher.log || true
+echo "Primary logs:"; docker logs --tail 30 nadmo-media-test-a || true
+echo "Backup logs:"; docker logs --tail 30 nadmo-media-test-b || true
 test -s /tmp/nadmo-a.m3u8
 test -s /tmp/nadmo-b.m3u8
 python3 apps/nadmo-live-broadcast/qa/verify_hls.py http://127.0.0.1:18888/live/index.m3u8
