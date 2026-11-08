@@ -79,6 +79,13 @@ export class CostLedger {
      if(x.kind==='room_sample')q.exec('INSERT INTO room_state (room,ts,viewer,kbps) VALUES (?,?,?,?) ON CONFLICT(room) DO UPDATE SET ts=excluded.ts,viewer=excluded.viewer,kbps=excluded.kbps WHERE excluded.ts>=room_state.ts',x.room,x.ts,x.viewer,x.kbps);
     }
    }
+   for(const x of items){
+    if(x.kind==='network_fault'||x.kind==='room_sample'&&x.viewer>=4&&x.kbps>=1500){
+     const level='WARNING',message=x.kind==='network_fault'?'Network disruption observed (simulation)':('High room media pressure: '+x.room+' · '+x.viewer+' viewers · '+x.kbps+' kbps');
+     const last=q.exec('SELECT ts,message FROM alerts ORDER BY id DESC LIMIT 1').toArray()[0];
+     if(!last||last.message!==message||Date.now()-last.ts>3600000)q.exec('INSERT INTO alerts(ts,level,message) VALUES(?,?,?)',Date.now(),level,message);
+    }
+   }
    return json({ok:true,staging:true,accepted:added,duplicates:items.length-added,productionMutations:0});
   }
   if(p==='/internal/dashboard'&&req.method==='GET'){
@@ -99,6 +106,7 @@ export class CostLedger {
    const complete=false; // billing connector not available; never claim completeness
    const decision=guard({collectedIdr:receipts.count>0?Number(receipts.amount):null,actualCostIdr:providerCost,estimateExtraIdr:relayEstimate,billingComplete:complete,stale:!costs.last_ts||now-costs.last_ts>36*3600000});
    const alert=q.exec('SELECT ts,level,message FROM alerts ORDER BY id DESC LIMIT 25').toArray();
+   const highRooms=q.exec('SELECT room,viewer,kbps FROM room_state WHERE ts>? ORDER BY viewer*kbps DESC LIMIT 5',now-90000).toArray();
    const periodDays=period==='day'?1:period==='week'?7:30;
    const sampleCount=Number(metrics.samples);
    const out={ok:true,staging:true,mode:'SIMULATED_DATA_ONLY',period,generatedAt:now,limits:LIMIT,metricSource:'synthetic_staging',
@@ -109,7 +117,7 @@ export class CostLedger {
     totalInfrastructureCostIdr:null,estimatedCostPerHostIdr:null,estimatedCostPerThousandViewerMinutesIdr:null,
     budget:decision,forecastEndOfMonthIdr:null,marginBeforeOtherCostsIdr:null,
     dataQuality:{billing:'MISSING_OR_INCOMPLETE',subscriptions:validSub?'SYNTHETIC':'STALE_OR_MISSING',video:'ESTIMATED_NOT_BILLED',relay:'CLIENT_REPORTED_NOT_PROVIDER_BILLED',receipts:'SYNTHETIC_NOT_PRODUCTION',readiness:'DO_NOT_SCALE_PAID_RELAY'},
-    durationPeriodDays:periodDays,warning:'No provider billing integration; costs are not official bills. No live production telemetry imported.',alerts:alert};
+    durationPeriodDays:periodDays,topRooms:highRooms,warning:'No provider billing integration; costs are not official bills. No live production telemetry imported.',alerts:alert};
    return json(out);
   }
   if(p==='/internal/alert'&&req.method==='POST'){
@@ -135,6 +143,7 @@ export default {
   if(ingest&&request.method!=='POST'||alert&&request.method!=='POST'||dashboard&&request.method!=='GET')return err(405,'METHOD','Not allowed');
   const stub=env.COST_LEDGER.get(env.COST_LEDGER.idFromName('nadmo-live-cost-stage-v1'));
   const path=ingest?'/internal/ingest':dashboard?'/internal/dashboard'+url.search:'/internal/alert';
-  return stub.fetch(new Request(new URL(path,url.origin),request));
+  try{return await stub.fetch(new Request(new URL(path,url.origin),request))}
+  catch{return err(503,'COST_STORE_UNAVAILABLE','Staging database or signaling unavailable; all live sessions remain unaffected')}
  }
 };
