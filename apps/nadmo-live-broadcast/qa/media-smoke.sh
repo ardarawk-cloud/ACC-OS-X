@@ -23,8 +23,8 @@ cleanup() {
   docker rm -f nadmo-media-test-a nadmo-media-test-b >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
-docker run -d --name nadmo-media-test-a -p 11935:1935 -p 18888:8888 -e MTX_HLSVARIANT=mpegts "$BASE" >/dev/null
-docker run -d --name nadmo-media-test-b -p 21935:1935 -p 28888:8888 -e MTX_HLSVARIANT=mpegts "$BASE" >/dev/null
+docker run -d --name nadmo-media-test-a -p 11935:1935 -p 18888:8888 -e MTX_HLSVARIANT=mpegts -e MTX_HLSALWAYSREMUX=true "$BASE" >/dev/null
+docker run -d --name nadmo-media-test-b -p 21935:1935 -p 28888:8888 -e MTX_HLSVARIANT=mpegts -e MTX_HLSALWAYSREMUX=true "$BASE" >/dev/null
 sleep 5
 echo "MediaMTX container status:"
 docker ps -a --filter name=nadmo-media-test --format "table {{.Names}}\t{{.Status}}"
@@ -47,12 +47,15 @@ sleep 4
 if ! kill -0 "$PUBLISHER_PID"; then echo "::error::Publisher exited early"; cat /tmp/nadmo-publisher.log; exit 1; fi
 for attempt in $(seq 1 12); do
   echo "checking HLS on both origins, attempt $attempt"
-  if curl -fsS --max-time 3 http://127.0.0.1:18888/live/index.m3u8 -o /tmp/nadmo-a.m3u8 &&
-     curl -fsS --max-time 3 http://127.0.0.1:28888/live/index.m3u8 -o /tmp/nadmo-b.m3u8 &&
+  if curl -fsSL --noproxy '*' --max-time 3 http://127.0.0.1:18888/live/index.m3u8 -o /tmp/nadmo-a.m3u8 &&
+     curl -fsSL --noproxy '*' --max-time 3 http://127.0.0.1:28888/live/index.m3u8 -o /tmp/nadmo-b.m3u8 &&
      grep -q 'EXTM3U' /tmp/nadmo-a.m3u8 &&
      grep -q 'EXTM3U' /tmp/nadmo-b.m3u8; then break; fi
   sleep 2
 done
+echo "Playlist response sample A:"; head -c 750 /tmp/nadmo-a.m3u8 || true; echo
+echo "Playlist response sample B:"; head -c 750 /tmp/nadmo-b.m3u8 || true; echo
+echo "HTTP headers primary:"; curl -sSI --noproxy '*' --max-time 3 http://127.0.0.1:18888/live/index.m3u8 || true
 echo "Publisher log:"; tail -50 /tmp/nadmo-publisher.log || true
 echo "Primary logs:"; docker logs --tail 30 nadmo-media-test-a || true
 echo "Backup logs:"; docker logs --tail 30 nadmo-media-test-b || true
