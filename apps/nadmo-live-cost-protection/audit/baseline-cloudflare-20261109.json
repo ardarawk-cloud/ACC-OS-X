@@ -1,0 +1,103 @@
+{
+  "auditDate": "2026-11-09",
+  "source": "Cloudflare API and GitHub",
+  "production": {
+    "script": "nadmo-live-beta-20261009",
+    "rollbackVersion": "664db15e-32b9-424a-9b83-3a901a549003",
+    "rollbackTrafficPercent": 100,
+    "bindings": [
+      [
+        "ASSETS",
+        "assets"
+      ],
+      [
+        "BETA_TEST_HOSTS_ENABLED",
+        "plain_text"
+      ],
+      [
+        "DANA_API_ORIGIN",
+        "plain_text"
+      ],
+      [
+        "DANA_CLIENT_SECRET",
+        "secret_text"
+      ],
+      [
+        "DANA_ENV",
+        "plain_text"
+      ],
+      [
+        "DANA_MERCHANT_ID",
+        "plain_text"
+      ],
+      [
+        "DANA_PRIVATE_KEY",
+        "secret_text"
+      ],
+      [
+        "DANA_PRODUCTION_PRIVATE_KEY",
+        "secret_text"
+      ],
+      [
+        "DANA_PUBLIC_KEY",
+        "plain_text"
+      ],
+      [
+        "DANA_X_PARTNER_ID",
+        "plain_text"
+      ],
+      [
+        "ROOM_HUB",
+        "durable_object_namespace"
+      ],
+      [
+        "SOCIAL_MEDIA",
+        "r2_bucket"
+      ]
+    ],
+    "liveLimitsFromSource": {
+      "roomLimit": 20,
+      "viewerLimitPerRoom": 4,
+      "guestSeats": 9,
+      "websocketConnectionsPerDO": 120
+    },
+    "streaming": "P2P mesh + STUN; TURN credentials 0; SFU not configured",
+    "subscriptionPricesIDR": {
+      "free": 0,
+      "pro": 19900,
+      "plus": 99900
+    },
+    "danaEnvironment": "sandbox"
+  },
+  "isolatedExistingStaging": {
+    "worker": "xlive-stage",
+    "bindings": [
+      "XLIVE_AUTH:kv_namespace",
+      "XLIVE_BETA_INVITE:secret_text",
+      "XLIVE_HOSTS:kv_namespace",
+      "XLIVE_ROOMS:durable_object_namespace"
+    ],
+    "unchanged": true
+  },
+  "newStaging": {
+    "worker": "nadmo-live-cost-stage",
+    "database": "isolated SQLite Durable Object CostLedger",
+    "bindings": [
+      "COST_LEDGER:durable_object_namespace",
+      "ADMIN_TOKEN:secret_text",
+      "INGEST_TOKEN:secret_text"
+    ],
+    "realMediaRelay": false,
+    "autoscalingEnabled": false
+  },
+  "limitations": [
+    "Cloudflare billing/usage API 403",
+    "Cloudflare spend-policies API 403",
+    "Cloudflare Stream API 403",
+    "D1 account quota 10 reached; no database deleted",
+    "No production TURN keys",
+    "No production payment settlement feed connected",
+    "No confirmation of actual provider invoice or full Cloudflare bill"
+  ],
+  "secrets": "Secrets values deliberately excluded. Restore by Cloudflare dashboard; never commit secret texts."
+}
