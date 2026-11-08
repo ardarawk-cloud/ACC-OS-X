@@ -13,7 +13,8 @@ const digest=async value=>hex(await crypto.subtle.digest('SHA-256',enc.encode(va
 function safeCompare(a,b){if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
 function tierOf(record,now=Date.now()){const tier=['pro','plus'].includes(record?.subscriptionTier)?record.subscriptionTier:'free';return tier!=='free'&&Number(record?.subscriptionExpiresAt)>now?tier:'free'}
 function snapshot(record,now=Date.now()){
- const tier=tierOf(record,now),count=Math.max(0,Number(record?.supportActionCount)||0);
+ const tier=tierOf(record,now),totalCount=Math.max(0,Number(record?.supportActionCount)||0);
+ const count=tier==='free'?totalCount:Math.max(0,totalCount-Math.max(0,Number(record?.subscriptionUsageStartCount)||0));
  const graceActive=Number(record?.subscriptionGraceUntil)>now&&!!record?.subscriptionPendingOrderId;
  const baseLimit=PLAN[tier].limit,effectiveLimit=baseLimit===null?null:baseLimit+(graceActive?GRACE_EXTRA:0);
  const locked=effectiveLimit!==null&&count>=effectiveLimit;
@@ -57,6 +58,7 @@ function danaGatewayReady(env){
 }
 async function activatePaidOrder(storage,order,record,now,referenceNo){
  const currentTier=tierOf(record,now),sameTier=currentTier===order.targetTier&&Number(record.subscriptionExpiresAt)>now,base=sameTier?Number(record.subscriptionExpiresAt):now;
+ record.subscriptionUsageStartCount=Math.max(0,Number(record.supportActionCount)||0);
  record.subscriptionTier=order.targetTier;record.subscriptionExpiresAt=base+SUBSCRIPTION_MS;record.subscriptionPendingOrderId='';record.subscriptionGraceUntil=0;record.subscriptionGraceLock='';record.updatedAt=now;
  order.status='approved';order.paymentStatus='paid';order.reviewedAt=now;order.approvedAt=now;order.providerReferenceNo=referenceNo||order.providerReferenceNo||null;
  await storage.put('auth-user:'+record.id,record);await storage.put('subscription-order:'+order.id,order);
@@ -103,7 +105,7 @@ export async function subscriptionEndpoint(storage,request,env){
  if(p==='/api/subscription/me'&&method==='GET'){
   const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
   const record=await storage.get('auth-user:'+user.id),pending=await pendingOrder(storage,record);
-  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env,u.origin),paymentGateway:{enabled:danaGatewayReady(env),environment:clean(env?.DANA_ENV,16)||'unknown'},subscription:snapshot(record,now),support:supportMethods(record),
+  return json({ok:true,plan:publicPlan(),qrisUrl:qrisConfig(env,u.origin),paymentGateway:{enabled:danaGatewayReady(env)&&String(env?.DANA_ENV||'').toLowerCase()==='production',environment:clean(env?.DANA_ENV,16)||'unknown'},subscription:snapshot(record,now),support:supportMethods(record),
    pending:pending?{id:pending.id,targetTier:pending.targetTier,price:pending.price,status:pending.status,provider:pending.provider||'manual',paymentStatus:pending.paymentStatus||null,createdAt:pending.createdAt,graceGranted:pending.graceGranted===true}:null});
  }
 
@@ -116,7 +118,7 @@ export async function subscriptionEndpoint(storage,request,env){
   const before=snapshot(record,now);if(before.locked)return json({ok:false,error:'Batas Support host sudah tercapai',code:'SUPPORT_LIMIT',subscription:before,support:{link:'',qris:''}},409);
   const viewer=await getAccount(storage,request);
   if(viewer?.id===record.id)return json({ok:true,allowed:true,counted:false,self:true,subscription:before,support:methods});
-  const rawIdentity=viewer?.id?('account:'+viewer.id):('guest:'+clean(request.headers.get('x-nadmo-client-ip')||'unknown',80)+'|'+clean(request.headers.get('user-agent')||'',180));
+  const rawIdentity=viewer?.id?('account:'+viewer.id):('guest:'+clean(request.headers.get('cf-connecting-ip')||'unknown',80)+'|'+clean(request.headers.get('user-agent')||'',180));
   const fingerprint=await digest(rawIdentity),key='support-action:'+record.id+':'+fingerprint,last=Number(await storage.get(key))||0;
   if(last&&now-last<DEDUPE_MS)return json({ok:true,allowed:true,counted:false,deduped:true,subscription:before,support:methods});
   record.supportActionCount=Math.max(0,Number(record.supportActionCount)||0)+1;record.updatedAt=now;
@@ -138,7 +140,7 @@ export async function subscriptionEndpoint(storage,request,env){
 
  if(p==='/api/subscription/dana/create'&&method==='POST'){
   if(!originOK(request))return fail(403,'Permintaan harus dari NADMO LIVE','ORIGIN_REQUIRED');
-  if(!danaGatewayReady(env))return fail(503,'DANA Payment Gateway belum siap','DANA_NOT_READY');
+  if(!danaGatewayReady(env)||String(env?.DANA_ENV||'').toLowerCase()!=='production')return fail(503,'DANA otomatis belum tersedia untuk transaksi produksi','DANA_NOT_READY');
   const user=await getAccount(storage,request);if(!user)return fail(401,'Login diperlukan','LOGIN_REQUIRED');
   let body;try{body=await parseJSON(request)}catch{return fail(400,'Data tidak valid','INVALID_INPUT')}
   const targetTier=clean(body.targetTier,10).toLowerCase();if(!['pro','plus'].includes(targetTier))return fail(400,'Paket tidak valid','BAD_PLAN');
@@ -191,12 +193,18 @@ export async function subscriptionEndpoint(storage,request,env){
   if(String(data.merchantId||'')!==String(env.DANA_MERCHANT_ID||''))return ack('5005601','Internal Server Error',500);
   const ref=clean(data.originalPartnerReferenceNo,80),id=ref&&await storage.get('subscription-dana-ref:'+ref);if(!id)return ack();
   const order=await storage.get('subscription-order:'+id);if(!order)return ack();
-  if(order.status==='approved'||order.status==='rejected'||order.status==='cancelled')return ack();
+  if(['approved','rejected','cancelled','sandbox_confirmed'].includes(order.status))return ack();
   const record=await storage.get('auth-user:'+order.userId);if(!record)return ack('5005601','Internal Server Error',500);
   const amount=Number(data?.amount?.value),currency=String(data?.amount?.currency||'');
   if(!Number.isFinite(amount)||amount!==Number(order.price)||currency!=='IDR')return ack('5005601','Internal Server Error',500);
   const status=String(data.latestTransactionStatus||'');
   if(status==='00'){
+   if(String(env?.DANA_ENV||'').toLowerCase()!=='production'){
+    order.status='sandbox_confirmed';order.paymentStatus='sandbox_verified';order.reviewedAt=now;
+    if(record.subscriptionPendingOrderId===id)record.subscriptionPendingOrderId='';
+    record.updatedAt=now;await storage.put('subscription-order:'+id,order);await storage.put('auth-user:'+record.id,record);
+    return ack();
+   }
    await activatePaidOrder(storage,order,record,now,clean(data.originalReferenceNo,80));return ack();
   }
   if(status==='05'){
@@ -216,7 +224,7 @@ export async function subscriptionEndpoint(storage,request,env){
   const record=await storage.get('auth-user:'+user.id);if(!record)return fail(404,'Akun tidak ditemukan','ACCOUNT_NOT_FOUND');
   const state=snapshot(record,now),allowed=state.tier==='free'?targetTier==='pro':state.tier==='pro'?['pro','plus'].includes(targetTier):targetTier==='plus';
   if(!allowed)return fail(409,'Paket tujuan tidak sesuai tier saat ini','BAD_UPGRADE_PATH');
-  const existing=await pendingOrder(storage,record);if(existing)return json({ok:true,duplicate:true,order:{id:existing.id,targetTier:existing.targetTier,status:existing.status,createdAt:existing.createdAt},subscription:state});
+  const existing=await pendingOrder(storage,record);if(existing){if(existing.provider==='dana-payment-gateway'||existing.targetTier!==targetTier)return fail(409,'Masih ada transaksi berbeda yang menunggu konfirmasi','ORDER_PENDING');return json({ok:true,duplicate:true,order:{id:existing.id,targetTier:existing.targetTier,status:existing.status,createdAt:existing.createdAt},subscription:state});}
   const id=crypto.randomUUID(),cycle=state.tier+'>'+targetTier+':'+String(Number(record.subscriptionExpiresAt)||0),graceGranted=state.locked&&record.subscriptionGraceLock!==cycle;
   const order={id,userId:user.id,handle:record.handle,name:record.name,targetTier,price:PLAN[targetTier].price,proofUrl,status:'pending',createdAt:now,graceGranted};
   await storage.put('subscription-order:'+id,order);record.subscriptionPendingOrderId=id;
@@ -240,9 +248,11 @@ export async function subscriptionEndpoint(storage,request,env){
   const order=await storage.get('subscription-order:'+id);if(!order)return fail(404,'Order tidak ditemukan','ORDER_NOT_FOUND');if(order.status!=='pending')return json({ok:true,unchanged:true,order});
   const record=await storage.get('auth-user:'+order.userId);if(!record)return fail(404,'Akun host tidak ditemukan','ACCOUNT_NOT_FOUND');
   if(action==='approve'){
+   if(order.provider==='dana-payment-gateway')return fail(409,'Order DANA harus dikonfirmasi oleh webhook pembayaran yang sah','GATEWAY_VERIFICATION_REQUIRED');
+   record.subscriptionUsageStartCount=Math.max(0,Number(record.supportActionCount)||0);
    const currentTier=tierOf(record,now),sameTier=currentTier===order.targetTier&&Number(record.subscriptionExpiresAt)>now,base=sameTier?Number(record.subscriptionExpiresAt):now;
    record.subscriptionTier=order.targetTier;record.subscriptionExpiresAt=base+SUBSCRIPTION_MS;record.subscriptionPendingOrderId='';record.subscriptionGraceUntil=0;record.subscriptionGraceLock='';record.updatedAt=now;
-   order.status='approved';order.reviewedAt=now;order.approvedAt=now;
+   order.status='approved';order.paymentStatus='verified_manual';order.reviewedAt=now;order.approvedAt=now;
   }else{record.subscriptionPendingOrderId='';record.subscriptionGraceUntil=0;record.updatedAt=now;order.status='rejected';order.reviewedAt=now;order.rejectedAt=now}
   await storage.put('auth-user:'+record.id,record);await storage.put('subscription-order:'+id,order);return json({ok:true,order,subscription:snapshot(record,now)});
  }

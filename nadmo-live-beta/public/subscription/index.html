@@ -106,10 +106,13 @@ $('submitOrder').onclick=async()=>{
   const proof=await uploadImage($('proofFile').files?.[0],st);
   const d=await request('/api/subscription/order',{method:'POST',body:JSON.stringify({targetTier:selectedTier,proofUrl:proof})});
   st.textContent=d.order?.graceGranted?'Bukti terkirim. PENDING VERIFICATION · Grace 24 jam +20 aktif.':'Bukti terkirim. PENDING VERIFICATION.';
-  await const danaReturn=new URLSearchParams(location.search).get('payment')==='dana';
-if(danaReturn){setTimeout(()=>load(),1200)}
-load();
+  await load();
  }catch(e){st.textContent=e.message}
 };
+if(new URLSearchParams(location.search).get('payment')==='dana'){
+ $('orderStatus').textContent='Memeriksa status pembayaran DANA...';
+ setTimeout(load,1500);
+ setTimeout(load,5000);
+}
 load();
 </script></body></html>
