@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import {simulate,guard,scaling} from '../worker.mjs';
+import handler,{simulate,guard,scaling} from '../worker.mjs';
+import {emitRoomTelemetry} from '../../../nadmo-live-beta/cost-telemetry-adapter.mjs';
 const hosts=[50,100,500,1000,5000,10000];
 for(const count of hosts){
  const out=simulate(count,2,2,1000,16000,0);
@@ -30,3 +31,27 @@ for(const h of [50,100,1000]){
  assert.equal(r.monthlyViewerMinutes,h*4*2*60*30);
 }
 console.log('PASS: 50/100/500/1000/5000/10000 host scenarios, 1/2/4 viewers, six budget levels, stale billing, paid relay holds, capacity, no forced LIVE disconnect');
+const throttle=simulate(50,4,2,500),normalRate=simulate(50,4,2,1000),videoSpike=simulate(50,4,2,2000);
+assert.ok(throttle.relayGb<normalRate.relayGb && videoSpike.relayGb>normalRate.relayGb,'quality profile should change bandwidth projection');
+const spike=simulate(1000,4);
+assert.equal(spike.monthlyViewerMinutes,simulate(1000,2).monthlyViewerMinutes*2,'audience spike should double viewer-minutes');
+const health=await handler.fetch(new Request('https://example.test/health'),{},null);
+assert.equal(health.status,200);
+assert.equal((await health.json()).liveProductionTouched,false);
+const privateData=await handler.fetch(new Request('https://example.test/api/dashboard'),{},null);
+assert.equal(privateData.status,503,'missing admin binding fails closed');
+const faultEnv={ADMIN_TOKEN:'test-admin',INGEST_TOKEN:'test-ingest',COST_LEDGER:{
+ idFromName:()=> 'stage-test',
+ get:()=>({fetch:async()=>{throw new Error('database-unavailable')}})
+}};
+const failed=await handler.fetch(new Request('https://example.test/api/dashboard',{headers:{Authorization:'Bearer test-admin'}}),faultEnv,null);
+assert.equal(failed.status,503);
+assert.equal((await failed.json()).code,'COST_STORE_UNAVAILABLE');
+const inactive=await emitRoomTelemetry({}, {},new Map(),[],()=>0,Date.now());
+assert.equal(inactive.status,'disabled');
+const store={get:async()=>0,put:async()=>{}};
+const networkFault=await emitRoomTelemetry(store,{
+ COST_MONITOR_INGEST_TOKEN:'staging-only',COST_MONITOR:{fetch:async()=>{throw new Error('network-failure')}}
+},new Map([['room:abc',{id:'abc',hostOfflineAt:null}]]),[],()=>4,Date.now());
+assert.equal(networkFault.status,'unavailable','network failure should not interrupt host LIVE');
+console.log('PASS: video quality adjustments, audience spikes, missing admin secret, database outage, network failure and no forced LIVE disruption');
