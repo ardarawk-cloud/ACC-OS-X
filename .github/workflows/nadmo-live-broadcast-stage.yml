@@ -17,6 +17,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify failover and database error isolation
         run: node apps/nadmo-live-broadcast/qa/broadcast.test.mjs
+      - name: Verify actual MediaMTX dual-origin video transport (no cloud production)
+        timeout-minutes: 5
+        run: bash apps/nadmo-live-broadcast/qa/media-smoke.sh
       - name: Verify deployed Cloudflare staging endpoints
         run: |
           set -euo pipefail
