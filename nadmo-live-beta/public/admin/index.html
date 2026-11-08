@@ -34,14 +34,21 @@ function render(data){
   left.innerHTML='<div class="row"><b>@'+esc(o.handle)+'</b><span class="badge '+esc(o.status)+'">'+esc(String(o.status).toUpperCase())+'</span><span class="badge">'+esc(String(o.targetTier).toUpperCase())+'</span></div>'+
    '<div class="meta"><span>Nama</span><b>'+esc(o.name)+'</b><span>Harga</span><b>'+esc(money(o.price))+'</b><span>Dikirim</span><b>'+esc(date(o.createdAt))+'</b><span>Grace</span><b>'+esc(o.graceGranted?'24 jam +20':'Tidak')+'</b><span>Support</span><b>'+esc(o.subscription?(o.subscription.count+' / '+(o.subscription.effectiveLimit===null?'∞':o.subscription.effectiveLimit)):'—')+'</b><span>Tier sekarang</span><b>'+esc(o.subscription?o.subscription.tier.toUpperCase():'—')+'</b></div>';
   if(o.status==='pending'){
-   const actions=document.createElement('div');actions.className='row';actions.style.marginTop='12px';
-   const approve=document.createElement('button');approve.textContent='APPROVE';approve.onclick=()=>review(o.id,'approve');
-   const reject=document.createElement('button');reject.textContent='REJECT';reject.className='danger';reject.onclick=()=>review(o.id,'reject');
-   actions.append(approve,reject);left.append(actions);
+   if(o.provider==='dana-payment-gateway'){
+    const notice=document.createElement('p');notice.textContent='Menunggu konfirmasi otomatis DANA. Order gateway tidak bisa disetujui manual.';left.append(notice);
+   }else{
+    const actions=document.createElement('div');actions.className='row';actions.style.marginTop='12px';
+    const approve=document.createElement('button');approve.textContent='APPROVE';approve.onclick=()=>review(o.id,'approve');
+    const reject=document.createElement('button');reject.textContent='REJECT';reject.className='danger';reject.onclick=()=>review(o.id,'reject');
+    actions.append(approve,reject);left.append(actions);
+   }
   }
-  const img=document.createElement('a');img.href=o.proofUrl;img.target='_blank';img.rel='noopener noreferrer';
-  const pic=document.createElement('img');pic.src=o.proofUrl;pic.alt='Bukti pembayaran '+o.handle;img.append(pic);
-  card.append(left,img);box.append(card);
+  card.append(left);
+  if(typeof o.proofUrl==='string'&&o.proofUrl.startsWith('https://')){
+   const img=document.createElement('a');img.href=o.proofUrl;img.target='_blank';img.rel='noopener noreferrer';
+   const pic=document.createElement('img');pic.src=o.proofUrl;pic.alt='Bukti pembayaran '+o.handle;img.append(pic);card.append(img);
+  }
+  box.append(card);
  }
 }
 async function load(){
