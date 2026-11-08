@@ -2,6 +2,7 @@ import {accountEndpoint,getAccount,getAccountBySessionFingerprint,getSessionFing
 import {getPublicSupporterBadge} from './supporter-levels.mjs';
 import {subscriptionEndpoint} from './subscription.mjs';
 import {integrationEndpoint} from './integrations.mjs';
+import {emitRoomTelemetry} from './cost-telemetry-adapter.mjs';
 // NADMO LIVE beta realtime signaling. WebRTC P2P mesh; NOT a production SFU.
 // No money handling or public onboarding. Beta safety tools operate without staffed review.
 const ALLOWED_ORIGIN='https://appassets.androidplatform.net';
@@ -130,6 +131,10 @@ export class RoomHub{
      reply(socket,{type:'room-ended',reason:'Host tidak kembali setelah masa pemulihan.'});
     }
    }
+  }
+  // Cost telemetry is optional. Failure never blocks signaling or ends a LIVE.
+  if(this.env.COST_MONITOR&&this.env.COST_MONITOR_INGEST_TOKEN){
+   this.ctx.waitUntil(emitRoomTelemetry(this.ctx.storage,this.env,rooms,sockets,roomCount,now).catch(()=>{}));
   }
   if(sockets.length){
    const heartbeat={type:'heartbeat',at:now};
