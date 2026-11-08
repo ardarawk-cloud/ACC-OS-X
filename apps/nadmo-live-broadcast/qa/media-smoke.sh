@@ -30,14 +30,15 @@ echo "MediaMTX container status:"
 docker ps -a --filter name=nadmo-media-test --format "table {{.Names}}\t{{.Status}}"
 docker logs --tail 25 nadmo-media-test-a || true
 docker logs --tail 25 nadmo-media-test-b || true
-ffmpeg -y -hide_banner -loglevel error \
-  -f lavfi -i "testsrc2=size=320x180:rate=12" \
-  -f lavfi -i "sine=frequency=440:sample_rate=44100" \
-  -t 45 -c:v libx264 -preset ultrafast -tune zerolatency \
+# Direct synthetic live publish avoids MP4 codec-tag mismatch in the FLV muxer.
+# One real-time FFmpeg publisher feeds both distinct MediaMTX ingest endpoints.
+ffmpeg -hide_banner -loglevel error \
+  -re -f lavfi -i "testsrc2=size=320x180:rate=12" \
+  -re -f lavfi -i "sine=frequency=440:sample_rate=44100" \
+  -t 120 -map 0:v -map 1:a \
+  -c:v libx264 -preset ultrafast -tune zerolatency \
   -g 24 -pix_fmt yuv420p -b:v 250k \
-  -c:a aac -b:a 64k /tmp/nadmo-source.mp4
-ffmpeg -hide_banner -loglevel error -re -stream_loop -1 -i /tmp/nadmo-source.mp4 \
-  -map 0:v -map 0:a -c copy \
+  -c:a aac -b:a 64k \
   -f tee "[f=flv:onfail=ignore]rtmp://127.0.0.1:11935/live|[f=flv:onfail=ignore]rtmp://127.0.0.1:21935/live" \
   >/tmp/nadmo-publisher.log 2>&1 &
 PUBLISHER_PID="$!"
