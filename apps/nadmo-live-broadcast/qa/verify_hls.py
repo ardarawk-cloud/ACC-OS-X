@@ -17,13 +17,13 @@ def main(url):
         if not entries:
             raise AssertionError("Playlist contains no media files")
         target=urllib.parse.urljoin(url,entries[0])
-        if entries[0].endswith(".m3u8"):
+        if urllib.parse.urlparse(target).path.endswith(".m3u8"):
             url=target
             continue
         chunk=fetch(target)
         if len(chunk)<1024:
             raise AssertionError("No real media payload")
-        if entries[0].endswith(".ts") and chunk[0]!=0x47:
+        if urllib.parse.urlparse(target).path.endswith(".ts") and chunk[0]!=0x47:
             raise AssertionError("MPEG-TS payload missing sync byte")
         print("PASS: playlist and real media segment",len(chunk),"bytes",url)
         return
