@@ -1,0 +1,29 @@
+name: NADMO LIVE Cost Guard (staging)
+on:
+  push:
+    branches:
+      - feat/nadmo-live-cost-protection-staging-20261109
+    paths:
+      - "apps/nadmo-live-cost-protection/**"
+      - ".github/workflows/nadmo-live-cost-guard-staging.yml"
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test isolated budget logic and host simulations
+        run: node apps/nadmo-live-cost-protection/qa/cost-guard.test.mjs
+      - name: Test isolated Cloudflare staging HTTP read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://nadmo-live-cost-stage.ardarawk.workers.dev"
+          curl --fail-with-body -sSL --max-time 20 "$URL/health" | grep -q '"liveProductionTouched":false'
+          CODE="$(curl -sSL --max-time 20 -o /tmp/cost-auth -w '%{http_code}' "$URL/api/dashboard?period=month")"
+          test "$CODE" = "401"
+          grep -q 'ADMIN_ONLY' /tmp/cost-auth
+          echo "PASS: staging HTTP health and admin-only guard"
