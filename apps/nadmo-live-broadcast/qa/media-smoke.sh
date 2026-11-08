@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
-command -v docker >/dev/null
-command -v ffmpeg >/dev/null
+echo "Runner PATH: $PATH"
+for name in docker ffmpeg ffprobe; do
+  if command -v "$name"; then echo "FOUND $name"; else echo "MISSING $name"; fi
+done
+if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+  echo "Installing FFmpeg and FFprobe on the isolated GitHub Actions runner"
+  sudo apt-get update -qq
+  sudo apt-get install -y ffmpeg
+fi
+if ! command -v docker >/dev/null; then
+  echo "::error::Docker unavailable on this runner"
+  exit 1
+fi
+docker version
+
 BASE="bluenviron/mediamtx:1.21.3"
 PUBLISHER_PID=""
 docker pull "$BASE"
