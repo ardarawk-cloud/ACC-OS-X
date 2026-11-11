@@ -33,6 +33,31 @@ export function update(s,role,ok,t){
  const pick=choice(s,t);if(pick.changed){s.selected=pick.selected;s.changedAt=t;s.audit=[...(s.audit||[]),{at:t,to:pick.selected,event:'failover'}].slice(-60)}
  return true;
 }
+// Validate real HLS manifests, not merely a 200 response to HEAD.
+ // A gateway can return 200 with HTML, an expired playlist, or an empty manifest.
+export async function probeManifest(url, fetcher=fetch){
+ let response, reader;
+ try {
+  response=await fetcher(url,{method:'GET',redirect:'manual',signal:AbortSignal.timeout(4500),
+   headers:{accept:'application/vnd.apple.mpegurl, application/x-mpegURL;q=0.9, */*;q=0.1','cache-control':'no-cache'}});
+  if(response.status!==200&&response.status!==206||!response.body)return false;
+  reader=response.body.getReader();
+  const decoder=new TextDecoder();let value='',bytes=0,done=false;
+  while(!done){
+   const chunk=await reader.read();done=chunk.done;
+   if(done)break;
+   bytes+=chunk.value.byteLength;
+   if(bytes>32768)return false; // fail closed on huge/unknown origin responses
+   value+=decoder.decode(chunk.value,{stream:true});
+  }
+  value+=decoder.decode();
+  const lines=value.replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  return lines[0]==='#EXTM3U'
+   &&!lines.includes('#EXT-X-ENDLIST')
+   &&lines.some(x=>/^#EXT(?:INF:|-X-STREAM-INF:|-X-PART:|-X-MAP:)/.test(x));
+ }catch{return false}
+ finally {if(reader){try{await reader.cancel()}catch{}}}
+}
 const EMPTY=()=>({sources:[],selected:null,changedAt:0,audit:[]});
 export function snapshot(s,t){
  const d=choice(s,t),sources=s.sources.map(x=>({role:x.role,url:x.url,healthy:healthy(x,t),status:t-x.checked>=45000?'stale':x.health}));
@@ -63,8 +88,7 @@ export class BroadcastHub{
  async alarm(){
   const s=await this.state();if(!s.sources.length)return;
   for(const origin of s.sources){
-   let ok=false;
-   try{const r=await fetch(origin.url,{method:'HEAD',redirect:'manual',signal:AbortSignal.timeout(4500),headers:{'cache-control':'no-cache'}});ok=r.status===200||r.status===206}catch{}
+   const ok=await probeManifest(origin.url);
    update(s,origin.role,ok,Date.now());
   }
   await this.ctx.storage.put('state',s);await this.ctx.storage.setAlarm(Date.now()+20000);
