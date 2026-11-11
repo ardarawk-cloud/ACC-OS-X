@@ -57,6 +57,7 @@ The metadata controller never proxies HLS manifests, video segments or stream co
 
 ## Quality and release gates
 Tests run on GitHub Actions: allowed/unallowed origins, token-protected admin/probe, bounded and valid HLS manifests (including false HTTP 200, invalid/empty, expired, oversized and redirects), 2-sample health, primary->backup via actual alarm, anti-flapping, backup->primary, stale data, missing database, no video proxy.
+The `qa/media-smoke.sh` pipeline now starts two real MediaMTX Docker origins and one FFmpeg synthetic video+audio publisher. It fetches real HLS playlists and media segments, runs `qa/real-origin-router.test.mjs` through the actual BroadcastHub alarm/route logic against both local HLS origins, stops the primary container, and requires the real backup to remain playable and be selected. HTTPS hostnames in the controller are mapped to localhost by a CI-only fetch shim; **this does not prove public TLS delivery or distinct physical failure domains**.
 HTTP smoke on stage: /health, /api/route/demo, /watch/demo, unauthorized configuration.
 NOT DONE: MediaMTX primary/backup installed, host-to-origin publish integration, real origin connectivity, real video playback, network switch/recovery, simultaneous 50/100/1K real viewers, actual egress billing; NEED owner approval to activate paid capacity or modify production.
 No production changes allowed until verified staging and rollback tests.
