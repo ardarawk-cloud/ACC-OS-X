@@ -63,8 +63,10 @@ test -s /tmp/nadmo-a.m3u8
 test -s /tmp/nadmo-b.m3u8
 python3 apps/nadmo-live-broadcast/qa/verify_hls.py http://127.0.0.1:18888/live/index.m3u8
 python3 apps/nadmo-live-broadcast/qa/verify_hls.py http://127.0.0.1:28888/live/index.m3u8
-docker stop nadmo-media-test-a >/dev/null
+# Verify the actual Durable Object routing algorithm against both live HLS origins.
+# This test deliberately stops primary and requires the real backup manifest to stay valid.
+node apps/nadmo-live-broadcast/qa/real-origin-router.test.mjs
 sleep 4
 kill -0 "$PUBLISHER_PID"
 python3 apps/nadmo-live-broadcast/qa/verify_hls.py http://127.0.0.1:28888/live/index.m3u8
-echo "PASS: one publishing process, two independent local MediaMTX origins, both delivered real video, backup continued after primary was stopped"
+echo "PASS: one publishing process, two local MediaMTX origins, verified media, real controller failover, backup survives primary stop"
