@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import worker,{validateSources,choice,update,snapshot,BroadcastHub,probeManifest} from '../worker.mjs';
+import {PLAYER_HTML} from '../player.mjs';
 const t=Date.now(),hosts=['primary.example.com','backup.example.com'];
 const sources=[{role:'primary',url:'https://primary.example.com/live/test.m3u8'},{role:'backup',url:'https://backup.example.com/live/test.m3u8'}];
 assert.equal(validateSources(sources,hosts)?.length,2);
@@ -19,6 +20,19 @@ assert.equal(await testManifest('#EXTM3U\n#EXT-X-TARGETDURATION:4\n'),false,'emp
 assert.equal(await testManifest(media+'#EXT-X-ENDLIST\n'),false,'ended stream must not look healthy');
 assert.equal(await testManifest(media,302),false,'do not follow origin redirects');
 assert.equal(await testManifest('x'.repeat(40000)),false,'bound untrusted origin response');
+// Browser route update must not wait for readyState to drop when old HLS buffers remain.
+const inlineScript=PLAYER_HTML.split('<script>')[1]?.split('</script>')[0];
+assert.ok(inlineScript);assert.doesNotThrow(()=>new Function(inlineScript));
+const switchLine=inlineScript.split('\n').find(x=>x.startsWith('function shouldSwitchRoute('));
+assert.ok(switchLine,'viewer must contain a route-health switch guard');
+const shouldSwitchRoute=new Function(switchLine+'\nreturn shouldSwitchRoute;')();
+const routeExample={roomReady:true,url:sources[1].url,sources:[{url:sources[0].url,healthy:false},{url:sources[1].url,healthy:true}]};
+assert.equal(shouldSwitchRoute(routeExample,sources[0].url,4,4000),true,'switch even if old video is buffered');
+assert.equal(shouldSwitchRoute(routeExample,sources[0].url,4,1000),false,'avoid instant flapping');
+routeExample.sources[0].healthy=true;
+assert.equal(shouldSwitchRoute(routeExample,sources[0].url,4,15000),false,'do not interrupt playable origin');
+assert.equal(shouldSwitchRoute(routeExample,sources[0].url,1,15000),true,'recover buffering route');
+assert.equal(shouldSwitchRoute({...routeExample,roomReady:false},sources[0].url,1,15000),false,'never switch to unready source');
 const s={sources:validateSources(sources,hosts),selected:null,audit:[]};
 assert.equal(choice(s,t).mode,'WAITING');
 update(s,'primary',true,t);assert.equal(choice(s,t).ready,false);
@@ -56,4 +70,4 @@ r=await call('/api/route/demo');assert.equal((await r.json()).mode,'BACKUP','do 
 r=await worker.fetch(new Request('https://local.test/api/route/demo'),{});assert.equal(r.status,503);
 r=await worker.fetch(new Request('https://local.test/api/route/demo'),{BROADCAST_HUB:{idFromName:()=>1,get:()=>({fetch:async()=>{throw Error('storage down')}})}});assert.equal(r.status,503);
 r=await call('/api/route/demo',{method:'POST'});assert.equal(r.status,405);
-console.log('PASS: strict HLS manifest checks, actual alarm fallback, URL allowlist, admin/probe isolation, primary+backup, stale data, hysteresis, recovered origin, storage outage and zero media proxy');
+console.log('PASS: strict HLS manifest checks, browser buffer-resistant failover, actual alarm fallback, URL allowlist, admin/probe isolation, primary+backup, stale data, hysteresis, recovered origin, storage outage and zero media proxy');
