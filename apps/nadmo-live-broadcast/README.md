@@ -43,7 +43,7 @@ The metadata controller never proxies HLS manifests, video segments or stream co
 - Authenticated POST /admin/configure/demo: body {"sources":[{"role":"primary","url":"https://primary.example.net/live/demo.m3u8"},{"role":"backup","url":"https://backup.example.net/live/demo.m3u8"}]}
 - Authenticated POST /probe/demo with {role:"primary",healthy:true} for backend test only.
 - Authenticated GET /admin/audit/demo.
-- Automatic HEAD probe of each approved origin manifest approximately every 20 seconds, 4.5 second timeout, no redirects, 2 successful checks to mark ready, recovery hysteresis 60 seconds. If both down/stale return WAITING/DEGRADED_HOLD and keep host session unaffected.
+- Automatic GET inspection of each approved origin HLS manifest approximately every 20 seconds, 4.5 second timeout, no redirects, maximum 32 KiB playlist read; rejects HTTP 200 HTML, empty playlists, oversized responses and ended media playlists. Requires 2 consecutive valid health checks, with 60-second failback hysteresis. A syntactically valid playlist alone is not proof of ongoing segments/playback; separate media test is required. If both down/stale return WAITING/DEGRADED_HOLD and keep host session unaffected.
 - Stage never issues Cloudflare Stream/TURN/SFU/Container spend commands. P2P segment sharing remains off in stage until separate tests and opt-in UX.
 
 ## Security requirements
@@ -56,7 +56,7 @@ The metadata controller never proxies HLS manifests, video segments or stream co
 - Peer-assisted streaming is not inherently free: viewer upload, NAT/TURN, mobile battery and potential IP discovery must be disclosed and user-controlled.
 
 ## Quality and release gates
-Tests run on GitHub Actions: allowed/unallowed origins, token-protected admin/probe, 2-sample health, primary->backup, anti-flapping, backup->primary, stale data, missing database, no video proxy.
+Tests run on GitHub Actions: allowed/unallowed origins, token-protected admin/probe, bounded and valid HLS manifests (including false HTTP 200, invalid/empty, expired, oversized and redirects), 2-sample health, primary->backup via actual alarm, anti-flapping, backup->primary, stale data, missing database, no video proxy.
 HTTP smoke on stage: /health, /api/route/demo, /watch/demo, unauthorized configuration.
 NOT DONE: MediaMTX primary/backup installed, host-to-origin publish integration, real origin connectivity, real video playback, network switch/recovery, simultaneous 50/100/1K real viewers, actual egress billing; NEED owner approval to activate paid capacity or modify production.
 No production changes allowed until verified staging and rollback tests.
