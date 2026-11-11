@@ -14,7 +14,8 @@ export function validateSources(sources,hosts){
   if(!s||!['primary','backup'].includes(s.role)||roles.has(s.role)||typeof s.url!=='string'||s.url.length>500)return null;
   let url;try{url=new URL(s.url)}catch{return null}
   if(url.protocol!=='https:'||url.username||url.password||url.port||url.search||url.hash||!url.pathname.endsWith('.m3u8'))return null;
-  if(!hosts.includes(url.hostname.toLowerCase())||url.hostname==='localhost'||url.hostname.endsWith('.local'))return null;
+  const host=url.hostname.toLowerCase().replace(/\.$/,'');
+  if(!hosts.includes(url.hostname.toLowerCase())||host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host.endsWith('.internal')||host.startsWith('[')||/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host))return null;
   roles.add(s.role);out.push({role:s.role,url:url.href,health:'unknown',success:0,failure:0,checked:0});
  }
  return out.sort((a,b)=>a.role==='primary'?-1:1);
@@ -52,9 +53,13 @@ export async function probeManifest(url, fetcher=fetch){
   }
   value+=decoder.decode();
   const lines=value.replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  return lines[0]==='#EXTM3U'
-   &&!lines.includes('#EXT-X-ENDLIST')
-   &&lines.some(x=>/^#EXT(?:INF:|-X-STREAM-INF:|-X-PART:|-X-MAP:)/.test(x));
+  if(lines[0]!=='#EXTM3U'||lines.includes('#EXT-X-ENDLIST'))return false;
+  // An EXTINF/variant header without any URI is not a usable playlist.
+  // Init map metadata alone is not playable content.
+  const hasUri=lines.some(x=>!x.startsWith('#'));
+  const hasSegment=lines.some(x=>/^#EXTINF:|^#EXT-X-STREAM-INF:/.test(x));
+  const hasPart=lines.some(x=>/^#EXT-X-PART:/.test(x)&&/URI="[^"]+"/.test(x));
+  return (hasUri&&hasSegment)||hasPart;
  }catch{return false}
  finally {if(reader){try{await reader.cancel()}catch{}}}
 }
