@@ -1,0 +1,33 @@
+name: NADMO LIVE Broadcast Failover (staging)
+on:
+  push:
+    branches:
+      - feat/nadmo-live-broadcast-failover-staging-20261109
+    paths:
+      - "apps/nadmo-live-broadcast/**"
+      - ".github/workflows/nadmo-live-broadcast-stage.yml"
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify failover and database error isolation
+        run: node apps/nadmo-live-broadcast/qa/broadcast.test.mjs
+      - name: Verify actual MediaMTX dual-origin video transport (no cloud production)
+        timeout-minutes: 5
+        run: bash apps/nadmo-live-broadcast/qa/media-smoke.sh
+      - name: Verify deployed Cloudflare staging endpoints
+        run: |
+          set -euo pipefail
+          URL="https://nadmo-live-broadcast-stage.ardarawk.workers.dev"
+          curl -fsS --max-time 20 "$URL/health" | grep -q '"productionTouched":false'
+          curl -fsS --max-time 20 "$URL/api/route/demo" | grep -q '"mode":"WAITING"'
+          curl -fsS --max-time 20 "$URL/watch/demo" | grep -q 'BROADCAST STAGING'
+          STATUS="$(curl -sS -o /tmp/broadcast-auth -w '%{http_code}' --max-time 20 -X POST "$URL/admin/configure/demo")"
+          test "$STATUS" = "401"
+          grep -q 'ADMIN_ONLY' /tmp/broadcast-auth
+          echo "PASS: runtime stage health, Durable Object read, unset media origins, admin access denied"
