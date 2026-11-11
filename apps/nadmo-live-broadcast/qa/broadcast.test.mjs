@@ -13,6 +13,11 @@ const testManifest=(body,status=200)=>probeManifest(sources[0].url,async(_url,op
  assert.equal(opts.method,'GET');assert.equal(opts.redirect,'manual');
  return new Response(body,{status});
 });
+assert.equal(validateSources([{role:'primary',url:'https://127.0.0.1/live/test.m3u8'},sources[1]],['127.0.0.1',hosts[1]]),null,'even explicitly allowlisted IPv4 literals are unsafe');
+assert.equal(validateSources([{role:'primary',url:'https://[::1]/live/test.m3u8'},sources[1]],['[::1]',hosts[1]]),null,'even explicitly allowlisted IPv6 literals are unsafe');
+assert.equal(await testManifest('#EXTM3U\n#EXTINF:4.0,\n'),false,'media tag without a segment is not live');
+assert.equal(await testManifest('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=300000\n'),false,'variant tag without a URI is not live');
+assert.equal(await testManifest('#EXTM3U\n#EXT-X-MAP:URI="init.mp4"\n'),false,'initialization map is not playable media');
 assert.equal(await testManifest(media),true);
 assert.equal(await testManifest(master),true);
 assert.equal(await testManifest('<html><body>OK</body></html>'),false,'HTTP 200 does not mean video exists');
